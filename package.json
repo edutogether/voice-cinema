@@ -1,0 +1,15 @@
+{
+  "name": "inky-voice-cinema",
+  "version": "1.0.0",
+  "description": "잉키 보이스 시네마 - 영화제 더빙 놀이 부스 프로그램",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "qrcode": "^1.5.4",
+    "ffmpeg-static": "^5.2.0",
+    "selfsigned": "^2.4.1"
+  }
+}

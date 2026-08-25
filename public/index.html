@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<title>잉키 보이스 시네마</title>
+<style>
+  :root{
+    --bg:#0b1020; --bg2:#0c1330; --panel:#141c3a; --panel2:#1b2549;
+    --gold:#e9c46a; --gold-soft:#f2cf6b; --cream:#f6f1e6;
+    --muted:#9aa6cc; --line:rgba(233,196,106,.22);
+    --ok:#39d59a; --danger:#ff5470;
+    --shadow:0 24px 60px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; height:100%;}
+  body{
+    font-family:'Pretendard','Pretendard Variable','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+    color:var(--cream); background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(233,196,106,.10), transparent 60%),
+      radial-gradient(900px 500px at 50% 120%, rgba(77,166,255,.08), transparent 60%),
+      linear-gradient(180deg,var(--bg),var(--bg2));
+    min-height:100dvh; overflow-x:hidden; user-select:none;
+  }
+  .wrap{max-width:1000px; margin:0 auto; padding:clamp(18px,3.5vw,40px) clamp(16px,4vw,32px); min-height:100dvh; display:flex; flex-direction:column;}
+  .view{display:none; flex:1; flex-direction:column;}
+  .view.active{display:flex; animation:fade .35s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(8px);}to{opacity:1; transform:none;}}
+
+  /* ── 헤더 / 마키 ── */
+  .brand{text-align:center; margin-bottom:clamp(18px,3vw,34px);}
+  .eyebrow{display:inline-flex; align-items:center; gap:8px; font-size:clamp(11px,1.4vw,13px); letter-spacing:.28em; color:var(--gold);
+    text-transform:uppercase; border:1px solid var(--line); padding:7px 16px; border-radius:999px; background:rgba(233,196,106,.06);}
+  .eyebrow .dot{width:7px; height:7px; border-radius:50%; background:var(--danger); box-shadow:0 0 12px var(--danger); animation:blink 1.4s infinite;}
+  @keyframes blink{50%{opacity:.25;}}
+  h1{font-size:clamp(34px,7vw,68px); line-height:1; margin:18px 0 8px; font-weight:800; letter-spacing:-.01em;}
+  h1 .gold{color:var(--gold); text-shadow:0 0 40px rgba(233,196,106,.35);}
+  .tagline{color:var(--muted); font-size:clamp(14px,2vw,18px); margin:0;}
+
+  /* ── 장르 타일 ── */
+  .grid{display:grid; grid-template-columns:repeat(2,1fr); gap:clamp(12px,2.2vw,20px);}
+  @media (min-width:760px){ .grid{grid-template-columns:repeat(3,1fr);} }
+  .tile{position:relative; border:1px solid var(--line); border-radius:22px; padding:clamp(18px,3vw,30px) clamp(14px,2.5vw,24px);
+    background:linear-gradient(160deg,var(--panel),var(--panel2)); cursor:pointer; overflow:hidden; min-height:clamp(120px,18vw,168px);
+    display:flex; flex-direction:column; justify-content:flex-end; gap:6px; transition:transform .15s ease, box-shadow .2s ease, border-color .2s;}
+  .tile:active{transform:scale(.97);}
+  .tile::before{content:""; position:absolute; inset:0; background:radial-gradient(120px 120px at 80% 0%, var(--c), transparent 70%); opacity:.5;}
+  .tile::after{content:""; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--c);}
+  .tile .emoji{font-size:clamp(30px,5vw,46px); filter:drop-shadow(0 6px 14px rgba(0,0,0,.4)); position:relative;}
+  .tile .gname{font-size:clamp(19px,2.8vw,26px); font-weight:700; position:relative;}
+  .tile .gsub{font-size:clamp(11px,1.6vw,13px); color:var(--muted); position:relative;}
+  .tile.locked{opacity:.45; cursor:not-allowed;}
+  .tile.locked:active{transform:none;}
+  .badge{position:absolute; top:12px; right:12px; font-size:11px; color:var(--gold); border:1px solid var(--line); border-radius:999px; padding:3px 9px; background:rgba(0,0,0,.25);}
+
+  /* ── 스튜디오 ── */
+  .topbar{display:flex; align-items:center; gap:12px; margin-bottom:clamp(14px,2.5vw,22px);}
+  .back{appearance:none; border:1px solid var(--line); background:rgba(255,255,255,.04); color:var(--cream); border-radius:14px;
+    padding:11px 16px; font-size:15px; font-weight:600; cursor:pointer;}
+  .back:active{transform:scale(.96);}
+  .chip{margin-left:auto; display:inline-flex; align-items:center; gap:9px; font-weight:700; font-size:clamp(15px,2vw,18px);
+    border:1px solid var(--line); border-radius:14px; padding:9px 16px; background:rgba(255,255,255,.03);}
+  .chip .e{font-size:20px;}
+
+  .stage{position:relative; border-radius:20px; overflow:hidden; background:#000; border:1px solid var(--line);
+    box-shadow:var(--shadow); aspect-ratio:16/9;}
+  .stage video{width:100%; height:100%; object-fit:cover; display:block; background:#000;}
+  .filmtop,.filmbot{position:absolute; left:0; right:0; height:18px; background:
+    repeating-linear-gradient(90deg,#0c1330 0 14px, transparent 14px 30px); opacity:.0; pointer-events:none;}
+  .filmtop{top:0;} .filmbot{bottom:0;}
+
+  /* 카운트다운 / REC 오버레이 */
+  .overlay{position:absolute; inset:0; display:none; align-items:center; justify-content:center; background:rgba(7,11,26,.55); backdrop-filter:blur(2px);}
+  .overlay.show{display:flex;}
+  .count{font-size:clamp(80px,22vw,200px); font-weight:800; color:var(--gold); text-shadow:0 0 50px rgba(233,196,106,.5); animation:pop .9s ease;}
+  @keyframes pop{0%{transform:scale(.4); opacity:0;}40%{transform:scale(1.05); opacity:1;}100%{transform:scale(1); opacity:1;}}
+  .recpill{position:absolute; top:14px; left:14px; display:none; align-items:center; gap:9px; background:rgba(255,84,112,.16);
+    border:1px solid rgba(255,84,112,.5); color:#ffd7df; padding:8px 14px; border-radius:999px; font-weight:700; font-size:14px;}
+  .recpill.show{display:inline-flex;}
+  .recpill .d{width:11px; height:11px; border-radius:50%; background:var(--danger); box-shadow:0 0 14px var(--danger); animation:blink 1s infinite;}
+
+  .progress{height:7px; background:rgba(255,255,255,.08); border-radius:99px; margin-top:14px; overflow:hidden; opacity:0; transition:opacity .2s;}
+  .progress.show{opacity:1;}
+  .progress > i{display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--gold),var(--gold-soft));}
+
+  .controls{margin-top:clamp(18px,3vw,28px); display:flex; flex-direction:column; align-items:center; gap:16px;}
+  .hint{color:var(--muted); font-size:clamp(14px,2vw,17px); text-align:center; min-height:1.4em;}
+  .btn{appearance:none; border:none; cursor:pointer; font-weight:800; border-radius:18px; transition:transform .12s ease, filter .2s;}
+  .btn:active{transform:scale(.96);}
+  .btn-rec{width:clamp(150px,40vw,200px); height:clamp(150px,40vw,200px); border-radius:50%; font-size:clamp(18px,2.6vw,22px);
+    color:#1a1205; background:radial-gradient(circle at 50% 35%, var(--gold-soft), var(--gold)); box-shadow:0 0 0 10px rgba(233,196,106,.12), 0 20px 50px rgba(233,196,106,.25);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;}
+  .btn-rec .ic{font-size:clamp(40px,9vw,60px);}
+  .btn-rec[disabled]{filter:grayscale(.6) brightness(.7); cursor:default;}
+  .row{display:flex; gap:12px; flex-wrap:wrap; justify-content:center; width:100%;}
+  .btn-lg{padding:18px 22px; font-size:clamp(16px,2.2vw,19px); min-width:130px; flex:1 1 130px; max-width:220px;}
+  .btn-ghost{background:rgba(255,255,255,.05); color:var(--cream); border:1px solid var(--line);}
+  .btn-gold{background:linear-gradient(180deg,var(--gold-soft),var(--gold)); color:#1a1205;}
+  .btn-save{background:linear-gradient(180deg,#46e0a6,var(--ok)); color:#04261a;}
+
+  /* ── 결과 / QR ── */
+  .result-card{margin:auto; text-align:center; max-width:520px; width:100%;}
+  .spinner{width:64px; height:64px; border-radius:50%; border:5px solid rgba(233,196,106,.2); border-top-color:var(--gold);
+    margin:0 auto 22px; animation:spin 1s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .qrbox{background:#fff; padding:20px; border-radius:24px; display:inline-block; box-shadow:var(--shadow); margin:10px 0 6px;}
+  .qrbox img{display:block; width:clamp(220px,55vw,300px); height:auto;}
+  .result-card h2{font-size:clamp(24px,4vw,34px); margin:6px 0;}
+  .result-card h2 .gold{color:var(--gold);}
+  .result-card p{color:var(--muted); font-size:clamp(14px,2vw,17px); margin:6px 0 22px;}
+  .savemode{font-size:12px; color:var(--muted); margin-top:14px;}
+
+  .errbox{border:1px solid rgba(255,84,112,.4); background:rgba(255,84,112,.08); color:#ffd7df; border-radius:16px; padding:18px; margin:18px 0; text-align:left; font-size:14px; line-height:1.6; display:none;}
+  .errbox.show{display:block;}
+  .footer{margin-top:auto; padding-top:22px; text-align:center; color:var(--muted); font-size:12px; letter-spacing:.04em;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ════ 메인: 장르 선택 ════ -->
+  <section id="home" class="view active">
+    <div class="brand">
+      <span class="eyebrow"><span class="dot"></span> INKY · 더빙 스튜디오</span>
+      <h1>잉키 <span class="gold">보이스 시네마</span></h1>
+      <p class="tagline">상상을 현실로 — 내 목소리로 완성하는 영화</p>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="footer">장르를 골라 주세요 · 인천어린이청소년영화제</div>
+  </section>
+
+  <!-- ════ 스튜디오: 녹음 ════ -->
+  <section id="studio" class="view">
+    <div class="topbar">
+      <button class="back" onclick="goHome()">← 처음으로</button>
+      <span class="chip"><span class="e" id="chipEmoji">🎬</span><span id="chipName">장르</span></span>
+    </div>
+
+    <div class="stage">
+      <div class="filmtop"></div><div class="filmbot"></div>
+      <video id="clip" playsinline muted preload="auto"></video>
+      <div class="recpill" id="recpill"><span class="d"></span> REC</div>
+      <div class="overlay" id="overlay"><div class="count" id="count">3</div></div>
+    </div>
+    <div class="progress" id="progress"><i id="bar"></i></div>
+
+    <div class="controls">
+      <div class="hint" id="hint">먼저 [미리 보기]로 영상을 확인하고, 준비되면 녹음하세요</div>
+
+      <!-- 미리 보기 버튼 (준비 단계) -->
+      <button class="btn btn-lg btn-ghost" id="previewBtn" onclick="togglePreview()">▶ 미리 보기</button>
+
+      <!-- 녹음 시작 버튼 -->
+      <button class="btn btn-rec" id="recBtn" onclick="startRecord()">
+        <span class="ic">🎤</span><span>녹음 시작</span>
+      </button>
+
+      <!-- 녹음 후 버튼 묶음 -->
+      <div class="row" id="afterRow" style="display:none;">
+        <button class="btn btn-lg btn-ghost" onclick="replay()">▶ 다시 듣기</button>
+        <button class="btn btn-lg btn-gold" onclick="resetRecord()">🔄 다시 녹음</button>
+        <button class="btn btn-lg btn-save" onclick="save()">💾 저장하기</button>
+      </div>
+    </div>
+    <div class="footer" id="studioFoot"></div>
+  </section>
+
+  <!-- ════ 결과: QR ════ -->
+  <section id="result" class="view">
+    <div class="result-card">
+      <div id="loading">
+        <div class="spinner"></div>
+        <h2>영화를 저장하고 있어요…</h2>
+        <p>목소리를 영상에 입히는 중입니다</p>
+      </div>
+
+      <div id="done" style="display:none;">
+        <h2>🎉 <span class="gold">완성!</span></h2>
+        <p>휴대폰 카메라로 QR을 스캔하면 내 영화를 받을 수 있어요</p>
+        <div class="qrbox"><img id="qrImg" alt="QR 코드"></div>
+        <div class="savemode" id="savemode"></div>
+        <div class="row" style="margin-top:26px;">
+          <button class="btn btn-lg btn-gold" onclick="goHome()">🎬 다른 더빙 하기</button>
+        </div>
+      </div>
+
+      <div class="errbox" id="errbox"></div>
+      <div class="row" id="errRow" style="display:none;">
+        <button class="btn btn-lg btn-ghost" onclick="backToStudio()">← 돌아가기</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+"use strict";
+let CFG = null, DUR = 10, current = null;
+let micStream = null, recorder = null, chunks = [], recordedBlob = null, busy = false, previewing = false;
+let session = 0;                     // H3: 화면 이탈 감지용 세션 토큰
+let recTimer = null;                 // C2: 녹음 강제 종료 안전 타이머
+let saving = false;                  // M1: 저장 더블탭 가드
+let replayAudio = null, replayUrl = null; // M2: 다시 듣기 오디오 관리
+
+const $ = s => document.querySelector(s);
+const show = (id) => { document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); $('#'+id).classList.add('active'); };
+
+// ── 초기화 ──
+async function init(){
+  try{
+    const r = await fetch('/api/genres');
+    CFG = await r.json();
+    DUR = CFG.durationSec || 10;
+    $('#studioFoot').textContent = '약 ' + DUR + '초 동안 녹음돼요';
+    renderGrid();
+  }catch(e){ alert('서버 연결 실패: ' + e.message); }
+}
+
+function renderGrid(){
+  const sub = {fantasy:'주문을 외쳐봐!', animation:'친구와 대화하기', horror:'으악! 비명 연기', action:'멋진 한마디', drama:'감정을 담아서', sitcom:'웃음 빵! 만담'};
+  const g = $('#grid'); g.innerHTML = '';
+  CFG.genres.forEach(x=>{
+    const el = document.createElement('div');
+    el.className = 'tile' + (x.ready ? '' : ' locked');
+    el.style.setProperty('--c', x.color);
+    el.innerHTML =
+      (x.ready ? '' : '<span class="badge">준비중</span>') +
+      `<div class="emoji">${x.emoji}</div>
+       <div class="gname">${x.name}</div>
+       <div class="gsub">${sub[x.id]||''}</div>`;
+    if(x.ready) el.onclick = ()=>openStudio(x);
+    g.appendChild(el);
+  });
+}
+
+// ── 스튜디오 진입 ──
+function openStudio(g){
+  current = g;
+  $('#chipEmoji').textContent = g.emoji;
+  $('#chipName').textContent = g.name;
+  const v = $('#clip');
+  v.src = '/clips/' + g.id + '.mp4';
+  v.muted = true; v.currentTime = 0; v.load();
+  // C2: 영상 재생 오류 시 녹음이 무한 지속되지 않도록 즉시 종료
+  v.onerror = () => {
+    try{ if(recorder && recorder.state!=='inactive') recorder.stop(); }catch(e){}
+    clearTimeout(recTimer);
+    $('#hint').textContent = '⚠ 영상을 재생할 수 없어요 — 운영자에게 알려주세요 (클립 파일 점검 필요)';
+  };
+  resetRecord();
+  show('studio');
+}
+function goHome(){ session++; stopAll(); show('home'); }
+function backToStudio(){ show('studio'); }
+
+function resetRecord(){
+  session++;                                   // H3: 진행 중이던 흐름 무효화
+  clearTimeout(recTimer);
+  stopReplayAudio();
+  recordedBlob = null; chunks = []; busy = false; previewing = false;
+  $('#recBtn').style.display = '';
+  $('#recBtn').disabled = false;
+  const pb = $('#previewBtn'); if(pb){ pb.style.display = ''; pb.textContent = '▶ 미리 보기'; }
+  $('#afterRow').style.display = 'none';
+  $('#recpill').classList.remove('show');
+  $('#progress').classList.remove('show');
+  $('#bar').style.width = '0%';
+  $('#hint').textContent = '먼저 [미리 보기]로 영상을 확인하고, 준비되면 녹음하세요';
+  const v = $('#clip'); if(v){ v.pause(); v.currentTime = 0; v.muted = true; v.ontimeupdate = null; v.onended = null; }
+}
+function stopAll(){
+  previewing = false;
+  clearTimeout(recTimer);
+  stopReplayAudio();
+  try{ if(recorder && recorder.state!=='inactive') recorder.stop(); }catch(e){}
+  const v = $('#clip'); if(v){ v.pause(); }
+}
+
+// M2: 다시 듣기 오디오 정리(이중 재생·메모리 누수 방지)
+function stopReplayAudio(){
+  if(replayAudio){ try{ replayAudio.pause(); }catch(e){} replayAudio = null; }
+  if(replayUrl){ try{ URL.revokeObjectURL(replayUrl); }catch(e){} replayUrl = null; }
+}
+
+// ── 미리 보기 (녹음 전 영상 확인) ──
+function togglePreview(){
+  if(busy) return;
+  if(previewing){ stopPreview(); return; }
+  const v = $('#clip');
+  previewing = true;
+  v.muted = false;            // 미리보기는 소리까지 (무음 클립이면 그대로 재생)
+  v.currentTime = 0;
+  $('#previewBtn').textContent = '⏹ 미리보기 정지';
+  $('#hint').textContent = '👀 영상을 보며 어떤 더빙을 할지 생각해 보세요';
+  $('#progress').classList.add('show');
+  v.ontimeupdate = () => { if(v.duration) $('#bar').style.width = Math.min(100,(v.currentTime/v.duration)*100) + '%'; };
+  v.onended = () => stopPreview();
+  v.play().catch(()=>{});
+}
+function stopPreview(){
+  const v = $('#clip');
+  previewing = false;
+  v.pause(); v.currentTime = 0; v.muted = true;
+  v.ontimeupdate = null; v.onended = null;
+  $('#previewBtn').textContent = '▶ 미리 보기';
+  $('#hint').textContent = '준비됐나요? [녹음 시작]을 누르면 3·2·1 후 시작돼요';
+  $('#progress').classList.remove('show');
+  $('#bar').style.width = '0%';
+}
+
+// ── 마이크 권한 ──
+async function ensureMic(){
+  if(micStream) return true;
+  if(!window.isSecureContext){
+    $('#hint').innerHTML = '⚠️ 태블릿에서는 <b>https 주소</b>로 접속해야 마이크가 켜져요<br>(노트북 화면이라면 새로고침 후 다시 시도)';
+    return false;
+  }
+  try{
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation:true, noiseSuppression:true } });
+    return true;
+  }catch(e){
+    $('#hint').textContent = '⚠️ 마이크 사용을 허용해 주세요 (브라우저 권한)';
+    return false;
+  }
+}
+
+// ── 녹음 ──
+async function startRecord(){
+  if(busy) return;
+  if(previewing) stopPreview();
+  const mySession = session;               // H3: 이 흐름의 세션 고정
+  const ok = await ensureMic();
+  if(!ok || mySession !== session) return; // 권한 대기 중 화면 이탈 시 중단
+  busy = true;
+  recordedBlob = null; chunks = [];
+  $('#recBtn').disabled = true;
+  $('#previewBtn').style.display = 'none';
+
+  await countdown(3);
+  if(mySession !== session){ busy = false; return; } // 카운트다운 중 이탈 시 중단
+
+  const v = $('#clip');
+  v.muted = true; v.currentTime = 0;
+
+  // M4: 마이크 장치 분리·권한 철회 등 예외 시 화면이 잠기지 않도록
+  try{
+    let mime = '';
+    ['audio/webm;codecs=opus','audio/webm','audio/mp4'].some(m=>{ if(MediaRecorder.isTypeSupported(m)){mime=m; return true;} return false; });
+    recorder = mime ? new MediaRecorder(micStream,{mimeType:mime}) : new MediaRecorder(micStream);
+  }catch(e){
+    micStream = null; // 다음 시도에서 마이크 다시 요청
+    busy = false;
+    $('#recBtn').disabled = false;
+    $('#previewBtn').style.display = '';
+    $('#hint').textContent = '⚠ 마이크에 문제가 생겼어요 — 연결 확인 후 다시 눌러 주세요';
+    return;
+  }
+  recorder.ondataavailable = e => { if(e.data && e.data.size) chunks.push(e.data); };
+  recorder.onstop = () => {
+    clearTimeout(recTimer);
+    if(mySession !== session){ chunks = []; return; } // 이탈 후 도착한 녹음은 폐기
+    recordedBlob = new Blob(chunks, { type: (chunks[0] && chunks[0].type) || 'audio/webm' });
+    onRecordDone();
+  };
+
+  $('#recpill').classList.add('show');
+  $('#progress').classList.add('show');
+  $('#hint').textContent = '🎙️ 지금 목소리를 연기해 보세요!';
+
+  // M7: 영상 재생이 시작된 뒤 녹음을 시작해 목소리-영상 싱크 개선
+  await v.play().catch(()=>{});
+  if(mySession !== session){ v.pause(); busy = false; return; }
+  try{
+    recorder.start();
+  }catch(e){
+    micStream = null;
+    busy = false;
+    $('#recBtn').disabled = false;
+    $('#previewBtn').style.display = '';
+    $('#hint').textContent = '⚠ 녹음을 시작하지 못했어요 — 다시 눌러 주세요';
+    return;
+  }
+
+  // C2: 영상 종료 이벤트가 오지 않아도 (재생 오류 등) 녹음이 반드시 끝나도록
+  const limitSec = (isFinite(v.duration) && v.duration > 0 ? v.duration : DUR) + 2;
+  clearTimeout(recTimer);
+  recTimer = setTimeout(()=>{ try{ if(recorder && recorder.state!=='inactive') recorder.stop(); }catch(e){} }, limitSec * 1000);
+
+  v.ontimeupdate = () => { if(v.duration) $('#bar').style.width = Math.min(100,(v.currentTime/v.duration)*100) + '%'; };
+  v.onended = () => { try{ if(recorder.state!=='inactive') recorder.stop(); }catch(e){} };
+}
+
+function countdown(n){
+  return new Promise(res=>{
+    const ov = $('#overlay'), c = $('#count');
+    ov.classList.add('show');
+    let k = n;
+    c.textContent = k;
+    c.style.animation = 'none'; void c.offsetWidth; c.style.animation = '';
+    const t = setInterval(()=>{
+      k--;
+      if(k<=0){ clearInterval(t); ov.classList.remove('show'); res(); return; }
+      c.textContent = k; c.style.animation='none'; void c.offsetWidth; c.style.animation='';
+    },900);
+  });
+}
+
+function onRecordDone(){
+  busy = false;
+  clearTimeout(recTimer);
+  $('#recpill').classList.remove('show');
+  $('#recBtn').style.display = 'none';
+  $('#afterRow').style.display = 'flex';
+  $('#bar').style.width = '100%';
+  $('#hint').textContent = '잘했어요! 다시 듣고, 마음에 들면 저장하세요';
+  const v = $('#clip'); v.pause(); v.currentTime = 0;
+}
+
+// ── 재생(영상+내 목소리) ──
+function replay(){
+  if(!recordedBlob) return;
+  stopReplayAudio();                       // M2: 연타 시 이중 재생 방지
+  const v = $('#clip');
+  v.muted = true; v.currentTime = 0;
+  replayUrl = URL.createObjectURL(recordedBlob);
+  replayAudio = new Audio(replayUrl);
+  v.play().catch(()=>{});
+  replayAudio.play().catch(()=>{});
+  v.onended = () => stopReplayAudio();
+  $('#hint').textContent = '▶ 내 더빙 영화 재생 중…';
+}
+
+// ── 저장 → 업로드 → QR ──
+function blobToB64(blob){
+  return new Promise((res,rej)=>{
+    const fr = new FileReader();
+    fr.onload = ()=>res(String(fr.result).split(',')[1]);
+    fr.onerror = ()=>rej(new Error('인코딩 실패'));
+    fr.readAsDataURL(blob);
+  });
+}
+async function save(){
+  if(!recordedBlob || saving){ return; }   // M1: 더블탭 → 이중 업로드 방지
+  saving = true;
+  stopReplayAudio();
+  show('result');
+  $('#loading').style.display=''; $('#done').style.display='none';
+  $('#errbox').classList.remove('show'); $('#errRow').style.display='none';
+  const ctrl = new AbortController();      // C1: 무한 스피너 방지
+  const timer = setTimeout(()=>ctrl.abort(), 120000);
+  try{
+    const audioBase64 = await blobToB64(recordedBlob);
+    const r = await fetch('/api/dub', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ genre: current.id, audioBase64 }),
+      signal: ctrl.signal
+    });
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error || '저장 실패');
+    $('#qrImg').src = j.qr;
+    const savedMode = j.saved || (CFG.saveMode==='drive' ? 'drive' : 'local');
+    const modeMsg = {
+      drive: '구글 드라이브에 저장되었습니다',
+      local: '같은 와이파이에 연결된 폰에서 스캔하세요',
+      local_fallback: '⚠ 인터넷 문제로 이번 영상은 부스 컴퓨터에 저장됐어요 — 같은 와이파이 폰에서 스캔하거나 운영자에게 문의하세요'
+    };
+    $('#savemode').textContent = modeMsg[savedMode] || '';
+    $('#loading').style.display='none'; $('#done').style.display='';
+  }catch(e){
+    $('#loading').style.display='none';
+    const box = $('#errbox');
+    box.innerHTML = '<b>저장 중 문제가 생겼어요.</b><br>';   // 고정 문구만 HTML
+    const msg = (e && e.name === 'AbortError')
+      ? '시간이 너무 오래 걸립니다. 네트워크를 확인하고 [돌아가기] 후 다시 저장해 주세요. (녹음은 그대로 남아 있어요)'
+      : String(e && e.message || e);
+    box.appendChild(document.createTextNode(msg));            // M3: 동적 내용은 텍스트로만
+    box.classList.add('show');
+    $('#errRow').style.display='flex';
+  }finally{
+    clearTimeout(timer);
+    saving = false;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
