@@ -23,6 +23,11 @@ const { spawn, spawnSync } = require('child_process');
 const QRCode = require('qrcode');
 const selfsigned = require('selfsigned');
 
+// 감사 발견 반영: 예상 못한 예외로 서버 전체가 조용히 죽는 대신
+// 무엇이 문제였는지 남기고 계속 동작을 시도한다(행사 중 서버가 죽으면 복구가 어려움).
+process.on('uncaughtException', e => console.error('[예상 못한 오류]', e));
+process.on('unhandledRejection', e => console.error('[예상 못한 오류(Promise)]', e));
+
 // ffmpeg 경로 해석: 설치 패키지 우선, 없으면 시스템 PATH(ffmpeg) 폴백
 function resolveFfmpeg() {
   try {
@@ -112,7 +117,10 @@ app.get('/api/genres', (req, res) => {
   });
 });
 
+const MERGE_TIMEOUT_MS = 30 * 1000;
+
 // 영상(무음 클립) + 녹음 음성 합성 → mp4
+// 감사 발견 반영: ffmpeg가 멈춰도 프로세스가 무한정 남지 않도록 타임아웃 후 강제 종료한다.
 function mergeClip(genreId, audioPath, outPath) {
   return new Promise((resolve, reject) => {
     const videoPath = path.join(CLIPS_DIR, genreId + '.mp4');
@@ -130,10 +138,12 @@ function mergeClip(genreId, audioPath, outPath) {
       outPath,
     ];
     const p = spawn(ffmpegPath, args);
-    let err = '';
+    let err = '', settled = false;
+    const timer = setTimeout(() => { try{ p.kill('SIGKILL'); }catch(e){} }, MERGE_TIMEOUT_MS);
+    const finish = (fn, arg) => { if (settled) return; settled = true; clearTimeout(timer); fn(arg); };
     p.stderr.on('data', d => { err += d.toString(); });
-    p.on('error', reject);
-    p.on('close', code => code === 0 ? resolve(outPath) : reject(new Error('영상 합성 실패\n' + err.slice(-600))));
+    p.on('error', e => finish(reject, e));
+    p.on('close', code => finish(code === 0 ? resolve : reject, code === 0 ? outPath : new Error('영상 합성 실패\n' + err.slice(-600))));
   });
 }
 
@@ -163,19 +173,30 @@ async function uploadToDrive(filePath, filename) {
   }
 }
 
+// 감사 발견 반영: 동시 요청 제한 없이는 같은 와이파이의 누구든 반복 요청으로
+// ffmpeg 프로세스를 무제한 만들어 노트북 CPU를 포화시킬 수 있었다.
+const MAX_CONCURRENT_MERGE = 2;
+let activeMerges = 0;
+
 // 더빙 저장 처리
 app.post('/api/dub', async (req, res) => {
   const { genre, audioBase64 } = req.body || {};
   if (!genre || !audioBase64) return res.status(400).json({ ok: false, error: '잘못된 요청' });
   if (!GENRE_IDS.has(genre))  return res.status(400).json({ ok: false, error: '알 수 없는 장르' }); // H1
+  if (activeMerges >= MAX_CONCURRENT_MERGE) {
+    return res.status(429).json({ ok: false, error: '지금 다른 학생의 영화를 만드는 중이에요 — 잠시 후 다시 눌러 주세요' });
+  }
 
   const ts = Date.now();
   const token = crypto.randomBytes(6).toString('hex'); // H2: 추측 불가 파일명
   const audioPath = path.join(TMP_DIR, `a_${ts}_${token}.webm`);
   const outName = `dub_${genre}_${ts}_${token}.mp4`;
   const outPath = path.join(OUTPUTS_DIR, outName);
-  const localUrl = `http://${LAN_IP}:${HTTP_PORT}/outputs/${outName}`;
+  // 배너가 나열하는 LAN IP 중 첫 번째(LAN_IP)가 실제로 접속에 쓰인 IP가 아닐 수 있어
+  // (가상 어댑터가 먼저 잡히는 경우), 이 요청이 실제로 도착한 주소(req의 Host 헤더)를 그대로 쓴다.
+  const localUrl = `${req.protocol}://${req.get('host') || (LAN_IP + ':' + HTTP_PORT)}/outputs/${outName}`;
 
+  activeMerges++;
   try {
     fs.writeFileSync(audioPath, Buffer.from(audioBase64, 'base64'));
     await mergeClip(genre, audioPath, outPath);
@@ -196,8 +217,10 @@ app.post('/api/dub', async (req, res) => {
     res.json({ ok: true, url: shareUrl, qr, saved });
   } catch (e) {
     console.error('[dub 오류]', e.message);
+    fs.unlink(outPath, () => {}); // 합성 실패로 남았을 수 있는 부분 파일 정리
     res.status(500).json({ ok: false, error: e.message });
   } finally {
+    activeMerges--;
     fs.unlink(audioPath, () => {});
   }
 });
@@ -251,7 +274,23 @@ function banner() {
   checkClips();
 }
 
-http.createServer(app).listen(HTTP_PORT, () => banner());
+// 감사 발견 반영: 포트가 이미 다른 프로그램에 쓰이고 있으면(EADDRINUSE)
+// 기존엔 안내 없이 영어 스택트레이스와 함께 죽었다 — 비개발자 운영자가 현장에서
+// 원인을 알 수 없었다. 한국어 안내 후 종료하도록 고친다.
+function portErrorGuide(port) {
+  return (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`\n[포트 오류] ${port}번 포트를 다른 프로그램이 이미 쓰고 있습니다.`);
+      console.error('  다른 잉키 보이스 시네마 창이 이미 실행 중인지 확인하거나, 컴퓨터를 재시작한 뒤 다시 실행하세요.\n');
+      process.exit(1);
+    } else {
+      console.error('[서버 오류]', err.message);
+      process.exit(1);
+    }
+  };
+}
+
+http.createServer(app).on('error', portErrorGuide(HTTP_PORT)).listen(HTTP_PORT, () => banner());
 
 // https: 태블릿 마이크 사용에 필요한 보안 컨텍스트 제공 (자체 서명 인증서)
 // H5: IP 구성이 바뀌면(행사장 이동 등) 인증서 자동 재발급
@@ -282,7 +321,7 @@ try {
     fs.writeFileSync(ipsP, ipsNow);
     creds = { key: pems.private, cert: pems.cert };
   }
-  https.createServer(creds, app).listen(HTTPS_PORT);
+  https.createServer(creds, app).on('error', portErrorGuide(HTTPS_PORT)).listen(HTTPS_PORT);
 } catch (e) {
   console.log('⚠️  https 비활성화(노트북 localhost는 정상 동작):', e.message);
 }
