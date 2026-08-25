@@ -1,6 +1,31 @@
 "use strict";
 import { FFmpeg } from './vendor/ffmpeg/index.js';
-import { fetchFile, toBlobURL } from './vendor/ffmpeg-util/index.js';
+import { fetchFile } from './vendor/ffmpeg-util/index.js';
+
+// @ffmpeg/util의 toBlobURL(progress=true)는 스트림 리더가 도중에 실패하면
+// 이미 읽은 Response.body를 다시 arrayBuffer()로 읽으려다
+// "body stream already read" 오류를 내는 버그가 있다(실사이트에서 재현 확인됨).
+// 그 경로를 피해 직접 fetch+진행률을 구현한다.
+async function toBlobURLWithProgress(url, mimeType, onProgress){
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`엔진 파일 다운로드 실패: ${resp.status} ${url}`);
+  const total = parseInt(resp.headers.get('content-length') || '-1', 10);
+  const reader = resp.body ? resp.body.getReader() : null;
+  if (!reader) {
+    const buf = await resp.arrayBuffer();
+    return URL.createObjectURL(new Blob([buf], { type: mimeType }));
+  }
+  const chunks = [];
+  let received = 0;
+  for(;;){
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.length;
+    if (onProgress && total > 0) onProgress(received, total);
+  }
+  return URL.createObjectURL(new Blob(chunks, { type: mimeType }));
+}
 
 // ── 설정 (server.js/config.json과 동일한 값) ──
 const FILM_TITLE = '잉키 보이스 시네마';
@@ -32,19 +57,27 @@ function getFFmpeg(){
   if (ffmpeg) return Promise.resolve(ffmpeg);
   if (ffmpegLoading) return ffmpegLoading;
   const bar = $('#enginebar'), prog = $('#engineProg');
+  bar.classList.remove('err');
   bar.classList.add('show');
+  prog.textContent = '0%';
   ffmpegLoading = (async () => {
     const inst = new FFmpeg();
     const base = new URL('./vendor/ffmpeg-core/', import.meta.url).href;
-    const coreURL = await toBlobURL(base + 'ffmpeg-core.js', 'text/javascript');
-    const wasmURL = await toBlobURL(base + 'ffmpeg-core.wasm', 'application/wasm', true, ({ received, total }) => {
-      if (total > 0) prog.textContent = Math.round((received/total)*100) + '%';
+    const coreURL = await toBlobURLWithProgress(base + 'ffmpeg-core.js', 'text/javascript');
+    const wasmURL = await toBlobURLWithProgress(base + 'ffmpeg-core.wasm', 'application/wasm', (received, total) => {
+      prog.textContent = Math.round((received/total)*100) + '%';
     });
     await inst.load({ coreURL, wasmURL });
     ffmpeg = inst;
     bar.classList.remove('show');
     return inst;
-  })().catch(e => { ffmpegLoading = null; bar.classList.remove('show'); throw e; });
+  })().catch(e => {
+    ffmpegLoading = null;
+    prog.textContent = '실패 — 저장 시 다시 시도됩니다';
+    bar.classList.add('err');
+    console.error('[엔진 준비 실패]', e);
+    throw e;
+  });
   return ffmpegLoading;
 }
 
@@ -52,17 +85,32 @@ function getFFmpeg(){
 async function mergeClip(genreId, audioBlob, mime){
   const ff = await getFFmpeg();
   const ext = /mp4/.test(mime) ? 'm4a' : 'webm';
-  await ff.writeFile('v.mp4', await fetchFile(`./clips/${genreId}.mp4`));
-  await ff.writeFile('a.' + ext, await fetchFile(audioBlob));
-  await ff.exec([
-    '-i', 'v.mp4', '-i', 'a.' + ext,
-    '-map', '0:v:0', '-map', '1:a:0',
-    '-c:v', 'copy',
-    '-c:a', 'aac', '-b:a', '160k',
-    '-shortest',
-    '-movflags', '+faststart',
-    'out.mp4',
-  ]);
+  const log = [];
+  const onLog = ({ message }) => log.push(message);
+  ff.on('log', onLog);
+  let ret;
+  try{
+    await ff.writeFile('v.mp4', await fetchFile(`./clips/${genreId}.mp4`));
+    await ff.writeFile('a.' + ext, await fetchFile(audioBlob));
+    ret = await ff.exec([
+      '-i', 'v.mp4', '-i', 'a.' + ext,
+      '-map', '0:v:0', '-map', '1:a:0',
+      '-c:v', 'copy',
+      '-c:a', 'aac', '-b:a', '160k',
+      '-shortest',
+      '-movflags', '+faststart',
+      'out.mp4',
+    ]);
+  } finally {
+    ff.off('log', onLog);
+  }
+  // exec()는 실패해도 예외를 던지지 않고 0이 아닌 코드만 반환하므로,
+  // 여기서 직접 확인하지 않으면 readFile()에서 "FS error"라는 알아보기 힘든
+  // 에러로만 나타나 원인(오디오 디코딩 실패 등)이 감춰진다.
+  if (ret !== 0) {
+    await Promise.all(['v.mp4', 'a.' + ext, 'out.mp4'].map(f => ff.deleteFile(f).catch(()=>{})));
+    throw new Error('영상 합성 실패\n' + log.slice(-8).join('\n'));
+  }
   const data = await ff.readFile('out.mp4');
   await Promise.all(['v.mp4', 'a.' + ext, 'out.mp4'].map(f => ff.deleteFile(f).catch(()=>{})));
   return new Blob([data.buffer], { type: 'video/mp4' });
