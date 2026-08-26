@@ -165,7 +165,7 @@ async function uploadToDrive(filePath, filename) {
     const text = await resp.text();
     let json;
     try { json = JSON.parse(text); }
-    catch (e) { throw new Error('드라이브 응답 파싱 실패: ' + text.slice(0, 200)); }
+    catch (e) { throw new Error('드라이브 응답 파싱 실패: ' + text.slice(0, 200), { cause: e }); }
     if (!json.ok) throw new Error('드라이브 저장 실패: ' + (json.error || 'unknown'));
     return json.url;
   } finally {

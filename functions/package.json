@@ -4,6 +4,9 @@
   "type": "module",
   "main": "index.js",
   "engines": { "node": "22" },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
   "dependencies": {
     "express": "^5.2.1",
     "firebase-admin": "^13.0.0",

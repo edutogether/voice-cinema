@@ -8,12 +8,17 @@
   },
   "scripts": {
     "start": "node server.js",
-    "sync-clips": "node scripts/sync-clips.js"
+    "sync-clips": "node scripts/sync-clips.js",
+    "lint": "eslint ."
   },
   "dependencies": {
     "express": "^4.22.2",
-    "qrcode": "^1.5.4",
     "ffmpeg-static": "^5.2.0",
+    "qrcode": "^1.5.4",
     "selfsigned": "^2.4.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.9.1"
   }
 }

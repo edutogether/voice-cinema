@@ -1,8 +1,10 @@
+import crypto from 'crypto';
 import { onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { initializeApp } from 'firebase-admin/app';
 import { getStorage } from 'firebase-admin/storage';
 import express from 'express';
+import { validateUploadRequest, createRateLimiter } from './validate.js';
 
 initializeApp();
 
@@ -25,22 +27,7 @@ const UPLOAD_PREFIX = 'dubs/';
 // 뿐이고(Secret Manager로 숨길 실익도 없음), 완전한 방어(Firebase App Check 등)는
 // 콘솔 설정이 필요해 별도 판단 대상으로 남긴다.
 const BOOTH_TOKEN = 'ac3231330f737aaf7f90c825f7ddacc9e287b3ac87caf99d';
-const ALLOWED_MIME = new Set(['video/mp4']);
-const MAX_DECODED_BYTES = 12 * 1024 * 1024; // 12MB — 15MB 요청 바디 한도보다 여유 있게 낮게 잡음
-const MAX_FILENAME_LEN = 120;
-
-// 인스턴스 하나당 최소한의 요청 빈도 제한(재기동되면 초기화되는 메모리 기반이라
-// 완벽하진 않지만, maxInstances 제한과 합쳐지면 스크립트 남용의 비용을 실질적으로 올린다).
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const RATE_LIMIT_MAX = 10;
-const requestLog = new Map(); // ip -> timestamps[]
-function isRateLimited(ip) {
-  const now = Date.now();
-  const arr = (requestLog.get(ip) || []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
-  arr.push(now);
-  requestLog.set(ip, arr);
-  return arr.length > RATE_LIMIT_MAX;
-}
+const isRateLimited = createRateLimiter();
 
 const app = express();
 app.use(express.json({ limit: '15mb' }));
@@ -48,39 +35,35 @@ app.use(express.json({ limit: '15mb' }));
 app.get('/', (req, res) => res.json({ ok: true, service: 'inky-voice-cinema' }));
 
 app.post('/upload', async (req, res) => {
+  // 감사 발견 반영: 업로드마다 짧은 식별자를 남겨, "QR이 안 나와요" 문의가 왔을 때
+  // 로그에서 그 건을 시간순 나열이 아니라 requestId로 바로 찾을 수 있게 한다.
+  const requestId = crypto.randomBytes(4).toString('hex');
   try {
     if (isRateLimited(req.ip)) {
+      console.warn(`[upload:${requestId}] 요청 제한 초과`);
       return res.status(429).json({ ok: false, error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' });
     }
     if (req.get('x-booth-token') !== BOOTH_TOKEN) {
+      console.warn(`[upload:${requestId}] 토큰 불일치`);
       return res.status(403).json({ ok: false, error: '접근 권한이 없습니다.' });
     }
-    const { filename, mimeType, dataBase64 } = req.body || {};
-    if (!filename || !dataBase64) {
-      return res.status(400).json({ ok: false, error: '파일 데이터가 없습니다.' });
-    }
-    if (String(filename).length > MAX_FILENAME_LEN) {
-      return res.status(400).json({ ok: false, error: '파일명이 너무 깁니다.' });
-    }
-    if (!ALLOWED_MIME.has(mimeType)) {
-      return res.status(400).json({ ok: false, error: '허용되지 않는 파일 형식입니다.' });
-    }
-    const safeName = String(filename).replace(/[^\w.\-가-힣]/g, '_');
-    const buffer = Buffer.from(dataBase64, 'base64');
-    if (buffer.length === 0 || buffer.length > MAX_DECODED_BYTES) {
-      return res.status(400).json({ ok: false, error: '파일 크기가 올바르지 않습니다.' });
+    const check = validateUploadRequest(req.body);
+    if (!check.ok) {
+      console.warn(`[upload:${requestId}] 검증 실패: ${check.error}`);
+      return res.status(check.status).json({ ok: false, error: check.error });
     }
     const bucket = getStorage().bucket();
-    const file = bucket.file(UPLOAD_PREFIX + safeName);
-    await file.save(buffer, {
-      contentType: mimeType,
+    const file = bucket.file(UPLOAD_PREFIX + check.safeName);
+    await file.save(check.buffer, {
+      contentType: req.body.mimeType,
       resumable: false,
     });
     await file.makePublic();
+    console.log(`[upload:${requestId}] 성공: ${check.safeName} (${check.buffer.length}바이트)`);
     res.json({ ok: true, url: file.publicUrl() });
   } catch (err) {
-    console.error('[upload]', err?.message || err);
-    res.status(500).json({ ok: false, error: '저장 중 오류가 발생했습니다.' });
+    console.error(`[upload:${requestId}] 오류`, err?.message || err);
+    res.status(500).json({ ok: false, error: '저장 중 오류가 발생했습니다.', requestId });
   }
 });
 

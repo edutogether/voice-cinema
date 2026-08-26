@@ -28,7 +28,6 @@ async function toBlobURLWithProgress(url, mimeType, onProgress){
 }
 
 // ── 설정 ──
-const FILM_TITLE = '잉키 보이스 시네마';
 const DUR = 10;
 // Firebase 프로젝트 배포 후, 실제 발급된 함수 URL로 아래 한 줄만 바꾸면 된다.
 const API_BASE = 'https://asia-northeast3-inky-voice-cinema.cloudfunctions.net/voiceCinema';
@@ -136,7 +135,7 @@ async function uploadOnce(dataBase64, filename){
     const text = await resp.text();
     let json;
     try { json = JSON.parse(text); }
-    catch (e) { throw new Error('저장 응답 파싱 실패: ' + text.slice(0, 200)); }
+    catch (e) { throw new Error('저장 응답 파싱 실패: ' + text.slice(0, 200), { cause: e }); }
     if (!json.ok) throw new Error('영상 저장 실패: ' + (json.error || 'unknown'));
     return json.url;
   } finally {
@@ -179,6 +178,12 @@ function init(){
   renderGrid();
   // 첫 더빙 전에 미리 엔진을 준비해 두어 저장 시 대기시간을 줄인다.
   getFFmpeg().catch(e => console.error('[ffmpeg 사전로딩 실패]', e));
+  // 감사 발견 반영: 31MB 엔진 파일을 서비스워커로 캐시해, 재부팅/캐시비움
+  // 이후에도 행사장 와이파이로 매번 다시 받지 않게 한다. 실패해도 앱 동작엔
+  // 지장 없으므로(HTTP 캐시로 폴백) 조용히 무시한다.
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(e => console.warn('[서비스워커 등록 실패]', e));
+  }
 }
 
 function renderGrid(){
@@ -425,7 +430,7 @@ async function save(){
   $('#loadingTitle').textContent = '저장하고 있어요…';
   $('#loadingSub').textContent = '완성된 영화를 전달 중입니다';
 
-  let shareUrl = null, saved = 'local_fallback';
+  let shareUrl = null, saved;
   try{
     // 파일이 makePublic()으로 공개되므로, 파일명을 밀리초 타임스탬프만으로 지으면
     // 행사 중 좁은 시간대를 순차 대입해 다른 학생의 영상 URL을 추측할 수 있다 —
