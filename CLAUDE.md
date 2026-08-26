@@ -7,15 +7,7 @@ InKY Festival(제4회 인천어린이청소년영화제, 2026.11.14. 인천 CGV)
 - **스택(2026-08-26 재설계, 2026-08-26 저장소 백엔드 2차 교체)**: 정적 프론트엔드(`docs/`, GitHub Pages 배포) — 영상 합성이 서버가 아니라 브라우저 안 ffmpeg.wasm으로 처리됨. 저장소는 Google Apps Script+Drive에서 poster-studio와 동일한 **Firebase Functions + Firebase Storage**(`inky-voice` 프로젝트)로 교체 — 특정 개인 구글 계정에 소유권이 묶이는 문제를 없애기 위함(대표 판단, 2026-08-26). 예전 Node.js/Express 로컬 서버(`server.js`, `public/`, `config.json`, `start.bat`/`start.command`)는 poster-studio와 같은 이유(MDM 노트북 설치 불가·방화벽)로 더 이상 쓰지 않지만, 삭제하지 않고 설치판 회귀 대비용으로 저장소에 그대로 남겨둠. `apps-script/Code.gs`도 마찬가지로 더 이상 쓰지 않는 이전 버전이지만 참고용으로 남겨둠.
 - **기능**: 무성영상 6종(장르별)에 더빙 → 브라우저에서 합성 → Firebase Storage 자동저장 → QR 전달
 - **자동삭제**: 2026년 12월 1일부터 예약 함수(`cleanupAfterCutoff`, Cloud Scheduler)가 매일 새벽 3시(KST)에 저장된 영상을 전부 삭제 — "다운로드는 11월 안에만 가능" 정책, 결과 화면에도 안내 문구 표시됨.
-- **배포**: `https://edutogether.github.io/voice-cinema/` — GitHub Pages(브랜치 `master` · `/docs` 폴더) 배포 확인됨, ffmpeg.wasm 로딩·화면 전환·미리보기까지 실사용 확인 완료(2026-08-26). **Firebase 백엔드 전환 배포는 진행 중** — 아래 "남은 배포 단계" 참고.
-
-## 재설계 후 남은 배포 단계 (2026-08-26)
-1. ~~Firebase 프로젝트 `inky-voice` 생성 + Blaze 전환~~ — 완료
-2. **Firebase Storage 활성화** — 대표 처리 중
-3. `firebase use --add`로 이 폴더에 `inky-voice` 프로젝트 연결
-4. `firebase deploy --only functions` 실행 → 발급되는 함수 URL을 [docs/app.js](docs/app.js)의 `API_BASE`에 반영
-5. 실제 더빙→저장→QR까지 실사용 확인, `.gitignore`의 `outputs/` 폴백 동작도 유지되는지 확인
-6. 위 끝나면 이 섹션 지우고 "정상 운영중"으로 갱신
+- **배포**: `https://edutogether.github.io/voice-cinema/` — GitHub Pages(브랜치 `master` · `/docs` 폴더) 배포 확인됨. **Firebase 백엔드(Functions+Storage)도 정상 운영중** — `firebase deploy --only functions` 완료, `voiceCinema`/`cleanupAfterCutoff` 함수 둘 다 라이브. 실제 업로드→`makePublic()`→공개 URL 접근까지, CORS(허용/차단 출처 둘 다)까지 curl로 직접 실측 확인함(2026-08-26 프리즈 후 정밀감사).
 
 ## 🔴 콘텐츠 미완성 — 행사 전 필수 조치 (2026-08-26 발견)
 `clips/`·`docs/clips/`에 있는 6개 mp4(action/animation/drama/fantasy/horror/sitcom)가 **전부** 진짜 영화 클립이 아니라 "SAMPLE - replace with Kling video"라는 문구가 박힌 컬러바 테스트 영상이다(6개 전부 직접 재생해서 확인함, 예외 없음). 인프라·코드는 완전히 정상이지만 이 상태로 행사를 열면 아이들이 테스트 영상에 더빙하게 된다. Kling AI 등으로 실제 무성 클립 6종을 제작해 두 폴더(`clips/`, `docs/clips/`) 모두에 동일 파일명으로 교체 필요 — 이건 코드 작업이 아니라 콘텐츠 제작이라 대표(또는 원작자) 확인·처리 필요.
