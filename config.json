@@ -3,5 +3,5 @@
   "httpPort": 3000,
   "httpsPort": 3443,
   "clipDurationSec": 10,
-  "appsScriptUrl": "https://script.google.com/macros/s/AKfycbzT6dFfMryj1Nl872IaXC3Kv7mK8aHm-wBEoR6dfc023RlIee3nvCPf1gc5wX50MIn6-Q/exec"
+  "appsScriptUrl": ""
 }
