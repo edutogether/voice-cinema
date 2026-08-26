@@ -20,6 +20,11 @@ InKY Festival(제4회 인천어린이청소년영화제, 2026.11.14. 인천 CGV)
 ## 아동 개인정보 동의 — 이미 오프라인으로 존재함 (2026-08-27 대표 확인)
 "앱 안에 동의 절차/수집 고지가 없다"는 정밀감사 발견은 **새 절차를 코드로 만들어야 할 미해결 리스크가 아니다.** 이 행사는 인천광역시교육청이 주최하고, 참가 학교(교사·학생)는 사전에 **동의서를 전부 걷고 명단을 제출한 뒤에만 참가**하는 구조다 — 즉 동의는 이미 학교/교육청 행정 절차로 존재한다. 현장에서 이 프로그램을 운영하는 스태프도 무작위 외부인이 아니라 같이교육 소속 교사들이다. Portal의 BGM 라이선스 건과 같은 성격 — "코드로 새로 만들 것"이 아니라 "이미 있는 절차를 문서화하는 것"으로 처리한다. 앱 화면에도 이 취지의 한 줄 안내를 넣었다(docs/index.html, public/index.html).
 
+## 테스트/린트/캐싱 (2026-08-27 추가, 대표 승인)
+- `functions/validate.js`에 검증 로직(mimeType/크기/파일명 규칙, sanitize, 레이트리밋)을 Express·firebase-admin과 분리된 순수 함수로 뒀다 — `cd functions && npm test`로 실행(node:test, 현재 9개 케이스). 앞으로 `/upload` 관련 로직을 고칠 땐 여기부터 본다.
+- `eslint.config.mjs`로 저장소 전체 린트 가능 — 루트에서 `npm run lint`. 빈 `catch(e){}`는 이 코드베이스가 "실패해도 무시" 용도로 의도적으로 많이 쓰는 패턴이라 허용해뒀다(버그 아님).
+- `docs/sw.js`(서비스워커)가 `docs/vendor/`의 ffmpeg 엔진(31MB)+qrcode.js만 캐시우선으로 서빙한다 — 재부팅·캐시비움 후에도 행사장 와이파이로 매번 다시 안 받게. `docs/app.js`/`index.html`/`clips/`/Cloud Functions는 건드리지 않는다. 캐시 무효화가 필요하면 `docs/sw.js`의 `CACHE_NAME` 버전을 올린다(예: `-v1` → `-v2`).
+
 ## 알아야 할 것
 - Firebase Functions는 GitHub Pages(edutogether.github.io) 출처만 CORS 허용 — poster-studio와 동일 패턴.
 - `/upload`는 `functions/index.js`의 `BOOTH_TOKEN` 상수와 `docs/app.js`의 동일 상수가 일치해야 동작한다 — 진짜 비밀이 아니라(공개 프론트에 그대로 노출됨) 무차별 스크립트 시도를 막는 1차 방어선일 뿐이다. mimeType(video/mp4만)·디코딩 후 크기(12MB)·파일명 길이(120자)·분당 요청수(인스턴스당 10회)도 서버단에서 강제한다(2026-08-26 정밀감사 반영).
