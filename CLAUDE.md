@@ -4,9 +4,12 @@ InKY Festival(제4회 인천어린이청소년영화제, 2026.11.14. 인천 CGV)
 
 ## 정체성
 - **위치**: `D:\Projects\inky-festival\voice-cinema`
-- **스택**: Node.js(>=18) + Express, Google Apps Script(Drive 자동저장)
-- **기능**: 무성영상 6종(장르별)에 더빙 → Drive 자동저장 → QR 전달
-- **상태**: 온보딩 단계. 다른 사람이 만든 v1.1(출시 전 점검 반영판) 원본 코드, 아직 코드 감사(Sonnet+Opus 크로스체크) 안 함. GitHub `edutogether/voice-cinema`(public)에 업로드 완료, origin 연결됨 — 이후 커밋·push는 이 세션이 자율 진행. `clips/`(18MB 영상)·`outputs/`는 `.gitignore` 처리됨.
+- **스택(2026-08-26 재설계)**: 정적 프론트엔드(`docs/`, GitHub Pages 배포) — 영상 합성이 서버가 아니라 브라우저 안 ffmpeg.wasm으로 처리됨. Google Apps Script가 Drive 자동저장 전담. 예전 Node.js/Express 로컬 서버는 poster-studio와 같은 이유(MDM 노트북 설치 불가·방화벽)로 제거됨.
+- **기능**: 무성영상 6종(장르별)에 더빙 → 브라우저에서 합성 → Drive 자동저장 → QR 전달
+- **배포**: `https://edutogether.github.io/voice-cinema/` — GitHub Pages(브랜치 `master` · `/docs` 폴더) 배포 확인됨, ffmpeg.wasm 로딩·화면 전환·미리보기까지 실사용 확인 완료(2026-08-26).
+
+## 🔴 콘텐츠 미완성 — 행사 전 필수 조치 (2026-08-26 발견)
+`clips/`·`docs/clips/`에 있는 6개 mp4(action/animation/drama/fantasy/horror/sitcom)가 **전부** 진짜 영화 클립이 아니라 "SAMPLE - replace with Kling video"라는 문구가 박힌 컬러바 테스트 영상이다(6개 전부 직접 재생해서 확인함, 예외 없음). 인프라·코드는 완전히 정상이지만 이 상태로 행사를 열면 아이들이 테스트 영상에 더빙하게 된다. Kling AI 등으로 실제 무성 클립 6종을 제작해 두 폴더(`clips/`, `docs/clips/`) 모두에 동일 파일명으로 교체 필요 — 이건 코드 작업이 아니라 콘텐츠 제작이라 대표(또는 원작자) 확인·처리 필요.
 
 ## 알아야 할 것
 - **인증 없는 공개 엔드포인트**: Google Apps Script 웹앱이 "모든 사용자" 접근으로 배포됨 — **설계상 의도된 것**(인증 붙이면 저장 실패). 보안 감사 시 이 특성을 이미 알고 있는 상태로 판단할 것.
