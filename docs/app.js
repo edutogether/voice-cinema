@@ -410,7 +410,11 @@ async function save(){
 
   let shareUrl = null, saved = 'local_fallback';
   try{
-    shareUrl = await uploadToCloud(mergedBlob, `dub_${current.id}_${Date.now()}.mp4`);
+    // 파일이 makePublic()으로 공개되므로, 파일명을 밀리초 타임스탬프만으로 지으면
+    // 행사 중 좁은 시간대를 순차 대입해 다른 학생의 영상 URL을 추측할 수 있다 —
+    // 추측 불가능한 무작위 토큰을 덧붙인다(설치판 server.js의 H2 조치와 동일한 목적).
+    const token = crypto.getRandomValues(new Uint8Array(6)).reduce((s, b) => s + b.toString(16).padStart(2, '0'), '');
+    shareUrl = await uploadToCloud(mergedBlob, `dub_${current.id}_${Date.now()}_${token}.mp4`);
     saved = 'cloud';
   }catch(e){
     console.error('[클라우드 저장 실패]', e.message);

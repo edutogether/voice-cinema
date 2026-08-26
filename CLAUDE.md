@@ -4,7 +4,7 @@ InKY Festival(제4회 인천어린이청소년영화제, 2026.11.14. 인천 CGV)
 
 ## 정체성
 - **위치**: `D:\Projects\inky-festival\voice-cinema`
-- **스택(2026-08-26 재설계, 2026-08-26 저장소 백엔드 2차 교체)**: 정적 프론트엔드(`docs/`, GitHub Pages 배포) — 영상 합성이 서버가 아니라 브라우저 안 ffmpeg.wasm으로 처리됨. 저장소는 Google Apps Script+Drive에서 poster-studio와 동일한 **Firebase Functions + Firebase Storage**(`inky-voice` 프로젝트)로 교체 — 특정 개인 구글 계정에 소유권이 묶이는 문제를 없애기 위함(대표 판단, 2026-08-26). 예전 Node.js/Express 로컬 서버는 poster-studio와 같은 이유(MDM 노트북 설치 불가·방화벽)로 제거됨. `apps-script/Code.gs`는 더 이상 쓰지 않는 이전 버전 — 삭제하지 않고 참고용으로만 남겨둠.
+- **스택(2026-08-26 재설계, 2026-08-26 저장소 백엔드 2차 교체)**: 정적 프론트엔드(`docs/`, GitHub Pages 배포) — 영상 합성이 서버가 아니라 브라우저 안 ffmpeg.wasm으로 처리됨. 저장소는 Google Apps Script+Drive에서 poster-studio와 동일한 **Firebase Functions + Firebase Storage**(`inky-voice` 프로젝트)로 교체 — 특정 개인 구글 계정에 소유권이 묶이는 문제를 없애기 위함(대표 판단, 2026-08-26). 예전 Node.js/Express 로컬 서버(`server.js`, `public/`, `config.json`, `start.bat`/`start.command`)는 poster-studio와 같은 이유(MDM 노트북 설치 불가·방화벽)로 더 이상 쓰지 않지만, 삭제하지 않고 설치판 회귀 대비용으로 저장소에 그대로 남겨둠. `apps-script/Code.gs`도 마찬가지로 더 이상 쓰지 않는 이전 버전이지만 참고용으로 남겨둠.
 - **기능**: 무성영상 6종(장르별)에 더빙 → 브라우저에서 합성 → Firebase Storage 자동저장 → QR 전달
 - **자동삭제**: 2026년 12월 1일부터 예약 함수(`cleanupAfterCutoff`, Cloud Scheduler)가 매일 새벽 3시(KST)에 저장된 영상을 전부 삭제 — "다운로드는 11월 안에만 가능" 정책, 결과 화면에도 안내 문구 표시됨.
 - **배포**: `https://edutogether.github.io/voice-cinema/` — GitHub Pages(브랜치 `master` · `/docs` 폴더) 배포 확인됨, ffmpeg.wasm 로딩·화면 전환·미리보기까지 실사용 확인 완료(2026-08-26). **Firebase 백엔드 전환 배포는 진행 중** — 아래 "남은 배포 단계" 참고.
