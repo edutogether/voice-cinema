@@ -27,10 +27,11 @@ async function toBlobURLWithProgress(url, mimeType, onProgress){
   return URL.createObjectURL(new Blob(chunks, { type: mimeType }));
 }
 
-// ── 설정 (server.js/config.json과 동일한 값) ──
+// ── 설정 ──
 const FILM_TITLE = '잉키 보이스 시네마';
 const DUR = 10;
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzT6dFfMryj1Nl872IaXC3Kv7mK8aHm-wBEoR6dfc023RlIee3nvCPf1gc5wX50MIn6-Q/exec';
+// Firebase 프로젝트 배포 후, 실제 발급된 함수 URL로 아래 한 줄만 바꾸면 된다.
+const API_BASE = 'https://asia-northeast3-inky-voice-cinema.cloudfunctions.net/voiceCinema';
 const GENRES = [
   { id: 'fantasy',   name: '판타지',     emoji: '🪄', color: '#8b6cff' },
   { id: 'animation', name: '애니메이션', emoji: '🎨', color: '#ff9a3d' },
@@ -116,26 +117,24 @@ async function mergeClip(genreId, audioBlob, mime){
   return new Blob([data.buffer], { type: 'video/mp4' });
 }
 
-// ── 구글 드라이브 업로드 (Apps Script, 브라우저에서 직접 호출) ──
-async function uploadToDrive(blob, filename){
+// ── Firebase Storage 업로드 (Cloud Functions 경유, 브라우저에서 직접 호출) ──
+async function uploadToCloud(blob, filename){
   const dataBase64 = await blobToB64(blob);
   const body = JSON.stringify({ filename, mimeType: 'video/mp4', dataBase64 });
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 60000);
   try {
-    // text/plain: Apps Script엔 doOptions가 없어 프리플라이트가 막히므로,
-    // 프리플라이트를 유발하지 않는 단순 요청(text/plain)으로 보낸다.
-    const resp = await fetch(APPS_SCRIPT_URL, {
+    const resp = await fetch(`${API_BASE}/upload`, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      headers: { 'Content-Type': 'application/json' },
       body,
       signal: ctrl.signal,
     });
     const text = await resp.text();
     let json;
     try { json = JSON.parse(text); }
-    catch (e) { throw new Error('드라이브 응답 파싱 실패: ' + text.slice(0, 200)); }
-    if (!json.ok) throw new Error('드라이브 저장 실패: ' + (json.error || 'unknown'));
+    catch (e) { throw new Error('저장 응답 파싱 실패: ' + text.slice(0, 200)); }
+    if (!json.ok) throw new Error('영상 저장 실패: ' + (json.error || 'unknown'));
     return json.url;
   } finally {
     clearTimeout(timer);
@@ -385,7 +384,7 @@ function showError(title, msg){
   $('#errRow').style.display = 'flex';
 }
 
-// ── 저장 → (브라우저 내부) 합성 → 드라이브 업로드 → QR ──
+// ── 저장 → (브라우저 내부) 합성 → 클라우드 업로드 → QR ──
 async function save(){
   if(!recordedBlob || saving){ return; }
   saving = true;
@@ -411,25 +410,25 @@ async function save(){
 
   let shareUrl = null, saved = 'local_fallback';
   try{
-    shareUrl = await uploadToDrive(mergedBlob, `dub_${current.id}_${Date.now()}.mp4`);
-    saved = 'drive';
+    shareUrl = await uploadToCloud(mergedBlob, `dub_${current.id}_${Date.now()}.mp4`);
+    saved = 'cloud';
   }catch(e){
-    console.error('[드라이브 실패]', e.message);
+    console.error('[클라우드 저장 실패]', e.message);
     saved = 'local_fallback';
   }
 
   $('#loading').style.display='none'; $('#done').style.display='';
-  if(saved === 'drive'){
+  if(saved === 'cloud'){
     $('#qrImg').src = makeQR(shareUrl);
     $('#qrbox').style.display = 'inline-block';
     $('#downloadRow').style.display = 'none';
     $('#doneMsg').textContent = '휴대폰 카메라로 QR을 스캔하면 내 영화를 받을 수 있어요';
-    $('#savemode').textContent = '구글 드라이브에 저장되었습니다';
+    $('#savemode').textContent = '클라우드에 저장되었습니다';
   }else{
     $('#qrbox').style.display = 'none';
     $('#downloadRow').style.display = 'flex';
     $('#doneMsg').textContent = '인터넷 문제로 자동 전달이 안 됐어요 — 아래 버튼으로 이 기기에 저장하고 운영자에게 알려주세요';
-    $('#savemode').textContent = '⚠ 드라이브 업로드 실패 — 이 기기에만 저장됨';
+    $('#savemode').textContent = '⚠ 클라우드 업로드 실패 — 이 기기에만 저장됨';
     const objUrl = URL.createObjectURL(mergedBlob);
     $('#downloadBtn').onclick = () => {
       const a = document.createElement('a');
