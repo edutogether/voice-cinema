@@ -6,6 +6,10 @@ import express from 'express';
 
 initializeApp();
 
+// 감사 발견 반영: 이 파일엔 전역 예외 핸들러가 없었다 — 남겨서 원인 파악을 돕는다.
+process.on('uncaughtException', (e) => console.error('[예상 못한 오류]', e));
+process.on('unhandledRejection', (e) => console.error('[예상 못한 오류(Promise)]', e));
+
 /* 2026년 12월 1일부터는 이 폴더 안의 영상을 전부 지운다 — "11월 안에만 다운로드 가능" 정책.
    Apps Script 버전의 CUTOFF_DATE/cleanupAfterCutoff와 동일한 개념이며,
    Cloud Scheduler가 대신 매일 정확히 이 함수를 깨워준다(별도 트리거 설치 불필요). */
