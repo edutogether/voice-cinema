@@ -32,6 +32,9 @@ const FILM_TITLE = '잉키 보이스 시네마';
 const DUR = 10;
 // Firebase 프로젝트 배포 후, 실제 발급된 함수 URL로 아래 한 줄만 바꾸면 된다.
 const API_BASE = 'https://asia-northeast3-inky-voice-cinema.cloudfunctions.net/voiceCinema';
+// functions/index.js의 BOOTH_TOKEN과 반드시 같은 값이어야 한다. 진짜 비밀이 아니라
+// (이 파일 자체가 공개다) URL만 아는 자동화 스크립트의 무차별 업로드를 막는 1차 방어선일 뿐이다.
+const BOOTH_TOKEN = 'ac3231330f737aaf7f90c825f7ddacc9e287b3ac87caf99d';
 const GENRES = [
   { id: 'fantasy',   name: '판타지',     emoji: '🪄', color: '#8b6cff' },
   { id: 'animation', name: '애니메이션', emoji: '🎨', color: '#ff9a3d' },
@@ -48,6 +51,7 @@ let session = 0;
 let recTimer = null;
 let saving = false;
 let replayAudio = null, replayUrl = null;
+let fallbackObjUrl = null; // 감사 발견 반영: 클라우드 업로드 실패 시 폴백 다운로드용 blob URL 회수용
 
 const $ = s => document.querySelector(s);
 const show = (id) => { document.querySelectorAll('.view').forEach(v=>v.classList.remove('active')); $('#'+id).classList.add('active'); };
@@ -118,15 +122,14 @@ async function mergeClip(genreId, audioBlob, mime){
 }
 
 // ── Firebase Storage 업로드 (Cloud Functions 경유, 브라우저에서 직접 호출) ──
-async function uploadToCloud(blob, filename){
-  const dataBase64 = await blobToB64(blob);
+async function uploadOnce(dataBase64, filename){
   const body = JSON.stringify({ filename, mimeType: 'video/mp4', dataBase64 });
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 60000);
   try {
     const resp = await fetch(`${API_BASE}/upload`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-booth-token': BOOTH_TOKEN },
       body,
       signal: ctrl.signal,
     });
@@ -138,6 +141,19 @@ async function uploadToCloud(blob, filename){
     return json.url;
   } finally {
     clearTimeout(timer);
+  }
+}
+
+// 감사 발견 반영: 부스 와이파이는 순간적으로 끊기는 일이 흔한데 재시도가 0회면
+// 그 한 번의 끊김만으로 영구히 로컬 폴백으로 떨어졌다 — 1회만 재시도한다.
+async function uploadToCloud(blob, filename){
+  const dataBase64 = await blobToB64(blob);
+  try {
+    return await uploadOnce(dataBase64, filename);
+  } catch (e) {
+    if (e && e.name === 'AbortError') throw e; // 이미 60초 기다렸다면 재시도해도 소용없음
+    console.warn('[업로드 1차 실패, 재시도]', e && e.message);
+    return await uploadOnce(dataBase64, filename);
   }
 }
 
@@ -203,6 +219,7 @@ function resetRecord(){
   session++;
   clearTimeout(recTimer);
   stopReplayAudio();
+  if (fallbackObjUrl) { URL.revokeObjectURL(fallbackObjUrl); fallbackObjUrl = null; }
   recordedBlob = null; chunks = []; busy = false; previewing = false;
   $('#recBtn').style.display = '';
   $('#recBtn').disabled = false;
@@ -427,16 +444,19 @@ async function save(){
     $('#qrbox').style.display = 'inline-block';
     $('#downloadRow').style.display = 'none';
     $('#doneMsg').textContent = '휴대폰 카메라로 QR을 스캔하면 내 영화를 받을 수 있어요';
-    $('#savemode').textContent = '클라우드에 저장되었습니다';
+    // 감사 발견 반영: 실제 공유범위(링크를 아는 사람은 누구나 볼 수 있음)와
+    // 안내 문구가 어긋나 있었다 — 화면에 명시한다.
+    $('#savemode').textContent = '클라우드에 저장되었습니다 (이 QR/링크를 아는 사람은 누구나 볼 수 있어요, 11/30까지)';
   }else{
     $('#qrbox').style.display = 'none';
     $('#downloadRow').style.display = 'flex';
     $('#doneMsg').textContent = '인터넷 문제로 자동 전달이 안 됐어요 — 아래 버튼으로 이 기기에 저장하고 운영자에게 알려주세요';
     $('#savemode').textContent = '⚠ 클라우드 업로드 실패 — 이 기기에만 저장됨';
-    const objUrl = URL.createObjectURL(mergedBlob);
+    if (fallbackObjUrl) { URL.revokeObjectURL(fallbackObjUrl); } // 감사 발견 반영: 이전 폴백 blob 미회수
+    fallbackObjUrl = URL.createObjectURL(mergedBlob);
     $('#downloadBtn').onclick = () => {
       const a = document.createElement('a');
-      a.href = objUrl; a.download = `잉키보이스시네마_${current.name}.mp4`;
+      a.href = fallbackObjUrl; a.download = `잉키보이스시네마_${current.name}.mp4`;
       document.body.appendChild(a); a.click(); a.remove();
     };
   }

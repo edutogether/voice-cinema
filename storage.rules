@@ -1,0 +1,13 @@
+rules_version = '2';
+
+// 감사 발견 반영: 이 저장소에 storage.rules 자체가 없어 버킷 규칙이 콘솔에만
+// 존재했다(버전관리·리뷰·재배포 불가). 모든 쓰기·읽기는 functions/index.js가
+// Admin SDK로만 수행하므로(이 규칙이 적용되지 않음), 클라이언트 SDK를 통한
+// 직접 접근은 기본적으로 전부 막는다 — 방어적 기본값.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
