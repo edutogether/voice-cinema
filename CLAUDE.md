@@ -4,17 +4,24 @@ InKY Festival(제4회 인천어린이청소년영화제, 2026.11.14. 인천 CGV)
 
 ## 정체성
 - **위치**: `D:\Projects\inky-festival\voice-cinema`
-- **스택(2026-08-26 재설계, 2026-08-26 저장소 백엔드 2차 교체)**: 정적 프론트엔드(`docs/`, GitHub Pages 배포) — 영상 합성이 서버가 아니라 브라우저 안 ffmpeg.wasm으로 처리됨. 저장소는 Google Apps Script+Drive에서 poster-studio와 동일한 **Firebase Functions + Firebase Storage**(`inky-voice` 프로젝트)로 교체 — 특정 개인 구글 계정에 소유권이 묶이는 문제를 없애기 위함(대표 판단, 2026-08-26). 예전 Node.js/Express 로컬 서버(`server.js`, `public/`, `config.json`, `start.bat`/`start.command`)는 poster-studio와 같은 이유(MDM 노트북 설치 불가·방화벽)로 더 이상 쓰지 않지만, 삭제하지 않고 설치판 회귀 대비용으로 저장소에 그대로 남겨둠. `apps-script/Code.gs`도 마찬가지로 더 이상 쓰지 않는 이전 버전이지만 참고용으로 남겨둠.
+- **스택(2026-08-26 재설계, 2026-08-26 저장소 백엔드 2차 교체)**: 정적 프론트엔드(`docs/`, GitHub Pages 배포) — 영상 합성이 서버가 아니라 브라우저 안 ffmpeg.wasm으로 처리됨. 저장소는 Google Apps Script+Drive에서 poster-studio와 동일한 **Firebase Functions + Firebase Storage**(`inky-voice-cinema` 프로젝트)로 교체 — 특정 개인 구글 계정에 소유권이 묶이는 문제를 없애기 위함(대표 판단, 2026-08-26). 예전 Node.js/Express 로컬 서버(`server.js`, `public/`, `config.json`, `start.bat`/`start.command`)는 poster-studio와 같은 이유(MDM 노트북 설치 불가·방화벽)로 더 이상 쓰지 않지만, 삭제하지 않고 설치판 회귀 대비용으로 저장소에 그대로 남겨둠. `apps-script/Code.gs`도 마찬가지로 더 이상 쓰지 않는 이전 버전이지만 참고용으로 남겨둠.
 - **기능**: 무성영상 6종(장르별)에 더빙 → 브라우저에서 합성 → Firebase Storage 자동저장 → QR 전달
 - **자동삭제**: 2026년 12월 1일부터 예약 함수(`cleanupAfterCutoff`, Cloud Scheduler)가 매일 새벽 3시(KST)에 저장된 영상을 전부 삭제 — "다운로드는 11월 안에만 가능" 정책, 결과 화면에도 안내 문구 표시됨.
 - **배포**: `https://edutogether.github.io/voice-cinema/` — GitHub Pages(브랜치 `master` · `/docs` 폴더) 배포 확인됨. **Firebase 백엔드(Functions+Storage)도 정상 운영중** — `firebase deploy --only functions` 완료, `voiceCinema`/`cleanupAfterCutoff` 함수 둘 다 라이브. 실제 업로드→`makePublic()`→공개 URL 접근까지, CORS(허용/차단 출처 둘 다)까지 curl로 직접 실측 확인함(2026-08-26 프리즈 후 정밀감사).
 
 ## 🔴 콘텐츠 미완성 — 행사 전 필수 조치 (2026-08-26 발견)
-`clips/`·`docs/clips/`에 있는 6개 mp4(action/animation/drama/fantasy/horror/sitcom)가 **전부** 진짜 영화 클립이 아니라 "SAMPLE - replace with Kling video"라는 문구가 박힌 컬러바 테스트 영상이다(6개 전부 직접 재생해서 확인함, 예외 없음). 인프라·코드는 완전히 정상이지만 이 상태로 행사를 열면 아이들이 테스트 영상에 더빙하게 된다. Kling AI 등으로 실제 무성 클립 6종을 제작해 두 폴더(`clips/`, `docs/clips/`) 모두에 동일 파일명으로 교체 필요 — 이건 코드 작업이 아니라 콘텐츠 제작이라 대표(또는 원작자) 확인·처리 필요.
+`clips/`·`docs/clips/`에 있는 6개 mp4(action/animation/drama/fantasy/horror/sitcom)가 **전부** 진짜 영화 클립이 아니라 "SAMPLE - replace with Kling video"라는 문구가 박힌 컬러바 테스트 영상이다(6개 전부 직접 재생해서 확인함, 예외 없음). 인프라·코드는 완전히 정상이지만 이 상태로 행사를 열면 아이들이 테스트 영상에 더빙하게 된다. Kling AI 등으로 실제 무성 클립 6종을 제작해 **`docs/clips/`(라이브, 정본)에 먼저 넣고 `npm run sync-clips` 실행**하면 `clips/`(레거시)에도 자동 복사된다. **교체 직후 반드시 실제 더빙 1건을 끝까지 돌려 업로드까지 검증할 것** — `/upload`가 디코딩 후 12MB 크기 상한을 강제하므로, 고화질 실사 클립은 이 한도에 걸릴 수 있다(2026-08-26 정밀감사 발견).
+
+## 🔴 대표 조치 필요 — 아직 안 끝난 것 (2026-08-26 정밀 재감사)
+1. **레거시 Google Apps Script 배포가 아직 라이브다** — `apps-script/Code.gs`는 안 쓰는 파일이라 안전하다고 생각했지만, 실제 배포된 웹앱 URL이 curl로 200 응답한다(`config.json`에 커밋된 URL). 실행계정=대표님 개인 구글계정, 액세스=모든사용자라 대표님 개인 Drive에 익명으로 쓰기 가능한 상태다. **Apps Script 콘솔에서 배포 해제 필요**(그 전에 Drive 폴더의 테스트 파일들도 확인·삭제).
+2. **GCP 예산 알림/결제 한도 설정** — 콘솔 전용이라 세션이 못 함.
+3. **로컬 `outputs/` 폴더의 테스트 녹음 삭제** — 실물 아동 음성 데이터.
+4. **만 14세 미만 아동 개인정보 동의 절차** — 법률 판단 필요, 세션이 결정 안 함.
 
 ## 알아야 할 것
 - Firebase Functions는 GitHub Pages(edutogether.github.io) 출처만 CORS 허용 — poster-studio와 동일 패턴.
-- 인터넷이 끊기면 클라우드 업로드가 실패하고, 그 기기에서 직접 다운로드하는 방식으로 폴백된다(코드상 `local_fallback` 처리, 자동 재시도 없음).
+- `/upload`는 `functions/index.js`의 `BOOTH_TOKEN` 상수와 `docs/app.js`의 동일 상수가 일치해야 동작한다 — 진짜 비밀이 아니라(공개 프론트에 그대로 노출됨) 무차별 스크립트 시도를 막는 1차 방어선일 뿐이다. mimeType(video/mp4만)·디코딩 후 크기(12MB)·파일명 길이(120자)·분당 요청수(인스턴스당 10회)도 서버단에서 강제한다(2026-08-26 정밀감사 반영).
+- 인터넷이 끊기면 클라우드 업로드가 실패하고, 그 기기에서 직접 다운로드하는 방식으로 폴백된다(코드상 `local_fallback` 처리, 1회 자동 재시도 후 폴백).
 - 영상 코덱은 반드시 **H.264**(H.265/HEVC는 브라우저에서 화면 검게 나옴) — 프로그램 시작 시 자동 코덱점검 있음.
 - 학생 음성 녹음 임시저장 — **12월 1일부터 자동삭제되지만, 그 전에 남은 테스트 파일은 대표가 수동 확인·삭제 필요.**
 - 아이패드(사파리)는 마이크 호환 문제 있어 권장 안 함 — 노트북 또는 안드로이드 태블릿 권장.
