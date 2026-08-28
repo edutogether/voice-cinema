@@ -27,9 +27,24 @@ const UPLOAD_PREFIX = 'dubs/';
 // 뿐이고(Secret Manager로 숨길 실익도 없음), 완전한 방어(Firebase App Check 등)는
 // 콘솔 설정이 필요해 별도 판단 대상으로 남긴다.
 const BOOTH_TOKEN = 'ac3231330f737aaf7f90c825f7ddacc9e287b3ac87caf99d';
-const isRateLimited = createRateLimiter();
+// 부스 와이파이는 보통 하나의 공인 IP(NAT)로 나가므로, 여러 학생이 동시에
+// 쓰는 태블릿/노트북이 전부 이 카운터 하나를 같이 쓴다 — 기본값(분당 10건)은
+// 개별 스크립트 남용을 막기엔 적당하지만, 부스 여러 대가 동시에 정상 사용할
+// 때 서로를 막아버리기엔 너무 낮다. 분당 60건(초당 1건 수준)까지 올려도
+// 남용 저지 목적은 유지되면서 정상적인 동시 사용은 걸리지 않는다.
+const isRateLimited = createRateLimiter({ max: 60 });
 
 const app = express();
+// Cloud Run(Functions v2)은 X-Forwarded-For로 실제 클라이언트 IP를 넘겨주는데,
+// trust proxy를 켜지 않으면 Express가 그걸 무시하고 내부 프록시 연결 자체의
+// 주소를 req.ip로 써서 서로 다른 클라이언트가 전부 같은 값으로 뭉뚱그려진다
+// (curl로 X-Forwarded-For를 바꿔가며 실제로 재현·확인함, 2026-08-28).
+// 값은 반드시 1(정확히 신뢰 가능한 홉 1개=Cloud Run 자체 프록시)이어야 한다 —
+// true로 하면 브라우저는 X-Forwarded-For를 직접 못 건드리지만(금지된 헤더) curl
+// 같은 비-브라우저 클라이언트는 그 값을 마음대로 지어낼 수 있어, 오히려 레이트
+// 리밋을 완전히 무력화하는 우회로가 된다. 1은 체인의 오른쪽에서 정확히 한 홉만
+// 신뢰해 클라이언트가 앞에 가짜 값을 붙여도 무시한다.
+app.set('trust proxy', 1);
 app.use(express.json({ limit: '15mb' }));
 
 app.get('/', (req, res) => res.json({ ok: true, service: 'inky-voice-cinema' }));
