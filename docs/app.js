@@ -1,6 +1,7 @@
 "use strict";
 import { FFmpeg } from './vendor/ffmpeg/index.js';
 import { fetchFile } from './vendor/ffmpeg-util/index.js';
+import { pickAudioExtension, buildUploadFilename, pickSupportedMime, shouldRetryUpload } from './logic.js';
 
 // @ffmpeg/util의 toBlobURL(progress=true)는 스트림 리더가 도중에 실패하면
 // 이미 읽은 Response.body를 다시 arrayBuffer()로 읽으려다
@@ -88,7 +89,7 @@ function getFFmpeg(){
 // ── 영상(무음 클립) + 녹음 음성 합성 (브라우저 내부, 서버 없이) ──
 async function mergeClip(genreId, audioBlob, mime){
   const ff = await getFFmpeg();
-  const ext = /mp4/.test(mime) ? 'm4a' : 'webm';
+  const ext = pickAudioExtension(mime);
   const log = [];
   const onLog = ({ message }) => log.push(message);
   ff.on('log', onLog);
@@ -150,7 +151,7 @@ async function uploadToCloud(blob, filename){
   try {
     return await uploadOnce(dataBase64, filename);
   } catch (e) {
-    if (e && e.name === 'AbortError') throw e; // 이미 60초 기다렸다면 재시도해도 소용없음
+    if (!shouldRetryUpload(e)) throw e; // 이미 60초 기다렸다면 재시도해도 소용없음
     console.warn('[업로드 1차 실패, 재시도]', e && e.message);
     return await uploadOnce(dataBase64, filename);
   }
@@ -310,10 +311,8 @@ async function startRecord(){
   v.muted = true; v.currentTime = 0;
 
   try{
-    let mime = '';
-    ['audio/webm;codecs=opus','audio/webm','audio/mp4'].some(m=>{ if(MediaRecorder.isTypeSupported(m)){mime=m; return true;} return false; });
-    recMime = mime;
-    recorder = mime ? new MediaRecorder(micStream,{mimeType:mime}) : new MediaRecorder(micStream);
+    recMime = pickSupportedMime(['audio/webm;codecs=opus','audio/webm','audio/mp4'], m => MediaRecorder.isTypeSupported(m));
+    recorder = recMime ? new MediaRecorder(micStream,{mimeType:recMime}) : new MediaRecorder(micStream);
   }catch(e){
     micStream = null;
     busy = false;
@@ -436,7 +435,7 @@ async function save(){
     // 행사 중 좁은 시간대를 순차 대입해 다른 학생의 영상 URL을 추측할 수 있다 —
     // 추측 불가능한 무작위 토큰을 덧붙인다(설치판 server.js의 H2 조치와 동일한 목적).
     const token = crypto.getRandomValues(new Uint8Array(6)).reduce((s, b) => s + b.toString(16).padStart(2, '0'), '');
-    shareUrl = await uploadToCloud(mergedBlob, `dub_${current.id}_${Date.now()}_${token}.mp4`);
+    shareUrl = await uploadToCloud(mergedBlob, buildUploadFilename(current.id, Date.now(), token));
     saved = 'cloud';
   }catch(e){
     console.error('[클라우드 저장 실패]', e.message);

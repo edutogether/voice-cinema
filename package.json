@@ -9,7 +9,8 @@
   "scripts": {
     "start": "node server.js",
     "sync-clips": "node scripts/sync-clips.js",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "node --test docs/test/*.test.js && cd functions && npm test"
   },
   "dependencies": {
     "express": "^4.22.2",
