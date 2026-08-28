@@ -4,3 +4,6 @@ outputs/*
 tmp/
 cert/
 .env
+test-results/
+playwright-report/
+blob-report/

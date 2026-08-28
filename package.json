@@ -10,7 +10,8 @@
     "start": "node server.js",
     "sync-clips": "node scripts/sync-clips.js",
     "lint": "eslint .",
-    "test": "node --test docs/test/*.test.js && cd functions && npm test"
+    "test": "node --test docs/test/*.test.js && cd functions && npm test",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "express": "^4.22.2",
@@ -20,6 +21,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.62.1",
     "eslint": "^10.9.1"
   }
 }

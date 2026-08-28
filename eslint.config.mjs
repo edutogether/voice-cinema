@@ -4,7 +4,7 @@ import js from '@eslint/js';
 export default [
   js.configs.recommended,
   {
-    ignores: ['node_modules/**', 'functions/node_modules/**', 'docs/vendor/**', 'outputs/**', 'cert/**', 'tmp/**'],
+    ignores: ['node_modules/**', 'functions/node_modules/**', 'docs/vendor/**', 'outputs/**', 'cert/**', 'tmp/**', 'test-results/**', 'playwright-report/**'],
   },
   {
     // 이 코드베이스는 "실패해도 무시해도 되는" 정리 작업(pause(), revokeObjectURL() 등)에
@@ -62,6 +62,15 @@ export default [
       ecmaVersion: 2022,
       sourceType: 'module',
       globals: { console: 'readonly', Buffer: 'readonly' },
+    },
+  },
+  {
+    // Playwright E2E 테스트 + 설정
+    files: ['e2e/**/*.js', 'playwright.config.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: { process: 'readonly', console: 'readonly' },
     },
   },
 ];
