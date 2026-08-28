@@ -4,7 +4,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { initializeApp } from 'firebase-admin/app';
 import { getStorage } from 'firebase-admin/storage';
 import express from 'express';
-import { validateUploadRequest, createRateLimiter } from './validate.js';
+import { validateUploadRequest, createRateLimiter, chunk } from './validate.js';
 
 initializeApp();
 
@@ -17,6 +17,21 @@ process.on('unhandledRejection', (e) => console.error('[예상 못한 오류(Pro
    Cloud Scheduler가 대신 매일 정확히 이 함수를 깨워준다(별도 트리거 설치 불필요). */
 const CUTOFF_DATE = new Date('2026-12-01T00:00:00+09:00');
 const UPLOAD_PREFIX = 'dubs/';
+
+// 2026-08-28 발견 반영: 파일 수백~수천 개를 Promise.all 하나로 한꺼번에
+// 지우면 인스턴스 메모리(256MiB)를 초과해 죽는다(2000개 실측 스트레스테스트로
+// 실제 재현: "Memory limit of 256 MiB exceeded with 275 MiB used"). 이 두 라우트
+// (정리용 임시 라우트, 실제 cleanupAfterCutoff)가 전부 같은 패턴이라 공용 함수로
+// 묶어 한 번에 100개씩만 처리한다.
+const DELETE_BATCH_SIZE = 100;
+async function deleteAllInBatches(files, logPrefix) {
+  let deleted = 0;
+  for (const batch of chunk(files, DELETE_BATCH_SIZE)) {
+    await Promise.all(batch.map((f) => f.delete().catch((e) => console.error(logPrefix, f.name, e?.message))));
+    deleted += batch.length;
+  }
+  return deleted;
+}
 
 // 정밀감사(2026-08-26) 발견 반영 — 이 엔드포인트는 원래 인증 없이 공개 배포된다
 // (익명 QR 전달 흐름 자체가 로그인을 요구할 수 없는 구조). 다만 감사에서
@@ -102,15 +117,18 @@ export const voiceCinema = onRequest(
 );
 
 // 매일 새벽 3시(KST)에 깨어나서, CUTOFF_DATE가 지났으면 업로드된 영상을 전부 지운다.
+// memory를 512MiB로 올린 것과 배치 삭제 둘 다 2026-08-28 발견 반영 — 행사 당일
+// 수천 개가 쌓인 상태에서 한 번에 지우려다 메모리 초과로 이 함수 자체가 죽으면
+// 자동삭제가 아예 안 되는(개인정보가 안 지워지는) 심각한 결과로 이어질 수 있었다.
 export const cleanupAfterCutoff = onSchedule(
-  { schedule: '0 3 * * *', timeZone: 'Asia/Seoul', region: 'asia-northeast3' },
+  { schedule: '0 3 * * *', timeZone: 'Asia/Seoul', region: 'asia-northeast3', memory: '512MiB', timeoutSeconds: 300 },
   async () => {
     if (new Date() < CUTOFF_DATE) return;
     try {
       const bucket = getStorage().bucket();
       const [files] = await bucket.getFiles({ prefix: UPLOAD_PREFIX });
-      await Promise.all(files.map((f) => f.delete().catch((e) => console.error('[cleanup]', f.name, e?.message))));
-      console.log(`[cleanup] ${files.length}개 파일 삭제 완료`);
+      const deleted = await deleteAllInBatches(files, '[cleanup]');
+      console.log(`[cleanup] ${deleted}개 파일 삭제 완료`);
     } catch (err) {
       // 감사 발견 반영: bucket()/getFiles() 자체가 던지면 이 스케줄 실행이
       // 처리되지 않은 예외로 끝난다 — 로그로 남겨 다음 날 재시도 전까지 원인을 알 수 있게 한다.

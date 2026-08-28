@@ -4,7 +4,7 @@
 // 테스트가 필요하다는 판단이었다.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sanitizeFilename, validateUploadRequest, createRateLimiter, MAX_DECODED_BYTES, MAX_FILENAME_LEN } from '../validate.js';
+import { sanitizeFilename, validateUploadRequest, createRateLimiter, chunk, MAX_DECODED_BYTES, MAX_FILENAME_LEN } from '../validate.js';
 
 test('sanitizeFilename: 경로 조작 문자를 제거한다', () => {
   assert.equal(sanitizeFilename('../../etc/passwd'), '.._.._etc_passwd');
@@ -63,4 +63,20 @@ test('createRateLimiter: IP가 다르면 서로 영향을 주지 않는다', () 
   const isRateLimited = createRateLimiter({ windowMs: 60000, max: 1 });
   assert.equal(isRateLimited('1.1.1.1'), false);
   assert.equal(isRateLimited('2.2.2.2'), false);
+});
+
+// 2026-08-28: 2000개 실측 스트레스테스트 중 대량 삭제가 메모리 초과로 실패하는 걸
+// 발견해 chunk()로 배치 처리하게 고쳤다 — 그 분할 로직 자체를 검증한다.
+test('chunk: 지정한 크기로 배열을 나눈다', () => {
+  assert.deepEqual(chunk([1,2,3,4,5], 2), [[1,2],[3,4],[5]]);
+  assert.deepEqual(chunk([1,2,3], 3), [[1,2,3]]);
+  assert.deepEqual(chunk([], 2), []);
+});
+
+test('chunk: 배치 크기보다 큰 배열도 원소를 하나도 안 빠뜨린다', () => {
+  const arr = Array.from({ length: 1989 }, (_, i) => i);
+  const batches = chunk(arr, 100);
+  assert.equal(batches.length, 20); // 19*100 + 89
+  assert.equal(batches.flat().length, 1989);
+  assert.deepEqual(batches.flat(), arr);
 });

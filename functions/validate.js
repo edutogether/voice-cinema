@@ -40,6 +40,15 @@ export function validateUploadRequest(body) {
   return { ok: true, safeName, buffer };
 }
 
+// 배열을 size개씩 묶는다 — 대량 삭제를 한 번에 Promise.all로 몰아넣으면
+// 메모리를 초과할 수 있어(2026-08-28, 2000개 실측 스트레스테스트 중 실제로
+// "Memory limit of 256 MiB exceeded" 발생 확인) 이걸로 나눠 처리한다.
+export function chunk(array, size) {
+  const out = [];
+  for (let i = 0; i < array.length; i += size) out.push(array.slice(i, i + size));
+  return out;
+}
+
 // 인스턴스 하나당 최소한의 요청 빈도 제한(재기동되면 초기화되는 메모리 기반이라
 // 완벽하진 않지만, maxInstances 제한과 합쳐지면 스크립트 남용의 비용을 실질적으로 올린다).
 export function createRateLimiter({ windowMs = 60 * 1000, max = 10 } = {}) {
