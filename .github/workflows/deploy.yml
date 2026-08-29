@@ -15,11 +15,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # FIREBASE_SERVICE_ACCOUNT 저장소 시크릿이 등록돼 있어야 동작한다. 서비스 계정
-    # 생성·키 발급은 GCP 콘솔 권한이 필요한 작업이라 이 세션이 대신할 수 없다 —
-    # poster-studio와 동일한 구조적 제약(대표가 콘솔에서 한 번 등록해야 함).
-    # 시크릿이 없으면 이 job은 조용히 스킵되고, 등록되는 순간 별도 수정 없이 바로 동작한다.
-    if: github.event.workflow_run.conclusion == 'success' && secrets.FIREBASE_SERVICE_ACCOUNT != ''
+    # FIREBASE_SERVICE_ACCOUNT 저장소 시크릿 등록 완료(2026-08-29, 대표 확인).
+    # 참고: job 레벨 if:에는 secrets 컨텍스트를 못 쓴다(GitHub Actions 제약) —
+    # 처음엔 "시크릿 없으면 스킵"을 여기서 걸려다 워크플로우 파일 자체가
+    # 파싱조차 안 되는 걸로 실측 확인해서(2026-08-29) 뺐다.
+    if: github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v4
         with:
