@@ -5,6 +5,48 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0b1020">
 <title>잉키 보이스 시네마</title>
+<link id="favicon" rel="icon" href="">
+<script>
+  (function () {
+    function makeFavicon(gray) {
+      var size = 64;
+      var c = document.createElement('canvas');
+      c.width = c.height = size;
+      var ctx = c.getContext('2d');
+      ctx.font = (size * 0.8) + 'px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🎙️', size / 2, size / 2 + 2);
+      if (gray) {
+        var img = ctx.getImageData(0, 0, size, size);
+        var d = img.data;
+        for (var i = 0; i < d.length; i += 4) {
+          var v = d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11;
+          d[i] = d[i + 1] = d[i + 2] = v;
+        }
+        ctx.putImageData(img, 0, 0);
+      }
+      return c.toDataURL('image/png');
+    }
+    var colorHref, grayHref;
+    function apply(gray) {
+      var link = document.getElementById('favicon');
+      if (!link) return;
+      if (gray) {
+        if (!grayHref) grayHref = makeFavicon(true);
+        link.href = grayHref;
+      } else {
+        if (!colorHref) colorHref = makeFavicon(false);
+        link.href = colorHref;
+      }
+    }
+    function sync() { apply(document.hidden); }
+    document.addEventListener('DOMContentLoaded', sync);
+    document.addEventListener('visibilitychange', sync);
+    window.addEventListener('blur', function () { apply(true); });
+    window.addEventListener('focus', function () { apply(document.hidden); });
+  })();
+</script>
 <style>
   :root{
     --bg:#0b1020; --bg2:#0c1330; --panel:#141c3a; --panel2:#1b2549;
