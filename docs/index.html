@@ -123,9 +123,24 @@
   .errbox.show{display:block;}
   .footer{margin-top:auto; padding-top:22px; text-align:center; color:var(--muted); font-size:12px; letter-spacing:.04em;}
   .privacy{font-size:11px; color:var(--muted); text-align:center; margin-top:6px; opacity:.8;}
+
+  /* ── 스플래시 ── */
+  #splash{position:fixed; inset:0; z-index:999; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:14px; background:linear-gradient(180deg,var(--bg),var(--bg2)); transition:opacity .5s ease;}
+  #splash.hide{opacity:0; pointer-events:none;}
+  #splash .logo{font-size:clamp(48px,10vw,72px); filter:drop-shadow(0 10px 24px rgba(233,196,106,.35)); animation:splashPop .6s ease;}
+  #splash .name{font-size:clamp(26px,5vw,38px); font-weight:800; letter-spacing:-.01em; color:var(--cream);}
+  #splash .name .gold{color:var(--gold);}
+  #splash .stagline{font-size:clamp(13px,2vw,16px); color:var(--muted);}
+  @keyframes splashPop{0%{transform:scale(.6); opacity:0;}60%{transform:scale(1.08); opacity:1;}100%{transform:scale(1);}}
 </style>
 </head>
 <body>
+<div id="splash">
+  <div class="logo">🎬</div>
+  <div class="name">Voice <span class="gold">Cinema</span></div>
+  <div class="stagline">무성영화에 내 목소리를 더빙해 완성하는 나만의 영화</div>
+</div>
 <div class="wrap">
 
   <!-- ════ 메인: 장르 선택 ════ -->
@@ -209,6 +224,14 @@
 
 </div>
 
+<script>
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      const s = document.getElementById('splash');
+      if (s) { s.classList.add('hide'); setTimeout(() => s.remove(), 600); }
+    }, 1100);
+  });
+</script>
 <script src="./vendor/qrcode.js"></script>
 <script type="module" src="./app.js"></script>
 </body>
