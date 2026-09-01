@@ -3,7 +3,10 @@
 // index.js의 /upload 핸들러가 이 함수들을 그대로 쓴다.
 
 export const ALLOWED_MIME = new Set(['video/mp4']);
-export const MAX_DECODED_BYTES = 12 * 1024 * 1024; // 12MB
+// 2026-09-01, 실제 Kling AI 클립 6종 교체 후 실측: -c:v copy로 합성한 완성 영상이
+// 12.8~13.0MB로 나와 기존 12MB 한도를 전부 초과했다(모든 장르 업로드가 실패할 뻔함,
+// 실제 파이프라인으로 재현·확인). 실측치에 넉넉한 여유를 두고 20MB로 올린다.
+export const MAX_DECODED_BYTES = 20 * 1024 * 1024; // 20MB
 export const MAX_FILENAME_LEN = 120;
 
 // 파일명에서 경로 조작(../ 등)과 GCS 키에 부적절한 문자를 제거한다.

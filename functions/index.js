@@ -60,7 +60,10 @@ const app = express();
 // 리밋을 완전히 무력화하는 우회로가 된다. 1은 체인의 오른쪽에서 정확히 한 홉만
 // 신뢰해 클라이언트가 앞에 가짜 값을 붙여도 무시한다.
 app.set('trust proxy', 1);
-app.use(express.json({ limit: '15mb' }));
+// MAX_DECODED_BYTES(20MB)를 base64로 인코딩하면 약 4/3배(~27MB)가 되므로,
+// body 파서 한도는 그보다 넉넉히 잡아야 한다(2026-09-01, 12MB/15mb였을 때
+// 실제 클립 교체 후 전 장르 업로드가 이 한도에서 막히는 것을 실측으로 발견).
+app.use(express.json({ limit: '28mb' }));
 
 app.get('/', (req, res) => res.json({ ok: true, service: 'inky-voice-cinema' }));
 
