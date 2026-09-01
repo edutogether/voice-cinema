@@ -1,8 +1,10 @@
 name: Deploy Backend
 
-# GitHub Pages(docs/)는 저장소 설정이 legacy 방식(브랜치 master · 경로 /docs)이라
-# push마다 GitHub 자체가 이미 자동 배포한다 — 이 워크플로우는 그 대상이 아니다.
-# 여기서 다루는 건 지금까지 수동으로만 해오던 Firebase Functions + Storage rules 배포.
+# 2026-09-01: 정본 배포처가 GitHub Pages(edutogether.github.io)에서
+# Firebase Hosting(voice-cinema.web.app)으로 이전됨 — 이제 이 워크플로우가
+# storage+functions에 더해 hosting까지 함께 배포한다. GitHub Pages(docs/)는
+# 당분간 병행 운영(포털 카드 링크 교체 전까지)이라 아직 자동배포가 남아있지만
+# 정본은 Firebase Hosting 쪽이다.
 #
 # CI(lint+test+e2e) 워크플로우가 통과한 뒤에만 이어서 실행되도록 workflow_run으로 연결한다
 # (push 트리거를 따로 두면 테스트 없이 배포될 수 있어 이렇게 묶었다).
@@ -32,6 +34,7 @@ jobs:
       - uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
-      # storage rules와 functions를 한 번에 — "규칙/functions 먼저" 순서를 위해
-      # hosting(=GitHub Pages, 별도 자동배포)과는 완전히 분리해서 다룬다.
+      # storage rules와 functions를 먼저 배포하고, hosting은 그 다음 단계로
+      # 순서를 명시한다 — 코디세이 기준(규칙/functions 먼저, hosting 나중)과 동일.
       - run: npx firebase-tools deploy --only storage,functions --project inky-voice-cinema --non-interactive
+      - run: npx firebase-tools deploy --only hosting:voice-cinema --project inky-voice-cinema --non-interactive

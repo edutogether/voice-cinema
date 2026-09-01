@@ -100,10 +100,13 @@ app.post('/upload', async (req, res) => {
   }
 });
 
-// GitHub Pages(edutogether.github.io)에서만 호출 가능하도록 CORS 제한.
+// 2026-09-01 Firebase Hosting(voice-cinema.web.app)로 이전 — GitHub Pages는
+// 당분간 병행 운영(포털 카드 링크 교체 전까지)이라 둘 다 남겨둔다.
 // 로컬 개발 시에는 5500(Live Server)·8080(firebase serve) 포트도 허용.
 const ALLOWED_ORIGINS = [
   /^https:\/\/edutogether\.github\.io$/,
+  /^https:\/\/voice-cinema\.web\.app$/,
+  /^https:\/\/voice-cinema\.firebaseapp\.com$/,
   /^http:\/\/localhost:(5500|8080)$/,
   /^http:\/\/127\.0\.0\.1:(5500|8080)$/,
 ];

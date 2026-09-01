@@ -2,6 +2,14 @@
   "projects": {
     "default": "inky-voice-cinema"
   },
-  "targets": {},
+  "targets": {
+    "inky-voice-cinema": {
+      "hosting": {
+        "voice-cinema": [
+          "voice-cinema"
+        ]
+      }
+    }
+  },
   "etags": {}
 }

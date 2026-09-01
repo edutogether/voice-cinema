@@ -207,7 +207,7 @@
   <!-- ════ 스튜디오: 녹음 ════ -->
   <section id="studio" class="view">
     <div class="topbar">
-      <button class="back" onclick="goHome()">← 처음으로</button>
+      <button class="back" id="studioBackBtn">← 처음으로</button>
       <span class="chip"><span class="e" id="chipEmoji">🎬</span><span id="chipName">장르</span></span>
     </div>
 
@@ -223,18 +223,18 @@
       <div class="hint" id="hint">먼저 [미리 보기]로 영상을 확인하고, 준비되면 녹음하세요</div>
 
       <!-- 미리 보기 버튼 (준비 단계) -->
-      <button class="btn btn-lg btn-ghost" id="previewBtn" onclick="togglePreview()">▶ 미리 보기</button>
+      <button class="btn btn-lg btn-ghost" id="previewBtn">▶ 미리 보기</button>
 
       <!-- 녹음 시작 버튼 -->
-      <button class="btn btn-rec" id="recBtn" onclick="startRecord()">
+      <button class="btn btn-rec" id="recBtn">
         <span class="ic">🎤</span><span>녹음 시작</span>
       </button>
 
       <!-- 녹음 후 버튼 묶음 -->
       <div class="row" id="afterRow" style="display:none;">
-        <button class="btn btn-lg btn-ghost" onclick="replay()">▶ 다시 듣기</button>
-        <button class="btn btn-lg btn-gold" onclick="resetRecord()">🔄 다시 녹음</button>
-        <button class="btn btn-lg btn-save" onclick="save()">💾 저장하기</button>
+        <button class="btn btn-lg btn-ghost" id="replayBtn">▶ 다시 듣기</button>
+        <button class="btn btn-lg btn-gold" id="resetBtn">🔄 다시 녹음</button>
+        <button class="btn btn-lg btn-save" id="saveBtn">💾 저장하기</button>
       </div>
     </div>
     <div class="footer" id="studioFoot"></div>
@@ -259,13 +259,13 @@
         <div class="savemode" id="savemode"></div>
         <p class="savemode" style="margin-top:4px;">⏰ 다운로드는 2026년 11월 30일까지만 가능해요 — 그 이후엔 자동으로 삭제됩니다</p>
         <div class="row" style="margin-top:26px;">
-          <button class="btn btn-lg btn-gold" onclick="goHome()">🎬 다른 더빙 하기</button>
+          <button class="btn btn-lg btn-gold" id="doneHomeBtn">🎬 다른 더빙 하기</button>
         </div>
       </div>
 
       <div class="errbox" id="errbox"></div>
       <div class="row" id="errRow" style="display:none;">
-        <button class="btn btn-lg btn-ghost" onclick="backToStudio()">← 돌아가기</button>
+        <button class="btn btn-lg btn-ghost" id="errBackBtn">← 돌아가기</button>
       </div>
     </div>
   </section>

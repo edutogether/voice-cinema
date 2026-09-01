@@ -177,6 +177,17 @@ function blobToB64(blob){
 function init(){
   $('#studioFoot').textContent = '약 ' + DUR + '초 동안 녹음돼요';
   renderGrid();
+  // CSP(script-src)가 인라인 onclick="" 속성 실행을 막으므로(2026-09-01
+  // Firebase Hosting 이전 후 실측으로 발견 — 모든 버튼이 죽어있었다),
+  // 여기서 addEventListener로 직접 연결한다.
+  $('#studioBackBtn').addEventListener('click', goHome);
+  $('#previewBtn').addEventListener('click', togglePreview);
+  $('#recBtn').addEventListener('click', startRecord);
+  $('#replayBtn').addEventListener('click', replay);
+  $('#resetBtn').addEventListener('click', resetRecord);
+  $('#saveBtn').addEventListener('click', save);
+  $('#doneHomeBtn').addEventListener('click', goHome);
+  $('#errBackBtn').addEventListener('click', backToStudio);
   // 첫 더빙 전에 미리 엔진을 준비해 두어 저장 시 대기시간을 줄인다.
   getFFmpeg().catch(e => console.error('[ffmpeg 사전로딩 실패]', e));
   // 감사 발견 반영: 31MB 엔진 파일을 서비스워커로 캐시해, 재부팅/캐시비움
@@ -466,13 +477,5 @@ async function save(){
   }
   saving = false;
 }
-
-window.goHome = goHome;
-window.backToStudio = backToStudio;
-window.togglePreview = togglePreview;
-window.startRecord = startRecord;
-window.replay = replay;
-window.resetRecord = resetRecord;
-window.save = save;
 
 init();
