@@ -4,7 +4,10 @@
 // 테스트가 필요하다는 판단이었다.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sanitizeFilename, validateUploadRequest, createRateLimiter, chunk, MAX_DECODED_BYTES, MAX_FILENAME_LEN } from '../validate.js';
+import { sanitizeFilename, validateUploadRequest, createRateLimiter, chunk, hasMp4Signature, MAX_DECODED_BYTES, MAX_FILENAME_LEN } from '../validate.js';
+
+// 진짜 mp4 파일 시작부(박스 크기 4바이트 + 'ftyp')를 흉내낸 최소 픽스처.
+const FAKE_MP4_BYTES = Buffer.concat([Buffer.from([0, 0, 0, 32]), Buffer.from('ftypisom')]);
 
 test('sanitizeFilename: 경로 조작 문자를 제거한다', () => {
   assert.equal(sanitizeFilename('../../etc/passwd'), '.._.._etc_passwd');
@@ -13,11 +16,26 @@ test('sanitizeFilename: 경로 조작 문자를 제거한다', () => {
 });
 
 test('validateUploadRequest: 정상 요청은 통과한다', () => {
-  const body = { filename: 'dub_fantasy_1_abcdef.mp4', mimeType: 'video/mp4', dataBase64: Buffer.from('hello').toString('base64') };
+  const body = { filename: 'dub_fantasy_1_abcdef.mp4', mimeType: 'video/mp4', dataBase64: FAKE_MP4_BYTES.toString('base64') };
   const result = validateUploadRequest(body);
   assert.equal(result.ok, true);
   assert.equal(result.safeName, 'dub_fantasy_1_abcdef.mp4');
-  assert.equal(result.buffer.toString(), 'hello');
+  assert.ok(result.buffer.equals(FAKE_MP4_BYTES));
+});
+
+// 2026-09-01 종합감사 발견: mimeType을 "video/mp4"라고 우겨도 실제 콘텐츠가
+// mp4가 아니면(ftyp 시그니처 없음) 거부해야 한다 — 이전엔 여기서 통과했다.
+test('validateUploadRequest: mimeType은 video/mp4지만 실제 내용은 mp4가 아니면 거부한다', () => {
+  const body = { filename: 'fake.mp4', mimeType: 'video/mp4', dataBase64: Buffer.from('<script>alert(1)</script>').toString('base64') };
+  const result = validateUploadRequest(body);
+  assert.equal(result.ok, false);
+  assert.equal(result.status, 400);
+});
+
+test('hasMp4Signature: ftyp 박스가 있으면 true, 없으면 false', () => {
+  assert.equal(hasMp4Signature(FAKE_MP4_BYTES), true);
+  assert.equal(hasMp4Signature(Buffer.from('not an mp4 at all')), false);
+  assert.equal(hasMp4Signature(Buffer.alloc(3)), false);
 });
 
 test('validateUploadRequest: filename/dataBase64 누락은 400', () => {

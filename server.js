@@ -72,7 +72,10 @@ const GENRES = [
 ];
 const GENRE_IDS = new Set(GENRES.map(g => g.id)); // H1: 화이트리스트
 
-const CLIPS_DIR   = path.join(ROOT, 'clips');
+// 종합감사(2026-09-01) L3 발견 반영: clips/(레거시 전용 사본)와 docs/clips/(정본)에
+// 동일 76MB가 중복 추적되던 유일한 이유가 이 경로였다 — docs/clips/를 직접 가리켜
+// 중복 자체를 없앤다(sync-clips.js와 clips/ 폴더는 더 이상 필요 없어 함께 제거).
+const CLIPS_DIR   = path.join(ROOT, 'docs', 'clips');
 const OUTPUTS_DIR = path.join(ROOT, 'outputs');
 const TMP_DIR     = path.join(ROOT, 'tmp');
 const CERT_DIR    = path.join(ROOT, 'cert');

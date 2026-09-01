@@ -26,6 +26,14 @@
             "value": "default-src 'self'; script-src 'self' blob: 'wasm-unsafe-eval' 'sha256-IAqIeeZze1rT8AJXp4mWVOa0bKnDs/BfDSiwZpQaZII=' 'sha256-VosYHR6J2wMHWCU0yomV15HKvuJkR6GvPAXajFyg1jU='; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' blob: https://asia-northeast3-inky-voice-cinema.cloudfunctions.net; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
           }
         ]
+      },
+      {
+        "source": "clips/**",
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }]
+      },
+      {
+        "source": "vendor/**",
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }]
       }
     ]
   }

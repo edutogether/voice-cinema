@@ -466,7 +466,10 @@ async function save(){
     $('#qrbox').style.display = 'none';
     $('#downloadRow').style.display = 'flex';
     $('#doneMsg').textContent = '인터넷 문제로 자동 전달이 안 됐어요 — 아래 버튼으로 이 기기에 저장하고 운영자에게 알려주세요';
-    $('#savemode').textContent = '⚠ 클라우드 업로드 실패 — 이 기기에만 저장됨';
+    // 종합감사(2026-09-01) 발견 반영: 이 폴백 사본은 dubs/ 자동삭제(12/1) 대상이
+    // 아니라 부스 기기 다운로드 폴더에 그대로 남는다 — 아동 음성이므로 전달 뒤
+    // 운영자가 직접 지워야 한다는 걸 화면에 명시한다.
+    $('#savemode').textContent = '⚠ 클라우드 업로드 실패 — 이 기기 다운로드 폴더에만 저장됨 (학생에게 전달 후 운영자가 이 파일을 꼭 삭제해 주세요 — 자동삭제 대상 아님)';
     if (fallbackObjUrl) { URL.revokeObjectURL(fallbackObjUrl); } // 감사 발견 반영: 이전 폴백 blob 미회수
     fallbackObjUrl = URL.createObjectURL(mergedBlob);
     $('#downloadBtn').onclick = () => {

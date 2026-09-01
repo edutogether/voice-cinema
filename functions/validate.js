@@ -14,6 +14,15 @@ export function sanitizeFilename(filename) {
   return String(filename).replace(/[^\w.\-가-힣]/g, '_');
 }
 
+// 2026-09-01 종합감사 발견 반영: mimeType 검사는 클라이언트가 JSON에 적어 보낸
+// 문자열만 볼 뿐 실제 파일 내용은 전혀 확인하지 않았다 — 공개 BOOTH_TOKEN만
+// 있으면 "video/mp4"라고 우기고 임의 바이트를 공개 버킷에 올릴 수 있었다.
+// MP4는 파일 시작부에 반드시 박스 크기(4바이트) + 'ftyp' 시그니처가 오므로
+// 이걸로 최소한의 실제 콘텐츠 검증을 한다.
+export function hasMp4Signature(buffer) {
+  return buffer.length >= 8 && buffer.toString('ascii', 4, 8) === 'ftyp';
+}
+
 // req.body를 검사해 저장 가능한 상태인지 판단한다.
 // 성공 시 { ok: true, safeName, buffer }, 실패 시 { ok: false, status, error }를 반환한다.
 export function validateUploadRequest(body) {
@@ -38,6 +47,9 @@ export function validateUploadRequest(body) {
   }
   if (buffer.length === 0 || buffer.length > MAX_DECODED_BYTES) {
     return { ok: false, status: 400, error: '파일 크기가 올바르지 않습니다.' };
+  }
+  if (!hasMp4Signature(buffer)) {
+    return { ok: false, status: 400, error: '올바른 mp4 파일이 아닙니다.' };
   }
 
   return { ok: true, safeName, buffer };
