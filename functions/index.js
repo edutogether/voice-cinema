@@ -1,3 +1,4 @@
+// CI 배포 경로(cloudscheduler.jobs.update IAM) 실측 검증용 트리거 — 2026-09-02.
 import crypto from 'crypto';
 import { onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
