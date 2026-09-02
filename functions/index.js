@@ -117,11 +117,15 @@ app.post('/upload', async (req, res) => {
 
 // 2026-09-01 Firebase Hosting(voice-cinema.web.app)로 이전 — GitHub Pages는
 // 당분간 병행 운영(포털 카드 링크 교체 전까지)이라 둘 다 남겨둔다.
+// 2026-09-02: Portal이 edutogether.kr/voice-cinema로 리버스 프록시하기로 결정 —
+// 프록시는 정적 콘텐츠만 다루고 이 Cloud Functions 도메인은 그대로 직접 호출되므로,
+// 브라우저가 보내는 Origin은 edutogether.kr가 된다(팀장 확인, 2026-09-02).
 // 로컬 개발 시에는 5500(Live Server)·8080(firebase serve) 포트도 허용.
 const ALLOWED_ORIGINS = [
   /^https:\/\/edutogether\.github\.io$/,
   /^https:\/\/voice-cinema\.web\.app$/,
   /^https:\/\/voice-cinema\.firebaseapp\.com$/,
+  /^https:\/\/edutogether\.kr$/,
   /^http:\/\/localhost:(5500|8080)$/,
   /^http:\/\/127\.0\.0\.1:(5500|8080)$/,
 ];
