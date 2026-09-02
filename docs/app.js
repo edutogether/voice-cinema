@@ -253,6 +253,16 @@ function init(){
   // 지장 없으므로(HTTP 캐시로 폴백) 조용히 무시한다.
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(e => console.warn('[서비스워커 등록 실패]', e));
+    // 2026-09-03 발견 반영: 새 서비스워커가 install/activate까지 마쳐도, 이미 열려있는
+    // 탭은 그 시점의 옛 app.js를 메모리에 들고 있어 수동으로 두 번 새로고침해야
+    // 새 버전이 반영됐다 — 새 서비스워커가 제어권을 넘겨받는 순간(controllerchange)
+    // 자동으로 한 번 새로고침해 이 문제를 없앤다(무한루프 방지로 세션당 1회만).
+    let reloadedForNewSW = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloadedForNewSW) return;
+      reloadedForNewSW = true;
+      window.location.reload();
+    });
   }
 }
 

@@ -2,7 +2,15 @@
 // (max-age=600, 10분)에만 의존하고 있었다 — 태블릿이 재부팅되거나 캐시가
 // 비면 행사장 와이파이로 매번 다시 흐른다. 엔진 파일만 서비스워커로 오래
 // 캐시해 재방문·재부팅 후에도 다시 받지 않게 한다.
-const CACHE_NAME = 'inky-voice-cinema-engine-v2';
+// 2026-09-03 발견 반영: app-shell(index.html/app.js/logic.js) fetch가 network-first라도,
+// 그 순간 네트워크 요청이 무슨 이유로든(일시적 실패 포함) 실패하면 .catch()가 곧바로
+// 아주 오래된 캐시(이 서비스워커가 설치되던 시점의 app.js)로 조용히 폴백해버린다 —
+// 실제로 대표님 화면에서 배포된 지 한참 지난 옛 app.js(loading="lazy" 포함 버전)가
+// no-store로 강제 재요청해도 계속 나오는 걸 실측으로 확인했다. CACHE_NAME을 바꾸면
+// sw.js 파일 자체의 바이트가 달라져 브라우저가 새 서비스워커로 install/activate를
+// 다시 돌리므로(오래 안 열어본 기기까지 포함해) 이 세션이 지금까지 만든 옛 캐시를
+// 강제로 무효화한다.
+const CACHE_NAME = 'inky-voice-cinema-engine-v3';
 const PRECACHE_URLS = [
   './vendor/ffmpeg/classes.js',
   './vendor/ffmpeg/const.js',
