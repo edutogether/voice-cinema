@@ -2,6 +2,7 @@
 import { FFmpeg } from './vendor/ffmpeg/index.js';
 import { fetchFile } from './vendor/ffmpeg-util/index.js';
 import { pickAudioExtension, buildUploadFilename, pickSupportedMime, shouldRetryUpload } from './logic.js';
+import { initializeApp, initializeAppCheck, ReCaptchaEnterpriseProvider, getToken } from './vendor/firebase/firebase-app-check.js';
 
 // @ffmpeg/util의 toBlobURL(progress=true)는 스트림 리더가 도중에 실패하면
 // 이미 읽은 Response.body를 다시 arrayBuffer()로 읽으려다
@@ -35,6 +36,17 @@ const API_BASE = 'https://asia-northeast3-inky-voice-cinema.cloudfunctions.net/v
 // functions/index.js의 BOOTH_TOKEN과 반드시 같은 값이어야 한다. 진짜 비밀이 아니라
 // (이 파일 자체가 공개다) URL만 아는 자동화 스크립트의 무차별 업로드를 막는 1차 방어선일 뿐이다.
 const BOOTH_TOKEN = 'ac3231330f737aaf7f90c825f7ddacc9e287b3ac87caf99d';
+// 종합감사(2026-09-01) D2 반영, 2026-09-02 사이트 키 발급 완료 후 연결.
+// apiKey는 Firebase 웹앱 식별용일 뿐 진짜 비밀이 아니다 — 실제 보호는 App Check 토큰 검증이 한다.
+const FIREBASE_CONFIG = {
+  apiKey: 'AIzaSyC9q2j284NR82lYfO9hwFwdMdwtj2LeFGE',
+  authDomain: 'inky-voice-cinema.firebaseapp.com',
+  projectId: 'inky-voice-cinema',
+  storageBucket: 'inky-voice-cinema.firebasestorage.app',
+  messagingSenderId: '710797378638',
+  appId: '1:710797378638:web:5d8b0fe73666bb84026f1f',
+};
+const RECAPTCHA_ENTERPRISE_SITE_KEY = '6LdZY6QtAAAAAAqN9jOJRravmX7C7FuwvJpQ6Gm9';
 const GENRES = [
   { id: 'fantasy',   name: '판타지',     emoji: '🪄', color: '#8b6cff' },
   { id: 'animation', name: '애니메이션', emoji: '🎨', color: '#ff9a3d' },
@@ -86,6 +98,25 @@ function getFFmpeg(){
   return ffmpegLoading;
 }
 
+// ── Firebase App Check (2026-09-02) — /upload를 BOOTH_TOKEN에 더해 이중으로 보호한다.
+// 초기화 실패(네트워크 차단 등)는 조용히 던지게 두고, 호출부(uploadOnce)가 그 실패를
+// 그대로 업로드 실패로 처리해 기존 로컬 폴백 경로를 그대로 타게 한다 — 별도 처리 불필요.
+let appCheckInstance = null;
+function getAppCheckInstance(){
+  if (!appCheckInstance) {
+    const app = initializeApp(FIREBASE_CONFIG);
+    appCheckInstance = initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider(RECAPTCHA_ENTERPRISE_SITE_KEY),
+      isTokenAutoRefreshEnabled: true,
+    });
+  }
+  return appCheckInstance;
+}
+async function getAppCheckHeaderToken(){
+  const result = await getToken(getAppCheckInstance());
+  return result.token;
+}
+
 // ── 영상(무음 클립) + 녹음 음성 합성 (브라우저 내부, 서버 없이) ──
 async function mergeClip(genreId, audioBlob, mime){
   const ff = await getFFmpeg();
@@ -124,12 +155,19 @@ async function mergeClip(genreId, audioBlob, mime){
 // ── Firebase Storage 업로드 (Cloud Functions 경유, 브라우저에서 직접 호출) ──
 async function uploadOnce(dataBase64, filename){
   const body = JSON.stringify({ filename, mimeType: 'video/mp4', dataBase64 });
+  // App Check 토큰 발급 자체가 실패해도(reCAPTCHA 차단 등) 여기서 미리 포기하지 않고
+  // 헤더 없이 그대로 요청을 보낸다 — 실제 보안 판단은 서버(functions/index.js)가
+  // 토큰 유무로 하므로, 클라이언트가 먼저 던지든 서버가 401을 주든 최종적으로
+  // 겪는 재시도/폴백 결과는 동일하다. 헤더를 붙일 수 있을 때 붙이는 정도로 충분하다.
+  let appCheckToken = '';
+  try { appCheckToken = await getAppCheckHeaderToken(); }
+  catch (e) { console.warn('[App Check 토큰 발급 실패]', e && e.message); }
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 60000);
   try {
     const resp = await fetch(`${API_BASE}/upload`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-booth-token': BOOTH_TOKEN },
+      headers: { 'Content-Type': 'application/json', 'x-booth-token': BOOTH_TOKEN, 'X-Firebase-AppCheck': appCheckToken },
       body,
       signal: ctrl.signal,
     });
@@ -190,6 +228,8 @@ function init(){
   $('#errBackBtn').addEventListener('click', backToStudio);
   // 첫 더빙 전에 미리 엔진을 준비해 두어 저장 시 대기시간을 줄인다.
   getFFmpeg().catch(e => console.error('[ffmpeg 사전로딩 실패]', e));
+  // App Check도 미리 초기화해 저장 시점의 토큰 발급 대기시간을 줄인다.
+  try { getAppCheckInstance(); } catch (e) { console.error('[App Check 사전초기화 실패]', e); }
   // 감사 발견 반영: 31MB 엔진 파일을 서비스워커로 캐시해, 재부팅/캐시비움
   // 이후에도 행사장 와이파이로 매번 다시 받지 않게 한다. 실패해도 앱 동작엔
   // 지장 없으므로(HTTP 캐시로 폴백) 조용히 무시한다.

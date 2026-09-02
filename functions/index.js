@@ -3,6 +3,7 @@ import { onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { initializeApp } from 'firebase-admin/app';
 import { getStorage } from 'firebase-admin/storage';
+import { getAppCheck } from 'firebase-admin/app-check';
 import express from 'express';
 import { validateUploadRequest, createRateLimiter, chunk } from './validate.js';
 
@@ -79,6 +80,20 @@ app.post('/upload', async (req, res) => {
     if (req.get('x-booth-token') !== BOOTH_TOKEN) {
       console.warn(`[upload:${requestId}] 토큰 불일치`);
       return res.status(403).json({ ok: false, error: '접근 권한이 없습니다.' });
+    }
+    // 2026-09-02, 대표 승인(D2) — Firebase App Check(reCAPTCHA Enterprise)로 BOOTH_TOKEN에
+    // 이중 방어를 더한다. BOOTH_TOKEN은 공개값이라 아는 사람은 누구나 쓸 수 있었지만,
+    // App Check 토큰은 진짜 브라우저에서 reCAPTCHA를 통과해야만 발급된다.
+    const appCheckToken = req.get('x-firebase-appcheck');
+    if (!appCheckToken) {
+      console.warn(`[upload:${requestId}] App Check 토큰 없음`);
+      return res.status(401).json({ ok: false, error: '보안 검증에 실패했습니다.' });
+    }
+    try {
+      await getAppCheck().verifyToken(appCheckToken);
+    } catch (e) {
+      console.warn(`[upload:${requestId}] App Check 토큰 검증 실패: ${e?.message}`);
+      return res.status(401).json({ ok: false, error: '보안 검증에 실패했습니다.' });
     }
     const check = validateUploadRequest(req.body);
     if (!check.ok) {
