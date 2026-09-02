@@ -260,6 +260,12 @@ function iconSvg(genreId){
   return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${GENRE_ICONS[genreId]||''}</svg>`;
 }
 
+// 2026-09-03 발견 반영: 썸네일 <img>에 loading="lazy"를 걸었더니 실사용
+// 브라우저(대표 본인 확인)에서 카드가 까맣게 보이는 문제가 재현됐다 — 이 화면은
+// 절대 스크롤되지 않는 단일 뷰포트라, 뷰포트 교차 판정이 최초 페인트 시점(그리드가
+// aspect-ratio로 아직 레이아웃을 확정하기 전) 크기로 잘못 계산되면 다시 재평가할
+// 스크롤 이벤트 자체가 없어 영영 안 불러와질 수 있다. 썸네일 6장 합쳐 130KB
+// 수준이라 지연로딩 이점도 없어, 그냥 즉시 로딩으로 바꿨다.
 function renderGrid(){
   const g = $('#grid'); g.innerHTML = '';
   GENRES.forEach(x=>{
@@ -268,7 +274,7 @@ function renderGrid(){
     el.style.setProperty('--c', x.color);
     el.innerHTML =
       `<div class="tile-media">
-         <img class="thumb" src="./clips/thumbs/${x.id}.jpg" alt="" loading="lazy">
+         <img class="thumb" src="./clips/thumbs/${x.id}.jpg" alt="">
          <video class="preview" muted playsinline preload="none"></video>
        </div>
        <div class="tile-tint"></div>
