@@ -1,5 +1,10 @@
 node_modules/
+.claude/settings.local.json
 .firebase/
+dist/
+build/
+*.log
+.cache/
 outputs/*
 !outputs/.gitkeep
 tmp/

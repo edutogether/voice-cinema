@@ -19,7 +19,14 @@ jobs:
       - run: npm test
       - name: functions 의존성 취약점 확인 (참고용, 실패해도 CI를 막지 않음)
         working-directory: functions
+        # 종합감사(2026-09-02) 발견 반영: 주석과 달리 continue-on-error가 없어서
+        # 실제로는 high 취약점이 뜨는 순간 이 스텝이 CI 잡을 실패시키고,
+        # deploy.yml의 workflow_run 조건(conclusion == 'success') 때문에 배포
+        # 전체가 막혔다 — Google 쪽 전이 의존성에 high 하나만 새로 잡혀도
+        # 긴급 수정조차 배포할 수 없는 상태였다. 참고용이라는 주석 그대로
+        # 동작하도록 continue-on-error를 추가한다.
         run: npm install && npm audit --audit-level=high
+        continue-on-error: true
 
   e2e:
     runs-on: ubuntu-latest

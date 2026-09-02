@@ -61,40 +61,47 @@ const app = express();
 // 리밋을 완전히 무력화하는 우회로가 된다. 1은 체인의 오른쪽에서 정확히 한 홉만
 // 신뢰해 클라이언트가 앞에 가짜 값을 붙여도 무시한다.
 app.set('trust proxy', 1);
-// MAX_DECODED_BYTES(20MB)를 base64로 인코딩하면 약 4/3배(~27MB)가 되므로,
-// body 파서 한도는 그보다 넉넉히 잡아야 한다(2026-09-01, 12MB/15mb였을 때
-// 실제 클립 교체 후 전 장르 업로드가 이 한도에서 막히는 것을 실측으로 발견).
-app.use(express.json({ limit: '28mb' }));
 
 app.get('/', (req, res) => res.json({ ok: true, service: 'inky-voice-cinema' }));
 
-app.post('/upload', async (req, res) => {
-  // 감사 발견 반영: 업로드마다 짧은 식별자를 남겨, "QR이 안 나와요" 문의가 왔을 때
-  // 로그에서 그 건을 시간순 나열이 아니라 requestId로 바로 찾을 수 있게 한다.
+// 종합감사(2026-09-02) 발견 반영: 예전엔 express.json()이 라우트보다 먼저
+// 전역 등록돼 있어, 토큰/App Check/레이트리밋 검사보다 28MB 본문 파싱이
+// 먼저 실행됐다 — 인증 안 된 요청도 매번 파싱+base64 디코딩 비용(256MiB
+// 인스턴스)을 강제로 치르게 할 수 있었다(보안·비용 이중 문제). 헤더만
+// 보는 검사(레이트리밋/BOOTH_TOKEN/App Check)를 먼저 통과한 요청에만
+// body를 파싱하도록 순서를 바꿨다.
+app.post('/upload', async (req, res, next) => {
   const requestId = crypto.randomBytes(4).toString('hex');
+  req.requestId = requestId;
+  if (isRateLimited(req.ip)) {
+    console.warn(`[upload:${requestId}] 요청 제한 초과`);
+    return res.status(429).json({ ok: false, error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' });
+  }
+  if (req.get('x-booth-token') !== BOOTH_TOKEN) {
+    console.warn(`[upload:${requestId}] 토큰 불일치`);
+    return res.status(403).json({ ok: false, error: '접근 권한이 없습니다.' });
+  }
+  // 2026-09-02, 대표 승인(D2) — Firebase App Check(reCAPTCHA Enterprise)로 BOOTH_TOKEN에
+  // 이중 방어를 더한다. BOOTH_TOKEN은 공개값이라 아는 사람은 누구나 쓸 수 있었지만,
+  // App Check 토큰은 진짜 브라우저에서 reCAPTCHA를 통과해야만 발급된다.
+  const appCheckToken = req.get('x-firebase-appcheck');
+  if (!appCheckToken) {
+    console.warn(`[upload:${requestId}] App Check 토큰 없음`);
+    return res.status(401).json({ ok: false, error: '보안 검증에 실패했습니다.' });
+  }
   try {
-    if (isRateLimited(req.ip)) {
-      console.warn(`[upload:${requestId}] 요청 제한 초과`);
-      return res.status(429).json({ ok: false, error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' });
-    }
-    if (req.get('x-booth-token') !== BOOTH_TOKEN) {
-      console.warn(`[upload:${requestId}] 토큰 불일치`);
-      return res.status(403).json({ ok: false, error: '접근 권한이 없습니다.' });
-    }
-    // 2026-09-02, 대표 승인(D2) — Firebase App Check(reCAPTCHA Enterprise)로 BOOTH_TOKEN에
-    // 이중 방어를 더한다. BOOTH_TOKEN은 공개값이라 아는 사람은 누구나 쓸 수 있었지만,
-    // App Check 토큰은 진짜 브라우저에서 reCAPTCHA를 통과해야만 발급된다.
-    const appCheckToken = req.get('x-firebase-appcheck');
-    if (!appCheckToken) {
-      console.warn(`[upload:${requestId}] App Check 토큰 없음`);
-      return res.status(401).json({ ok: false, error: '보안 검증에 실패했습니다.' });
-    }
-    try {
-      await getAppCheck().verifyToken(appCheckToken);
-    } catch (e) {
-      console.warn(`[upload:${requestId}] App Check 토큰 검증 실패: ${e?.message}`);
-      return res.status(401).json({ ok: false, error: '보안 검증에 실패했습니다.' });
-    }
+    await getAppCheck().verifyToken(appCheckToken);
+  } catch (e) {
+    console.warn(`[upload:${requestId}] App Check 토큰 검증 실패: ${e?.message}`);
+    return res.status(401).json({ ok: false, error: '보안 검증에 실패했습니다.' });
+  }
+  next();
+// MAX_DECODED_BYTES(20MB)를 base64로 인코딩하면 약 4/3배(~27MB)가 되므로,
+// body 파서 한도는 그보다 넉넉히 잡아야 한다(2026-09-01, 12MB/15mb였을 때
+// 실제 클립 교체 후 전 장르 업로드가 이 한도에서 막히는 것을 실측으로 발견).
+}, express.json({ limit: '28mb' }), async (req, res) => {
+  const requestId = req.requestId;
+  try {
     const check = validateUploadRequest(req.body);
     if (!check.ok) {
       console.warn(`[upload:${requestId}] 검증 실패: ${check.error}`);

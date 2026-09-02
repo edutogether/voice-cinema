@@ -66,10 +66,26 @@ export function chunk(array, size) {
 
 // 인스턴스 하나당 최소한의 요청 빈도 제한(재기동되면 초기화되는 메모리 기반이라
 // 완벽하진 않지만, maxInstances 제한과 합쳐지면 스크립트 남용의 비용을 실질적으로 올린다).
+// 종합감사(2026-09-02) 발견 반영: 창(windowMs) 밖으로 나간 타임스탬프는
+// 요청 IP 본인 배열에서만 걸러졌고, 그 IP의 키 자체는 지우지 않아 인스턴스가
+// 오래 살수록(요청이 뜸해진 IP까지 포함해) Map이 단조 증가하는 메모리 누수였다.
+// 매 요청마다 전체 Map을 훑는 건 낭비라, 일정 요청 수마다 한 번씩 전체를
+// 훑어 빈 항목(=최근 windowMs 동안 요청이 없던 IP)의 키를 지운다.
+const PRUNE_EVERY_N_REQUESTS = 200;
+
 export function createRateLimiter({ windowMs = 60 * 1000, max = 10 } = {}) {
   const requestLog = new Map(); // ip -> timestamps[]
+  let requestCount = 0;
   return function isRateLimited(ip) {
     const now = Date.now();
+    requestCount++;
+    if (requestCount % PRUNE_EVERY_N_REQUESTS === 0) {
+      for (const [key, timestamps] of requestLog) {
+        const fresh = timestamps.filter((t) => now - t < windowMs);
+        if (fresh.length === 0) requestLog.delete(key);
+        else requestLog.set(key, fresh);
+      }
+    }
     const arr = (requestLog.get(ip) || []).filter((t) => now - t < windowMs);
     arr.push(now);
     requestLog.set(ip, arr);

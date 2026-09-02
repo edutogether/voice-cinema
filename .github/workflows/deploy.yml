@@ -14,6 +14,15 @@ on:
     types: [completed]
     branches: [master]
 
+# 종합감사(2026-09-02) 발견 반영: concurrency 그룹이 없어서 연속 push로 CI가
+# 두 번 이상 겹쳐 끝나면 이 워크플로우도 겹쳐 실행돼 배포 순서가 역전(늦게
+# 커밋한 게 먼저 배포되고, 그 뒤에 이전 커밋이 나중에 덮어씀)될 수 있었다.
+# cancel-in-progress는 쓰지 않는다 — firebase deploy 도중 잡을 강제 종료하면
+# functions/hosting 일부만 반영된 상태로 끊길 수 있어, 겹치지 않게 순서대로
+# 대기시키는 쪽(기본값)이 더 안전하다.
+concurrency:
+  group: deploy-voice-cinema
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -38,3 +47,17 @@ jobs:
       # 순서를 명시한다 — 코디세이 기준(규칙/functions 먼저, hosting 나중)과 동일.
       - run: npx firebase-tools deploy --only storage,functions --project inky-voice-cinema --non-interactive
       - run: npx firebase-tools deploy --only hosting:voice-cinema --project inky-voice-cinema --non-interactive
+      # 종합감사(2026-09-02) 발견 반영: 로컬 E2E는 통과했는데 배포된 사이트에서만
+      # CSP가 인라인 onclick 핸들러를 막아 버튼 8개가 죽었던 회귀(CLAUDE.md 기록)를
+      # 이 파이프라인이 자동으로 잡을 방법이 없었다 — Hosting과 Functions가 실제로
+      # 살아있는지 배포 직후 최소한으로 확인한다.
+      - name: 배포 후 라이브 스모크 검증
+        run: |
+          set -e
+          hosting_status=$(curl -s -o /dev/null -w '%{http_code}' https://voice-cinema.web.app/)
+          if [ "$hosting_status" != "200" ]; then
+            echo "Hosting 응답이 200이 아님: $hosting_status"
+            exit 1
+          fi
+          functions_body=$(curl -s https://asia-northeast3-inky-voice-cinema.cloudfunctions.net/voiceCinema/)
+          echo "$functions_body" | grep -q '"ok":true' || { echo "Functions 응답에 ok:true 없음: $functions_body"; exit 1; }
