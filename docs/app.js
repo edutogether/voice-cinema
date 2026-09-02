@@ -70,7 +70,16 @@ const GENRES = [
   { id: 'drama',     name: '드라마',     color: '#c9a24b' },
   { id: 'sitcom',    name: '시트콤',     color: '#3f7fb8' },
 ];
-const GENRE_SUB = {fantasy:'주문을 외쳐봐!', animation:'친구와 대화하기', horror:'으악! 비명 연기', action:'멋진 한마디', drama:'감정을 담아서', sitcom:'웃음 빵! 만담'};
+// 2026-09-03 5차, 대표 지시: 부제가 너무 짧고 밋밋해 한 문장 느낌으로 다시 씀.
+// 대표 표준 규칙(전 앱 공통) — 느낌표(!) 앞에는 항상 한 칸 띄어쓰기.
+const GENRE_SUB = {
+  fantasy: '마법 지팡이를 들고, 주문 한 줄로 세상을 뒤바꿔보세요 !',
+  animation: '친구가 되어, 마음을 담은 목소리로 대화를 나눠보세요 !',
+  horror: '어둠 속 발소리, 온몸이 서늘해지는 비명을 질러보세요 !',
+  action: '위기의 순간, 가장 멋진 한마디로 상황을 뒤집어보세요 !',
+  drama: '말하지 못했던 진심을, 떨리는 목소리에 담아보세요 !',
+  sitcom: '빵 터지는 타이밍, 웃음 가득한 만담을 펼쳐보세요 !',
+};
 // 마우스 호버가 실제로 되는 입력장치(데스크탑 마우스)에서만 썸네일 호버 재생을 켠다 —
 // 터치스크린(행사장 태블릿 등)은 hover 개념 자체가 없어 클립을 미리 받을 이유가 없다.
 const SUPPORTS_HOVER_PREVIEW = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
@@ -290,8 +299,10 @@ function renderGrid(){
        <div class="tile-tint"></div>
        <div class="tile-scrim"></div>
        <div class="tile-body">
-         <div class="ic">${iconSvg(x.id)}</div>
-         <div class="gname">${x.name}</div>
+         <div class="gname-row">
+           <div class="ic">${iconSvg(x.id)}</div>
+           <div class="gname">${x.name}</div>
+         </div>
          <div class="gsub">${GENRE_SUB[x.id]||''}</div>
        </div>`;
     el.onclick = ()=>openStudio(x);

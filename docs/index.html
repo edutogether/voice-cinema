@@ -81,12 +81,12 @@
   .view.active{display:flex; animation:fade .35s ease;}
   @keyframes fade{from{opacity:0; transform:translateY(8px);}to{opacity:1; transform:none;}}
 
-  /* ── 헤더 (2026-09-03 4차 정정 — 팀장 세션이 3차 지시를 잘못 전달했다고
-     정정: "바" 컨테이너에는 태그라인만 담고, 제목은 박스 밖 원래 자리로) ── */
+  /* ── 헤더 (2026-09-03 4차 정정: "바" 컨테이너에는 태그라인만.
+     5차, 대표 지시: 제목이 먼저, 태그라인이 그 아래로 순서 정정) ── */
   @keyframes blink{50%{opacity:.25;}}
   .brand{text-align:center; margin:0 auto clamp(10px,1.6vw,18px);}
   .tagline-top{display:inline-block; color:var(--muted); font-size:clamp(12px,1.5vw,15px);
-    margin:0 0 10px; letter-spacing:.04em; font-weight:500;
+    margin:10px 0 0; letter-spacing:.04em; font-weight:500;
     background:linear-gradient(160deg,rgba(255,255,255,.035),rgba(255,255,255,.012));
     border:1px solid var(--line); border-radius:999px; padding:7px 20px;}
   h1{font-size:clamp(28px,5vw,48px); line-height:1.05; margin:0; font-weight:800; letter-spacing:-.01em;}
@@ -114,7 +114,7 @@
      유지하되 스크롤 없이 한 화면에 맞도록 크기를 되돌린다(1차 크기보다는
      살짝 크게, wrap 폭을 1560px→1680px 정도로만 완만하게 키움). */
   .grid{flex:1; min-height:0; display:grid; grid-template-columns:repeat(2,1fr); grid-template-rows:repeat(3,1fr);
-    gap:clamp(12px,2vw,20px);}
+    gap:clamp(14px,2.3vw,24px);}
   @media (min-width:760px){
     .grid{grid-template-columns:repeat(3,1fr); grid-template-rows:none; align-content:center;}
     .tile{aspect-ratio:16/9;}
@@ -135,10 +135,13 @@
   .tile-scrim{position:absolute; inset:0; background:linear-gradient(180deg, rgba(5,7,15,.05) 35%, rgba(5,7,15,.92) 100%); z-index:1;}
   .tile-body{position:absolute; left:0; right:0; bottom:0; z-index:2; padding:clamp(14px,2.4vw,24px);
     display:flex; flex-direction:column; gap:6px;}
-  .tile-body .ic{color:var(--c); filter:drop-shadow(0 4px 10px rgba(0,0,0,.5));}
-  .tile-body .ic svg{width:clamp(26px,3.6vw,38px); height:clamp(26px,3.6vw,38px); display:block;}
+  /* 2026-09-03 5차, 대표 지시: 아이콘을 제목 위 별도 줄이 아니라 제목과 같은 줄
+     왼쪽에 인라인으로, 색도 장르색 대신 흰색으로 통일. */
+  .tile-body .gname-row{display:flex; align-items:center; gap:9px;}
+  .tile-body .ic{color:#fff; filter:drop-shadow(0 4px 10px rgba(0,0,0,.5)); display:flex; flex:none;}
+  .tile-body .ic svg{width:clamp(20px,2.8vw,28px); height:clamp(20px,2.8vw,28px); display:block;}
   .tile-body .gname{font-size:clamp(19px,2.6vw,28px); font-weight:800;}
-  .tile-body .gsub{font-size:clamp(11px,1.5vw,14px); color:var(--muted);}
+  .tile-body .gsub{font-size:clamp(12px,1.6vw,15px); color:var(--muted); line-height:1.4;}
   .tile.locked{opacity:.45; cursor:not-allowed;}
   .tile.locked:active{transform:none;}
   .badge{position:absolute; top:12px; right:12px; font-size:11px; color:var(--gold); border:1px solid var(--line); border-radius:999px; padding:3px 9px; background:rgba(0,0,0,.25); z-index:2;}
@@ -209,8 +212,8 @@
      링크만 남김. 2026-09-03 3차(대표 지시): 화면 맨 아래 가운데로 옮기고,
      Be a Googler류의 순수 텍스트 링크(배경/테두리 없이, 작고 조용한 밑줄 링크)
      톤으로 다듬었다. */
-  .privacylink{display:inline-block; margin:10px auto 0; font-size:12px; color:var(--muted);
-    text-decoration:underline; text-underline-offset:3px; letter-spacing:.01em;
+  .privacylink{display:inline-block; margin:10px auto 0; font-size:14px; color:var(--muted);
+    text-decoration:underline; text-underline-offset:3px;
     transition:color .2s;}
   .privacylink:hover{color:var(--gold);}
 
@@ -250,8 +253,8 @@
   <!-- ════ 메인: 장르 선택 ════ -->
   <section id="home" class="view active">
     <div class="brand">
-      <p class="tagline-top">상상을 현실로 — 내 목소리로 완성하는 영화</p>
       <h1>InKY <span class="gold">Voice Cinema</span></h1>
+      <p class="tagline-top">상상을 현실로 — 내 목소리로 완성하는 영화</p>
     </div>
     <div class="enginebar" id="enginebar">엔진 준비 중… <b id="engineProg">0%</b></div>
     <div class="grid" id="grid"></div>
