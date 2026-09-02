@@ -18,9 +18,16 @@ test.describe('홈 화면', () => {
     }
   });
 
-  test('교육청 주최 안내 문구가 보인다 (2026-08-27 대표 확인 반영)', async ({ page }) => {
+  // 2026-09-03: 홈 화면 하단에 있던 교육청 주최 안내 문구가 개인정보처리방침
+  // 별도 페이지(privacy.html)로 옮겨졌다 — 홈 화면엔 그 페이지로 가는 링크만
+  // 남고, 실제 문구는 그 페이지에서 확인한다(대표 지시, 홈 화면 개편).
+  test('교육청 주최 안내 문구가 개인정보처리방침 페이지에 보인다 (2026-08-27 대표 확인, 2026-09-03 별도 페이지로 이전)', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('.privacy')).toContainText('인천광역시교육청');
+    const link = page.locator('.privacylink');
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute('href', './privacy.html');
+    await page.goto('/privacy.html');
+    await expect(page.locator('body')).toContainText('인천광역시교육청');
   });
 });
 

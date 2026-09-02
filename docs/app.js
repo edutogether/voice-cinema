@@ -47,15 +47,30 @@ const FIREBASE_CONFIG = {
   appId: '1:710797378638:web:5d8b0fe73666bb84026f1f',
 };
 const RECAPTCHA_ENTERPRISE_SITE_KEY = '6LdZY6QtAAAAAAqN9jOJRravmX7C7FuwvJpQ6Gm9';
+// 대표 지시(2026-09-03, 라이브 스크린샷 보고 장르 선택 화면 개편) — 이모지 대신
+// Lucide 아이콘(lucide-static@1.39.0, ISC 라이선스)의 원본 SVG 마크업을 그대로
+// 인라인으로 박아둔다. CSP가 script-src 'self'라 런타임에 CDN에서 아이콘 라이브러리를
+// 불러올 수 없어서, 빌드 시점(이 파일 작성 시)에 필요한 아이콘 6개만 직접 벤더링했다.
+const GENRE_ICONS = {
+  fantasy: '<path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72" /><path d="m14 7 3 3" /><path d="M5 6v4" /><path d="M19 14v4" /><path d="M10 2v2" /><path d="M7 8H3" /><path d="M21 16h-4" /><path d="M11 3H9" />',
+  animation: '<path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" /><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />',
+  horror: '<path d="M15 10v1" /><path d="M7.528 20.472a1.6 1.6 0 0 1 2.277 0l1.057 1.056a1.6 1.6 0 0 0 2.276 0l1.057-1.056a1.6 1.6 0 0 1 2.277 0l1.114 1.114a1.4 1.4 0 0 0 2.414-1V10a8 8 0 0 0-16 0v10.586a1.4 1.4 0 0 0 2.414 1z" /><path d="M9 10v1" />',
+  action: '<path d="M15.914 4a1.5 1.5 0 0 0-2.474-1.561l-9 9A1.5 1.5 0 0 0 5.5 14h4.002a.5.5 0 0 1 .471.666L8.086 20a1.5 1.5 0 0 0 2.475 1.56l9-9A1.5 1.5 0 0 0 18.5 10h-3.997a.5.5 0 0 1-.472-.667z" />',
+  drama: '<path d="M10 11h.01" /><path d="M14 6h.01" /><path d="M18 6h.01" /><path d="M6.5 13.1h.01" /><path d="M22 5c0 9-4 12-6 12s-6-3-6-12c0-2 2-3 6-3s6 1 6 3" /><path d="M17.4 9.9c-.8.8-2 .8-2.8 0" /><path d="M10.1 7.1C9 7.2 7.7 7.7 6 8.6c-3.5 2-4.7 3.9-3.7 5.6 4.5 7.8 9.5 8.4 11.2 7.4.9-.5 1.9-2.1 1.9-4.7" /><path d="M9.1 16.5c.3-1.1 1.4-1.7 2.4-1.4" />',
+  sitcom: '<path d="M15 10V9" /><path d="M7.084 14.302a5.12 5.12 0 0 0 9.833 0 .24.24 0 0 0-.235-.302H7.32a.24.24 0 0 0-.235.302" /><path d="M9 10V9" /><circle cx="12" cy="12" r="10" />',
+};
 const GENRES = [
-  { id: 'fantasy',   name: '판타지',     emoji: '🪄', color: '#8b6cff' },
-  { id: 'animation', name: '애니메이션', emoji: '🎨', color: '#ff9a3d' },
-  { id: 'horror',    name: '호러',       emoji: '👻', color: '#39d59a' },
-  { id: 'action',    name: '액션',       emoji: '💥', color: '#ff5470' },
-  { id: 'drama',     name: '드라마',     emoji: '🌅', color: '#ffc24d' },
-  { id: 'sitcom',    name: '시트콤',     emoji: '😂', color: '#4da6ff' },
+  { id: 'fantasy',   name: '판타지',     color: '#8b6cff' },
+  { id: 'animation', name: '애니메이션', color: '#ff9a3d' },
+  { id: 'horror',    name: '호러',       color: '#39d59a' },
+  { id: 'action',    name: '액션',       color: '#ff5470' },
+  { id: 'drama',     name: '드라마',     color: '#ffc24d' },
+  { id: 'sitcom',    name: '시트콤',     color: '#4da6ff' },
 ];
 const GENRE_SUB = {fantasy:'주문을 외쳐봐!', animation:'친구와 대화하기', horror:'으악! 비명 연기', action:'멋진 한마디', drama:'감정을 담아서', sitcom:'웃음 빵! 만담'};
+// 마우스 호버가 실제로 되는 입력장치(데스크탑 마우스)에서만 썸네일 호버 재생을 켠다 —
+// 터치스크린(행사장 태블릿 등)은 hover 개념 자체가 없어 클립을 미리 받을 이유가 없다.
+const SUPPORTS_HOVER_PREVIEW = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
 let current = null;
 let micStream = null, recorder = null, chunks = [], recMime = '', recordedBlob = null, busy = false, previewing = false;
@@ -238,6 +253,10 @@ function init(){
   }
 }
 
+function iconSvg(genreId){
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${GENRE_ICONS[genreId]||''}</svg>`;
+}
+
 function renderGrid(){
   const g = $('#grid'); g.innerHTML = '';
   GENRES.forEach(x=>{
@@ -245,18 +264,57 @@ function renderGrid(){
     el.className = 'tile';
     el.style.setProperty('--c', x.color);
     el.innerHTML =
-      `<div class="emoji">${x.emoji}</div>
-       <div class="gname">${x.name}</div>
-       <div class="gsub">${GENRE_SUB[x.id]||''}</div>`;
+      `<div class="tile-media">
+         <img class="thumb" src="./clips/thumbs/${x.id}.jpg" alt="" loading="lazy">
+         <video class="preview" muted playsinline preload="none"></video>
+       </div>
+       <div class="tile-scrim"></div>
+       <div class="tile-body">
+         <div class="ic">${iconSvg(x.id)}</div>
+         <div class="gname">${x.name}</div>
+         <div class="gsub">${GENRE_SUB[x.id]||''}</div>
+       </div>`;
     el.onclick = ()=>openStudio(x);
+    if (SUPPORTS_HOVER_PREVIEW) wireTilePreview(el, x.id);
     g.appendChild(el);
+  });
+}
+
+// 유튜브 썸네일 호버 재생 방식(2026-09-03, 대표 지시) — 평소엔 정지된 첫 프레임
+// 이미지만 보여주다가, 마우스를 올리면 그때 영상을 내려받아 소리와 함께 재생한다.
+// 6개를 전부 미리 받아두지 않는 이유: 행사장 와이파이로 78MB(6개 클립)를 화면
+// 진입 즉시 받으면 첫 화면이 느려진다 — 실제로 마우스가 올라간 것만 그때 받는다.
+function wireTilePreview(el, genreId){
+  const img = el.querySelector('.thumb');
+  const video = el.querySelector('.preview');
+  let hoverToken = 0;
+
+  el.addEventListener('mouseenter', () => {
+    const myToken = ++hoverToken;
+    if (!video.src) video.src = './clips/' + genreId + '.mp4';
+    video.currentTime = 0;
+    video.muted = false;
+    const showVideo = () => { if (myToken === hoverToken) { img.style.opacity = '0'; video.style.opacity = '1'; } };
+    video.play().then(showVideo).catch(() => {
+      // 브라우저가 소리 있는 자동재생을 막으면(정책상 마우스 호버는 클릭만큼
+      // 확실한 사용자 제스처로 안 쳐줄 수 있음) 무음으로라도 재생을 시도한다.
+      video.muted = true;
+      video.play().then(showVideo).catch(()=>{});
+    });
+  });
+  el.addEventListener('mouseleave', () => {
+    hoverToken++;
+    video.pause();
+    img.style.opacity = '1';
+    video.style.opacity = '0';
   });
 }
 
 // ── 스튜디오 진입 ──
 function openStudio(g){
   current = g;
-  $('#chipEmoji').textContent = g.emoji;
+  $('#chipEmoji').innerHTML = iconSvg(g.id);
+  $('#chipEmoji').style.color = g.color;
   $('#chipName').textContent = g.name;
   const v = $('#clip');
   v.src = './clips/' + g.id + '.mp4';
