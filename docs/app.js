@@ -59,13 +59,16 @@ const GENRE_ICONS = {
   drama: '<path d="M10 11h.01" /><path d="M14 6h.01" /><path d="M18 6h.01" /><path d="M6.5 13.1h.01" /><path d="M22 5c0 9-4 12-6 12s-6-3-6-12c0-2 2-3 6-3s6 1 6 3" /><path d="M17.4 9.9c-.8.8-2 .8-2.8 0" /><path d="M10.1 7.1C9 7.2 7.7 7.7 6 8.6c-3.5 2-4.7 3.9-3.7 5.6 4.5 7.8 9.5 8.4 11.2 7.4.9-.5 1.9-2.1 1.9-4.7" /><path d="M9.1 16.5c.3-1.1 1.4-1.7 2.4-1.4" />',
   sitcom: '<path d="M15 10V9" /><path d="M7.084 14.302a5.12 5.12 0 0 0 9.833 0 .24.24 0 0 0-.235-.302H7.32a.24.24 0 0 0-.235.302" /><path d="M9 10V9" /><circle cx="12" cy="12" r="10" />',
 };
+// 2026-09-03 대표 지시: 원래 색이 너무 원색이라 "저렴해 보인다"는 피드백 —
+// 채도를 낮추고 톤을 깊게 눌러 보석빛(자수정/구리/에메랄드/가넷/앤틱골드/사파이어)
+// 느낌으로 업그레이드했다.
 const GENRES = [
-  { id: 'fantasy',   name: '판타지',     color: '#8b6cff' },
-  { id: 'animation', name: '애니메이션', color: '#ff9a3d' },
-  { id: 'horror',    name: '호러',       color: '#39d59a' },
-  { id: 'action',    name: '액션',       color: '#ff5470' },
-  { id: 'drama',     name: '드라마',     color: '#ffc24d' },
-  { id: 'sitcom',    name: '시트콤',     color: '#4da6ff' },
+  { id: 'fantasy',   name: '판타지',     color: '#8a63d2' },
+  { id: 'animation', name: '애니메이션', color: '#d97b3f' },
+  { id: 'horror',    name: '호러',       color: '#2f9e6e' },
+  { id: 'action',    name: '액션',       color: '#c94f5c' },
+  { id: 'drama',     name: '드라마',     color: '#c9a24b' },
+  { id: 'sitcom',    name: '시트콤',     color: '#3f7fb8' },
 ];
 const GENRE_SUB = {fantasy:'주문을 외쳐봐!', animation:'친구와 대화하기', horror:'으악! 비명 연기', action:'멋진 한마디', drama:'감정을 담아서', sitcom:'웃음 빵! 만담'};
 // 마우스 호버가 실제로 되는 입력장치(데스크탑 마우스)에서만 썸네일 호버 재생을 켠다 —
@@ -268,6 +271,7 @@ function renderGrid(){
          <img class="thumb" src="./clips/thumbs/${x.id}.jpg" alt="" loading="lazy">
          <video class="preview" muted playsinline preload="none"></video>
        </div>
+       <div class="tile-tint"></div>
        <div class="tile-scrim"></div>
        <div class="tile-body">
          <div class="ic">${iconSvg(x.id)}</div>
