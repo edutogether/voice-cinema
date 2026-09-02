@@ -16,7 +16,7 @@
 // 3차 개편(호버 리소스 반환/헤더 바/2배 카드 등)이 반영 안 된 옛 화면을
 // 계속 보여줬다. app-shell 내용이 바뀌는 배포마다 CACHE_NAME을 올리는 게
 // 유일하게 확실한 방법이라 이번에도 올린다.
-const CACHE_NAME = 'inky-voice-cinema-engine-v7';
+const CACHE_NAME = 'inky-voice-cinema-engine-v8';
 const PRECACHE_URLS = [
   './vendor/ffmpeg/classes.js',
   './vendor/ffmpeg/const.js',

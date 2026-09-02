@@ -212,10 +212,13 @@
      링크만 남김. 2026-09-03 3차(대표 지시): 화면 맨 아래 가운데로 옮기고,
      Be a Googler류의 순수 텍스트 링크(배경/테두리 없이, 작고 조용한 밑줄 링크)
      톤으로 다듬었다. */
-  .privacylink{display:inline-block; margin:10px auto 0; font-size:14px; color:var(--muted);
-    text-decoration:underline; text-underline-offset:3px;
-    transition:color .2s;}
-  .privacylink:hover{color:var(--gold);}
+  /* 2026-09-03 6차: 팀장 세션이 참고 사이트(g00gler.web.app)의 실제 computed
+     style 값을 그대로 전달해 그 값으로 맞췄다. */
+  .privacylink{display:inline-block; margin:10px auto 0;
+    font-family:'Pretendard Variable','Pretendard','SUIT','Noto Sans KR',system-ui,sans-serif;
+    font-size:11px; font-weight:600; color:rgba(255,255,255,.82);
+    text-decoration:none; transition:color .2s;}
+  .privacylink:hover{color:var(--gold); text-decoration:underline;}
 
   /* ── 스플래시 (2026-09-03 발견 반영: "렉걸린 듯" 버벅임의 원인 —
      #splash가 body를 완전히 덮는 동안에도 body의 무거운 배경(라디얼
