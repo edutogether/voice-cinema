@@ -10,7 +10,13 @@
 // sw.js 파일 자체의 바이트가 달라져 브라우저가 새 서비스워커로 install/activate를
 // 다시 돌리므로(오래 안 열어본 기기까지 포함해) 이 세션이 지금까지 만든 옛 캐시를
 // 강제로 무효화한다.
-const CACHE_NAME = 'inky-voice-cinema-engine-v3';
+// 2026-09-03 발견 반영(2): sw.js 자체를 안 건드리고 app.js/index.html만 바꾼
+// 배포에서도 같은 stale-cache 폴백이 재현됐다 — CACHE_NAME은 v3 그대로였지만
+// v3 캐시가 "직전 배포(2차 개편) 시점"에 채워진 채로 남아있어, 방금 배포한
+// 3차 개편(호버 리소스 반환/헤더 바/2배 카드 등)이 반영 안 된 옛 화면을
+// 계속 보여줬다. app-shell 내용이 바뀌는 배포마다 CACHE_NAME을 올리는 게
+// 유일하게 확실한 방법이라 이번에도 올린다.
+const CACHE_NAME = 'inky-voice-cinema-engine-v4';
 const PRECACHE_URLS = [
   './vendor/ffmpeg/classes.js',
   './vendor/ffmpeg/const.js',
