@@ -327,6 +327,14 @@ function wireTilePreview(el, genreId){
     video.pause();
     img.style.opacity = '1';
     video.style.opacity = '0';
+    // 2026-09-03 발견 반영: pause()만 하고 src는 그대로 둬서, 여러 카드를 잇달아
+    // 호버하며 둘러보면(실제로 대표님이 겪은 패턴) 디코더 자원을 쥔 <video>가
+    // 계속 쌓여 브라우저의 동시 비디오 디코드 한도에 걸리는 것으로 추정된다 —
+    // 특정 카드가 항상 고장난 게 아니라 "몇 번째로 호버했는지"에 따라 달라지는
+    // 증상과 일치한다. 마우스를 떼면 디코더 자원 자체를 반환해 다음 카드가
+    // 항상 새로 디코드를 시작할 수 있게 한다.
+    video.removeAttribute('src');
+    video.load();
   });
 }
 
