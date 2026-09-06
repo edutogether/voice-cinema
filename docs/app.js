@@ -180,6 +180,17 @@ async function mergeClip(genreId, audioBlob, mime){
 }
 
 // ── Firebase Storage 업로드 (Cloud Functions 경유, 브라우저에서 직접 호출) ──
+// 2026-09-06, 대표 지시 — 크롬 DevTools 표준 프리셋(Fast 3G: 업로드 0.75Mbps·지연
+// 560ms / Slow 3G: 0.4Mbps·지연 2000ms)으로 실측해 정한 값. 설계 목표는 "Fast 3G에서는
+// 성공, Slow 3G는 억지로 성공시키려 하지 말고 적당한 시간 안에 실패 감지 후 로컬
+// 폴백"이다 — 720p 재인코딩(제안 중, 평균 5.91MB) 기준 base64 포함 전송량(~7.88MB)을
+// 로컬에서 같은 대역폭/지연으로 재현해 Fast 3G 93.9초·Slow 3G 171.0초를 실측했다.
+// 110초로 잡으면 Fast 3G는 여유 있게 성공(약 16초 여유)하고, Slow 3G는 171초까지
+// 안 기다리고 110초에서 타임아웃으로 끊겨 폴백으로 넘어간다. 이 값은 반드시
+// functions/index.js의 onRequest timeoutSeconds와 같이 맞춰야 한다 — Cloud Run
+// 기반이라 서버가 그 시간에 도달하면 클라이언트 설정과 무관하게 먼저 끊는다.
+const UPLOAD_TIMEOUT_MS = 110000;
+
 async function uploadOnce(dataBase64, filename){
   const body = JSON.stringify({ filename, mimeType: 'video/mp4', dataBase64 });
   // App Check 토큰 발급 자체가 실패해도(reCAPTCHA 차단 등) 여기서 미리 포기하지 않고
@@ -190,7 +201,7 @@ async function uploadOnce(dataBase64, filename){
   try { appCheckToken = await getAppCheckHeaderToken(); }
   catch (e) { console.warn('[App Check 토큰 발급 실패]', e && e.message); }
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 60000);
+  const timer = setTimeout(() => ctrl.abort(), UPLOAD_TIMEOUT_MS);
   try {
     const resp = await fetch(`${API_BASE}/upload`, {
       method: 'POST',
@@ -210,16 +221,25 @@ async function uploadOnce(dataBase64, filename){
 }
 
 // 감사 발견 반영: 부스 와이파이는 순간적으로 끊기는 일이 흔한데 재시도가 0회면
-// 그 한 번의 끊김만으로 영구히 로컬 폴백으로 떨어졌다 — 1회만 재시도한다.
+// 그 한 번의 끊김만으로 영구히 로컬 폴백으로 떨어졌다 — 2026-09-06 대표 지시로
+// 1회→2회로 늘렸다. shouldRetryUpload()가 타임아웃(AbortError)은 재시도 대상에서
+// 이미 빼두므로(재시도해도 똑같이 걸릴 게 뻔해서), Slow 3G처럼 타임아웃으로 끝나는
+// 경우는 여기서 늘어난 재시도 횟수와 무관하게 1회 만에 바로 폴백으로 넘어간다 —
+// 재시도 2회는 순간적 끊김 등 타임아웃이 아닌 실패에만 적용된다.
 async function uploadToCloud(blob, filename){
   const dataBase64 = await blobToB64(blob);
-  try {
-    return await uploadOnce(dataBase64, filename);
-  } catch (e) {
-    if (!shouldRetryUpload(e)) throw e; // 이미 60초 기다렸다면 재시도해도 소용없음
-    console.warn('[업로드 1차 실패, 재시도]', e && e.message);
-    return await uploadOnce(dataBase64, filename);
+  const MAX_ATTEMPTS = 3; // 최초 시도 + 재시도 2회
+  let lastErr;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      return await uploadOnce(dataBase64, filename);
+    } catch (e) {
+      lastErr = e;
+      if (attempt === MAX_ATTEMPTS || !shouldRetryUpload(e)) throw e;
+      console.warn(`[업로드 ${attempt}차 실패, 재시도]`, e && e.message);
+    }
   }
+  throw lastErr;
 }
 
 function makeQR(text){

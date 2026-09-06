@@ -137,11 +137,14 @@ const ALLOWED_ORIGINS = [
   /^http:\/\/127\.0\.0\.1:(5500|8080)$/,
 ];
 
+// 2026-09-06, 대표 지시로 60초→110초 — Cloud Run 기반이라 클라이언트의
+// AbortController 설정과 무관하게 이 시간이 지나면 서버가 먼저 연결을 끊는다.
+// docs/app.js의 UPLOAD_TIMEOUT_MS와 반드시 같은 값으로 맞출 것(그쪽에 산출 근거 있음).
 export const voiceCinema = onRequest(
   {
     region: 'asia-northeast3',
     memory: '256MiB',
-    timeoutSeconds: 60,
+    timeoutSeconds: 110,
     maxInstances: 10,
     cors: ALLOWED_ORIGINS,
   },
