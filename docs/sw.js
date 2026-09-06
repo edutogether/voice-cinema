@@ -16,7 +16,10 @@
 // 3차 개편(호버 리소스 반환/헤더 바/2배 카드 등)이 반영 안 된 옛 화면을
 // 계속 보여줬다. app-shell 내용이 바뀌는 배포마다 CACHE_NAME을 올리는 게
 // 유일하게 확실한 방법이라 이번에도 올린다.
-const CACHE_NAME = 'inky-voice-cinema-engine-v9';
+// 2026-09-06: 클립 6종을 720p로 교체(용량 축소, 파일명은 그대로)했다 — sw.js 자체는
+// 안 바꾸는 배포지만, isClip 런타임 캐시가 옛(1080p) 바이트를 파일명 그대로 들고
+// 있을 수 있어 CACHE_NAME을 올려 강제로 새로 받게 한다.
+const CACHE_NAME = 'inky-voice-cinema-engine-v10';
 const PRECACHE_URLS = [
   './vendor/ffmpeg/classes.js',
   './vendor/ffmpeg/const.js',
