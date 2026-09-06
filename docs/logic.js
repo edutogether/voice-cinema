@@ -27,7 +27,7 @@ export function pickSupportedMime(candidates, isTypeSupported) {
 }
 
 // uploadToCloud()에서 업로드 1차 실패 후 재시도할지 판단한다.
-// AbortError(이미 60초 기다린 자체 타임아웃)는 재시도해도 소용없어 제외한다.
+// AbortError(이미 UPLOAD_TIMEOUT_MS만큼 기다린 자체 타임아웃)는 재시도해도 소용없어 제외한다.
 export function shouldRetryUpload(error) {
   return !(error && error.name === 'AbortError');
 }

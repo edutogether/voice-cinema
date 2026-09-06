@@ -19,7 +19,11 @@
 // 2026-09-06: 클립 6종을 720p로 교체(용량 축소, 파일명은 그대로)했다 — sw.js 자체는
 // 안 바꾸는 배포지만, isClip 런타임 캐시가 옛(1080p) 바이트를 파일명 그대로 들고
 // 있을 수 있어 CACHE_NAME을 올려 강제로 새로 받게 한다.
-const CACHE_NAME = 'inky-voice-cinema-engine-v10';
+// 2026-09-07 종합감사 발견 반영: app.js가 정적으로 import하는
+// vendor/firebase/firebase-app-check.js가 캐시 목록 어디에도 없어, 오프라인에서
+// 탭을 새로 열면 app.js 모듈 그래프 전체가 로드에 실패해 앱이 통째로 죽었다
+// (앱 셸 캐싱을 넣은 목적 자체가 무력화된 상태였다). 목록에 추가하며 CACHE_NAME도 올린다.
+const CACHE_NAME = 'inky-voice-cinema-engine-v11';
 const PRECACHE_URLS = [
   './vendor/ffmpeg/classes.js',
   './vendor/ffmpeg/const.js',
@@ -35,6 +39,10 @@ const PRECACHE_URLS = [
   './vendor/ffmpeg-util/index.js',
   './vendor/ffmpeg-util/types.js',
   './vendor/qrcode.js',
+  // App Check 번들(2026-09-02 도입) — app.js 최상단의 정적 import 대상이라
+  // 이게 없으면 오프라인에서 app.js 자체가 실행조차 되지 않는다. 엔진/qrcode와
+  // 같은 성격(재배포 전까지 바뀌지 않는 벤더 파일)이라 같은 캐시우선 경로에 둔다.
+  './vendor/firebase/firebase-app-check.js',
 ];
 
 // 종합감사(2026-09-02) 발견 반영: 엔진만 캐시하고 앱 셸(index.html/app.js/logic.js)은
@@ -45,7 +53,9 @@ const PRECACHE_URLS = [
 // 느려지고 느린 와이파이에서 install 자체가 실패할 위험이 있다 — 그래서 앱 셸은
 // install 시점에 즉시 프리캐시하되, 클립은 실제로 그 장르를 한 번 재생/로드한
 // 뒤부터 캐시에 쌓이는 방식(runtime caching)으로 나눈다.
-const APP_SHELL_URLS = ['./', './index.html', './app.js', './logic.js'];
+// privacy.html은 2026-09-03에 홈 화면에서 분리해 새로 만든 페이지인데 이 목록에
+// 반영되지 않아, 오프라인에서 개인정보처리방침 링크만 깨져 있었다 — 같이 넣는다.
+const APP_SHELL_URLS = ['./', './index.html', './app.js', './logic.js', './privacy.html'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

@@ -33,7 +33,7 @@ test('pickSupportedMime: 아무것도 지원 안 하면 빈 문자열(MediaRecor
   expect(pickSupportedMime(['audio/webm', 'audio/mp4'], () => false)).toBe('');
 });
 
-test('shouldRetryUpload: AbortError는 재시도하지 않는다 (이미 60초 기다림)', () => {
+test('shouldRetryUpload: AbortError는 재시도하지 않는다 (이미 타임아웃만큼 기다림)', () => {
   const abortErr = new Error('aborted');
   abortErr.name = 'AbortError';
   expect(shouldRetryUpload(abortErr)).toBe(false);
