@@ -2,17 +2,19 @@
   "name": "inky-voice-cinema",
   "version": "1.0.0",
   "description": "잉키 보이스 시네마 - 영화제 더빙 놀이 부스 프로그램",
+  "type": "module",
   "engines": {
     "node": ">=18"
   },
   "scripts": {
     "lint": "eslint .",
-    "test": "node --test docs/test/*.test.js test/*.test.js && cd functions && npm test",
+    "test": "vitest run && cd functions && npm test",
     "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.62.1",
-    "eslint": "^10.9.1"
+    "eslint": "^10.9.1",
+    "vitest": "^5.0.0"
   }
 }

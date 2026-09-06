@@ -5,8 +5,7 @@
 // 두 파일을 실제로 import하지 않고(functions/index.js는 firebase-admin 등
 // functions/node_modules 안에만 있는 의존성을 로드하려 해서 이 위치에서 import가
 // 실패한다) 소스 텍스트에서 정규식으로 뽑아 비교한다.
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -16,12 +15,12 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 function extractBoothToken(relPath) {
   const src = readFileSync(path.join(root, '..', relPath), 'utf8');
   const m = src.match(/const BOOTH_TOKEN = '([^']+)'/);
-  assert.ok(m, `${relPath}에서 BOOTH_TOKEN을 찾지 못함`);
+  expect(m, `${relPath}에서 BOOTH_TOKEN을 찾지 못함`).toBeTruthy();
   return m[1];
 }
 
 test('BOOTH_TOKEN: functions/index.js와 docs/app.js가 같은 값을 쓴다', () => {
   const serverToken = extractBoothToken('functions/index.js');
   const clientToken = extractBoothToken('docs/app.js');
-  assert.equal(clientToken, serverToken);
+  expect(clientToken).toBe(serverToken);
 });
