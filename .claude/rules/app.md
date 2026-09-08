@@ -51,7 +51,12 @@
 - **CORS 허용 출처 정규식의 앵커(`^`/`$`)를 풀지 말 것** — 부모 도메인 항목이 서브도메인을 매치하지
   않는 게 불편하다고 앵커를 느슨하게 하면, 공격자가 가진 도메인의 서브도메인이나 접미사 위조
   (`https://edutogether.kr.attacker.com`)까지 통째로 열린다. 서브도메인을 허용해야 하면 앵커를 푸는 대신
-  **항목을 하나 더 추가한다**. `functions/test/allowed-origins.test.js`가 이 규칙을 고정한다
+  **항목을 하나 더 추가한다**
+- **CORS 허용 출처 정규식에서 점(`.`)의 이스케이프를 빠뜨리지 말 것** — 정규식에서 맨 점은 "아무 문자
+  하나"라, `edutogether.kr`이 `edutogetherXkr`에도 매치된다. **앵커가 멀쩡해도 이건 안 막힌다**
+- 위 두 규칙은 `functions/test/allowed-origins.test.js`가 고정한다 — 지금 있는 주소를 나열하는 것에 더해
+  **목록에 들어오는 모든 규칙이 앵커를 갖추고 점을 이스케이프했는지**를 검사하므로, 앞으로 추가되는
+  항목까지 덮는다
 - **`app.set('trust proxy', 1)`을 `true`로 바꾸지 말 것** — 클라이언트가 `X-Forwarded-For`를 위조해 레이트리밋을
   무력화할 수 있다(실제 스푸핑으로 재현·검증됨)
 - **`/upload`의 검사 순서를 바꾸지 말 것** — 헤더만 보는 검사(레이트리밋 → `BOOTH_TOKEN` → App Check)를
@@ -111,7 +116,7 @@ D-7인 이유는 예열과 실기기 리허설(노트북·안드로이드 태블
 ## 명령
 - 개발 서버: `npm run dev` (http://localhost:4321)
 - 빌드: `npm run build` (`tsc --noEmit` + `vite build` → `dist/`)
-- 테스트: `npm test` (vitest, 루트 9 + functions 18 = 27개). 개별 실행은 `cd functions && npm test`
+- 테스트: `npm test` (vitest, 루트 9 + functions 35 = 44개). 개별 실행은 `cd functions && npm test`
 - 린트: `npm run lint` (eslint). `src/`는 `tsc`가 담당하므로 eslint 대상에서 뺐다. 빈 `catch{}`는 이 코드베이스가
   의도적으로 쓰는 패턴이라 허용해뒀다 — 버그가 아니다
 - E2E: `npm run test:e2e` (12개) — 빌드 후 `dist/`를 서빙해 실제 산출물로 검증한다. 최초 1회

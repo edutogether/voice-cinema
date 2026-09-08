@@ -20,7 +20,7 @@
 ```bash
 npm run dev       # 개발 서버 (http://localhost:4321)
 npm run build     # tsc --noEmit + vite build → dist/
-npm test          # vitest — 루트 9개 + functions 18개 = 27개
+npm test          # vitest — 루트 9개 + functions 35개 = 44개
 npm run lint      # eslint (src/는 tsc가 담당하므로 제외)
 npm run test:e2e  # Playwright 12개. 빌드 후 dist/를 서빙해 실제 산출물로 검증한다
                   # 최초 1회: npx playwright install chromium

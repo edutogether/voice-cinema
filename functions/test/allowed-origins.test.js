@@ -62,6 +62,10 @@ describe('차단해야 하는 출처', () => {
     // 프로토콜을 느슨하게 하면 여기서 걸린다 — 부스 와이파이에서 가로채기 가능
     ['http://voice.edutogether.kr', '평문 http'],
     ['http://voice-cinema.web.app', '평문 http'],
+    // 점(.) 이스케이프가 빠지면 여기서 걸린다 — 앵커가 있어도 막히지 않는다
+    ['https://edutogetherXkr', '점을 임의 문자로 치환'],
+    ['https://voiceXedutogether.kr', '점을 임의 문자로 치환'],
+    ['https://voice-cinemaXweb.app', '점을 임의 문자로 치환'],
     // 폐지된 배포처 (2026-09-08)
     ['https://edutogether.github.io', 'GitHub Pages, 폐지됨'],
   ])('%s (%s)', (origin) => {
@@ -75,5 +79,18 @@ test('모든 규칙이 시작·끝 앵커를 갖는다', () => {
   for (const r of ALLOWED_ORIGINS) {
     expect(r.source.startsWith('^'), `${r} 에 시작 앵커(^)가 없다`).toBe(true);
     expect(r.source.endsWith('$'), `${r} 에 끝 앵커($)가 없다`).toBe(true);
+  }
+});
+
+// 점(.)을 이스케이프하지 않으면 정규식에서 "아무 문자 하나"가 된다 — 앵커가 멀쩡해도
+// ^https://edutogetherXkr$ 가 통과한다. 위 차단 목록은 지금 있는 주소만 덮으므로,
+// 앞으로 추가되는 규칙까지 커버하려면 목록 전체의 성질로 검사해야 한다.
+// 이스케이프 쌍(백슬래시+문자)을 통째로 걷어낸 뒤에도 점이 남아 있으면,
+// 그 점은 이스케이프되지 않은 것이다.
+const hasUnescapedDot = (pattern) => pattern.replace(/\\./g, '').includes('.');
+
+test('모든 규칙에서 점(.)이 이스케이프돼 있다', () => {
+  for (const r of ALLOWED_ORIGINS) {
+    expect(hasUnescapedDot(r.source), `${r} 에 이스케이프되지 않은 점이 있다`).toBe(false);
   }
 });
