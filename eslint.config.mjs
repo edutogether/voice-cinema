@@ -59,6 +59,7 @@ export default [
         process: 'readonly', console: 'readonly',
         window: 'readonly', document: 'readonly', getComputedStyle: 'readonly',
         setInterval: 'readonly', clearInterval: 'readonly',
+        URL: 'readonly', location: 'readonly',
       },
     },
   },

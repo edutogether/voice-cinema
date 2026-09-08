@@ -76,8 +76,8 @@ export function Result({ active, job, onHome, onBack }: Props) {
         {loading && (
           <div id="loading">
             <div className="spinner" />
-            <h2>{stage.kind === 'merging' ? '영화를 만들고 있어요…' : '저장하고 있어요…'}</h2>
-            <p>{stage.kind === 'merging' ? '목소리를 영상에 입히는 중입니다' : '완성된 영화를 전달 중입니다'}</p>
+            <h2 id="loadingTitle">{stage.kind === 'merging' ? '영화를 만들고 있어요…' : '저장하고 있어요…'}</h2>
+            <p id="loadingSub">{stage.kind === 'merging' ? '목소리를 영상에 입히는 중입니다' : '완성된 영화를 전달 중입니다'}</p>
           </div>
         )}
 
@@ -121,20 +121,20 @@ export function Result({ active, job, onHome, onBack }: Props) {
             </p>
 
             <div className="row" style={{ marginTop: 26 }}>
-              <button className="btn btn-lg btn-gold" onClick={onHome}>🎬 다른 더빙 하기</button>
+              <button className="btn btn-lg btn-gold" id="doneHomeBtn" onClick={onHome}>🎬 다른 더빙 하기</button>
             </div>
           </div>
         )}
 
         {stage.kind === 'error' && (
           <>
-            <div className="errbox show">
+            <div className="errbox show" id="errbox">
               <b>영상 합성 중 문제가 생겼어요.</b>
               <br />
               {stage.message}
             </div>
-            <div className="row">
-              <button className="btn btn-lg btn-ghost" onClick={onBack}>← 돌아가기</button>
+            <div className="row" id="errRow">
+              <button className="btn btn-lg btn-ghost" id="errBackBtn" onClick={onBack}>← 돌아가기</button>
             </div>
           </>
         )}

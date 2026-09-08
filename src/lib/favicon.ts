@@ -37,6 +37,7 @@ export function installFavicon(): void {
     // 링크 엘리먼트 자체를 매번 새로 만들어 교체한다(대표 테스트로 재현·확인, 2026-08-31).
     document.querySelectorAll('link[rel~="icon"]').forEach((el) => el.remove());
     const link = document.createElement('link');
+    link.id = 'favicon';
     link.rel = 'icon';
     link.href = href;
     document.head.appendChild(link);

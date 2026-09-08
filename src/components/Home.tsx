@@ -22,12 +22,13 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
       {/* 배너는 항상 DOM에 두고 `.show`로만 여닫는다(전환 전과 동일).
           문구도 그대로 — 앞의 "엔진 준비 중…"은 고정이고 굵은 부분만 바뀐다. */}
       <div
+        id="enginebar"
         className={`enginebar${engineLoading || engineFailed ? ' show' : ''}${engineFailed ? ' err' : ''}`}
       >
-        엔진 준비 중… <b>{engineFailed ? '실패 — 저장 시 다시 시도됩니다' : `${enginePercent}%`}</b>
+        엔진 준비 중… <b id="engineProg">{engineFailed ? '실패 — 저장 시 다시 시도됩니다' : `${enginePercent}%`}</b>
       </div>
 
-      <div className="grid">
+      <div className="grid" id="grid">
         {GENRES.map((genre) => (
           <GenreTile key={genre.id} genre={genre} onSelect={onSelect} />
         ))}

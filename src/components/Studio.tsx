@@ -32,9 +32,9 @@ export function Studio({ active, genre, onHome, onSave }: Props) {
   return (
     <section id="studio" className={`view${active ? ' active' : ''}`}>
       <div className="topbar">
-        <button className="back" onClick={onHome}>← 처음으로</button>
+        <button className="back" id="studioBackBtn" onClick={onHome}>← 처음으로</button>
         <span className="chip">
-          <span className="e" style={{ color: genre.color }} dangerouslySetInnerHTML={{ __html: iconSvg(genre) }} />
+          <span className="e" id="chipEmoji" style={{ color: genre.color }} dangerouslySetInnerHTML={{ __html: iconSvg(genre) }} />
           <span id="chipName">{genre.name}</span>
         </span>
       </div>
@@ -42,17 +42,17 @@ export function Studio({ active, genre, onHome, onSave }: Props) {
       <div className="stage">
         <video id="clip" ref={videoRef} playsInline muted preload="auto" />
         {phase === 'recording' && (
-          <div className="recpill show"><span className="d" /> REC</div>
+          <div className="recpill show" id="recpill"><span className="d" /> REC</div>
         )}
         {dub.countdown > 0 && (
-          <div className="overlay show">
-            <div className="count" key={dub.countdown}>{dub.countdown}</div>
+          <div className="overlay show" id="overlay">
+            <div className="count" id="count" key={dub.countdown}>{dub.countdown}</div>
           </div>
         )}
       </div>
 
-      <div className={`progress${dub.showProgress ? ' show' : ''}`}>
-        <i style={{ width: `${dub.progress}%` }} />
+      <div className={`progress${dub.showProgress ? ' show' : ''}`} id="progress">
+        <i id="bar" style={{ width: `${dub.progress}%` }} />
       </div>
 
       <div className="controls">
@@ -73,10 +73,11 @@ export function Studio({ active, genre, onHome, onSave }: Props) {
 
         {done && (
           <div className="row" id="afterRow">
-            <button className="btn btn-lg btn-ghost" onClick={dub.replay}>▶ 다시 듣기</button>
-            <button className="btn btn-lg btn-gold" onClick={dub.reset}>🔄 다시 녹음</button>
+            <button className="btn btn-lg btn-ghost" id="replayBtn" onClick={dub.replay}>▶ 다시 듣기</button>
+            <button className="btn btn-lg btn-gold" id="resetBtn" onClick={dub.reset}>🔄 다시 녹음</button>
             <button
               className="btn btn-lg btn-save"
+              id="saveBtn"
               onClick={() => dub.recordedBlob && onSave(dub.recordedBlob, dub.recordedMime)}
             >
               💾 저장하기
@@ -85,7 +86,7 @@ export function Studio({ active, genre, onHome, onSave }: Props) {
         )}
       </div>
 
-      <div className="footer">약 {CLIP_SECONDS}초 동안 녹음돼요</div>
+      <div className="footer" id="studioFoot">약 {CLIP_SECONDS}초 동안 녹음돼요</div>
     </section>
   );
 }
