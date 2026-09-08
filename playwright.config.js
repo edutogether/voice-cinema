@@ -15,6 +15,10 @@ export default defineConfig({
     url: 'http://localhost:4321',
     reuseExistingServer: !process.env.CI,
     timeout: 180000,
+    // 서버 기동이 실패하면 원인을 바로 볼 수 있어야 한다 — CI에서 출력 없이
+    // "Exit code 1"만 남아 원인을 못 찾은 적이 있다(2026-09-08).
+    stdout: 'pipe',
+    stderr: 'pipe',
   },
   use: {
     baseURL: 'http://localhost:4321',
