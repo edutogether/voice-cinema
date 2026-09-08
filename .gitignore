@@ -1,10 +1,20 @@
 node_modules/
+# .claude/ 로컬 전용 경로 — CONVENTIONS §7 표준 목록 그대로.
+# .git/info/exclude에만 두면 그 파일은 커밋되지 않아 다른 PC나 Codex에서 열 때
+# 무시 설정이 안 따라오고, mailbox/agent-registry 같은 세션 내부 데이터가
+# 공개 저장소에 올라갈 수 있다. `.claude/*` 통째 무시는 쓰지 않는다 —
+# 커밋되어야 하는 settings.json과 rules/ 까지 빠진다(portal 사고).
 .claude/settings.local.json
-# 세션 도구가 만드는 로컬 전용 파일 — 지금까지 .git/info/exclude로만 무시되고
-# 있었는데 그건 커밋되지 않아 다른 PC나 Codex에서 열면 무시 설정이 안 따라온다
-# (CONVENTIONS §7 표준, 2026-09-08).
 .claude/worktrees/
 .claude/scheduled_tasks.lock
+.claude/scheduled_tasks.json
+.claude/routines/.state/
+.claude/checkpoints/
+.claude/mailbox/
+.claude/agent-registry.json
+.claude/agent-memory-local
+.claude/first-run
+.claude/assistant-daemon-state.json
 .firebase/
 dist/
 build/
