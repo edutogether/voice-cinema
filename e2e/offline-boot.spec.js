@@ -25,16 +25,23 @@ const REQUIRED = [
 // 취급해 조건과 무관하게 즉시 통과한다(이 테스트를 만들며 실제로 겪음).
 // 캐시 조회는 비동기라 expect.poll()로 확인해야 한다.
 async function cacheState(page) {
-  return page.evaluate(async (required) => {
-    const missing = [];
-    for (const url of required) {
-      // ignoreVary는 서비스워커가 실제로 캐시를 찾을 때 쓰는 것과 같은 조건이다.
-      // 이 서버는 정적 파일에 Vary: Origin을 붙이는데, 그러면 저장할 때와 찾을 때의
-      // 요청 헤더가 달라 캐시에 있는데도 못 찾는 일이 생긴다(이 전환 중 실측).
-      if (!(await caches.match(url, { ignoreVary: true }))) missing.push(url);
-    }
-    return { controlled: !!navigator.serviceWorker.controller, missing };
-  }, REQUIRED);
+  // 서비스워커가 제어권을 잡는 순간 앱이 스스로 한 번 새로고침하므로, 확인 중에
+  // 페이지가 이동해 실행 컨텍스트가 사라질 수 있다(CI에서 실제로 겪음).
+  // 그건 실패가 아니라 "아직 확인할 수 없음"이므로 다음 폴링에서 다시 본다.
+  try {
+    return await page.evaluate(async (required) => {
+      const missing = [];
+      for (const url of required) {
+        // ignoreVary는 서비스워커가 실제로 캐시를 찾을 때 쓰는 것과 같은 조건이다.
+        // 이 서버는 정적 파일에 Vary: Origin을 붙이는데, 그러면 저장할 때와 찾을 때의
+        // 요청 헤더가 달라 캐시에 있는데도 못 찾는 일이 생긴다(이 전환 중 실측).
+        if (!(await caches.match(url, { ignoreVary: true }))) missing.push(url);
+      }
+      return { controlled: !!navigator.serviceWorker.controller, missing };
+    }, REQUIRED);
+  } catch {
+    return { controlled: false, missing: ['(페이지 이동 중이라 확인 못 함)'] };
+  }
 }
 
 test('인터넷이 끊긴 상태에서 탭을 새로 열어도 앱이 정상 부팅된다', async ({ page, context }) => {
