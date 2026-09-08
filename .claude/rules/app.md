@@ -9,10 +9,11 @@
   포털 카드 링크 교체 전까지 병행 운영 중인 옛 주소일 뿐, 정본은 https://voice-cinema.web.app
 
 ## 배포 폴더
-- `firebase.json` public = `docs`. `_docs/`는 이 저장소에 없고, `.claude/`는 루트에 있어 배포 대상 밖임을 확인함 (확인일 9/8)
-- **주의**: 이 저장소는 배포 폴더 이름이 하필 `docs`다. `docs/` 아래 새로 만드는 파일은 전부 공개 웹에 서빙되므로
-  내부 문서(intent, 메모, 계획)를 여기 두면 안 된다 — 그런 문서가 필요해지면 루트의 `_docs/`에 만든다
-  (`firebase.json`의 `ignore`는 `**/.*`와 `test/**`만 제외한다)
+- `firebase.json` public = `dist`(빌드 산출물, gitignore 대상). 2026-09-08 리액트 전환 전에는 `docs`였다 —
+  그때는 폴더 이름 때문에 내부 문서를 거기 만들면 공개되는 함정이 있었는데, 지금은 배포 대상이 빌드 산출물이라
+  그 함정 자체가 없어졌다. `_docs/`·`.claude/`·`src/`는 배포에 포함되지 않음을 확인함 (확인일 9/8)
+- **주의**: `public/` 아래 둔 것은 빌드가 `dist/`로 그대로 복사하므로 공개된다 — 내부 문서는 `_docs/`에 둔다
+- 배포 잡은 반드시 `npm run build`를 거쳐야 한다. `dist/`는 저장소에 없으므로, 빌드 단계를 빼면 빈 폴더가 배포된다
 
 ## 데이터
 - 개인정보·미성년자 데이터: **있음.** 학생 목소리가 담긴 완성 mp4. 이름·학교·연락처 등 신원 정보는 일절 수집하지 않는다
@@ -34,36 +35,45 @@
 - **클립을 H.265/HEVC로 인코딩하지 말 것** — 브라우저에서 화면이 검게 나온다. H.264/AAC 유지
 - **클립의 원본 오디오 트랙을 지우거나 무음으로 바꾸지 말 것** — 최종 합성물엔 학생 음성만 들어가지만(`-map 1:a:0`),
   스튜디오 화면의 "미리 보기"에서는 학생이 이 원본 오디오를 실제로 듣는다
-- **업로드 타임아웃을 한쪽만 고치지 말 것** — `docs/app.js`의 `UPLOAD_TIMEOUT_MS`와 `functions/index.js`의
-  `timeoutSeconds`를 항상 같은 값으로(현재 110초). 서버가 먼저 끊으므로 클라이언트만 늘리면 효과가 없다
-- **`docs/` 아래 파일을 추가·삭제·개명하고 `docs/sw.js`를 그냥 두지 말 것** — 캐시 목록에서 빠진 파일이 하나라도
-  있으면 오프라인에서 앱이 통째로 안 뜬다. 목록 수정 + `CACHE_NAME` 버전 올리기를 같은 커밋에서 한다
+- **업로드 타임아웃을 한쪽만 고치지 말 것** — `src/config.ts`의 `UPLOAD_TIMEOUT_MS`와 `functions/index.js`의
+  `timeoutSeconds`를 항상 같은 값으로(현재 110초). 서버가 먼저 끊으므로 클라이언트만 늘리면 효과가 없다.
+  어긋나면 `test/contract.test.js`가 실패한다 — 그 테스트를 고쳐 통과시키지 말고 값을 맞출 것
+- **`dist/sw.js`를 직접 고치지 말 것** — 빌드가 매번 덮어쓴다. 서비스워커를 고칠 일이 있으면
+  `tools/sw-template.js`를, 캐시 대상 규칙을 바꿀 일이 있으면 `tools/precache-plugin.js`를 고친다.
+  캐시 목록과 캐시 버전은 빌드가 산출물에서 자동으로 뽑으므로 사람이 목록이나 `CACHE_NAME`을 관리하지 않는다
+- **서비스워커에서 `ignoreVary: true` 없이 캐시를 조회하지 말 것** — Hosting이 정적 파일에 `Vary: Origin`을
+  붙여서, 저장할 때와 찾을 때의 요청 헤더가 달라 캐시에 있는데도 못 찾는다(전환 중 실측). 그러면 오프라인에서 앱이 안 뜬다
 - **`voiceCinema`의 `concurrency: 1`을 올리지 말 것** — 요청 하나가 최대 ~47MB를 붙들어, 256MiB 인스턴스에서
   겹치면 OOM으로 다른 학생 요청까지 연쇄로 죽는다. 처리량은 `maxInstances`가 담당한다
 - **`app.set('trust proxy', 1)`을 `true`로 바꾸지 말 것** — 클라이언트가 `X-Forwarded-For`를 위조해 레이트리밋을
   무력화할 수 있다(실제 스푸핑으로 재현·검증됨)
 - **`/upload`의 검사 순서를 바꾸지 말 것** — 헤더만 보는 검사(레이트리밋 → `BOOTH_TOKEN` → App Check)를
   통과한 요청에만 본문을 파싱한다. 순서가 뒤집히면 인증 안 된 요청에 28MB 파싱 비용을 물릴 수 있다
-- **`onclick=""` 같은 인라인 이벤트 핸들러를 쓰지 말 것** — CSP가 막는다(해시 예외로도 안 됨).
-  `docs/app.js`의 `init()`에서 `addEventListener`로 연결한다
+- **인라인 스크립트를 만들지 말 것** — CSP가 인라인을 해시로만 허용하는데, 해시를 `firebase.json`에 박으면
+  스크립트를 고칠 때마다 그것도 같이 고쳐야 하고 잊으면 배포된 사이트에서만 화면이 죽는다. 전환 때 인라인을
+  0개로 만들고 해시 항목도 지웠다(리액트라 이벤트는 자연히 핸들러 속성이 아니다)
+- **`public/vendor/`의 ffmpeg를 번들러에 태우지 말 것** — Worker+WebAssembly+blob: URL로 코어를 스스로
+  로드하므로, 번들러가 해시·재작성하면 경로 해석이 깨진다. `src/lib/vendor.ts`의 절대경로 동적 import를 유지한다
 - **`npm audit fix --force`를 실행하지 말 것** — `firebase-admin`을 10.3.0으로 다운그레이드해 지금 쓰는 모듈형
   API가 사라지면서 코드가 깨진다. 남은 moderate 취약점은 Google 쪽 전이 의존성(`uuid<11.1.1`) 문제로 업스트림 대기 상태다
 - 행사 직전 배포 동결 기간에 대한 정책은 아직 정해진 바 없다 `[확인]`
 
 ## 명령
-- 테스트: `npm test` (vitest, 루트 8 + functions 13 = 21개). 개별 실행은 `cd functions && npm test`
-- 린트: `npm run lint` (eslint). 빈 `catch(e){}`는 이 코드베이스가 의도적으로 쓰는 패턴이라 허용해뒀다 — 버그가 아니다
-- 로컬 실행: `npx serve -l 4321 docs` (Playwright의 `webServer`와 같은 방식)
-- E2E: `npm run test:e2e` — 최초 1회 `npx playwright install chromium` 필요. Playwright 버전을 올리면 이 설치를 다시 해야 한다
+- 개발 서버: `npm run dev` (http://localhost:4321)
+- 빌드: `npm run build` (`tsc --noEmit` + `vite build` → `dist/`)
+- 테스트: `npm test` (vitest, 루트 9 + functions 13 = 22개). 개별 실행은 `cd functions && npm test`
+- 린트: `npm run lint` (eslint). `src/`는 `tsc`가 담당하므로 eslint 대상에서 뺐다. 빈 `catch{}`는 이 코드베이스가
+  의도적으로 쓰는 패턴이라 허용해뒀다 — 버그가 아니다
+- E2E: `npm run test:e2e` (9개) — 빌드 후 `dist/`를 서빙해 실제 산출물로 검증한다. 최초 1회
+  `npx playwright install chromium` 필요하고, Playwright 버전을 올리면 이 설치를 다시 해야 한다
 - 에뮬레이터: 쓰지 않음 — 서버 쪽은 순수 함수만 유닛테스트하고, 실제 동작은 배포 후 라이브로 확인한다
 
 ## 자주 틀리는 것
-- **`docs/`를 "문서 폴더"로 착각해 내부 문서를 거기 만든다.** 이 저장소에서 `docs/`는 곧 배포되는 웹 루트라,
-  거기 만든 파일은 전부 라이브에 공개된다. 2026-09-08 문서 정비 때 `docs/intents/`(내부 기획 문서)를 만들라는
-  지시가 실제로 내려왔다가 이 이유로 `_docs/intents/`로 정정됐다 — 그대로 만들었으면 기획 문서가 공개될 뻔했다.
-  **내부 문서는 전부 루트 `_docs/` 아래**(`_docs/intents/`, `_docs/ops/`, `_docs/CHANGELOG.md`)
-- **`CACHE_NAME` 올리기를 빼먹는다.** `docs/app.js`/`index.html`/클립만 바꾸고 `sw.js`를 안 건드리면, 이미 방문한
-  기기(대표님 포함)는 배포된 새 화면을 못 본다. 하루에 두 번 반복한 적이 있다 — 지금은 수동 습관에만 의존하는 구조다
+- **내부 문서를 배포되는 폴더에 만든다.** `public/`에 두면 빌드가 `dist/`로 복사해 공개된다.
+  2026-09-08 문서 정비 때 당시 배포 폴더였던 `docs/` 아래에 기획 문서를 만들라는 지시가 실제로 내려왔다가
+  공개될 뻔했다. **내부 문서는 전부 루트 `_docs/` 아래**(`_docs/intents/`, `_docs/ops/`, `_docs/CHANGELOG.md`)
+- **배포 잡에서 빌드 단계를 빠뜨린다.** `dist/`는 저장소에 없으므로 `npm run build` 없이 배포하면 빈 폴더가 올라간다
+  (전환 때 실제로 빠뜨렸다가 배포 직전에 잡았다)
 - **"배포했는데 반영이 안 된다"를 배포 실패로 오인한다.** 캐시가 세 겹이다(CDN 엣지 / 서비스워커 CacheStorage /
   브라우저 일반 HTTP 캐시). 서버 원본은 `curl`로 확인하고, 브라우저는 강력 새로고침이나 시크릿 창으로 다시 본다
 - **로컬 E2E가 8개 전부 실패하면 포트 4321부터 의심한다.** 다른 프로젝트 개발 서버가 먼저 점유하고 있으면

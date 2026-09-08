@@ -1,7 +1,7 @@
 # AGENTS.md — InKY Voice Cinema
 
-이 저장소에서 작업하는 **모든 도구(Claude Code, Codex 등)**가 읽는 문서. 도구에 상관없이 알아야 하는
-것만 여기 둔다 — 조직 운영 규칙·상세 이력은 [CLAUDE.md](CLAUDE.md)에 있다.
+이 저장소에서 작업하는 **모든 도구(Claude Code, Codex 등)**가 읽는 문서. 도구에 상관없이 알아야
+하는 것만 여기 둔다 — 조직 운영 규칙·상세 이력은 [CLAUDE.md](CLAUDE.md)에 있다.
 
 ## 이 앱이 하는 일
 
@@ -9,40 +9,42 @@
 검증·저장 → QR로 전달. 영상 합성은 서버가 아니라 클라이언트에서 일어난다.
 
 라이브: https://voice-cinema.web.app · Firebase 프로젝트 `inky-voice-cinema`(`asia-northeast3`)
+프론트는 Vite + React + TypeScript(2026-09-08 전환).
 
 ## 명령
 
 ```bash
-npm test          # vitest — 루트 8개 + functions 13개 = 21개
-npm run lint      # eslint (저장소 전체)
-npm run test:e2e  # Playwright, 실제 Chromium + 가짜 마이크로 전체 흐름 8개
+npm run dev       # 개발 서버 (http://localhost:4321)
+npm run build     # tsc --noEmit + vite build → dist/
+npm test          # vitest — 루트 9개 + functions 13개 = 22개
+npm run lint      # eslint (src/는 tsc가 담당하므로 제외)
+npm run test:e2e  # Playwright 9개. 빌드 후 dist/를 서빙해 실제 산출물로 검증한다
                   # 최초 1회: npx playwright install chromium
 ```
 
 `functions/`는 **루트와 별개인 독립 npm 패키지**다(자체 `node_modules`/`package-lock.json`/
 `vitest.config.js`). 의존성을 건드릴 땐 어느 쪽 패키지인지 먼저 확인할 것.
 
+## 폴더
+
+| 경로 | 내용 |
+|---|---|
+| `src/` | 앱 소스. 화면은 `components/`, 녹음 상태 기계는 `hooks/useDubbing.ts`, ffmpeg·업로드는 `lib/` |
+| `public/` | **번들러가 건드리지 않고 그대로 복사된다** — `vendor/`(ffmpeg 엔진 31MB, qrcode, App Check 번들), `clips/`(장르 영상 6종 37MB) |
+| `tools/` | 빌드 도구. `precache-plugin.js`가 서비스워커 프리캐시 목록을 산출물에서 자동 생성하고, `sw-template.js`가 그 원본이다 |
+| `dist/` | 빌드 산출물 = 배포 폴더. 커밋하지 않는다 |
+| `_docs/` | 내부 문서(배포 안 됨). 문서를 만들 땐 여기 — `dist/`나 `public/`에 두면 공개된다 |
+
 ## 배포
 
 `master`에 push → GitHub Actions `CI`(lint + 유닛 + E2E) 통과 → `Deploy Backend`가 **자동으로**
-이어져 `storage,functions` → `hosting:voice-cinema` 순으로 배포한다. 수동 승인 게이트가 없다 —
-**push = 배포**라고 생각할 것. 로컬에서 `firebase deploy`를 직접 돌릴 필요는 없다.
+이어져 프론트를 빌드하고 `storage,functions` → `hosting:voice-cinema` 순으로 배포한다.
+수동 승인 게이트가 없다 — **push = 배포**라고 생각할 것.
 
-배포 폴더는 `docs/`(`firebase.json`의 `public`). 즉 **`docs/` 아래에 새로 만드는 파일은 전부
-공개 웹에 그대로 서빙된다** — 내부 문서·메모를 여기 두면 안 된다(`firebase.json`의 `ignore`는
-`**/.*`와 `test/**`만 제외한다).
+배포 폴더가 `dist/`(빌드 산출물)이므로 **배포 잡은 반드시 `npm run build`를 거쳐야 한다.**
+그 단계를 빼면 빈 폴더가 배포된다(전환 때 실제로 빠뜨렸다가 배포 직전에 잡음).
 
 ## 이 저장소의 함정 — 실제로 사고가 났던 것들
-
-### 0. `docs/`가 곧 웹 루트다 — 내부 문서를 절대 여기 두지 말 것
-이 저장소는 하필 배포 폴더 이름이 `docs`다(`firebase.json`의 `public: "docs"`). 다른 저장소에서
-"문서니까 `docs/`"라는 습관대로 파일을 만들면 **그 문서가 라이브 사이트에 그대로 공개된다.**
-`firebase.json`의 `ignore`는 `**/.*`와 `test/**`만 제외하므로 다른 건 전부 서빙된다.
-
-실제로 2026-09-08 문서 정비 때 `docs/intents/`(내부 기획 문서)를 만들라는 지시가 내려왔다가
-이 이유로 취소됐다 — 그대로 만들었으면 intent·spec·plan이 전부 공개됐을 건이다.
-**내부 문서는 전부 루트의 `_docs/` 아래에 둔다**(`_docs/intents/`, `_docs/ops/`, `_docs/CHANGELOG.md`).
-`docs/` 아래에는 실제로 브라우저에 서빙돼야 하는 것만 넣는다.
 
 ### 1. Functions의 `concurrency`를 비워두지 말 것
 `functions/index.js`의 `voiceCinema`는 `concurrency: 1`이다. Functions v2는 이 값을 안 적으면
@@ -51,47 +53,58 @@ npm run test:e2e  # Playwright, 실제 Chromium + 가짜 마이크로 전체 흐
 인스턴스에서 큰 요청 4건만 겹쳐도 OOM이 나고, **그 인스턴스에 얹혀 있던 다른 학생들의 업로드까지
 전부 같이 죽는다.** 처리량은 `maxInstances`(10)가 결정하므로 `concurrency`를 올려서 얻을 이점이 없다.
 
-### 2. `docs/sw.js`의 캐시 목록에서 파일이 빠지면 오프라인에서 앱이 통째로 안 뜬다
-서비스워커가 앱 셸과 벤더 파일을 프리캐시한다. `docs/app.js`가 정적 `import`하는 파일이 이 목록에
-없으면, 인터넷이 끊긴 상태(행사장에서 실제로 일어난다)에서 탭을 새로 열 때 모듈 그래프 전체가
-로드에 실패해 **앱이 아예 뜨지 않는다.** 실제로 App Check 번들
-(`docs/vendor/firebase/firebase-app-check.js`)이 빠져 있어 이 상태였다.
+### 2. 오프라인 부팅 — 캐시 목록은 손대지 말 것(자동 생성이다)
+행사장에서 인터넷이 끊긴 채 태블릿 탭을 새로 열어도 앱이 떠야 한다. 예전에는 서비스워커 캐시
+목록을 손으로 적어뒀는데, 파일을 추가하고 목록 갱신을 잊어 **앱이 통째로 안 뜨는** 상태로 배포된
+적이 있다(App Check 번들 누락).
 
-**규칙**: `docs/` 아래에 앱이 로드하는 파일을 추가·삭제·개명하면 반드시
-`docs/sw.js`의 `PRECACHE_URLS` 또는 `APP_SHELL_URLS`를 같이 고치고, **`CACHE_NAME`의 버전을
-올린다**(현재 `...-v11`). `sw.js` 자체의 바이트가 바뀌어야 브라우저가 새 서비스워커를 설치해 옛
-캐시를 지운다 — `app.js`나 클립만 바꾸고 `CACHE_NAME`을 안 올리면 이미 방문한 기기는 옛 버전을
-계속 본다(이 저장소에서 같은 실수가 여러 번 반복됐다).
+지금은 `tools/precache-plugin.js`가 빌드 산출물에서 목록과 캐시 버전을 뽑아 넣는다. 그래서:
+- **`dist/sw.js`를 직접 고치지 말 것.** 빌드할 때마다 덮어쓴다. 고칠 일이 있으면 `tools/sw-template.js`
+- 목록에서 앱 셸이나 `vendor/`가 비면 **빌드가 실패한다**(배포 전에 멈춘다)
+- `CACHE_NAME`을 사람이 올릴 필요가 없다 — 내용이 바뀌면 캐시 이름이 자동으로 바뀐다
+- `clips/`(37MB)는 일부러 프리캐시에서 뺀다. install에서 한꺼번에 받으면 느린 와이파이에서 설치
+  자체가 실패한다 — 실제로 재생한 장르부터 런타임에 쌓인다
+- 서비스워커에서 캐시를 찾을 땐 **`ignoreVary: true`가 필요하다.** Hosting이 정적 파일에
+  `Vary: Origin`을 붙이는데, 저장할 때와 찾을 때의 요청 헤더가 달라 캐시에 있는데도 못 찾는다
+  (전환 중 실측으로 확인 — 그대로 뒀으면 오프라인에서 앱이 안 떴다)
+
+`e2e/offline-boot.spec.js`가 실제로 오프라인 상태를 만들어 이걸 매번 검증한다.
 
 ### 3. 업로드 타임아웃은 클라이언트·서버 양쪽을 같이 고쳐야 한다
-타임아웃이 두 곳에 각각 있다:
-- `docs/app.js`의 `UPLOAD_TIMEOUT_MS`(클라이언트 `AbortController`)
+타임아웃이 두 곳에 각각 있다(`functions/`는 자기 디렉터리만 배포돼 공용 모듈로 못 묶는다):
+- `src/config.ts`의 `UPLOAD_TIMEOUT_MS`(클라이언트 `AbortController`)
 - `functions/index.js`의 `onRequest({ timeoutSeconds })`(Cloud Run 서버 측)
 
 현재 둘 다 **110초**. 서버 쪽은 클라이언트가 얼마를 기다리든 상관없이 그 시간이 지나면 느린 업로드를
-받는 도중이라도 먼저 연결을 끊으므로, **클라이언트만 늘리면 아무 효과가 없다.** 한쪽을 바꾸면 반드시
-다른 쪽도 같은 값으로 맞출 것.
+받는 도중이라도 먼저 연결을 끊으므로, **클라이언트만 늘리면 아무 효과가 없다.**
+한쪽만 고치면 `test/contract.test.js`가 실패한다 — 그 테스트를 고쳐서 통과시키지 말고 값을 맞출 것.
 
 ### 4. `BOOTH_TOKEN`은 두 파일에 하드코딩돼 있고 반드시 일치해야 한다
-`functions/index.js`와 `docs/app.js`에 같은 상수가 있다. 어긋나면 부스 업로드 전체가 403으로
-죽는다(E2E는 업로드를 가로채므로 이걸 못 잡는다). `test/token-sync.test.js`가 두 파일을 읽어
-자동 비교하니, 이 테스트가 깨지면 무시하지 말 것. 이 값은 진짜 비밀이 아니라(공개 프론트에 노출됨)
-무차별 스크립트를 막는 1차 방어선일 뿐이며, 실제 방어선은 App Check(reCAPTCHA Enterprise)다.
+`functions/index.js`와 `src/config.ts`에 같은 상수가 있다. 어긋나면 부스 업로드 전체가 403으로
+죽는다(E2E는 업로드를 가로채므로 이걸 못 잡는다). `test/contract.test.js`가 두 소스를 읽어
+자동 비교한다. 이 값은 진짜 비밀이 아니라(공개 프론트에 노출됨) 무차별 스크립트를 막는 1차
+방어선일 뿐이며, 실제 방어선은 App Check(reCAPTCHA Enterprise)다.
 
 ### 5. 영상 코덱은 반드시 H.264
-H.265/HEVC로 인코딩하면 브라우저에서 화면이 검게 나온다. `docs/clips/*.mp4`를 교체할 땐
+H.265/HEVC로 인코딩하면 브라우저에서 화면이 검게 나온다. `public/clips/*.mp4`를 교체할 땐
 H.264/AAC 유지. 클립의 **원본 오디오 트랙도 지우면 안 된다** — 최종 합성물엔 학생 음성만 들어가지만
 (`-map 1:a:0`), 스튜디오 화면의 "미리 보기"에서는 학생이 이 원본 오디오를 실제로 듣는다.
 
-### 6. CSP가 인라인 이벤트 핸들러를 막는다
-`firebase.json`의 CSP 때문에 `onclick="..."` 같은 인라인 속성은 **동작하지 않는다**(해시 예외로도
-안 됨). 이벤트는 `docs/app.js`의 `init()`에서 `addEventListener`로 연결할 것. 인라인 `<script>`
-블록을 추가·수정하면 `firebase.json`의 `script-src` 해시(`sha256-...`)도 다시 계산해 넣어야 한다.
+### 6. ffmpeg 벤더 파일은 번들러에 태우지 말 것
+`public/vendor/`의 ffmpeg는 Worker + WebAssembly + blob: URL로 코어를 스스로 로드한다. 번들러가
+이 파일들을 해시·재작성하면 그 경로 해석이 깨진다. `src/lib/vendor.ts`가 절대 경로로 동적 import
+하는 형태를 유지할 것(`import(/* @vite-ignore */ '/vendor/...')`).
 
-### 7. "배포했는데 화면이 그대로"일 때
+### 7. 인라인 스크립트를 만들지 말 것
+CSP의 `script-src`는 인라인 스크립트를 해시로만 허용하는데, 해시를 `firebase.json`에 박아두면
+스크립트를 고칠 때마다 그것도 같이 고쳐야 하고 잊으면 **배포된 사이트에서만** 화면이 죽는다
+(이 앱이 인라인 `onclick`으로 실제로 겪었다). 전환 때 인라인 스크립트를 0개로 만들고 해시 항목도
+지웠으니, 다시 만들지 말 것. Vite의 modulePreload 폴리필도 같은 이유로 꺼져 있다.
+
+### 8. "배포했는데 화면이 그대로"일 때
 캐시가 세 겹이다: CDN 엣지 / 서비스워커 CacheStorage / 브라우저 일반 HTTP 캐시
-(`app.js`는 1시간, `clips/**`·`vendor/**`는 1일). 서버 원본은 `curl`로 확인하고, 브라우저는
-강력 새로고침이나 시크릿 창으로 다시 볼 것 — 배포 실패로 오인하기 쉽다.
+(`assets/**`는 해시가 붙어 1년 불변, `sw.js`는 no-cache, `clips/**`·`vendor/**`는 1일).
+서버 원본은 `curl`로 확인하고, 브라우저는 강력 새로고침이나 시크릿 창으로 다시 볼 것.
 
 ## 서버 측 업로드 제약 (`functions/validate.js`)
 
