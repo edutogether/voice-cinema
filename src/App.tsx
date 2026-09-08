@@ -37,8 +37,14 @@ export function App() {
     setView('studio');
   };
 
+  // 홈으로 나갈 때는 스튜디오를 화면에서 숨기는 것으로 끝내지 않고 아예 내린다.
+  // `.view`는 숨길 때 display:none일 뿐이라 그 안의 <video>·재생 중인 오디오는
+  // 계속 소리를 낸다 — 미리보기나 [다시 듣기] 도중에 [처음으로]를 누르면 홈
+  // 화면에서 앞 사람의 영상·목소리가 끝까지 들렸다(실측 확인). 마운트를 끊으면
+  // useDubbing의 정리(reset·재생 중단)가 한 곳에서 확실히 돌아 그 경로가 사라진다.
   const goHome = () => {
     setJob(null);
+    setGenre(null);
     setView('home');
   };
 

@@ -27,7 +27,11 @@ const isPrecached = (url) => PRECACHE_URLS.includes(url.pathname);
 const isClip = (url) => url.pathname.startsWith('/clips/');
 
 // 응답을 캐시에 넣고 그대로 돌려준다. 실패(용량 초과 등)해도 응답 자체는 살린다.
+// 실패 응답(404·500 등)은 절대 캐시하지 않는다 — 부스 와이파이가 잠깐 흔들려
+// 클립 한 번이 오류로 돌아오면, 그 오류가 캐시에 박혀 다음 배포로 캐시 이름이
+// 바뀔 때까지 그 기기에서 그 장르가 계속 재생되지 않는다.
 function cacheAndReturn(request, response) {
+  if (!response.ok) return response;
   const copy = response.clone();
   caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
   return response;
@@ -67,7 +71,17 @@ self.addEventListener('fetch', (event) => {
   }
 
   // 그 밖의 문서 요청(예: 주소 직접 입력)은 네트워크 우선, 끊겼으면 캐시로.
+  // 여기서도 ignoreVary가 반드시 필요하다 — 이 조회가 실패하면 오프라인에서
+  // 주소창으로 연 탭이 그대로 죽는다. 저장은 헤더 없는 요청으로 했는데 탐색
+  // 요청에는 브라우저가 헤더를 더 붙이므로, Vary를 무시하지 않으면 캐시에
+  // 있는데도 못 찾는 그 함정에 똑같이 걸린다(위 프리캐시 조회와 같은 이유).
   if (request.mode === 'navigate') {
-    event.respondWith(fetch(request).catch(() => caches.match(request).then((hit) => hit || caches.match('/index.html'))));
+    event.respondWith(
+      fetch(request).catch(() =>
+        caches
+          .match(request, { ignoreVary: true })
+          .then((hit) => hit || caches.match('/index.html', { ignoreVary: true }))
+      )
+    );
   }
 });

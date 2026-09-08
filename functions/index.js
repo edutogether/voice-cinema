@@ -38,7 +38,7 @@ async function deleteAllInBatches(files, logPrefix) {
 // (익명 QR 전달 흐름 자체가 로그인을 요구할 수 없는 구조). 다만 감사에서
 // "누구나 15MB×무제한으로 업로드 가능", "mimeType 무검증으로 임의 콘텐츠 공개 호스팅
 // 가능"이 실제로 확인돼, 코드로 세울 수 있는 방어를 여기 추가한다.
-// BOOTH_TOKEN은 공개 정적 프론트(docs/app.js)에도 그대로 들어가야 하는 값이라 진짜
+// BOOTH_TOKEN은 공개 프론트(src/config.ts)에도 그대로 들어가야 하는 값이라 진짜
 // 비밀은 아니다 — URL만 아는 자동화 스크립트의 무차별 시도를 막는 1차 방어선일
 // 뿐이고(Secret Manager로 숨길 실익도 없음), 완전한 방어(Firebase App Check 등)는
 // 콘솔 설정이 필요해 별도 판단 대상으로 남긴다.
@@ -122,24 +122,28 @@ app.post('/upload', async (req, res, next) => {
   }
 });
 
-// 2026-09-01 Firebase Hosting(voice-cinema.web.app)로 이전 — GitHub Pages는
-// 당분간 병행 운영(포털 카드 링크 교체 전까지)이라 둘 다 남겨둔다.
+// 2026-09-01 Firebase Hosting(voice-cinema.web.app)로 이전. GitHub Pages는
+// 한동안 병행 운영했으나 2026-09-08 대표 지시로 폐지했다(포털 카드가 이미 Firebase
+// 주소를 가리키는 것을 확인한 뒤) — 그래서 edutogether.github.io는 허용 목록에서 뺐다.
+// 이제 이 앱의 배포처는 Firebase Hosting 한 곳뿐이다.
 // 2026-09-02: Portal이 edutogether.kr/voice-cinema로 리버스 프록시하기로 결정 —
 // 프록시는 정적 콘텐츠만 다루고 이 Cloud Functions 도메인은 그대로 직접 호출되므로,
 // 브라우저가 보내는 Origin은 edutogether.kr가 된다(팀장 확인, 2026-09-02).
-// 로컬 개발 시에는 5500(Live Server)·8080(firebase serve) 포트도 허용.
+// 로컬 개발 시에는 4321(vite dev·preview) 포트도 허용 — 2026-09-08 리액트 전환으로
+// 개발 서버가 5500(Live Server)/8080(firebase serve)에서 이 포트로 바뀌었는데 목록이
+// 그대로 남아 있어, 로컬에서 실제 업로드 경로를 시험하면 CORS로 막히고 폴백만
+// 확인하게 되는 상태였다.
 const ALLOWED_ORIGINS = [
-  /^https:\/\/edutogether\.github\.io$/,
   /^https:\/\/voice-cinema\.web\.app$/,
   /^https:\/\/voice-cinema\.firebaseapp\.com$/,
   /^https:\/\/edutogether\.kr$/,
-  /^http:\/\/localhost:(5500|8080)$/,
-  /^http:\/\/127\.0\.0\.1:(5500|8080)$/,
+  /^http:\/\/localhost:4321$/,
+  /^http:\/\/127\.0\.0\.1:4321$/,
 ];
 
 // 2026-09-06, 대표 지시로 60초→110초 — Cloud Run 기반이라 클라이언트의
 // AbortController 설정과 무관하게 이 시간이 지나면 서버가 먼저 연결을 끊는다.
-// docs/app.js의 UPLOAD_TIMEOUT_MS와 반드시 같은 값으로 맞출 것(그쪽에 산출 근거 있음).
+// src/config.ts의 UPLOAD_TIMEOUT_MS와 반드시 같은 값으로 맞출 것(그쪽에 산출 근거 있음).
 // 종합감사(2026-09-07) 발견 반영 — concurrency를 명시하지 않으면 Functions v2는
 // 인스턴스 하나가 요청 80건을 동시에 처리한다(firebase-functions 옵션 문서: "기본값
 // 80, CPU >= 1일 때"이고 CPU는 메모리 2GB 이하에서 기본 1). 그런데 이 엔드포인트는

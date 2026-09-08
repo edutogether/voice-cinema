@@ -126,6 +126,44 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     expect(callCount).toBeGreaterThanOrEqual(2); // 1차 실패 + 재시도 1회
   });
 
+  // src/lib/ffmpeg.ts의 mergeClip()은 클립을 불러오지 못하면 예외를 던지고,
+  // Result.tsx는 그걸 잡아 에러 화면(errbox)을 보여준다 — 그런데 이 경로가
+  // 지금까지 어떤 테스트로도 실제로 실행되지 않았다. <video> 태그의 클립 로딩과
+  // 달리 merge 단계는 fetchFile()이 window.fetch()로 같은 클립을 다시 읽는다
+  // (page.route는 Chromium에서 <video src> 요청 자체를 가로채지 못해 실측 확인함 —
+  // 그래서 studio 화면은 정상 그대로 두고, fetch만 그 시점에 실패하도록 패치한다).
+  // 이렇게 merge를 실제로 실패시켜, 에러 화면과 [돌아가기]로 녹음이 보존된 채
+  // 스튜디오로 돌아가는지까지 확인한다.
+  test('합성 실패 경로: 클립을 불러올 수 없으면 에러 화면이 뜨고 돌아가기로 녹음이 보존된다', async ({ page }) => {
+    await page.addInitScript(() => {
+      const originalFetch = window.fetch;
+      window.fetch = (input, init) => {
+        const url = typeof input === 'string' ? input : input.url;
+        if (url.includes('/clips/animation.mp4')) {
+          return Promise.reject(new Error('시뮬레이션된 네트워크 실패'));
+        }
+        return originalFetch(input, init);
+      };
+    });
+
+    await page.goto('/');
+    await page.locator('.tile', { hasText: '애니메이션' }).click();
+    await page.locator('#recBtn').click();
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: 20000 });
+
+    await page.locator('button', { hasText: '저장하기' }).click();
+
+    await expect(page.locator('#errbox')).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('#errbox')).toContainText('영상 합성 중 문제가 생겼어요');
+    await expect(page.locator('#done')).toBeHidden();
+
+    // [돌아가기]를 누르면 스튜디오로 돌아가고, 녹음(afterRow)은 그대로 남아 있어야
+    // 한다 — 안내 문구("녹음은 남아 있어요")가 실제로 맞는지 여기서 검증한다.
+    await page.locator('#errBackBtn').click();
+    await expect(page.locator('#studio')).toHaveClass(/active/);
+    await expect(page.locator('#afterRow')).toBeVisible();
+  });
+
   test('다시 녹음을 누르면 초기 상태로 돌아가 다시 저장할 수 있다', async ({ page }) => {
     await page.goto('/');
     await page.locator('.tile', { hasText: '시트콤' }).click();

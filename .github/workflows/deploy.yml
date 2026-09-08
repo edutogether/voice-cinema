@@ -1,10 +1,8 @@
 name: Deploy Backend
 
-# 2026-09-01: 정본 배포처가 GitHub Pages(edutogether.github.io)에서
-# Firebase Hosting(voice-cinema.web.app)으로 이전됨 — 이제 이 워크플로우가
-# storage+functions에 더해 hosting까지 함께 배포한다. GitHub Pages(docs/)는
-# 당분간 병행 운영(포털 카드 링크 교체 전까지)이라 아직 자동배포가 남아있지만
-# 정본은 Firebase Hosting 쪽이다.
+# 2026-09-01: 정본 배포처가 GitHub Pages에서 Firebase Hosting(voice-cinema.web.app)으로
+# 이전됨 — 이 워크플로우가 storage+functions에 더해 hosting까지 배포한다.
+# 2026-09-08: GitHub Pages를 폐지해 배포처는 Firebase Hosting 한 곳뿐이다.
 #
 # CI(lint+test+e2e) 워크플로우가 통과한 뒤에만 이어서 실행되도록 workflow_run으로 연결한다
 # (push 트리거를 따로 두면 테스트 없이 배포될 수 있어 이렇게 묶었다).

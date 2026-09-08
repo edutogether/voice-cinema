@@ -21,8 +21,6 @@ dist/
 build/
 *.log
 .cache/
-outputs/*
-!outputs/.gitkeep
 tmp/
 cert/
 .env

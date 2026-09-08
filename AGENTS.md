@@ -11,6 +11,10 @@
 라이브: https://voice-cinema.web.app · Firebase 프로젝트 `inky-voice-cinema`(`asia-northeast3`)
 프론트는 Vite + React + TypeScript(2026-09-08 전환).
 
+**배포처는 Firebase Hosting 한 곳뿐이다.** GitHub Pages(`edutogether.github.io/voice-cinema`)를 한동안
+병행 운영했지만 **2026-09-08 대표 지시로 폐지**했다 — 그 주소는 이제 404이고, 되살릴 계획은 없다.
+`functions/index.js`의 CORS 허용 목록에서도 뺐다. "Pages는 왜 안 쓰지"를 다시 조사하지 않아도 된다.
+
 ## 명령
 
 ```bash
@@ -18,7 +22,7 @@ npm run dev       # 개발 서버 (http://localhost:4321)
 npm run build     # tsc --noEmit + vite build → dist/
 npm test          # vitest — 루트 9개 + functions 13개 = 22개
 npm run lint      # eslint (src/는 tsc가 담당하므로 제외)
-npm run test:e2e  # Playwright 9개. 빌드 후 dist/를 서빙해 실제 산출물로 검증한다
+npm run test:e2e  # Playwright 12개. 빌드 후 dist/를 서빙해 실제 산출물로 검증한다
                   # 최초 1회: npx playwright install chromium
 ```
 

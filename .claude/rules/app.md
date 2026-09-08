@@ -5,8 +5,9 @@
 - 무엇: 무성 클립 6종에 학생이 자기 목소리로 더빙 → 브라우저 ffmpeg.wasm으로 합성 → Firebase Storage 저장 → QR 전달
 - 사용자: 제4회 인천어린이청소년영화제 "InKY 놀이터" 부스 방문 학생. **행사일 2026-11-14(인천 CGV), 하루짜리 행사.**
   현장 예상 인원은 `[확인]` — 다만 "하루 2000명" 가정으로 실측 스트레스테스트를 통과해둔 상태(2026-08-28, 1989/2000 성공, 레이트리밋 429 0건)
-- 배포: Firebase Hosting + Functions (`inky-voice-cinema`, `asia-northeast3`). GitHub Pages(`edutogether.github.io/voice-cinema`)는
-  포털 카드 링크 교체 전까지 병행 운영 중인 옛 주소일 뿐, 정본은 https://voice-cinema.web.app
+- 배포: Firebase Hosting + Functions (`inky-voice-cinema`, `asia-northeast3`). **배포처는 https://voice-cinema.web.app 한 곳뿐이다** —
+  GitHub Pages는 2026-09-08 대표 지시로 폐지했고 옛 주소는 404다(의도된 결과). 다시 세울 일이 생기면 폐지 전 설정은
+  `build_type: legacy`, `source: master /docs`였다
 
 ## 배포 폴더
 - `firebase.json` public = `dist`(빌드 산출물, gitignore 대상). 2026-09-08 리액트 전환 전에는 `docs`였다 —
@@ -64,7 +65,7 @@
 - 테스트: `npm test` (vitest, 루트 9 + functions 13 = 22개). 개별 실행은 `cd functions && npm test`
 - 린트: `npm run lint` (eslint). `src/`는 `tsc`가 담당하므로 eslint 대상에서 뺐다. 빈 `catch{}`는 이 코드베이스가
   의도적으로 쓰는 패턴이라 허용해뒀다 — 버그가 아니다
-- E2E: `npm run test:e2e` (9개) — 빌드 후 `dist/`를 서빙해 실제 산출물로 검증한다. 최초 1회
+- E2E: `npm run test:e2e` (12개) — 빌드 후 `dist/`를 서빙해 실제 산출물로 검증한다. 최초 1회
   `npx playwright install chromium` 필요하고, Playwright 버전을 올리면 이 설치를 다시 해야 한다
 - 에뮬레이터: 쓰지 않음 — 서버 쪽은 순수 함수만 유닛테스트하고, 실제 동작은 배포 후 라이브로 확인한다
 
@@ -81,5 +82,5 @@
 - **`functions/`를 루트 패키지로 착각한다.** 자체 `node_modules`/`package-lock.json`/`vitest.config.js`를 가진
   독립 패키지다. 루트 `vitest.config.js`의 `include`가 `functions/`를 아예 안 건드리도록 좁혀둔 것도
   `functions/node_modules` 안 서드파티 테스트가 딸려 들어오는 걸 막기 위한 것이니 넓히지 말 것
-- **인라인 `<script>`를 고치고 CSP 해시를 안 고친다.** `firebase.json`의 `script-src`에 `sha256-...` 두 개가
-  박혀 있어, 인라인 스크립트 내용이 바뀌면 해시도 다시 계산해 넣어야 한다
+- **인라인 스크립트를 다시 만든다.** 전환 때 인라인을 0개로 만들고 `firebase.json`의 CSP 해시 2개도 지웠다 —
+  다시 만들면 해시를 박아야 하고, 잊으면 배포된 사이트에서만 화면이 죽는다(이 앱이 실제로 겪은 사고)

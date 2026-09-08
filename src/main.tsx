@@ -28,9 +28,15 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   });
   // 새 서비스워커가 제어권을 넘겨받으면 한 번만 새로고침한다 — 안 그러면 이미 열려
   // 있던 탭은 수동으로 두 번 새로고침해야 새 버전이 반영된다(2026-09-03 실측).
+  //
+  // 단, 이 탭에 원래 제어자가 없었다면(=이 기기의 첫 방문, 캐시 비움 뒤 첫 방문)
+  // 새로고침하지 않는다. 그 경우 화면은 방금 네트워크에서 받은 최신본이라 새로
+  // 고칠 것이 없는데, 설치는 엔진 31MB를 다 받은 뒤에야 끝나므로 그 사이 이미
+  // 녹음·합성·업로드 중인 학생의 작업을 아무 안내 없이 날려버릴 수 있다.
+  const hadController = !!navigator.serviceWorker.controller;
   let reloaded = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (reloaded) return;
+    if (!hadController || reloaded) return;
     reloaded = true;
     window.location.reload();
   });

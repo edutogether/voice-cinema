@@ -28,6 +28,15 @@ const PROGRESS_PHASES: readonly Phase[] = ['preview', 'recording', 'recorded', '
 
 const MIME_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
 
+// reset()과 stopPreview() 둘 다 "영상을 처음 상태(정지·시작 지점·무음)로 되돌린다"를
+// 그대로 반복하고 있었다 — 한 곳으로 모은다.
+function resetVideo(v: HTMLVideoElement | null): void {
+  if (!v) return;
+  v.pause();
+  v.currentTime = 0;
+  v.muted = true;
+}
+
 // 마이크 스트림은 한 번 얻으면 앱이 살아있는 동안 재사용한다(장르를 바꿀 때마다
 // 권한 프롬프트가 다시 뜨지 않도록).
 let micStream: MediaStream | null = null;
@@ -90,12 +99,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     runRef.current++;
     stopRecorder();
     stopReplay();
-    const v = videoRef.current;
-    if (v) {
-      v.pause();
-      v.currentTime = 0;
-      v.muted = true;
-    }
+    resetVideo(videoRef.current);
     recorderRef.current = null;
     setRecorded(null);
     setProgress(0);
@@ -134,12 +138,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
   }, [phase, stopRecorder, stopReplay, videoRef]);
 
   const stopPreview = useCallback(() => {
-    const v = videoRef.current;
-    if (v) {
-      v.pause();
-      v.currentTime = 0;
-      v.muted = true;
-    }
+    resetVideo(videoRef.current);
     setProgress(0);
     setHint(HINT.ready);
     setPhase('ready');
