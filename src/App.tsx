@@ -20,6 +20,12 @@ export function App() {
   const [engineLoading, setEngineLoading] = useState(true);
   const [engineFailed, setEngineFailed] = useState(false);
 
+  // 화면이 실제로 붙었다고 알린다 — 스플래시가 이 신호를 기다렸다가 걷힌다
+  // (src/styles/splash.css의 로드 게이트). 시간은 CSS가 재고 여기서는 조건만 준다.
+  useEffect(() => {
+    document.body.classList.add('app-ready');
+  }, []);
+
   // 첫 더빙 전에 엔진(31MB)과 App Check를 미리 준비해 저장 시 대기시간을 줄인다.
   useEffect(() => {
     loadEngine((percent) => setEnginePercent(percent))

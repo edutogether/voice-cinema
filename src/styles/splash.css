@@ -10,6 +10,16 @@ body:has(#splash) {
    재는 셈이라 그만큼 늦게 사라진다. CSS 애니메이션은 문서가 그려지는 순간부터
    흐르므로 전환 전(파싱 직후 시작하던 인라인 스크립트)과 같은 시점에 맞는다.
    1800ms 유지 → 500ms 페이드(전환 전 transition: opacity .5s와 동일) → 2400ms에 제거. */
+/* 로드 게이트(2026-09-09 표준 개정) — 앱이 화면에 붙기 전에는 소멸을 멈춰 세운다.
+   고정 시간만 쓰면 회선이 느릴 때 스플래시가 걷힌 뒤 덜 그려진 화면이 보인다
+   (실측: JS 번들만 4초 늦어도 1.75초, 6초 늦으면 3.77초간 빈 화면 노출).
+   시간은 여전히 CSS가 재고, JS는 "앱이 붙었는가"라는 조건만 알려준다 —
+   `app-ready` 클래스 하나가 그 신호다(src/App.tsx). 일반 회선에서는 앱이
+   30~70ms 만에 붙어 멈춤이 사실상 없다(소멸 시각이 실측 편차 안에서 그대로다). */
+body:not(.app-ready) #splash {
+  animation-play-state: paused;
+}
+
 #splash {
   animation: splashOut 2400ms ease forwards;
   position: fixed;
@@ -86,6 +96,16 @@ body:has(#splash) {
     transform: scale(1);
   }
 }
+/* 움직임을 줄이도록 설정한 사용자에게는 장식 애니메이션(로고 팝·로딩바)만 끈다.
+   스플래시 자체의 유지·페이드까지 없애면 덜 그려진 화면을 가려주는 역할이 사라지므로
+   그건 그대로 둔다. */
+@media (prefers-reduced-motion: reduce) {
+  #splash .logo,
+  #splash .sbar i {
+    animation: none;
+  }
+}
+
 @keyframes splashBar {
   0% {
     transform: translateX(-76px);
