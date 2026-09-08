@@ -8,6 +8,15 @@
 // 그게 실제로 지켜지는지 여기서 확인한다.
 import { test, expect } from '@playwright/test';
 
+// 이 두 테스트는 녹음 10초를 포함해 상호작용이 길다. 그 사이 서비스워커가 처음
+// 제어권을 잡으면 앱이 (설계대로) 한 번 새로고침하는데, 그러면 조작 중이던
+// 요소가 사라져 테스트가 흔들린다. 여기서 볼 것은 세션 초기화 동작이지
+// 서비스워커가 아니므로, 등록 자체를 막아 결정적으로 만든다
+// (서비스워커는 offline-boot.spec.js가 따로 검증한다).
+test.beforeEach(async ({ page }) => {
+  await page.route('**/sw.js', (route) => route.abort());
+});
+
 test('홈에 나갔다 같은 장르로 다시 들어오면 이전 녹음이 남아있지 않다', async ({ page }) => {
   await page.goto('/');
   await page.locator('.tile', { hasText: '드라마' }).click();
