@@ -133,10 +133,16 @@ app.post('/upload', async (req, res, next) => {
 // 개발 서버가 5500(Live Server)/8080(firebase serve)에서 이 포트로 바뀌었는데 목록이
 // 그대로 남아 있어, 로컬에서 실제 업로드 경로를 시험하면 CORS로 막히고 폴백만
 // 확인하게 되는 상태였다.
+// 2026-09-09: 정본 주소를 voice.edutogether.kr로 옮기기로 확정돼 새 출처를 미리 넣어둔다.
+// 바로 위 edutogether.kr 항목은 `$`로 끝나 서브도메인을 매치하지 않으므로 별도 항목이
+// 필요하다(실측 확인). 아직 존재하지 않는 출처를 미리 허용해도 지금 라이브에는 아무
+// 영향이 없고, 도메인이 붙는 순간 "화면은 뜨는데 업로드만 CORS로 막히는" 구간이 없어진다.
+// 옛 주소(voice-cinema.web.app)는 전환 후에도 당분간 함께 살려둔다.
 const ALLOWED_ORIGINS = [
   /^https:\/\/voice-cinema\.web\.app$/,
   /^https:\/\/voice-cinema\.firebaseapp\.com$/,
   /^https:\/\/edutogether\.kr$/,
+  /^https:\/\/voice\.edutogether\.kr$/,
   /^http:\/\/localhost:4321$/,
   /^http:\/\/127\.0\.0\.1:4321$/,
 ];
