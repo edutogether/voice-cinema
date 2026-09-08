@@ -34,6 +34,16 @@ npm run test:e2e  # Playwright, 실제 Chromium + 가짜 마이크로 전체 흐
 
 ## 이 저장소의 함정 — 실제로 사고가 났던 것들
 
+### 0. `docs/`가 곧 웹 루트다 — 내부 문서를 절대 여기 두지 말 것
+이 저장소는 하필 배포 폴더 이름이 `docs`다(`firebase.json`의 `public: "docs"`). 다른 저장소에서
+"문서니까 `docs/`"라는 습관대로 파일을 만들면 **그 문서가 라이브 사이트에 그대로 공개된다.**
+`firebase.json`의 `ignore`는 `**/.*`와 `test/**`만 제외하므로 다른 건 전부 서빙된다.
+
+실제로 2026-09-08 문서 정비 때 `docs/intents/`(내부 기획 문서)를 만들라는 지시가 내려왔다가
+이 이유로 취소됐다 — 그대로 만들었으면 intent·spec·plan이 전부 공개됐을 건이다.
+**내부 문서는 전부 루트의 `_docs/` 아래에 둔다**(`_docs/intents/`, `_docs/ops/`, `_docs/CHANGELOG.md`).
+`docs/` 아래에는 실제로 브라우저에 서빙돼야 하는 것만 넣는다.
+
 ### 1. Functions의 `concurrency`를 비워두지 말 것
 `functions/index.js`의 `voiceCinema`는 `concurrency: 1`이다. Functions v2는 이 값을 안 적으면
 **인스턴스 하나가 요청을 최대 80건까지 동시에** 받는데, `/upload`는 요청 하나가 GCS 저장이 끝날
