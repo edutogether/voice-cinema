@@ -6,7 +6,12 @@ body:has(#splash) {
   background: var(--bg);
 }
 
+/* 사라지는 타이밍을 CSS로 잡는다 — JS 타이머로 시작하면 번들이 로드된 뒤부터
+   재는 셈이라 그만큼 늦게 사라진다. CSS 애니메이션은 문서가 그려지는 순간부터
+   흐르므로 전환 전(파싱 직후 시작하던 인라인 스크립트)과 같은 시점에 맞는다.
+   1800ms 유지 → 500ms 페이드(전환 전 transition: opacity .5s와 동일) → 2400ms에 제거. */
 #splash {
+  animation: splashOut 2400ms ease forwards;
   position: fixed;
   inset: 0;
   z-index: 999;
@@ -16,11 +21,22 @@ body:has(#splash) {
   justify-content: center;
   gap: 14px;
   background: linear-gradient(180deg, var(--bg), var(--bg2));
-  transition: opacity 0.5s ease;
 }
-#splash.hide {
-  opacity: 0;
-  pointer-events: none;
+@keyframes splashOut {
+  0%,
+  74.99% {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  75% {
+    opacity: 1;
+    pointer-events: none;
+  }
+  95.83%,
+  100% {
+    opacity: 0;
+    pointer-events: none;
+  }
 }
 #splash .logo {
   font-size: clamp(48px, 10vw, 72px);

@@ -48,12 +48,18 @@ export default [
     },
   },
   {
-    // 빌드 도구(Vite 플러그인)와 루트 설정 — Node에서 돈다
-    files: ['tools/precache-plugin.js', '*.config.js', '*.config.mjs'],
+    // 빌드·검증 도구와 루트 설정 — Node에서 돈다. compare-visual.js는 그 안에
+    // page.evaluate()로 브라우저에서 실행되는 코드를 함께 담고 있어 두 전역이 다 필요하다.
+    files: ['tools/*.js', '*.config.js', '*.config.mjs'],
+    ignores: ['tools/sw-template.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
-      globals: { process: 'readonly', console: 'readonly' },
+      globals: {
+        process: 'readonly', console: 'readonly',
+        window: 'readonly', document: 'readonly', getComputedStyle: 'readonly',
+        setInterval: 'readonly', clearInterval: 'readonly',
+      },
     },
   },
   {

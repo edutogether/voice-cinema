@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Home } from './components/Home';
 import { Result, type SaveJob } from './components/Result';
-import { Splash } from './components/Splash';
 import { Studio } from './components/Studio';
 import type { Genre } from './genres';
 import { loadEngine } from './lib/ffmpeg';
@@ -17,13 +16,14 @@ export function App() {
   // 호출하는 대신 마운트 경계가 보장한다).
   const [studioKey, setStudioKey] = useState(0);
   const [job, setJob] = useState<SaveJob | null>(null);
-  const [engineProgress, setEngineProgress] = useState<number | null>(0);
+  const [enginePercent, setEnginePercent] = useState(0);
+  const [engineLoading, setEngineLoading] = useState(true);
   const [engineFailed, setEngineFailed] = useState(false);
 
   // 첫 더빙 전에 엔진(31MB)과 App Check를 미리 준비해 저장 시 대기시간을 줄인다.
   useEffect(() => {
-    loadEngine((percent) => setEngineProgress(percent))
-      .then(() => setEngineProgress(null))
+    loadEngine((percent) => setEnginePercent(percent))
+      .then(() => setEngineLoading(false))
       .catch((e) => {
         console.error('[엔진 준비 실패]', e);
         setEngineFailed(true);
@@ -43,39 +43,37 @@ export function App() {
   };
 
   return (
-    <>
-      <Splash />
-      <div className="wrap">
-        <Home
-          active={view === 'home'}
-          engineProgress={engineProgress}
-          engineFailed={engineFailed}
-          onSelect={openStudio}
+    <div className="wrap">
+      <Home
+        active={view === 'home'}
+        enginePercent={enginePercent}
+        engineLoading={engineLoading}
+        engineFailed={engineFailed}
+        onSelect={openStudio}
+      />
+      {genre && (
+        <Studio
+          key={studioKey}
+          active={view === 'studio'}
+          genre={genre}
+          onHome={goHome}
+          onSave={(blob, mime) => {
+            setJob({ genre, blob, mime });
+            setView('result');
+          }}
         />
-        {genre && (
-          <Studio
-            key={studioKey}
-            active={view === 'studio'}
-            genre={genre}
-            onHome={goHome}
-            onSave={(blob, mime) => {
-              setJob({ genre, blob, mime });
-              setView('result');
-            }}
-          />
-        )}
-        {job && (
-          <Result
-            active={view === 'result'}
-            job={job}
-            onHome={goHome}
-            onBack={() => {
-              setJob(null);
-              setView('studio');
-            }}
-          />
-        )}
-      </div>
-    </>
+      )}
+      {job && (
+        <Result
+          active={view === 'result'}
+          job={job}
+          onHome={goHome}
+          onBack={() => {
+            setJob(null);
+            setView('studio');
+          }}
+        />
+      )}
+    </div>
   );
 }

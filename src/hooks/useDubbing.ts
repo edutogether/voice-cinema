@@ -7,15 +7,24 @@ import { pickSupportedMime } from '../logic';
 // 여기서는 단계(phase) 하나가 화면 전체를 결정하고, 정리는 effect cleanup이 맡는다.
 export type Phase = 'idle' | 'ready' | 'preview' | 'countdown' | 'recording' | 'recorded' | 'replaying';
 
-const HINTS: Record<Phase, string> = {
+// 안내 문구는 단계에서 파생하지 않고 전환 시점에 명시적으로 바꾼다 — 카운트다운
+// 동안에는 직전 문구가 그대로 남아야 하기 때문이다(전환 전 동작과 동일).
+const HINT = {
   idle: '먼저 [미리 보기]로 영상을 확인하고, 준비되면 녹음하세요',
   ready: '준비됐나요? [녹음 시작]을 누르면 3·2·1 후 시작돼요',
   preview: '👀 영상을 보며 어떤 더빙을 할지 생각해 보세요',
-  countdown: '준비됐나요? [녹음 시작]을 누르면 3·2·1 후 시작돼요',
   recording: '🎙️ 지금 목소리를 연기해 보세요!',
   recorded: '잘했어요! 다시 듣고, 마음에 들면 저장하세요',
   replaying: '▶ 내 더빙 영화 재생 중…',
-};
+  micDenied: '⚠️ 마이크 사용을 허용해 주세요 (브라우저 권한)',
+  insecure: '⚠️ 이 페이지는 https 주소여야 마이크가 켜져요',
+  micBroken: '⚠ 마이크에 문제가 생겼어요 — 연결 확인 후 다시 눌러 주세요',
+  recordFailed: '⚠ 녹음을 시작하지 못했어요 — 다시 눌러 주세요',
+} as const;
+
+// 진행바가 보이는 단계. 미리보기 중과 녹음이 시작된 뒤에만 보이고, 대기·카운트다운
+// 중에는 숨는다(전환 전 `.progress.show` 토글 시점과 동일).
+const PROGRESS_PHASES: readonly Phase[] = ['preview', 'recording', 'recorded', 'replaying'];
 
 const MIME_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
 
@@ -38,6 +47,7 @@ async function ensureMic(): Promise<MediaStream | null> {
 export interface Dubbing {
   phase: Phase;
   hint: string;
+  showProgress: boolean;
   progress: number;
   countdown: number;
   recordedBlob: Blob | null;
@@ -50,7 +60,7 @@ export interface Dubbing {
 
 export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoElement | null>): Dubbing {
   const [phase, setPhase] = useState<Phase>('idle');
-  const [errorHint, setErrorHint] = useState('');
+  const [hint, setHint] = useState<string>(HINT.idle);
   const [progress, setProgress] = useState(0);
   const [countdown, setCountdown] = useState(0);
   const [recorded, setRecorded] = useState<{ blob: Blob; mime: string } | null>(null);
@@ -90,7 +100,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     setRecorded(null);
     setProgress(0);
     setCountdown(0);
-    setErrorHint('');
+    setHint(HINT.idle);
     setPhase('idle');
   }, [stopRecorder, stopReplay, videoRef]);
 
@@ -111,6 +121,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
       else if (phase === 'recording') stopRecorder();
       else if (phase === 'replaying') {
         stopReplay();
+        setHint(HINT.recorded);
         setPhase('recorded');
       }
     };
@@ -130,6 +141,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
       v.muted = true;
     }
     setProgress(0);
+    setHint(HINT.ready);
     setPhase('ready');
   }, [videoRef]);
   // onEnded가 최신 stopPreview를 보도록 ref로 들고 있는다(effect 의존성 순환 방지).
@@ -146,6 +158,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     if (!v) return;
     v.muted = false;
     v.currentTime = 0;
+    setHint(HINT.preview);
     setPhase('preview');
     void v.play().catch(() => {});
   }, [phase, stopPreview, videoRef]);
@@ -159,15 +172,11 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
       const stream = await ensureMic();
       if (stale()) return;
       if (!stream) {
-        setErrorHint(
-          window.isSecureContext
-            ? '⚠️ 마이크 사용을 허용해 주세요 (브라우저 권한)'
-            : '⚠️ 이 페이지는 https 주소여야 마이크가 켜져요'
-        );
+        setHint(window.isSecureContext ? HINT.micDenied : HINT.insecure);
         return;
       }
 
-      setErrorHint('');
+      // 카운트다운 동안에는 문구를 바꾸지 않는다 — 직전 문구가 그대로 남는다.
       setPhase('countdown');
       for (let n = 3; n > 0; n--) {
         setCountdown(n);
@@ -188,7 +197,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
         recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
       } catch {
         micStream = null;
-        setErrorHint('⚠ 마이크에 문제가 생겼어요 — 연결 확인 후 다시 눌러 주세요');
+        setHint(HINT.micBroken);
         setPhase('idle');
         return;
       }
@@ -203,6 +212,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
         const mime = chunks[0]?.type || 'audio/webm';
         setRecorded({ blob: new Blob(chunks, { type: mime }), mime });
         setProgress(100);
+        setHint(HINT.recorded);
         setPhase('recorded');
         const vv = videoRef.current;
         if (vv) {
@@ -212,6 +222,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
       };
       recorderRef.current = recorder;
 
+      setHint(HINT.recording);
       setPhase('recording');
       await v.play().catch(() => {});
       if (stale()) {
@@ -222,7 +233,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
         recorder.start();
       } catch {
         micStream = null;
-        setErrorHint('⚠ 녹음을 시작하지 못했어요 — 다시 눌러 주세요');
+        setHint(HINT.recordFailed);
         setPhase('idle');
         return;
       }
@@ -245,6 +256,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     const url = URL.createObjectURL(recorded.blob);
     const audio = new Audio(url);
     replayRef.current = { audio, url };
+    setHint(HINT.replaying);
     setPhase('replaying');
     void v.play().catch(() => {});
     void audio.play().catch(() => {});
@@ -258,7 +270,8 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
 
   return {
     phase,
-    hint: errorHint || HINTS[phase],
+    hint,
+    showProgress: PROGRESS_PHASES.includes(phase),
     progress,
     countdown,
     recordedBlob: recorded?.blob ?? null,

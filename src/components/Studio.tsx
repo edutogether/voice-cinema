@@ -51,7 +51,7 @@ export function Studio({ active, genre, onHome, onSave }: Props) {
         )}
       </div>
 
-      <div className={`progress${phase === 'idle' ? '' : ' show'}`}>
+      <div className={`progress${dub.showProgress ? ' show' : ''}`}>
         <i style={{ width: `${dub.progress}%` }} />
       </div>
 

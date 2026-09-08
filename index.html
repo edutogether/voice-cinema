@@ -7,10 +7,18 @@
 <title>InKY Voice Cinema</title>
 <!-- 인라인 스크립트는 두지 않는다 — CSP의 script-src에 해시를 박으면 내용이 바뀔
      때마다 firebase.json을 같이 고쳐야 하고, 잊으면 배포된 사이트에서만 화면이 죽는다.
-     파비콘 생성과 스플래시 제거는 각각 src/lib/favicon.ts와 Splash 컴포넌트로 옮겼다. -->
+     파비콘 생성과 스플래시 제거는 각각 src/lib/favicon.ts와 src/lib/splash.ts로 옮겼다. -->
 <script src="/vendor/qrcode.js"></script>
 </head>
 <body>
+<!-- 스플래시는 정적 마크업으로 둔다 — 리액트가 그리면 번들 로드 전까지 빈 화면이
+     잠깐 보인다. 사라지는 시점만 src/lib/splash.ts가 맡는다. -->
+<div id="splash">
+  <div class="logo">🎬</div>
+  <div class="name">InKY <span class="gold">Voice Cinema</span></div>
+  <div class="stagline">무성영화에 내 목소리를 더빙해 완성하는 나만의 영화</div>
+  <span class="sbar"><i></i></span>
+</div>
 <div id="root"></div>
 <script type="module" src="/src/main.tsx"></script>
 </body>
