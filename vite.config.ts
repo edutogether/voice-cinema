@@ -1,14 +1,14 @@
 import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
-import { precacheSW } from './build/precache-plugin.js';
+import { precacheSW } from './tools/precache-plugin.js';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   plugins: [
     react(),
-    precacheSW({ swSource: root + 'build/sw-template.js' }),
+    precacheSW({ swSource: root + 'tools/sw-template.js' }),
   ],
   build: {
     // 인라인 스크립트를 하나도 만들지 않는다. CSP의 script-src에 해시를 박아두면

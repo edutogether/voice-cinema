@@ -49,7 +49,7 @@ export default [
   },
   {
     // 빌드 도구(Vite 플러그인)와 루트 설정 — Node에서 돈다
-    files: ['build/precache-plugin.js', '*.config.js', '*.config.mjs'],
+    files: ['tools/precache-plugin.js', '*.config.js', '*.config.mjs'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
@@ -59,7 +59,7 @@ export default [
   {
     // 서비스워커 원본. 빌드 시점에 치환되는 자리표시자(__PRECACHE_URLS__ 등)가
     // 들어 있어 그 자체로는 실행되지 않는 템플릿이라, 문법 검사만 통과하면 된다.
-    files: ['build/sw-template.js'],
+    files: ['tools/sw-template.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
