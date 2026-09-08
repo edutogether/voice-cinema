@@ -40,6 +40,11 @@ jobs:
           node-version: '22'
       - run: npm ci
         working-directory: functions
+      # 2026-09-08 리액트 전환: 배포 폴더가 docs/(소스 그대로)에서 dist/(빌드
+      # 산출물)로 바뀌었다. dist/는 저장소에 없으므로 여기서 반드시 빌드해야 한다 —
+      # 이 단계가 없으면 hosting 배포가 빈 폴더를 올리거나 아예 실패한다.
+      - run: npm ci
+      - run: npm run build
       - uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
@@ -61,3 +66,11 @@ jobs:
           fi
           functions_body=$(curl -s https://asia-northeast3-inky-voice-cinema.cloudfunctions.net/voiceCinema/)
           echo "$functions_body" | grep -q '"ok":true' || { echo "Functions 응답에 ok:true 없음: $functions_body"; exit 1; }
+          # 빌드 산출물이 실제로 올라갔는지 확인한다 — index.html이 해시 붙은
+          # 번들을 가리키고, 서비스워커가 프리캐시 목록을 담은 채 서빙돼야 한다.
+          # (빈 dist/를 배포하면 200은 나와도 이 검사에서 걸린다.)
+          home=$(curl -s https://voice-cinema.web.app/)
+          echo "$home" | grep -qE '/assets/main-[A-Za-z0-9_-]+\.js' || { echo "index.html에 빌드된 번들 참조가 없음"; exit 1; }
+          sw=$(curl -s https://voice-cinema.web.app/sw.js)
+          echo "$sw" | grep -q '/vendor/ffmpeg-core/ffmpeg-core.wasm' || { echo "sw.js 프리캐시 목록에 엔진이 없음"; exit 1; }
+          echo "$sw" | grep -q '/index.html' || { echo "sw.js 프리캐시 목록에 진입점이 없음"; exit 1; }
