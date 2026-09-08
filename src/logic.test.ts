@@ -1,8 +1,7 @@
-// 테스트 커버리지 프론트엔드 확장(2026-08-27). docs/app.js 자체는 DOM/브라우저 API에
-// 강하게 결합돼 있어 통째로 테스트하기 어렵다 — 대신 순수 로직을 docs/logic.mjs로
-// 뽑아 app.js가 그대로 가져다 쓰게 했고, 그 로직을 여기서 검증한다.
+// 순수 로직 유닛테스트. UI는 DOM/브라우저 API에 묶여 통째로 테스트하기 어려우므로,
+// 판단이 들어가는 로직만 logic.ts로 뽑아 여기서 검증한다.
 import { test, expect } from 'vitest';
-import { pickAudioExtension, buildUploadFilename, pickSupportedMime, shouldRetryUpload } from '../logic.js';
+import { pickAudioExtension, buildUploadFilename, pickSupportedMime, shouldRetryUpload } from './logic';
 
 test('pickAudioExtension: mp4 계열은 m4a, 그 외(webm/opus)는 webm', () => {
   expect(pickAudioExtension('audio/mp4')).toBe('m4a');
@@ -19,11 +18,11 @@ test('buildUploadFilename: genreId+timestamp+token으로 파일명을 만든다'
 
 test('buildUploadFilename: token 없이는 예외를 던진다 (추측 가능한 파일명 방지)', () => {
   expect(() => buildUploadFilename('fantasy', 1735689600000, '')).toThrow();
-  expect(() => buildUploadFilename('fantasy', 1735689600000, undefined)).toThrow();
+  expect(() => buildUploadFilename('fantasy', 1735689600000, undefined as unknown as string)).toThrow();
 });
 
 test('pickSupportedMime: 지원하는 첫 번째 후보를 고른다', () => {
-  const isTypeSupported = (m) => m === 'audio/webm';
+  const isTypeSupported = (m: string) => m === 'audio/webm';
   expect(
     pickSupportedMime(['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'], isTypeSupported)
   ).toBe('audio/webm');

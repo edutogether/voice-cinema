@@ -17,6 +17,7 @@ node_modules/
 .claude/assistant-daemon-state.json
 .firebase/
 dist/
+.vite/
 build/
 *.log
 .cache/

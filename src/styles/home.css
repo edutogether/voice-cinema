@@ -1,0 +1,206 @@
+/* 홈: 제목 + 장르 타일 6개 */
+
+.brand {
+  text-align: center;
+  margin: 0 auto clamp(10px, 1.6vw, 18px);
+}
+.brand h1 {
+  font-size: clamp(28px, 5vw, 48px);
+  line-height: 1.05;
+  margin: 0;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.brand h1 .gold {
+  background: linear-gradient(135deg, var(--gold-soft) 0%, var(--gold) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.tagline-top {
+  display: inline-block;
+  color: var(--muted);
+  font-size: clamp(12px, 1.5vw, 15px);
+  margin: 10px 0 0;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012));
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 20px;
+}
+
+/* 엔진(31MB) 준비 배너 */
+.enginebar {
+  max-width: 520px;
+  margin: 14px auto 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+.enginebar b {
+  color: var(--gold);
+}
+.enginebar.err {
+  border-color: rgba(255, 84, 112, 0.4);
+  background: rgba(255, 84, 112, 0.08);
+}
+.enginebar.err b {
+  color: var(--danger);
+}
+
+/* 좁은 화면에서 16:9를 강제하면 카드 블록이 낮아져 위아래로 빈 공간이 남는다 —
+   16:9는 가로 폭이 넉넉한 데스크탑에서만 적용하고, 모바일은 남는 세로를 채운다. */
+.grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: clamp(14px, 2.3vw, 24px);
+}
+@media (min-width: 760px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: none;
+    align-content: center;
+  }
+  .tile {
+    aspect-ratio: 16 / 9;
+  }
+}
+
+.tile {
+  position: relative;
+  border-radius: 24px;
+  background: #05070f;
+  cursor: pointer;
+  overflow: hidden;
+  min-height: 0;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.25s ease;
+}
+.tile:hover {
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.55),
+    0 0 0 2px var(--c),
+    0 0 48px 6px color-mix(in srgb, var(--c) 55%, transparent);
+}
+.tile:active {
+  transform: scale(0.97);
+}
+.tile::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: var(--c);
+  z-index: 2;
+}
+
+.tile-media {
+  position: absolute;
+  inset: 0;
+}
+.tile-media .thumb,
+.tile-media .preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.25s ease, transform 0.3s ease;
+}
+.tile-media .preview {
+  opacity: 0;
+}
+/* 호버 재생이 실제로 시작된 순간에만 영상이 썸네일을 대체한다. */
+.tile-media .preview.playing {
+  opacity: 1;
+}
+.tile-media:has(.preview.playing) .thumb {
+  opacity: 0;
+}
+.tile:hover .tile-media .thumb,
+.tile:hover .tile-media .preview {
+  transform: scale(1.05);
+}
+
+.tile-tint {
+  position: absolute;
+  inset: 0;
+  background: var(--c);
+  opacity: 0;
+  mix-blend-mode: overlay;
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.tile:hover .tile-tint {
+  opacity: 0.4;
+}
+.tile-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(5, 7, 15, 0.05) 35%, rgba(5, 7, 15, 0.92) 100%);
+  z-index: 1;
+}
+.tile-body {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  padding: clamp(14px, 2.4vw, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tile-body .gname-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.tile-body .ic {
+  color: #fff;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+  display: flex;
+  flex: none;
+}
+.tile-body .ic svg {
+  width: clamp(20px, 2.8vw, 28px);
+  height: clamp(20px, 2.8vw, 28px);
+  display: block;
+}
+.tile-body .gname {
+  font-size: clamp(19px, 2.6vw, 28px);
+  font-weight: 800;
+}
+.tile-body .gsub {
+  font-size: clamp(12px, 1.6vw, 15px);
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* 참고 사이트의 실제 computed style에 맞춘 값(2026-09-03, 팀장 확인). */
+.privacylink {
+  display: inline-block;
+  margin: 10px auto 0;
+  font-family: 'Pretendard Variable', 'Pretendard', 'SUIT', 'Noto Sans KR', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.82);
+  text-decoration: none;
+  transition: color 0.2s;
+  text-align: center;
+}
+.privacylink:hover {
+  color: var(--gold);
+  text-decoration: underline;
+}

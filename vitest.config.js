@@ -1,11 +1,10 @@
 import { defineConfig } from 'vitest/config';
 
-// 2026-09-07, 대표 승인 vitest 이전 — functions/는 별도 npm 패키지(자체
-// node_modules/package-lock)라 여기서 다루지 않는다(functions/vitest.config.js 참고).
-// include를 정확히 이 두 파일로만 좁혀서, functions/node_modules 안의 서드파티
-// 테스트 파일이 잘못 주워지는 문제(팀장 조사에서 실제로 확인됨)를 원천적으로 피한다.
+// 루트 패키지의 유닛테스트만 포함한다. functions/는 자체 node_modules를 가진
+// 독립 패키지라 여기서 아예 건드리지 않는다 — 그래야 그 안의 서드파티 테스트
+// 파일이 잘못 주워지는 문제가 원천적으로 생기지 않는다.
 export default defineConfig({
   test: {
-    include: ['docs/test/*.test.js', 'test/*.test.js'],
+    include: ['src/**/*.test.ts', 'test/*.test.js'],
   },
 });

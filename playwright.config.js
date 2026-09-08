@@ -1,7 +1,7 @@
-// E2E 테스트 설정(2026-08-27, 테스트 커버리지 완성도 향상 — 대표 지시).
-// docs/를 정적으로 서빙해 실제 브라우저(Chromium)에서 녹음→합성→저장 흐름을 검증한다.
-// Chromium의 내장 가짜 미디어 장치를 쓴다 — 오디오 데이터가 항상 잘 만들어진
-// 유효한 스트림이라, 손으로 만든 AudioContext 트릭보다 훨씬 안정적이다.
+// 실사용 흐름 E2E 설정. 소스가 아니라 **빌드 결과(dist/)** 를 서빙해서,
+// 실제 배포되는 것과 같은 산출물로 녹음→합성→저장 흐름을 검증한다.
+// Chromium의 내장 가짜 미디어 장치를 쓴다 — 오디오 데이터가 항상 유효한
+// 스트림이라 손으로 만든 AudioContext 트릭보다 안정적이다.
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
@@ -11,10 +11,10 @@ export default defineConfig({
   retries: 0,
   reporter: 'list',
   webServer: {
-    command: 'npx serve -l 4321 docs',
+    command: 'npm run build && npx vite preview --port 4321 --strictPort',
     url: 'http://localhost:4321',
     reuseExistingServer: !process.env.CI,
-    timeout: 30000,
+    timeout: 180000,
   },
   use: {
     baseURL: 'http://localhost:4321',
