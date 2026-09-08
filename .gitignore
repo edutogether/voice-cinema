@@ -1,5 +1,10 @@
 node_modules/
 .claude/settings.local.json
+# 세션 도구가 만드는 로컬 전용 파일 — 지금까지 .git/info/exclude로만 무시되고
+# 있었는데 그건 커밋되지 않아 다른 PC나 Codex에서 열면 무시 설정이 안 따라온다
+# (CONVENTIONS §7 표준, 2026-09-08).
+.claude/worktrees/
+.claude/scheduled_tasks.lock
 .firebase/
 dist/
 build/
