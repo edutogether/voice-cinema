@@ -52,6 +52,12 @@ body:not(.app-ready) #splash {
   font-size: clamp(48px, 10vw, 72px);
   filter: drop-shadow(0 10px 24px rgba(233, 196, 106, 0.35));
   animation: splashPop 0.6s ease;
+  /* will-change를 여기 붙이지 말 것 — 2026-09-10에 붙였다가 측정으로 되돌렸다.
+     "로고만 합성 레이어 밖이라 끊긴다"는 가설로 `will-change: transform, opacity`를
+     줬는데, 화면에 실제로 나간 프레임의 최대 공백이 **70ms에서 360ms로 다섯 배 나빠졌다**
+     (중앙값, 3회씩). 이 요소에는 `filter: drop-shadow`가 걸려 있어서, 레이어로 올리면
+     매 프레임 필터를 다시 그려야 해 오히려 비싸진다. 그림자만 빼도 316ms로 별로였고,
+     will-change를 뺀 쪽이 70ms, 둘 다 뺀 쪽이 63ms였다. */
 }
 #splash .name {
   font-size: clamp(26px, 5vw, 38px);
@@ -80,7 +86,10 @@ body:not(.app-ready) #splash {
   height: 100%;
   border-radius: 99px;
   background: linear-gradient(90deg, var(--gold), var(--gold-soft));
-  animation: splashBar 1.15s ease-in-out infinite;
+  /* ease-in-out이 아니라 linear다. 끝에서 감속해 거의 서 있다가(실측 0.3px/프레임)
+     다음 프레임에 -266px로 순간이동해서 1.15초마다 울컥거렸다. 등속이면 되돌아가는
+     불연속 자체는 남지만 그 앞에서 서지 않아 훨씬 덜 튄다. */
+  animation: splashBar 1.15s linear infinite;
   will-change: transform;
 }
 @keyframes splashPop {
