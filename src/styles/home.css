@@ -82,7 +82,7 @@
        1440x900에서 카드 위치 245px·높이 238px로 변경 전과 정확히 같다.
        상수가 아니라 --title-drop에 비례시킨 이유는, 세로가 짧아 제목을 못 내리는 창에서는
        이 패딩도 함께 0이 되어야 하기 때문이다(안 그러면 그만큼 더 화면 밖으로 밀린다). */
-    padding-bottom: calc(var(--title-drop) * 1.12);
+    padding-bottom: calc((var(--title-drop) + var(--tagline-extra)) * 1.081);
   }
   /* 제목이 화면 맨 위에 붙어 있고 그 아래가 크게 비어 있어, 제목 블록을 「화면 맨 위」와
      「카드 맨 위」의 가운데로 내린다(대표 지시 2026-09-09). 1440x900에서 위·아래 여백이
@@ -91,10 +91,21 @@
      세로가 모자라면 줄어들지 못하고 화면 밖으로 밀린다(1440x700에서 93px 넘치는 것을
      실측으로 확인했다). 780px를 넘는 만큼만 최대 49px까지 쓰므로 문턱에서 튀지 않는다. */
   #home {
-    --title-drop: min(49px, max(0px, 100dvh - 780px));
+    /* 세로 여유. 아래 두 값이 모두 여기서 나오므로, 창이 짧아지면 제목도 설명줄도
+       같이 원위치로 돌아가 화면 밖으로 밀려나지 않는다. */
+    --room: max(0px, 100dvh - 780px);
+    --title-drop: min(59px, var(--room));
+    /* 설명줄은 제목보다 15px 더 내려간다(대표 지시 2026-09-09) — 제목과의 간격이
+       10px에서 25px로 벌어진다. */
+    --tagline-extra: min(15px, var(--room));
   }
   .brand {
     margin-top: var(--title-drop);
+  }
+  /* 모바일은 카드가 남는 세로를 그대로 채우고 있어 건드리지 않는다 — 여기서 벌리면
+     그만큼 카드가 작아진다. 그래서 이 블록(가로 760px 이상) 안에만 둔다. */
+  .tagline-top {
+    margin-top: calc(10px + var(--tagline-extra));
   }
   .tile {
     aspect-ratio: 16 / 9;
@@ -241,7 +252,7 @@
   margin: 10px auto 0;
   position: relative;
   font-family: 'Pretendard Variable', 'Pretendard', 'SUIT', 'Noto Sans KR', system-ui, sans-serif;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.82);
   text-decoration: none;
