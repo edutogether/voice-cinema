@@ -42,7 +42,7 @@ test.describe('마우스가 없는 기기', () => {
         timeout: 60000,
         intervals: [500, 1000],
       })
-      .toBe(6);
+      .toBe(7); // 일부러 틀린 값 — 게이트가 실제로 막는지 확인용, 곧 되돌린다
 
     const before = await tileStates(page);
     // 소리가 있으면 브라우저가 자동재생을 막아 정지 화면 그대로가 되고,
