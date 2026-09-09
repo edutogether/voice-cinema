@@ -12,12 +12,12 @@ import path from 'node:path';
  * 파일명에 붙는 해시도 자동으로 따라간다.
  *
  * 무엇을 넣고 무엇을 빼는가:
- *  - 넣는다: html/js/css(앱 셸)와 vendor/**(ffmpeg 엔진·App Check 번들 등).
+ *  - 넣는다: html/js/css(앱 셸)와 vendor/**(ffmpeg 엔진·App Check 번들 등), fonts/**(서브셋 폰트).
  *    앱이 부팅하려면 반드시 필요한 것들이라 오프라인에 있어야 한다.
  *  - 뺀다: clips/**(6개 합쳐 37MB). install에서 한꺼번에 받으면 행사장 와이파이에서
  *    설치 자체가 실패한다 — 실제로 재생한 장르부터 런타임에 쌓는다.
  */
-export function precacheSW({ swSource, precacheDirs = ['vendor'], excludeDirs = ['clips'] }) {
+export function precacheSW({ swSource, precacheDirs = ['vendor', 'fonts'], excludeDirs = ['clips'] }) {
   let outDir;
   return {
     name: 'voice-cinema-precache-sw',

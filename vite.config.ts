@@ -2,12 +2,15 @@ import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { precacheSW } from './tools/precache-plugin.js';
+import { subsetFonts } from './tools/subset-fonts.js';
 
 const root = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   plugins: [
     react(),
+    // 순서가 중요하다 — 서브셋이 먼저 dist/fonts/를 만들어야 프리캐시 목록에 들어간다.
+    subsetFonts({ srcDir: root + 'fonts' }),
     precacheSW({ swSource: root + 'tools/sw-template.js' }),
   ],
   build: {

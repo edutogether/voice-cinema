@@ -77,6 +77,13 @@
 - **업로드 타임아웃을 한쪽만 고치지 말 것** — `src/config.ts`의 `UPLOAD_TIMEOUT_MS`와 `functions/index.js`의
   `timeoutSeconds`를 항상 같은 값으로(현재 110초). 서버가 먼저 끊으므로 클라이언트만 늘리면 효과가 없다.
   어긋나면 `test/contract.test.js`가 실패한다 — 그 테스트를 고쳐 통과시키지 말고 값을 맞출 것
+- **`fonts/`의 원본 woff2를 `public/`에 두지 말 것** — `public/`은 빌드가 `dist/`로 그대로 복사하므로
+  원본 3.9MB가 배포에 실린다. 원본은 저장소 루트 `fonts/`에 두고, 빌드가 만든 서브셋만 `dist/fonts/`로
+  나간다. 라이선스 고지(`fonts/PRETENDARD-LICENSE.txt`)는 폰트와 함께 저장소에 남긴다
+- **폰트 서브셋에 넣을 글자를 빌드 산출물에서만 뽑지 말 것** — 번들러가 한글을 유니코드 이스케이프로
+  내보내서, 산출물만 읽으면 그 글자들이 안 보인다. 실제로 **140자가 빠졌다**(2026-09-09, fontTools로
+  서브셋 cmap을 직접 읽어 확인). 지금은 이스케이프를 되돌리고 소스도 함께 읽는다 —
+  `test/subset-fonts.test.js`가 그 되돌리기를 고정한다
 - **`dist/sw.js`를 직접 고치지 말 것** — 빌드가 매번 덮어쓴다. 서비스워커를 고칠 일이 있으면
   `tools/sw-template.js`를, 캐시 대상 규칙을 바꿀 일이 있으면 `tools/precache-plugin.js`를 고친다.
   캐시 목록과 캐시 버전은 빌드가 산출물에서 자동으로 뽑으므로 사람이 목록이나 `CACHE_NAME`을 관리하지 않는다
@@ -175,7 +182,7 @@ D-7인 이유는 예열과 실기기 리허설(노트북·안드로이드 태블
 ## 명령
 - 개발 서버: `npm run dev` (http://localhost:4321)
 - 빌드: `npm run build` (`tsc --noEmit` + `vite build` → `dist/`)
-- 테스트: `npm test` (vitest, 루트 10 + functions 38 = 48개). 개별 실행은 `cd functions && npm test`
+- 테스트: `npm test` (vitest, 루트 14 + functions 38 = 52개). 개별 실행은 `cd functions && npm test`
 - 린트: `npm run lint` (eslint). `src/`는 `tsc`가 담당하므로 eslint 대상에서 뺐다. 빈 `catch{}`는 이 코드베이스가
   의도적으로 쓰는 패턴이라 허용해뒀다 — 버그가 아니다
 - E2E: `npm run test:e2e` (20개) — 빌드 후 `dist/`를 서빙해 실제 산출물로 검증한다. 최초 1회

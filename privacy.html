@@ -14,7 +14,10 @@
     padding: 40px 20px 80px;
     background: linear-gradient(160deg, #fffdf6, #e9f4ff);
     color: #202124;
-    font-family: "Pretendard Variable", Pretendard, SUIT, "Noto Sans KR", system-ui, sans-serif;
+    /* Pretendard를 맨 앞에 둔다 — 이 저장소가 서브셋을 함께 배포하므로, 설치된
+       "Pretendard Variable"이 있는 기기(대표 PC)와 없는 기기가 서로 다른 글꼴로
+       보이지 않게 하려는 것이다. */
+    font-family: Pretendard, "Pretendard Variable", SUIT, "Noto Sans KR", system-ui, sans-serif;
     line-height: 1.7;
   }
   main {
@@ -34,6 +37,11 @@
   a { color: #2f6fd6; }
   .back { display: inline-block; margin-bottom: 24px; font-size: 14px; color: #2f6fd6; text-decoration: none; }
 </style>
+  <link rel="stylesheet" href="/fonts/pretendard.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/pretendard-400.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/pretendard-500.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/pretendard-600.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/pretendard-800.woff2">
 </head>
 <body>
 <main>

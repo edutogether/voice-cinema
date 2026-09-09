@@ -9,6 +9,11 @@
      때마다 firebase.json을 같이 고쳐야 하고, 잊으면 배포된 사이트에서만 화면이 죽는다.
      파비콘 생성과 스플래시 제거는 각각 src/lib/favicon.ts와 src/lib/splash.ts로 옮겼다. -->
 <script src="/vendor/qrcode.js"></script>
+  <link rel="stylesheet" href="/fonts/pretendard.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/pretendard-400.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/pretendard-500.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/pretendard-600.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/pretendard-800.woff2">
 </head>
 <body>
 <!-- 스플래시는 정적 마크업으로 둔다 — 리액트가 그리면 번들 로드 전까지 빈 화면이
