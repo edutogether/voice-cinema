@@ -5,8 +5,9 @@ status: draft
 작성 시각: 2026-09-09
 ---
 
-<!-- status를 올리는 것은 Bumm님이다(intent-workflow.md). 세션이 스스로 accepted로
-     바꾸지 않는다. -->
+<!-- 이 문서는 세션이 스스로 제안해 쓴 것이라 draft로 둔다 — 자기 제안을 자기가
+     승인하지 못하게 막는 규칙(intent-workflow.md)에 해당한다. 팀장에게서 착수 지시가
+     오면 그 지시 자체가 승인이므로(2026-09-09 조항), 그때 in-progress로 올리고 진행한다. -->
 
 # 정본 주소를 voice-cinema.web.app에서 voice.edutogether.kr로 옮긴다
 
