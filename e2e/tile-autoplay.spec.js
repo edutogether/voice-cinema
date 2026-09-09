@@ -2,15 +2,12 @@
 //
 // 왜 있는가: 2026-09-09까지 카드 미리보기와 강조 효과가 마우스 호버로만 켜졌다
 // (`(hover: hover) and (pointer: fine)`). 그래서 폰·태블릿에서는 여섯 장이 전부
-// 정지 이미지로 남았고, 대표가 실제 화면에서 두 번 지적했다. 이 앱은 부스에서
-// 노트북·태블릿·폰으로 쓰므로, 터치 기기에서 안 움직이는 카드는 설계가 아니라
-// 그 사용자에게는 고장난 화면이다.
+// 정지 이미지로 남았다. 그다음에는 "화면 가운데 한 장만 재생"으로 고쳤는데, 375px는
+// 스크롤이 없어 그 한 장이 영영 바뀌지 않아 대표가 "계속 호러만 재생된다"고 지적했다.
+// 지금은 여섯 장이 전부 재생되고, 강조는 손가락을 대고 있는 동안(:active)에 걸린다 —
+// 터치에서 PC의 호버에 해당하는 것이 그 순간이다.
 //
-// 지금은 화면 가운데에 가장 가까운 카드 한 장이 PC의 호버 카드 역할을 한다 —
-// 재생과 강조가 함께 일어나고, 활성 카드는 언제나 하나뿐이다.
-//
-// 스크린샷으로는 정지 화면과 구분되지 않는다 — currentTime이 실제로 흐르는지,
-// 강조 값이 PC의 호버와 같은지 계산된 스타일로 확인한다.
+// 스크린샷으로는 정지 화면과 구분되지 않는다 — currentTime이 실제로 흐르는지 본다.
 import { test, expect } from '@playwright/test';
 
 test.setTimeout(120000);
@@ -21,12 +18,9 @@ async function tileStates(page) {
       const v = tile.querySelector('video');
       return {
         장르: tile.querySelector('.gname').textContent,
-        활성: tile.classList.contains('is-active'),
         paused: v.paused,
         muted: v.muted,
         time: v.currentTime,
-        틴트: Number(window.getComputedStyle(tile.querySelector('.tile-tint')).opacity),
-        확대: window.getComputedStyle(tile.querySelector('.thumb')).transform,
       };
     })
   );
@@ -35,44 +29,66 @@ async function tileStates(page) {
 test.describe('마우스가 없는 기기', () => {
   test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
 
-  test('활성 카드 한 장이 음소거로 재생되고 PC 호버와 같은 강조가 걸린다', async ({ page }) => {
+  test('여섯 장이 모두 음소거로 재생된다', async ({ page }) => {
     await page.goto('/');
     await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
 
     // 이 조건이 참이면 호버 경로가 쓰이므로 이 테스트의 전제가 무너진다.
     expect(await page.evaluate(() => window.matchMedia('(hover: hover) and (pointer: fine)').matches)).toBe(false);
 
-    // 첫 화면에서 이미 한 장은 활성이어야 한다 — 아무것도 강조되지 않은 채로
-    // 시작하면 예전과 똑같은 정지 화면으로 보인다.
+    // 카드마다 250ms씩 늦춰 시작한다(행사장 와이파이에서 37MB를 한꺼번에 받지 않으려고).
     await expect
-      .poll(async () => (await tileStates(page)).filter((s) => s.활성 && !s.paused).length, {
-        timeout: 30000,
-        intervals: [300, 500],
+      .poll(async () => (await tileStates(page)).filter((s) => !s.paused).length, {
+        timeout: 60000,
+        intervals: [500, 1000],
       })
-      .toBe(1);
+      .toBe(6);
 
     const before = await tileStates(page);
-    // 활성 카드는 하나뿐이다 — 여러 장이 동시에 돌면 디코더와 대역폭을 나눠 쓴다.
-    expect(before.filter((s) => s.활성)).toHaveLength(1);
-
-    const 활성 = before.find((s) => s.활성);
     // 소리가 있으면 브라우저가 자동재생을 막아 정지 화면 그대로가 되고,
-    // 부스에서 여러 장이 동시에 소리를 내는 사고도 난다.
-    expect(활성.muted).toBe(true);
-    // PC의 :hover가 주는 것과 같은 값이어야 한다(같은 CSS 규칙을 나눠 쓴다).
-    expect(활성.틴트).toBeCloseTo(0.4, 2);
-    expect(활성.확대).toBe('matrix(1.05, 0, 0, 1.05, 0, 0)');
-
-    // 활성이 아닌 카드는 강조도 재생도 없어야 한다.
-    for (const s of before.filter((x) => !x.활성)) {
-      expect(s.paused, `${s.장르}가 활성이 아닌데 재생 중이다`).toBe(true);
-      expect(s.틴트, `${s.장르}가 활성이 아닌데 강조돼 있다`).toBe(0);
-    }
+    // 부스에서 여섯 개가 동시에 소리를 내는 사고도 난다.
+    expect(before.every((s) => s.muted)).toBe(true);
 
     await page.waitForTimeout(1200);
     const after = await tileStates(page);
-    const 활성후 = after.find((s) => s.활성);
-    expect(활성후.time, '활성 카드의 시간이 흐르지 않는다').toBeGreaterThan(활성.time);
+    const 멈춘것 = after.filter((s, i) => s.time <= before[i].time).map((s) => s.장르);
+    expect(멈춘것, '시간이 흐르지 않는 카드가 있다').toEqual([]);
+  });
+
+  test('카드를 누르고 있는 동안 PC 호버와 같은 강조가 걸린다', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
+
+    const 강조 = () =>
+      page.evaluate(() => {
+        const tile = document.querySelector('.tile');
+        return {
+          틴트: Number(window.getComputedStyle(tile.querySelector('.tile-tint')).opacity),
+          확대: window.getComputedStyle(tile.querySelector('.thumb')).transform,
+        };
+      });
+
+    expect((await 강조()).틴트).toBe(0);
+
+    // 손가락을 대고 있는 상태를 만든다(떼지 않는다).
+    const box = await page.locator('.tile').first().boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    // 틴트 0.25s·확대 0.3s의 전환이 끝난 뒤에 재야 한다 — 누르자마자 재면 아직 0이다.
+    await page.waitForTimeout(500);
+    const 누른중 = await 강조();
+    await page.mouse.up();
+
+    // PC의 :hover가 주는 것과 같은 값이어야 한다(같은 CSS 선언을 나눠 쓴다).
+    expect(누른중.틴트).toBeCloseTo(0.4, 2);
+    expect(누른중.확대).toBe('matrix(1.05, 0, 0, 1.05, 0, 0)');
+  });
+
+  test('카드를 한 번 탭하면 그 장르로 들어간다', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
+    await page.locator('.tile', { hasText: '판타지' }).click();
+    await expect(page.locator('#studio')).toHaveClass(/active/);
   });
 });
 
@@ -83,9 +99,8 @@ test.describe('마우스가 있는 기기', () => {
     await page.goto('/');
     await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
 
-    // 마우스가 있는 기기에서는 활성 카드 경로가 아예 켜지지 않는다 — 두 경로가
-    // 겹치면 호버를 벗어나도 가운데 카드가 계속 도는 이상한 상태가 된다.
-    expect((await tileStates(page)).some((s) => s.활성)).toBe(false);
+    // 마우스가 있는 기기에서는 자동재생 경로가 아예 켜지지 않는다.
+    expect((await tileStates(page)).every((s) => s.paused)).toBe(true);
 
     await page.locator('.tile', { hasText: '판타지' }).hover();
     await expect

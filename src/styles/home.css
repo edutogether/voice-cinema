@@ -57,9 +57,12 @@
   color: var(--danger);
 }
 
-/* 마우스가 없는 기기에서 "지금 보고 있는 카드"가 PC의 호버 카드 역할을 한다.
-   강조 효과는 위 :hover 규칙을 그대로 나눠 쓴다(.tile.is-active) — 새로 만들지
-   않으므로 나중에 한쪽만 바뀌는 일이 없다. */
+/* 터치 기기에서 PC의 호버에 해당하는 것은 "손가락을 대고 있는 순간"이다.
+   그래서 강조 효과를 :active에도 나눠 건다 — 아래 :hover 규칙에 선택자만 더하므로
+   값이 갈라질 수 없다. 화면 가운데 카드 한 장만 강조하던 방식은 걷어냈다.
+   여섯 장이 다 재생되는 상태에서 한 장만 빛내면 "왜 저것만"이 되고, 스크롤이 없는
+   화면(375px)에서는 그 한 장이 영영 바뀌지 않아 나머지가 죽은 것처럼 보였다
+   (2026-09-09 대표 지적: "계속 호러만 재생됨"). */
 
 /* 좁은 화면에서 16:9를 강제하면 카드 블록이 낮아져 위아래로 빈 공간이 남는다 —
    16:9는 가로 폭이 넉넉한 데스크탑에서만 적용하고, 모바일은 남는 세로를 채운다. */
@@ -145,12 +148,14 @@
   transition: transform 0.15s ease, box-shadow 0.25s ease;
 }
 .tile:hover,
-.tile.is-active {
+.tile:active {
   box-shadow:
     0 18px 44px rgba(0, 0, 0, 0.55),
     0 0 0 2px var(--c),
     0 0 48px 6px color-mix(in srgb, var(--c) 55%, transparent);
 }
+/* 카드 자체는 살짝 눌리고(아래), 그 안의 영상·썸네일은 확대된다(위) — 서로 다른
+   요소라 겹쳐도 하나의 누름 효과로 읽힌다. */
 .tile:active {
   transform: scale(0.97);
 }
@@ -190,8 +195,8 @@
 }
 .tile:hover .tile-media .thumb,
 .tile:hover .tile-media .preview,
-.tile.is-active .tile-media .thumb,
-.tile.is-active .tile-media .preview {
+.tile:active .tile-media .thumb,
+.tile:active .tile-media .preview {
   transform: scale(1.05);
 }
 
@@ -206,7 +211,7 @@
   transition: opacity 0.25s ease;
 }
 .tile:hover .tile-tint,
-.tile.is-active .tile-tint {
+.tile:active .tile-tint {
   opacity: 0.4;
 }
 .tile-scrim {

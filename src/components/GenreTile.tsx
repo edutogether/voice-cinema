@@ -2,15 +2,21 @@ import { useEffect, useRef } from 'react';
 import { clipUrl, thumbUrl, type Genre } from '../genres';
 import { SUPPORTS_HOVER } from '../lib/pointer';
 
+// 마우스가 없는 기기에서는 여섯 장이 함께 시작한다. 한꺼번에 내려받기 시작하면
+// 행사장 와이파이에서 첫 화면이 한참 멈추므로(클립 6개 합쳐 약 37MB) 카드마다
+// 이만큼씩 늦춰 요청이 줄을 서게 한다.
+const STAGGER_MS = 250;
+
 interface Props {
   genre: Genre;
-  /** 마우스가 없는 기기에서 "지금 보고 있는 카드"인지. 마우스가 있으면 항상 false다(호버가 그 역할을 한다). */
-  active: boolean;
+  /** 카드 순서. 마우스가 없는 기기에서 재생 시작을 늦추는 데 쓴다. */
+  index: number;
+  /** 홈 화면이 보이는 중인지. 스튜디오로 들어간 뒤에는 뒤에서 계속 돌지 않게 한다. */
+  viewActive: boolean;
   onSelect: (genre: Genre) => void;
-  registerRef: (el: HTMLDivElement | null) => void;
 }
 
-export function GenreTile({ genre, active, onSelect, registerRef }: Props) {
+export function GenreTile({ genre, index, viewActive, onSelect }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hoveringRef = useRef(false);
 
@@ -45,45 +51,49 @@ export function GenreTile({ genre, active, onSelect, registerRef }: Props) {
     v.load();
   };
 
-  // 마우스가 없는 기기: 활성 카드가 되면 재생하고, 벗어나면 멈춘다. 한 번에 한 장만
-  // 재생되므로 PC에서 마우스를 옮길 때와 같은 모양이고, 클립도 그 한 장만 내려받는다.
+  // 마우스가 없는 기기: 여섯 장이 전부 재생된다. 한 장만 고르면 사용자는 "왜 저것만"이
+  // 되고, 스크롤이 없는 화면에서는 그 한 장이 영영 바뀌지 않아 나머지가 죽은 것처럼
+  // 보인다(2026-09-09 대표 지적). PC에서 한 장만 사는 건 거기에 마우스가 있어서다.
   //
   // 음소거는 타협이 아니라 필수다. 소리가 있으면 브라우저가 자동재생을 막아 정지
-  // 화면 그대로가 되고, 부스에서 여러 개가 동시에 소리를 내는 사고도 난다. 학생이
+  // 화면 그대로가 되고, 부스에서 여섯 개가 동시에 소리를 내는 사고도 난다. 학생이
   // 원본 소리를 듣는 자리는 스튜디오 화면의 "미리 보기"이고 그건 그대로다.
   useEffect(() => {
     if (SUPPORTS_HOVER) return;
     const v = videoRef.current;
     if (!v) return;
 
+    let timer: number | undefined;
     const stop = () => {
+      window.clearTimeout(timer);
       v.pause();
       v.classList.remove('playing');
-      // 호버 경로와 같은 이유로 자원을 놓아준다 — 보이지 않는 카드가 디코더를
-      // 쥐고 있으면 정작 보이는 카드가 재생되지 못한다.
+      // 호버 경로와 같은 이유로 자원을 놓아준다 — 화면을 떠난 뒤에도 디코더를
+      // 쥐고 있으면 다른 화면이 그만큼 느려진다.
       v.removeAttribute('src');
       v.load();
     };
 
-    if (!active) {
+    if (!viewActive) {
       stop();
       return;
     }
 
-    if (!v.src) v.src = clipUrl(genre.id);
-    v.muted = true; // 자동재생 정책을 통과하는 유일한 조건이다
-    v.loop = true; // 10초짜리라 반복하지 않으면 곧 마지막 프레임에서 멈춘다
-    v.play()
-      .then(() => v.classList.add('playing'))
-      .catch((e) => console.warn(`[카드 자동재생 실패] ${genre.id}`, e));
+    timer = window.setTimeout(() => {
+      if (!v.src) v.src = clipUrl(genre.id);
+      v.muted = true; // 자동재생 정책을 통과하는 유일한 조건이다
+      v.loop = true; // 10초짜리라 반복하지 않으면 곧 마지막 프레임에서 멈춘다
+      v.play()
+        .then(() => v.classList.add('playing'))
+        .catch((e) => console.warn(`[카드 자동재생 실패] ${genre.id}`, e));
+    }, index * STAGGER_MS);
 
     return stop;
-  }, [active, genre.id]);
+  }, [viewActive, genre.id, index]);
 
   return (
     <div
-      ref={registerRef}
-      className={`tile${active ? ' is-active' : ''}`}
+      className="tile"
       style={{ '--c': genre.color } as React.CSSProperties}
       onClick={() => onSelect(genre)}
       onMouseEnter={SUPPORTS_HOVER ? onEnter : undefined}
