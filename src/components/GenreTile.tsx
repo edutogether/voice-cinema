@@ -122,7 +122,7 @@ export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }
   return (
     <div
       className={`tile${solo ? ' is-solo' : ''}`}
-      style={{ '--c': genre.color, '--c-glow': withAlpha(genre.color, 0.55) } as React.CSSProperties}
+      style={{ '--c': genre.color, '--c-glow': withAlpha(genre.color, 0.45) } as React.CSSProperties}
       onClick={() => onSelect(genre)}
       onMouseEnter={SUPPORTS_HOVER ? onEnter : undefined}
       onMouseLeave={SUPPORTS_HOVER ? onLeave : undefined}

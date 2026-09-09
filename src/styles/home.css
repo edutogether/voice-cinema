@@ -148,13 +148,17 @@
   /* 강조 그림자는 여기 한 번만 적는다. 아래 :hover와 :active가 이 값을 가리키기만
      하므로 둘이 갈라질 수 없다. 커스텀 속성은 쓰는 자리에서 치환돼 var(--c)가
      타일마다 제 색으로 풀린다. */
+  /* 2026-09-09: 번짐이 과해 "큰 네모"로 보였다. box-shadow는 모서리를 정확히 따르지만
+     카드 반경이 24px인데 번짐이 48px + 퍼짐 6px이라, 둥근 구간이 빛에 파묻혀 카드보다
+     훨씬 큰 사각형 후광으로 읽혔다(모서리 확대로 확인). 모양이 아니라 크기 문제였다.
+     번짐을 16px로 줄이고 퍼짐을 없앴다 — 테두리 주변만 은은하게 감싼다. */
   --hl-shadow:
-    0 18px 44px rgba(0, 0, 0, 0.55),
+    0 14px 30px rgba(0, 0, 0, 0.5),
     0 0 0 2px var(--c),
     /* color-mix를 쓰지 않는다 — 모르는 브라우저에서는 이 box-shadow 선언 전체가
      무시돼 테두리와 번짐이 같이 사라진다(인앱 브라우저에서 실제로 그렇게 보였다).
      --c-glow는 같은 색을 미리 계산한 rgba다(src/genres.ts의 withAlpha). */
-    0 0 48px 6px var(--c-glow);
+    0 0 16px 0 var(--c-glow);
 }
 /* 터치 기기에서는 :hover가 한 번 닿으면 손을 떼도 그대로 붙어 있다 — 그래서 호버
    규칙은 마우스가 있는 기기에만 건다. 터치에서는 :active(누르고 있는 동안)가
@@ -168,7 +172,8 @@
     transform: scale(1.05);
   }
   .tile:hover .tile-tint {
-    opacity: 0.4;
+    /* :active 쪽과 같은 값이어야 한다 — 두 화면이 갈라지면 안 된다. */
+    opacity: 0.12;
   }
   .privacylink:hover {
     color: var(--gold);
@@ -237,9 +242,11 @@
   pointer-events: none;
   transition: opacity 0.25s ease;
 }
+/* 색 덮기를 0.4에서 낮췄다 — 사진 위에 색을 진하게 덮으면 원래 색이 죽고 탁해 보인다.
+   어느 카드를 눌렀는지는 테두리가 알려주므로 여기서는 아주 옅게만 거든다. */
 .tile:active .tile-tint,
 .tile.is-solo .tile-tint {
-  opacity: 0.4;
+  opacity: 0.12;
 }
 .tile-scrim {
   position: absolute;
