@@ -3,6 +3,10 @@ name: Deploy Backend
 # 2026-09-01: 정본 배포처가 GitHub Pages에서 Firebase Hosting(voice-cinema.web.app)으로
 # 이전됨 — 이 워크플로우가 storage+functions에 더해 hosting까지 배포한다.
 # 2026-09-08: GitHub Pages를 폐지해 배포처는 Firebase Hosting 한 곳뿐이다.
+# 2026-09-09: 정본 주소가 voice.edutogether.kr(커스텀 도메인)로 바뀌었다 — 아래
+# 스모크 검증이 그 주소를 본다. voice-cinema.web.app도 같은 Hosting 사이트라
+# 계속 살아 있지만, 검증은 실사용자가 실제로 여는 주소를 봐야 의미가 있다
+# (옛 주소만 보면 새 주소가 죽어도 CI가 초록으로 나온다).
 #
 # CI(lint+test+e2e) 워크플로우가 통과한 뒤에만 이어서 실행되도록 workflow_run으로 연결한다
 # (push 트리거를 따로 두면 테스트 없이 배포될 수 있어 이렇게 묶었다).
@@ -57,7 +61,7 @@ jobs:
       - name: 배포 후 라이브 스모크 검증
         run: |
           set -e
-          hosting_status=$(curl -s -o /dev/null -w '%{http_code}' https://voice-cinema.web.app/)
+          hosting_status=$(curl -s -o /dev/null -w '%{http_code}' https://voice.edutogether.kr/)
           if [ "$hosting_status" != "200" ]; then
             echo "Hosting 응답이 200이 아님: $hosting_status"
             exit 1
@@ -67,8 +71,8 @@ jobs:
           # 빌드 산출물이 실제로 올라갔는지 확인한다 — index.html이 해시 붙은
           # 번들을 가리키고, 서비스워커가 프리캐시 목록을 담은 채 서빙돼야 한다.
           # (빈 dist/를 배포하면 200은 나와도 이 검사에서 걸린다.)
-          home=$(curl -s https://voice-cinema.web.app/)
+          home=$(curl -s https://voice.edutogether.kr/)
           echo "$home" | grep -qE '/assets/main-[A-Za-z0-9_-]+\.js' || { echo "index.html에 빌드된 번들 참조가 없음"; exit 1; }
-          sw=$(curl -s https://voice-cinema.web.app/sw.js)
+          sw=$(curl -s https://voice.edutogether.kr/sw.js)
           echo "$sw" | grep -q '/vendor/ffmpeg-core/ffmpeg-core.wasm' || { echo "sw.js 프리캐시 목록에 엔진이 없음"; exit 1; }
           echo "$sw" | grep -q '/index.html' || { echo "sw.js 프리캐시 목록에 진입점이 없음"; exit 1; }

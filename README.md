@@ -4,7 +4,7 @@
 학생이 무성 영상 6종(장르별) 중 하나를 골라 자기 목소리로 더빙하면, **브라우저 안에서** 영상과
 음성을 합쳐 완성본 mp4를 만들고 클라우드에 저장한 뒤 QR로 전달한다.
 
-- **라이브**: https://voice-cinema.web.app
+- **라이브**: https://voice.edutogether.kr (옛 주소 https://voice-cinema.web.app 도 같은 사이트로 계속 살아 있다)
 - **백엔드**: Firebase Functions + Storage (`inky-voice-cinema` 프로젝트, `asia-northeast3`)
 - **프론트**: Vite + React + TypeScript (2026-09-08 전환)
 - **합성 엔진**: ffmpeg.wasm — 서버가 아니라 학생 브라우저에서 처리한다

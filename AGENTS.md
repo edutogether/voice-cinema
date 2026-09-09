@@ -8,7 +8,8 @@
 학생이 무성 클립(6종)에 자기 목소리를 더빙 → **브라우저의 ffmpeg.wasm**이 합성 → Cloud Functions가
 검증·저장 → QR로 전달. 영상 합성은 서버가 아니라 클라이언트에서 일어난다.
 
-라이브: https://voice-cinema.web.app · Firebase 프로젝트 `inky-voice-cinema`(`asia-northeast3`)
+라이브: https://voice.edutogether.kr · Firebase 프로젝트 `inky-voice-cinema`(`asia-northeast3`)
+옛 주소 `voice-cinema.web.app`은 같은 Hosting 사이트라 계속 살아 있다 — 되돌릴 일이 생기면 링크만 바꾸면 된다.
 프론트는 Vite + React + TypeScript(2026-09-08 전환).
 
 **배포처는 Firebase Hosting 한 곳뿐이다.** GitHub Pages(`edutogether.github.io/voice-cinema`)를 한동안

@@ -5,7 +5,10 @@
 - 무엇: 무성 클립 6종에 학생이 자기 목소리로 더빙 → 브라우저 ffmpeg.wasm으로 합성 → Firebase Storage 저장 → QR 전달
 - 사용자: 제4회 인천어린이청소년영화제 "InKY 놀이터" 부스 방문 학생. **행사일 2026-11-14(인천 CGV), 하루짜리 행사.**
   현장 예상 인원은 `[확인]` — 다만 "하루 2000명" 가정으로 실측 스트레스테스트를 통과해둔 상태(2026-08-28, 1989/2000 성공, 레이트리밋 429 0건)
-- 배포: Firebase Hosting + Functions (`inky-voice-cinema`, `asia-northeast3`). **배포처는 https://voice-cinema.web.app 한 곳뿐이다** —
+- 배포: Firebase Hosting + Functions (`inky-voice-cinema`, `asia-northeast3`). **정본 주소는 https://voice.edutogether.kr 다**
+  (2026-09-09 커스텀 도메인 연결). 옛 주소 `voice-cinema.web.app`은 같은 Hosting 사이트라 계속 살아 있고, 되돌릴 일이 생기면
+  포털 링크만 바꾸면 된다 — 행사 전에는 죽이지 않는다. **Hosting 사이트가 두 개라는 점에 주의**: 커스텀 도메인은 `voice-cinema`
+  사이트에 붙어 있고, 프로젝트 기본 사이트 `inky-voice-cinema`는 빈 사이트(404)다. 배포처는 Firebase Hosting 한 곳뿐이다 —
   GitHub Pages는 2026-09-08 대표 지시로 폐지했고 옛 주소는 404다(의도된 결과). 다시 세울 일이 생기면 폐지 전 설정은
   `build_type: legacy`, `source: master /docs`였다
 

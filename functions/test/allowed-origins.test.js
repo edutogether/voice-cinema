@@ -27,10 +27,10 @@ const allows = (origin) => ALLOWED_ORIGINS.some((r) => r.test(origin));
 
 describe('허용해야 하는 출처', () => {
   test.each([
-    ['https://voice-cinema.web.app', '현재 정본'],
+    ['https://voice-cinema.web.app', '옛 정본, 계속 살아 있다'],
     ['https://voice-cinema.firebaseapp.com', 'Hosting 기본 도메인'],
     ['https://edutogether.kr', 'Portal 리버스 프록시'],
-    ['https://voice.edutogether.kr', '전환 예정 정본'],
+    ['https://voice.edutogether.kr', '정본'],
     ['http://localhost:4321', '개발 서버'],
     ['http://127.0.0.1:4321', '개발 서버'],
   ])('%s (%s)', (origin) => {
