@@ -5,6 +5,10 @@
 // 타이밍 등)을 뽑아 두 쪽을 대조한다.
 //
 // 사용법: node tools/compare-visual.js <옛주소> <새주소>
+//
+// 주의: 2026-09-09 대표 지시로 홈 화면의 제목·부제목·개인정보처리방침 크기와 위치를
+// 의도적으로 바꿨다. 그래서 전환 전 태그와 대조하면 .brand h1 / .tagline-top /
+// .privacylink / .grid에서 차이가 나는 게 정상이다 — 회귀가 아니다.
 import { chromium } from '@playwright/test';
 
 const OLD_URL = process.argv[2] || 'http://localhost:4322';
