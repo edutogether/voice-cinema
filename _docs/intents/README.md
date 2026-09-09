@@ -26,7 +26,8 @@
 
 | 날짜 | 슬러그 | 등급 | 상태 | 요약 |
 |---|---|---|---|---|
-| | | | | |
+| 2026-09-08 | [react-typescript-migration](2026-09-08-react-typescript-migration/intent.md) | 2 | done | 프론트를 바닐라 JS에서 Vite+React+TypeScript로 다시 짜고, 전후 화면을 기계 대조해 동일함을 증명 (**사후 작성**) |
+| 2026-09-09 | [domain-migration](2026-09-09-domain-migration/intent.md) | 2 | draft | 정본 주소를 `voice-cinema.web.app`에서 `voice.edutogether.kr`로 이전 |
 
 ## 폴더 규칙
 
