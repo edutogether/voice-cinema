@@ -55,6 +55,31 @@ test.describe('마우스가 없는 기기', () => {
     expect(멈춘것, '시간이 흐르지 않는 카드가 있다').toEqual([]);
   });
 
+  // loop만으로는 실제 기기에서 계속 돈다는 보장이 없다 — 절전 모드나 동시 디코드
+  // 한도로 브라우저가 임의로 멈추면 카드가 마지막 프레임에 굳는다(대표가 실제 폰에서
+  // 발견). 원인을 하나씩 막는 대신 "멈춰 있으면 다시 튼다"로 처리했고, 여기서는
+  // 그 복구가 실제로 도는지 확인한다 — 브라우저가 멈춘 상황을 직접 만들어 본다.
+  test('브라우저가 영상을 멈춰도 다시 재생된다', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
+    await expect
+      .poll(async () => (await tileStates(page)).filter((s) => !s.paused).length, {
+        timeout: 60000,
+        intervals: [500, 1000],
+      })
+      .toBe(6);
+
+    await page.evaluate(() => document.querySelectorAll('.tile video').forEach((v) => v.pause()));
+    expect((await tileStates(page)).filter((s) => !s.paused)).toHaveLength(0);
+
+    await expect
+      .poll(async () => (await tileStates(page)).filter((s) => !s.paused).length, {
+        timeout: 15000,
+        intervals: [500],
+      })
+      .toBe(6);
+  });
+
   test('카드를 누르고 있는 동안 PC 호버와 같은 강조가 걸린다', async ({ page }) => {
     await page.goto('/');
     await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });

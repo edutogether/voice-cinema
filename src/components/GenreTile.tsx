@@ -7,6 +7,12 @@ import { SUPPORTS_HOVER } from '../lib/pointer';
 // 이만큼씩 늦춰 요청이 줄을 서게 한다.
 const STAGGER_MS = 250;
 
+// 재생이 멈췄는지 되돌아보는 간격. loop만으로는 실제 기기에서 계속 돈다는 보장이
+// 없다 — 절전 모드, 동시 디코드 한도, 백그라운드 전환 등으로 브라우저가 임의로
+// 멈추면 카드가 마지막 프레임에 굳는다(2026-09-09 대표가 실제 폰에서 발견).
+// 원인을 하나씩 막는 대신 "멈춰 있으면 다시 튼다"로 한 곳에서 처리한다.
+const WATCH_MS = 2000;
+
 interface Props {
   genre: Genre;
   /** 카드 순서. 마우스가 없는 기기에서 재생 시작을 늦추는 데 쓴다. */
@@ -64,8 +70,10 @@ export function GenreTile({ genre, index, viewActive, onSelect }: Props) {
     if (!v) return;
 
     let timer: number | undefined;
+    let watch: number | undefined;
     const stop = () => {
       window.clearTimeout(timer);
+      window.clearInterval(watch);
       v.pause();
       v.classList.remove('playing');
       // 호버 경로와 같은 이유로 자원을 놓아준다 — 화면을 떠난 뒤에도 디코더를
@@ -79,6 +87,8 @@ export function GenreTile({ genre, index, viewActive, onSelect }: Props) {
       return;
     }
 
+    // 처음 받을 때만 시차를 준다 — 여섯 장이 한꺼번에 내려받기를 시작하지 않게 하려는
+    // 것이라, 이미 받아둔 뒤 반복될 때는 그냥 이어서 돌면 된다.
     timer = window.setTimeout(() => {
       if (!v.src) v.src = clipUrl(genre.id);
       v.muted = true; // 자동재생 정책을 통과하는 유일한 조건이다
@@ -86,6 +96,13 @@ export function GenreTile({ genre, index, viewActive, onSelect }: Props) {
       v.play()
         .then(() => v.classList.add('playing'))
         .catch((e) => console.warn(`[카드 자동재생 실패] ${genre.id}`, e));
+
+      // loop를 걸어도 실제 기기에서는 브라우저가 임의로 멈출 수 있다. 멈춰 있으면
+      // 다시 튼다 — 끝난 영상에 play()를 부르면 처음부터 다시 재생된다.
+      watch = window.setInterval(() => {
+        if (!v.paused || !v.isConnected) return;
+        v.play().catch(() => {});
+      }, WATCH_MS);
     }, index * STAGGER_MS);
 
     return stop;
