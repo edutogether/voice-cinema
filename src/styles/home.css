@@ -127,6 +127,12 @@
     top: -20px;
   }
 }
+/* PC에서만 한 단계 더 크게(대표 지시 2026-09-09). 모바일은 13px 그대로 둔다. */
+@media (min-width: 760px) {
+  .privacylink {
+    font-size: 14px;
+  }
+}
 
 .tile {
   position: relative;
