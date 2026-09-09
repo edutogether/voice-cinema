@@ -36,7 +36,24 @@ jobs:
         with:
           node-version: 22
       - run: npm install
-      - run: npx playwright install --with-deps chromium
+      # --with-deps를 쓰지 않는다. 그 옵션만이 apt를 건드리는 부분인데,
+      # 2026-09-10에 Google의 apt 저장소가 자기 Release 파일이 약속한 해시와 다른
+      # Packages.gz를 내려주는 바람에(Release는 233e56de…, 실제 파일은 bc1428ab…,
+      # 이 세션 PC에서 직접 받아 CI 로그와 같은 값임을 확인) 브라우저 설치가 죽고
+      # 테스트가 한 개도 실행되지 못했다. 재시도는 소용이 없다 — 깨진 것이 원격
+      # 인덱스라 캐시를 지우고 다시 받아도 같은 파일을 받는다.
+      # ubuntu-latest에는 크로미움 구동에 필요한 라이브러리가 이미 들어 있다.
+      # 나중에 무엇이 없다고 하면 저장소 인덱스를 통째로 갱신하지 말고 그 라이브러리만 설치한다.
+      - name: Playwright 버전 확인
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      # 버전이 오르면 키가 갈려 자동으로 새로 받는다. 캐시가 비어도 아래 install이
+      # 그냥 받으므로 정상 동작한다 — 캐시 미스는 실패가 아니라 정상 경로다.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      - run: npx playwright install chromium
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v4
         if: failure()
