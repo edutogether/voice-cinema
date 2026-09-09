@@ -130,12 +130,6 @@
     top: -20px;
   }
 }
-/* PC에서만 한 단계 더 크게(대표 지시 2026-09-09). 모바일은 13px 그대로 둔다. */
-@media (min-width: 760px) {
-  .privacylink {
-    font-size: 14px;
-  }
-}
 
 .tile {
   position: relative;
@@ -272,4 +266,14 @@
 .privacylink:hover {
   color: var(--gold);
   text-decoration: underline;
+}
+
+/* PC에서만 한 단계 더 크게(대표 지시 2026-09-09). 모바일은 13px 그대로 둔다.
+   이 블록은 반드시 위 .privacylink 기본 선언보다 **뒤에** 있어야 한다 — 명시도가
+   같아서 순서로 이기기 때문이다. 앞에 뒀다가 13px에 덮여 라이브에서 그대로였다
+   (2026-09-09 실측으로 발견). */
+@media (min-width: 760px) {
+  .privacylink {
+    font-size: 14px;
+  }
 }
