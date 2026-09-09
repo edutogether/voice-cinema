@@ -13,9 +13,14 @@
 export function installServiceWorker(onUpdateReady: () => void): void {
   if (!('serviceWorker' in navigator) || !import.meta.env.PROD) return;
 
-  window.addEventListener('load', () => {
+  // load 이벤트가 이미 지났으면 리스너를 달아도 영영 안 불린다 — 이 함수는 리액트가
+  // 붙은 뒤에 호출되므로 그 경우가 흔하다. 실제로 그렇게 만들었다가 등록 자체가 안 돼
+  // 오프라인 부팅이 죽었고, e2e/offline-boot.spec.js가 잡았다(2026-09-09).
+  const register = () => {
     navigator.serviceWorker.register('/sw.js').catch((e) => console.warn('[서비스워커 등록 실패]', e));
-  });
+  };
+  if (document.readyState === 'complete') register();
+  else window.addEventListener('load', register, { once: true });
 
   // 이 탭에 원래 제어자가 없었다면 방금 첫 설치다 — 화면은 이미 최신본이라 알릴 것이 없다.
   const hadController = !!navigator.serviceWorker.controller;
