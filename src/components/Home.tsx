@@ -29,8 +29,8 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
       </div>
 
       <div className="grid" id="grid">
-        {GENRES.map((genre) => (
-          <GenreTile key={genre.id} genre={genre} onSelect={onSelect} />
+        {GENRES.map((genre, i) => (
+          <GenreTile key={genre.id} genre={genre} index={i} onSelect={onSelect} />
         ))}
       </div>
 
