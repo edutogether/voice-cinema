@@ -39,6 +39,11 @@ export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }
     };
     v.play().then(reveal).catch(() => {
       // 브라우저가 소리 있는 자동재생을 막으면 무음으로라도 재생을 시도한다.
+      // 단, 그 사이 마우스가 이미 벗어났으면 되살리지 않는다 — 첫 시도의 거부는
+      // onLeave의 pause()가 부른 것일 수도 있어서, 그대로 재시도하면 방금 멈춘
+      // 영상을 다시 튼다. 소스는 이미 지워진 뒤라 화면에는 아무것도 안 보이는데
+      // paused만 false로 남는 상태가 된다(2026-09-09 CI 실패로 드러남).
+      if (!hoveringRef.current) return;
       v.muted = true;
       v.play().then(reveal).catch(() => {});
     });
