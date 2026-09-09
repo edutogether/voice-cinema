@@ -15,6 +15,20 @@ export interface Genre {
   icon: string;
 }
 
+/**
+ * 장르 색을 반투명 rgba 문자열로 바꾼다.
+ *
+ * CSS에서 `color-mix(in srgb, var(--c) 55%, transparent)`로 쓰던 것을 대신한다.
+ * color-mix는 비교적 최신 기능이라 인앱 브라우저(카카오톡 등)의 오래된 WebView가
+ * 모르면 **그 선언 전체가 무시된다** — box-shadow 한 줄에 테두리·번짐이 같이
+ * 들어 있어서, 누를 때 강조가 통째로 사라진다(2026-09-09 대표 지적:
+ * "클릭할 때 효과 퀄리티가 굉장히 떨어짐"). rgba는 어디서나 통한다.
+ */
+export function withAlpha(hex: string, alpha: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
+
 export const GENRES: Genre[] = [
   {
     id: 'fantasy',

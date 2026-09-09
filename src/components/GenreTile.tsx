@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { clipUrl, thumbUrl, type Genre } from '../genres';
+import { clipUrl, thumbUrl, withAlpha, type Genre } from '../genres';
 import { SUPPORTS_HOVER } from '../lib/pointer';
 
 // 재생이 멈췄는지 되돌아보는 간격. loop만으로는 실제 기기에서 계속 돈다는 보장이
@@ -122,7 +122,7 @@ export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }
   return (
     <div
       className={`tile${solo ? ' is-solo' : ''}`}
-      style={{ '--c': genre.color } as React.CSSProperties}
+      style={{ '--c': genre.color, '--c-glow': withAlpha(genre.color, 0.55) } as React.CSSProperties}
       onClick={() => onSelect(genre)}
       onMouseEnter={SUPPORTS_HOVER ? onEnter : undefined}
       onMouseLeave={SUPPORTS_HOVER ? onLeave : undefined}

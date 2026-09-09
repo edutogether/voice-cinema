@@ -151,7 +151,10 @@
   --hl-shadow:
     0 18px 44px rgba(0, 0, 0, 0.55),
     0 0 0 2px var(--c),
-    0 0 48px 6px color-mix(in srgb, var(--c) 55%, transparent);
+    /* color-mix를 쓰지 않는다 — 모르는 브라우저에서는 이 box-shadow 선언 전체가
+     무시돼 테두리와 번짐이 같이 사라진다(인앱 브라우저에서 실제로 그렇게 보였다).
+     --c-glow는 같은 색을 미리 계산한 rgba다(src/genres.ts의 withAlpha). */
+    0 0 48px 6px var(--c-glow);
 }
 /* 터치 기기에서는 :hover가 한 번 닿으면 손을 떼도 그대로 붙어 있다 — 그래서 호버
    규칙은 마우스가 있는 기기에만 건다. 터치에서는 :active(누르고 있는 동안)가
