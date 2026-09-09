@@ -58,8 +58,8 @@
 }
 
 /* 터치 기기에서 PC의 호버에 해당하는 것은 "손가락을 대고 있는 순간"이다.
-   그래서 강조 효과를 :active에도 나눠 건다 — 아래 :hover 규칙에 선택자만 더하므로
-   값이 갈라질 수 없다. 화면 가운데 카드 한 장만 강조하던 방식은 걷어냈다.
+   그래서 강조 효과를 :active에 건다 — 값은 --hl-shadow 한 곳에만 적고 :hover와
+   :active가 그것을 가리키므로 둘이 갈라질 수 없다. 화면 가운데 카드 한 장만 강조하던 방식은 걷어냈다.
    여섯 장이 다 재생되는 상태에서 한 장만 빛내면 "왜 저것만"이 되고, 스크롤이 없는
    화면(375px)에서는 그 한 장이 영영 바뀌지 않아 나머지가 죽은 것처럼 보였다
    (2026-09-09 대표 지적: "계속 호러만 재생됨"). */
@@ -140,13 +140,35 @@
   min-height: 0;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4);
   transition: transform 0.15s ease, box-shadow 0.25s ease;
-}
-.tile:hover,
-.tile:active {
-  box-shadow:
+  /* 강조 그림자는 여기 한 번만 적는다. 아래 :hover와 :active가 이 값을 가리키기만
+     하므로 둘이 갈라질 수 없다. 커스텀 속성은 쓰는 자리에서 치환돼 var(--c)가
+     타일마다 제 색으로 풀린다. */
+  --hl-shadow:
     0 18px 44px rgba(0, 0, 0, 0.55),
     0 0 0 2px var(--c),
     0 0 48px 6px color-mix(in srgb, var(--c) 55%, transparent);
+}
+/* 터치 기기에서는 :hover가 한 번 닿으면 손을 떼도 그대로 붙어 있다 — 그래서 호버
+   규칙은 마우스가 있는 기기에만 건다. 터치에서는 :active(누르고 있는 동안)가
+   그 역할을 한다. 안 감싸면 탭한 카드가 홈으로 돌아온 뒤에도 계속 강조돼 있다. */
+@media (hover: hover) and (pointer: fine) {
+  .tile:hover {
+    box-shadow: var(--hl-shadow);
+  }
+  .tile:hover .tile-media .thumb,
+  .tile:hover .tile-media .preview {
+    transform: scale(1.05);
+  }
+  .tile:hover .tile-tint {
+    opacity: 0.4;
+  }
+  .privacylink:hover {
+    color: var(--gold);
+    text-decoration: underline;
+  }
+}
+.tile:active {
+  box-shadow: var(--hl-shadow);
 }
 /* 카드 자체는 살짝 눌리고(아래), 그 안의 영상·썸네일은 확대된다(위) — 서로 다른
    요소라 겹쳐도 하나의 누름 효과로 읽힌다. */
@@ -187,8 +209,6 @@
 .tile-media:has(.preview.playing) .thumb {
   opacity: 0;
 }
-.tile:hover .tile-media .thumb,
-.tile:hover .tile-media .preview,
 .tile:active .tile-media .thumb,
 .tile:active .tile-media .preview {
   transform: scale(1.05);
@@ -204,7 +224,6 @@
   pointer-events: none;
   transition: opacity 0.25s ease;
 }
-.tile:hover .tile-tint,
 .tile:active .tile-tint {
   opacity: 0.4;
 }
@@ -262,10 +281,6 @@
   color: rgba(255, 255, 255, 0.82);
   text-decoration: none;
   transition: color 0.2s;
-}
-.privacylink:hover {
-  color: var(--gold);
-  text-decoration: underline;
 }
 
 /* PC에서만 한 단계 더 크게(대표 지시 2026-09-09). 모바일은 13px 그대로 둔다.
