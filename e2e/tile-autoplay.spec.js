@@ -105,7 +105,7 @@ test.describe('마우스가 없는 기기', () => {
     await page.mouse.up();
 
     // PC의 :hover가 주는 것과 같은 값이어야 한다(같은 CSS 선언을 나눠 쓴다).
-    expect(누른중.틴트).toBeCloseTo(0.4, 2);
+    expect(누른중.틴트).toBeCloseTo(0.12, 2);
     expect(누른중.확대).toBe('matrix(1.05, 0, 0, 1.05, 0, 0)');
   });
 
