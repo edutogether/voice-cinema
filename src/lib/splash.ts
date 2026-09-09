@@ -17,9 +17,28 @@ const SAFETY_MS = 8000;
  *    계속 매치돼 배경 그라디언트가 안 돌아온다.
  * 2) 앱이 끝내 안 붙는 경우를 대비한 안전판.
  */
+/** 이 탭에서 스플래시를 이미 보여줬는지. 탭을 닫으면 사라지는 저장소라 "그 세션에서 한 번"이 된다. */
+const SHOWN_KEY = 'voice-cinema:splash-shown';
+
 export function installSplash(): void {
   const splash = document.getElementById('splash');
   if (!splash) return;
+
+  // 이미 본 뒤라면 다시 보여주지 않는다. 화면을 다 본 뒤에 스플래시가 또 나왔다
+  // 사라지면 사용자는 앱이 혼자 다시 시작한 것으로 본다(2026-09-09 대표 지적).
+  // 새로고침(서비스워커 교체·수동 새로고침·복구)이 이 자리를 만든다.
+  let seen = false;
+  try {
+    seen = sessionStorage.getItem(SHOWN_KEY) === '1';
+    sessionStorage.setItem(SHOWN_KEY, '1');
+  } catch {
+    // 시크릿 모드 등에서 저장소가 막혀 있으면 예전처럼 매번 보여준다 — 그게 안전한 쪽이다.
+  }
+  if (seen) {
+    splash.remove();
+    document.body.classList.add('app-ready');
+    return;
+  }
 
   const remove = () => splash.remove();
   splash.addEventListener('animationend', (e) => {
