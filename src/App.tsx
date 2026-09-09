@@ -4,6 +4,7 @@ import { Result, type SaveJob } from './components/Result';
 import { Studio } from './components/Studio';
 import type { Genre } from './genres';
 import { loadEngine } from './lib/ffmpeg';
+import { installServiceWorker } from './lib/sw';
 import { initAppCheck } from './lib/upload';
 
 type View = 'home' | 'studio' | 'result';
@@ -19,11 +20,18 @@ export function App() {
   const [enginePercent, setEnginePercent] = useState(0);
   const [engineLoading, setEngineLoading] = useState(true);
   const [engineFailed, setEngineFailed] = useState(false);
+  // 새 버전이 준비됐는지. 저절로 새로고침하지 않고 사람이 누를 때만 한다 —
+  // 부스에서 아이가 녹음·합성 중에 화면이 다시 시작되면 작업이 통째로 날아간다.
+  const [updateReady, setUpdateReady] = useState(false);
 
   // 화면이 실제로 붙었다고 알린다 — 스플래시가 이 신호를 기다렸다가 걷힌다
   // (src/styles/splash.css의 로드 게이트). 시간은 CSS가 재고 여기서는 조건만 준다.
   useEffect(() => {
     document.body.classList.add('app-ready');
+  }, []);
+
+  useEffect(() => {
+    installServiceWorker(() => setUpdateReady(true));
   }, []);
 
   // 첫 더빙 전에 엔진(31MB)과 App Check를 미리 준비해 저장 시 대기시간을 줄인다.
@@ -74,6 +82,13 @@ export function App() {
             setView('result');
           }}
         />
+      )}
+      {/* 홈에 있을 때만 알린다 — 녹음·합성·저장 중에는 화면에 끼어들지 않는다.
+          누르는 순간에만 새로고침하므로 하던 작업이 날아갈 일이 없다. */}
+      {updateReady && view === 'home' && (
+        <button className="update-nudge" type="button" onClick={() => window.location.reload()}>
+          새 버전이 있어요 <b>새로고침</b>
+        </button>
       )}
       {job && (
         <Result

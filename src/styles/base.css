@@ -119,3 +119,42 @@ body {
   justify-content: center;
   width: 100%;
 }
+
+/* 새 버전 알림. 부스에서 아이가 보는 화면이라 작고 눈에 거슬리지 않게 둔다 —
+   화면 오른쪽 아래 구석에 붙이고, 누르면 그때 새로고침한다(저절로 하지 않는다).
+   position: fixed라 레이아웃을 밀지 않는다. */
+.update-nudge {
+  position: fixed;
+  right: clamp(12px, 2vw, 20px);
+  bottom: clamp(12px, 2vw, 20px);
+  z-index: 50;
+  appearance: none;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  background: rgba(20, 28, 58, 0.92);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  transition: color 0.2s, border-color 0.2s;
+}
+.update-nudge b {
+  color: var(--gold);
+  font-weight: 700;
+}
+@media (hover: hover) and (pointer: fine) {
+  .update-nudge:hover {
+    border-color: var(--gold);
+    color: var(--cream);
+  }
+}
+/* 좁은 화면에서는 개인정보처리방침 링크가 화면 아래 가운데에 있어 알림과 겹친다 —
+   링크 위로 올려 붙인다(실측으로 확인). */
+@media (max-width: 759px) {
+  .update-nudge {
+    bottom: 48px;
+  }
+}
