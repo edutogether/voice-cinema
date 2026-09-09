@@ -23,7 +23,7 @@ npm run dev       # 개발 서버 (http://localhost:4321)
 npm run build     # tsc --noEmit + vite build → dist/
 npm test          # vitest — 루트 9개 + functions 35개 = 44개
 npm run lint      # eslint (src/는 tsc가 담당하므로 제외)
-npm run test:e2e  # Playwright 12개. 빌드 후 dist/를 서빙해 실제 산출물로 검증한다
+npm run test:e2e  # Playwright 13개. 빌드 후 dist/를 서빙해 실제 산출물로 검증한다
                   # 최초 1회: npx playwright install chromium
 ```
 
@@ -77,6 +77,12 @@ npm run test:e2e  # Playwright 12개. 빌드 후 dist/를 서빙해 실제 산�
 - 서비스워커에서 캐시를 찾을 땐 **`ignoreVary: true`가 필요하다.** Hosting이 정적 파일에
   `Vary: Origin`을 붙이는데, 저장할 때와 찾을 때의 요청 헤더가 달라 캐시에 있는데도 못 찾는다
   (전환 중 실측으로 확인 — 그대로 뒀으면 오프라인에서 앱이 안 떴다)
+- **탐색 요청(`request.mode === 'navigate'`) 분기가 프리캐시 분기보다 먼저 와야 한다.**
+  `/privacy.html`처럼 프리캐시 목록에 든 문서가 캐시 우선 분기에 먼저 걸리면 네트워크를
+  아예 보지 않아, 새로 배포해도 그 기기의 서비스워커가 교체되기 전까지 옛 화면이 계속
+  나온다(2026-09-09 실제 발생 — 방침 화면만 안 바뀌었다. 홈은 경로가 `/`라 목록에 없어
+  바로 반영됐고 그 차이 때문에 원인을 찾기 어려웠다). `e2e/document-freshness.spec.js`가
+  이 순서를 고정한다
 
 `e2e/offline-boot.spec.js`가 실제로 오프라인 상태를 만들어 이걸 매번 검증한다.
 

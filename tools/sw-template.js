@@ -43,8 +43,32 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return; // Cloud Functions 등 외부 호출은 그대로 흘려보낸다
 
+  // 화면으로 여는 문서(주소창 입력, 링크로 새 탭 열기, 새로고침)는 **프리캐시 분기보다
+  // 먼저** 네트워크 우선으로 처리한다. 순서가 핵심이다 — /privacy.html처럼 프리캐시
+  // 목록에 든 문서가 아래 캐시 우선 분기에 먼저 걸리면, 새로 배포해도 그 기기의
+  // 서비스워커가 교체되기 전까지 네트워크를 아예 보지 않아 옛 화면이 계속 나온다.
+  // (2026-09-09 실측: 방침 화면을 새로 배포했는데 기기에서는 옛 화면이 그대로였다.
+  //  홈은 경로가 '/'라 프리캐시 목록에 없어 이 분기로 와서 바로 반영됐고, 그 차이
+  //  때문에 "한 화면만 안 바뀐다"로 보였다.)
+  //
+  // 오프라인에서는 캐시로 떨어진다. 여기서도 ignoreVary가 반드시 필요하다 — 이
+  // 조회가 실패하면 오프라인에서 주소창으로 연 탭이 그대로 죽는다. 저장은 헤더 없는
+  // 요청으로 했는데 탐색 요청에는 브라우저가 헤더를 더 붙이므로, Vary를 무시하지
+  // 않으면 캐시에 있는데도 못 찾는 함정에 걸린다.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request).catch(() =>
+        caches
+          .match(request, { ignoreVary: true })
+          .then((hit) => hit || caches.match('/index.html', { ignoreVary: true }))
+      )
+    );
+    return;
+  }
+
   // 프리캐시된 앱 셸·엔진: 캐시 우선. 파일명에 해시가 붙어 있어(또는 재배포 시
-  // 캐시 이름 자체가 바뀌어) 옛 내용이 남아 새 배포를 가리는 일이 없다.
+  // 캐시 이름 자체가 바뀌어) 옛 내용이 남아 새 배포를 가리는 일이 없다. 화면으로
+  // 여는 문서는 위에서 이미 처리했으므로 여기로 오지 않는다.
   //
   // ignoreVary가 반드시 필요하다: install의 addAll()은 헤더 없는 평범한 요청으로
   // 저장하는데, 같은 파일을 모듈 import로 다시 요청하면 브라우저가 Origin 등을
@@ -68,20 +92,5 @@ self.addEventListener('fetch', (event) => {
         .then((hit) => hit || fetch(request).then((resp) => cacheAndReturn(request, resp)))
     );
     return;
-  }
-
-  // 그 밖의 문서 요청(예: 주소 직접 입력)은 네트워크 우선, 끊겼으면 캐시로.
-  // 여기서도 ignoreVary가 반드시 필요하다 — 이 조회가 실패하면 오프라인에서
-  // 주소창으로 연 탭이 그대로 죽는다. 저장은 헤더 없는 요청으로 했는데 탐색
-  // 요청에는 브라우저가 헤더를 더 붙이므로, Vary를 무시하지 않으면 캐시에
-  // 있는데도 못 찾는 그 함정에 똑같이 걸린다(위 프리캐시 조회와 같은 이유).
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request).catch(() =>
-        caches
-          .match(request, { ignoreVary: true })
-          .then((hit) => hit || caches.match('/index.html', { ignoreVary: true }))
-      )
-    );
   }
 });
