@@ -289,9 +289,11 @@
   display: inline-block;
   margin: 10px auto 0;
   position: relative;
-  font-family: 'Pretendard Variable', 'Pretendard', 'SUIT', 'Noto Sans KR', system-ui, sans-serif;
+  font-family: 'Pretendard', 'Pretendard Variable', 'SUIT', 'Noto Sans KR', system-ui, sans-serif;
   font-size: 13px;
-  font-weight: 600;
+  /* 700 — 한 단계 굵게(대표 지시 2026-09-09). 서브셋에 700이 있어야 합성으로
+     뭉개지지 않는다(이 저장소는 400·500·600·700·800을 만든다). */
+  font-weight: 700;
   color: rgba(255, 255, 255, 0.82);
   text-decoration: none;
   transition: color 0.2s;
