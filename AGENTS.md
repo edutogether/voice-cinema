@@ -103,7 +103,7 @@ npm run test:e2e  # Playwright 20개. 빌드 후 dist/를 서빙해 실제 산�
 
 ### 5. 영상 코덱은 반드시 H.264
 H.265/HEVC로 인코딩하면 브라우저에서 화면이 검게 나온다. `public/clips/*.mp4`를 교체할 땐
-H.264/AAC 유지. 클립의 **원본 오디오 트랙도 지우면 안 된다** — 최종 합성물엔 학생 음성만 들어가지만
+H.264/AAC 유지(교체 절차는 [`_docs/ops/clip-replacement-guide.txt`](_docs/ops/clip-replacement-guide.txt)). 클립의 **원본 오디오 트랙도 지우면 안 된다** — 최종 합성물엔 학생 음성만 들어가지만
 (`-map 1:a:0`), 스튜디오 화면의 "미리 보기"에서는 학생이 이 원본 오디오를 실제로 듣는다.
 
 ### 6. ffmpeg 벤더 파일은 번들러에 태우지 말 것

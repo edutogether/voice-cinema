@@ -21,7 +21,7 @@
 | `functions/` | Cloud Functions — 업로드 검증·저장(`voiceCinema`), 기한 후 자동 삭제(`cleanupAfterCutoff`). 루트와 별개인 독립 npm 패키지 |
 | `e2e/` | Playwright 실사용 흐름 테스트 — 녹음→합성→업로드→QR/폴백, 오프라인 부팅, 새 배포가 기기에 바로 반영되는지, 모바일 카드 재생·강조, 스플래시 |
 | `test/` | 클라이언트·서버가 같은 값을 쓰는지 강제하는 계약 테스트 |
-| `_docs/` | 내부 문서 — 배포되지 않는다. `_docs/ops/`(부스 운영 자료), `_docs/CHANGELOG.md`(날짜별 이력), `_docs/intents/` |
+| `_docs/` | 내부 문서 — 배포되지 않는다. `_docs/CHANGELOG.md`(날짜별 이력), `_docs/intents/`, `_docs/ops/`(부스 운영 자료·현장 인쇄물), `_docs/archive/`(끝났지만 근거로 남기는 것) |
 
 > **부스 운영 자료(설치·운영 설명서, 부스 게시물 PDF)는 [`_docs/ops/`](_docs/ops/)에 있다.**
 > 행사 당일 현장에서 필요한 인쇄물·설명서가 여기 들어있다.
