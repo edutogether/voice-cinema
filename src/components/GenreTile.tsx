@@ -2,11 +2,6 @@ import { useEffect, useRef } from 'react';
 import { clipUrl, thumbUrl, type Genre } from '../genres';
 import { SUPPORTS_HOVER } from '../lib/pointer';
 
-// 마우스가 없는 기기에서는 여섯 장이 함께 시작한다. 한꺼번에 내려받기 시작하면
-// 행사장 와이파이에서 첫 화면이 한참 멈추므로(클립 6개 합쳐 약 37MB) 카드마다
-// 이만큼씩 늦춰 요청이 줄을 서게 한다.
-const STAGGER_MS = 250;
-
 // 재생이 멈췄는지 되돌아보는 간격. loop만으로는 실제 기기에서 계속 돈다는 보장이
 // 없다 — 절전 모드, 동시 디코드 한도, 백그라운드 전환 등으로 브라우저가 임의로
 // 멈추면 카드가 마지막 프레임에 굳는다(2026-09-09 대표가 실제 폰에서 발견).
@@ -15,14 +10,18 @@ const WATCH_MS = 2000;
 
 interface Props {
   genre: Genre;
-  /** 카드 순서. 마우스가 없는 기기에서 재생 시작을 늦추는 데 쓴다. */
-  index: number;
-  /** 홈 화면이 보이는 중인지. 스튜디오로 들어간 뒤에는 뒤에서 계속 돌지 않게 한다. */
-  viewActive: boolean;
+  /** 이 카드가 지금 재생돼야 하는지. 마우스가 있는 기기에서는 호버가 정하므로 쓰이지 않는다. */
+  playing: boolean;
+  /** 재생을 이만큼 늦춰 시작한다 — 여섯 장이 한꺼번에 내려받기를 시작하지 않게 하려는 것이다. */
+  delayMs: number;
+  /** 한 장씩 돌려 재생하는 환경에서 "지금 이 카드"임을 알린다 — 강조가 함께 걸린다. */
+  solo: boolean;
+  /** 재생이 거부됐을 때 알린다. 동시 재생을 하나로 제한하는 환경을 알아내는 신호다. */
+  onBlocked: () => void;
   onSelect: (genre: Genre) => void;
 }
 
-export function GenreTile({ genre, index, viewActive, onSelect }: Props) {
+export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hoveringRef = useRef(false);
 
@@ -82,7 +81,7 @@ export function GenreTile({ genre, index, viewActive, onSelect }: Props) {
       v.load();
     };
 
-    if (!viewActive) {
+    if (!playing) {
       stop();
       return;
     }
@@ -95,22 +94,29 @@ export function GenreTile({ genre, index, viewActive, onSelect }: Props) {
       v.loop = true; // 10초짜리라 반복하지 않으면 곧 마지막 프레임에서 멈춘다
       v.play()
         .then(() => v.classList.add('playing'))
-        .catch((e) => console.warn(`[카드 자동재생 실패] ${genre.id}`, e));
+        .catch((e) => {
+          // 거부는 곧 "이 환경은 이 카드를 지금 재생할 수 없다"는 뜻이다. 느린 회선과
+          // 달리 시간이 지나도 저절로 풀리지 않으므로, 동시 재생 제한을 알아내는
+          // 신호로 이것을 쓴다(재생 장수를 세는 방식은 회선이 느릴 때 오판한다).
+          onBlocked();
+          console.warn(`[카드 자동재생 실패] ${genre.id}`, e);
+        });
 
       // loop를 걸어도 실제 기기에서는 브라우저가 임의로 멈출 수 있다. 멈춰 있으면
       // 다시 튼다 — 끝난 영상에 play()를 부르면 처음부터 다시 재생된다.
       watch = window.setInterval(() => {
         if (!v.paused || !v.isConnected) return;
-        v.play().catch(() => {});
+        // 다시 시도해서 또 거부되면 일시적인 것이 아니다 — 그 사실을 알린다.
+        v.play().catch(onBlocked);
       }, WATCH_MS);
-    }, index * STAGGER_MS);
+    }, delayMs);
 
     return stop;
-  }, [viewActive, genre.id, index]);
+  }, [playing, delayMs, genre.id, onBlocked]);
 
   return (
     <div
-      className="tile"
+      className={`tile${solo ? ' is-solo' : ''}`}
       style={{ '--c': genre.color } as React.CSSProperties}
       onClick={() => onSelect(genre)}
       onMouseEnter={SUPPORTS_HOVER ? onEnter : undefined}

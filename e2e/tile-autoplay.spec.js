@@ -109,6 +109,47 @@ test.describe('마우스가 없는 기기', () => {
     expect(누른중.확대).toBe('matrix(1.05, 0, 0, 1.05, 0, 0)');
   });
 
+  // 카카오톡 같은 인앱 브라우저는 동시 디코딩을 하나로 제한하는 경우가 있다 —
+  // 여섯 장에 play()를 걸어도 하나만 살아남고 나머지는 조용히 거부된다. 그러면
+  // "왜 호러만 재생되지"로 보인다(2026-09-09 대표가 카카오톡에서 발견).
+  // 브라우저 이름이 아니라 실제로 재생되는 장수를 세어 판단하므로, 여기서는 그
+  // 제약이 있는 환경을 직접 만들어 대체 동작(한 장씩 돌려 재생 + 강조)을 확인한다.
+  test('한 장만 재생되는 환경에서는 한 장씩 돌아가며 재생된다', async ({ page, context }) => {
+    await context.addInitScript(() => {
+      const real = window.HTMLMediaElement.prototype.play;
+      window.HTMLMediaElement.prototype.play = function () {
+        const 이미돌고있음 = [...document.querySelectorAll('video')].some((v) => v !== this && !v.paused);
+        if (이미돌고있음) return Promise.reject(new window.DOMException('한 번에 하나만', 'NotAllowedError'));
+        return real.call(this);
+      };
+    });
+    await page.goto('/');
+    await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
+
+    const 상태 = () =>
+      page.evaluate(() =>
+        [...document.querySelectorAll('.tile')].map((t) => ({
+          장르: t.querySelector('.gname').textContent,
+          재생: !t.querySelector('video').paused,
+          강조: t.classList.contains('is-solo'),
+        }))
+      );
+
+    // 여섯 장을 시도해 본 뒤 "한 장밖에 안 된다"를 스스로 알아채고 전환한다.
+    await expect
+      .poll(async () => (await 상태()).filter((s) => s.강조).length, { timeout: 30000, intervals: [500] })
+      .toBe(1);
+
+    const 처음 = await 상태();
+    // 재생 중인 카드와 강조된 카드가 같아야 한다 — 엉뚱한 카드가 빛나면 더 이상하다.
+    expect(처음.filter((s) => s.재생).map((s) => s.장르)).toEqual(처음.filter((s) => s.강조).map((s) => s.장르));
+
+    // 그리고 다음 카드로 넘어가야 한다. 한 장에 머물면 대표가 본 그 화면과 같다.
+    await expect
+      .poll(async () => (await 상태()).find((s) => s.강조)?.장르, { timeout: 20000, intervals: [500] })
+      .not.toBe(처음.find((s) => s.강조).장르);
+  });
+
   test('카드를 한 번 탭하면 그 장르로 들어간다', async ({ page }) => {
     await page.goto('/');
     await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });

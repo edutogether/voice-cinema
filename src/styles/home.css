@@ -164,7 +164,10 @@
     text-decoration: underline;
   }
 }
-.tile:active {
+.tile:active,
+/* 한 장씩 돌려 재생하는 환경(인앱 브라우저 등)에서 "지금 이 카드"를 알린다 —
+   누를 때와 같은 값을 쓴다. */
+.tile.is-solo {
   box-shadow: var(--hl-shadow);
 }
 /* 카드 자체는 살짝 눌리고(아래), 그 안의 영상·썸네일은 확대된다(위) — 서로 다른
@@ -207,7 +210,9 @@
   opacity: 0;
 }
 .tile:active .tile-media .thumb,
-.tile:active .tile-media .preview {
+.tile:active .tile-media .preview,
+.tile.is-solo .tile-media .thumb,
+.tile.is-solo .tile-media .preview {
   transform: scale(1.05);
 }
 
@@ -221,7 +226,8 @@
   pointer-events: none;
   transition: opacity 0.25s ease;
 }
-.tile:active .tile-tint {
+.tile:active .tile-tint,
+.tile.is-solo .tile-tint {
   opacity: 0.4;
 }
 .tile-scrim {
