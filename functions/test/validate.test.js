@@ -2,8 +2,8 @@
 // 검증 로직부터 시작한다. 실제로 이 저장소는 이미 한 번 "파일명이 추측
 // 가능했던" 결함이 배포까지 간 전례가 있어(2026-08-26), 회귀를 잡아줄
 // 테스트가 필요하다는 판단이었다.
-import { test, expect } from 'vitest';
-import { sanitizeFilename, validateUploadRequest, createRateLimiter, chunk, hasMp4Signature, MAX_DECODED_BYTES, MAX_FILENAME_LEN } from '../validate.js';
+import { test, expect, describe } from 'vitest';
+import { sanitizeFilename, validateUploadRequest, createRateLimiter, chunk, hasMp4Signature, MAX_DECODED_BYTES, MAX_FILENAME_LEN, isAfterCutoff } from '../validate.js';
 
 // 진짜 mp4 파일 시작부(박스 크기 4바이트 + 'ftyp')를 흉내낸 최소 픽스처.
 const FAKE_MP4_BYTES = Buffer.concat([Buffer.from([0, 0, 0, 32]), Buffer.from('ftypisom')]);
@@ -96,4 +96,23 @@ test('chunk: 배치 크기보다 큰 배열도 원소를 하나도 안 빠뜨린
   expect(batches.length).toBe(20); // 19*100 + 89
   expect(batches.flat().length).toBe(1989);
   expect(batches.flat()).toEqual(arr);
+});
+
+// 자동삭제 경계. 개인정보처리방침이 "2026년 12월 1일 00:00에는 저장된 영상을 전부
+// 자동으로 삭제합니다"라고 약속하므로, 그 시각과 이 판정이 어긋나면 틀린 고지가 된다.
+// 하루 일찍 지우면 학생이 아직 받지 못한 영상이 사라지므로 그쪽이 훨씬 위험하다.
+describe('isAfterCutoff — 자동삭제 경계', () => {
+  const cutoff = new Date('2026-12-01T00:00:00+09:00');
+
+  test('11월 30일 23:59:59(KST)에는 지우지 않는다', () => {
+    expect(isAfterCutoff(new Date('2026-11-30T23:59:59+09:00'), cutoff)).toBe(false);
+  });
+
+  test('12월 1일 00:00:00(KST) 정각에는 지운다', () => {
+    expect(isAfterCutoff(new Date('2026-12-01T00:00:00+09:00'), cutoff)).toBe(true);
+  });
+
+  test('행사 당일(11월 14일)에는 지우지 않는다', () => {
+    expect(isAfterCutoff(new Date('2026-11-14T23:00:00+09:00'), cutoff)).toBe(false);
+  });
 });

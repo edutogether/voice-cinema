@@ -44,3 +44,18 @@ test('업로드 타임아웃: 클라이언트(ms)와 서버(초)가 같은 시�
   );
   expect(clientMs).toBe(serverSeconds * 1000);
 });
+
+// 개인정보처리방침이 약속한 삭제 시각과 실제 예약 시각이 어긋나면 그건 틀린 고지다.
+// 2026-09-09에 실제로 어긋나 있었다 — 방침은 "12월 1일 00:00", 예약은 새벽 3시라
+// 그 사이 세 시간 동안 파일이 남아 있었다. 예약을 자정으로 옮겨 맞췄고, 다음에 누가
+// 예약 시각을 바꾸면 방침 문구도 같이 고치도록 여기서 강제한다.
+test('자동삭제: 예약 시각과 개인정보처리방침에 적힌 시각이 같다', () => {
+  const cron = extract(
+    read('functions/index.js'),
+    /export const cleanupAfterCutoff = onSchedule\([\s\S]*?schedule: '([^']+)'/,
+    'cleanupAfterCutoff schedule'
+  );
+  const [minute, hour] = cron.split(' ');
+  const 시각 = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+  expect(read('privacy.html')).toContain(`2026년 12월 1일 ${시각}`);
+});

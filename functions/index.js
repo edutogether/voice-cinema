@@ -5,7 +5,7 @@ import { initializeApp } from 'firebase-admin/app';
 import { getStorage } from 'firebase-admin/storage';
 import { getAppCheck } from 'firebase-admin/app-check';
 import express from 'express';
-import { validateUploadRequest, createRateLimiter, chunk } from './validate.js';
+import { validateUploadRequest, createRateLimiter, chunk, isAfterCutoff } from './validate.js';
 
 initializeApp();
 
@@ -186,9 +186,13 @@ export const voiceCinema = onRequest(
 // 수천 개가 쌓인 상태에서 한 번에 지우려다 메모리 초과로 이 함수 자체가 죽으면
 // 자동삭제가 아예 안 되는(개인정보가 안 지워지는) 심각한 결과로 이어질 수 있었다.
 export const cleanupAfterCutoff = onSchedule(
-  { schedule: '0 3 * * *', timeZone: 'Asia/Seoul', region: 'asia-northeast3', memory: '512MiB', timeoutSeconds: 300 },
+  // 예약 시각은 개인정보처리방침이 약속한 시각과 같아야 한다 — 방침에 "2026년 12월
+  // 1일 00:00에는 저장된 영상을 전부 자동으로 삭제합니다"라고 적혀 있으므로 자정에
+  // 돈다(2026-09-09, 그전에는 새벽 3시라 00:00~03:00 사이에 파일이 남아 있었다).
+  // 이 값을 바꾸면 privacy.html의 문구도 같이 고쳐야 한다.
+  { schedule: '0 0 * * *', timeZone: 'Asia/Seoul', region: 'asia-northeast3', memory: '512MiB', timeoutSeconds: 300 },
   async () => {
-    if (new Date() < CUTOFF_DATE) return;
+    if (!isAfterCutoff(new Date(), CUTOFF_DATE)) return;
     try {
       const bucket = getStorage().bucket();
       const [files] = await bucket.getFiles({ prefix: UPLOAD_PREFIX });

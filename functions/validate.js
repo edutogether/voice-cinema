@@ -92,3 +92,15 @@ export function createRateLimiter({ windowMs = 60 * 1000, max = 10 } = {}) {
     return arr.length > max;
   };
 }
+
+/**
+ * 자동삭제를 실행할 시각이 됐는지. 개인정보처리방침이 약속한 시각과 이 판정이
+ * 어긋나면 그건 틀린 고지가 되므로, 경계를 테스트로 고정하려고 순수 함수로 떼어냈다.
+ *
+ * 경계는 "cutoff 이전에는 절대 지우지 않는다"이다 — 하루 일찍 지우면 학생이 아직
+ * 받지 못한 영상이 사라진다. 같은 시각이면 지운다(방침이 "12월 1일 00:00에는
+ * 삭제합니다"라고 약속하므로).
+ */
+export function isAfterCutoff(now, cutoff) {
+  return now.getTime() >= cutoff.getTime();
+}
