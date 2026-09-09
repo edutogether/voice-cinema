@@ -29,7 +29,11 @@ body {
 
 body {
   font-family: 'Pretendard', 'Pretendard Variable', 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  /* -webkit-font-smoothing: antialiased 를 뺐다(2026-09-09).
+     이 속성은 애플 기기(iOS·macOS)에서만 동작하고 글자를 한 단계 얇게 그린다.
+     윈도우 PC에서는 아무 효과가 없어서, 폰트를 자체 호스팅해 글꼴이 같아진 뒤에는
+     같은 화면이 기기에 따라 다른 굵기로 보이는 원인만 남았다(대표가 카카오톡에서
+     "폰트는 똑같아졌는데 얇다"고 지적). 빼면 애플 기기가 PC 쪽으로 맞춰진다. */
   text-rendering: optimizeLegibility;
   color: var(--cream);
   background:
