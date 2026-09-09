@@ -5,38 +5,92 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>개인정보처리방침 · InKY Voice Cinema</title>
 <style>
-  :root{
-    --bg:#0b1020; --bg2:#0c1330; --panel:#141c3a;
-    --gold:#e9c46a; --cream:#f6f1e6; --muted:#9aa6cc; --line:rgba(233,196,106,.22);
+  /* 밝은 화면 하나로 고정한다(대표 지시 2026-09-09, Be a Googler와 동일 양식).
+     본 앱은 어두운 화면이지만 이 페이지만 예외이며, prefers-color-scheme 대응을
+     두지 않는다 — 읽는 문서라 밝은 바탕이 낫다는 판단이 이미 내려져 있다.
+     바탕은 순백이 아니라 아주 옅은 크림→하늘 그라데이션 위에 흰 카드다. */
+  body {
+    margin: 0;
+    padding: 40px 20px 80px;
+    background: linear-gradient(160deg, #fffdf6, #e9f4ff);
+    color: #202124;
+    font-family: "Pretendard Variable", Pretendard, SUIT, "Noto Sans KR", system-ui, sans-serif;
+    line-height: 1.7;
   }
-  *{box-sizing:border-box;}
-  html,body{margin:0; min-height:100%;}
-  body{
-    font-family:'Pretendard','Pretendard Variable','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
-    color:var(--cream);
-    background:linear-gradient(180deg,var(--bg),var(--bg2));
-    min-height:100dvh;
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 24px;
+    padding: 40px clamp(24px, 5vw, 56px);
+    box-shadow: 0 24px 56px rgba(42, 62, 68, 0.1);
   }
-  .wrap{max-width:640px; margin:0 auto; padding:clamp(24px,5vw,48px) clamp(18px,4vw,32px);}
-  .back{display:inline-flex; align-items:center; gap:6px; color:var(--muted); text-decoration:none; font-size:14px; margin-bottom:24px;}
-  .back:hover{color:var(--gold);}
-  h1{font-size:clamp(22px,4vw,30px); margin:0 0 20px; font-weight:800;}
-  h1 .gold{color:var(--gold);}
-  .card{border:1px solid var(--line); border-radius:18px; background:var(--panel); padding:clamp(18px,3.5vw,28px); line-height:1.75; font-size:15px;}
-  .card p{margin:0 0 16px;}
-  .card p:last-child{margin-bottom:0;}
-  .card b{color:var(--gold);}
+  h1 { font-size: clamp(24px, 4vw, 30px); font-weight: 800; margin: 0 0 8px; }
+  p.updated { color: #6b7166; font-size: 14px; margin: 0 0 32px; }
+  h2 { font-size: 18px; font-weight: 750; margin: 32px 0 10px; }
+  p, li { font-size: 15px; color: #3c3f3a; }
+  ul { padding-left: 20px; margin: 8px 0; }
+  a { color: #2f6fd6; }
+  .back { display: inline-block; margin-bottom: 24px; font-size: 14px; color: #2f6fd6; text-decoration: none; }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <a class="back" href="./index.html">← InKY Voice Cinema로 돌아가기</a>
-  <h1>개인정보처리방침 <span class="gold">· InKY Voice Cinema</span></h1>
-  <div class="card">
-    <p>이 프로그램은 인천광역시교육청 주최 행사(인천어린이청소년영화제 "InKY 놀이터") 참가자를 대상으로 합니다. 참가 학교는 사전에 <b>개인정보 수집·이용 동의서를 걷고 명단을 제출한 뒤에만</b> 참가하며, 동의 절차는 학교·교육청 행정 절차로 이미 진행되어 있습니다.</p>
-    <p>녹음된 목소리(음성)는 <b>완성 영화를 만들어 전달하는 목적에만</b> 사용됩니다. 이름·학교·연락처 등 다른 개인정보는 이 프로그램에서 별도로 수집하지 않습니다.</p>
-    <p>완성된 영화는 <b>2026년 11월 30일까지만</b> 내려받을 수 있으며, 그 이후에는 저장된 영상이 자동으로 삭제됩니다(행사 종료 후 파기).</p>
-  </div>
-</div>
+<main>
+  <a class="back" href="./index.html">← Voice Cinema로 돌아가기</a>
+  <h1>개인정보처리방침</h1>
+  <p class="updated">최종 수정일: 2026-09-09</p>
+
+  <p>
+    InKY Voice Cinema는 인천광역시교육청이 주최하는 인천어린이청소년영화제 “InKY 놀이터” 부스에서
+    운영하는 프로그램입니다. 학생이 무성 영상에 자기 목소리로 더빙하면 그 자리에서 한 편의 짧은
+    영화가 완성됩니다. 참가 학교는 사전에 개인정보 수집·이용 동의서를 걷고 명단을 제출한 뒤에
+    참가하며, 동의 절차는 학교와 교육청의 행정 절차로 이미 진행되어 있습니다.
+  </p>
+
+  <h2>1. 수집하는 정보</h2>
+  <ul>
+    <li>학생이 마이크로 녹음한 <b>목소리</b>, 그리고 그 목소리를 영상에 얹어 만든 <b>완성 영상 파일</b></li>
+    <li>이름·학교·학년·연락처 등 <b>누구인지 알 수 있는 정보는 수집하지 않습니다.</b> 완성 영상에는
+      학생이 직접 말한 내용만 담깁니다.</li>
+    <li>접속한 기기의 <b>IP 주소</b> — 짧은 시간에 들어오는 요청 수를 세어 남용을 막는 데만 쓰고,
+      따로 저장하지 않습니다.</li>
+    <li>사람이 아닌 자동화 프로그램의 접근을 막기 위해 Google reCAPTCHA Enterprise를 사용하며,
+      이 과정에서 브라우저·기기에 관한 정보가 Google로 전송됩니다.</li>
+  </ul>
+  <p>광고나 이용자 분석을 위한 추적 도구는 사용하지 않습니다.</p>
+
+  <h2>2. 이용 목적</h2>
+  <ul>
+    <li>녹음한 목소리로 완성 영상을 만들고, QR과 링크로 학생에게 전달하기 위해</li>
+    <li>부스가 정상적으로 운영되도록 과도한 요청과 자동화 접근을 막기 위해</li>
+  </ul>
+  <p>위 목적 외의 용도로는 사용하지 않습니다.</p>
+
+  <h2>3. 보관 및 삭제</h2>
+  <ul>
+    <li>완성 영상은 Google Firebase Storage에 저장되며, <b>QR이나 링크를 아는 사람은 누구나 볼 수
+      있는 공개 주소</b>로 전달됩니다. 그 자리에서 QR로 건네는 방식이라 로그인을 요구할 수 없는
+      구조이며, 완성 화면에도 이 사실을 그대로 안내합니다.</li>
+    <li>다운로드는 <b>2026년 11월 30일까지</b> 가능합니다. <b>2026년 12월 1일부터</b> 매일 새벽 3시에
+      저장된 영상을 전부 자동으로 삭제합니다.</li>
+    <li>행사장 인터넷이 끊겨 자동 전달이 실패하면 완성 영상이 <b>그 부스 기기에 직접 저장</b>됩니다.
+      이 파일은 자동 삭제 대상이 아니므로, 학생에게 전달한 뒤 운영자가 직접 삭제합니다.</li>
+  </ul>
+
+  <h2>4. 제3자 제공</h2>
+  <p>
+    수집한 정보를 제3자에게 제공하거나 판매하지 않습니다. 다만 프로그램을 운영하기 위해 Google의
+    Firebase(Hosting·Cloud Functions·Storage)와 reCAPTCHA Enterprise를 사용하며, 완성 영상과
+    요청은 이 서비스들 위에서 저장·처리됩니다.
+  </p>
+
+  <h2>5. 문의</h2>
+  <p>
+    문의는 같이교육 인스타그램
+    <a href="https://www.instagram.com/edutogether_/" target="_blank" rel="noopener">@edutogether_</a>
+    으로 남겨 주세요.
+  </p>
+</main>
 </body>
 </html>
