@@ -57,6 +57,10 @@
   color: var(--danger);
 }
 
+/* 마우스가 없는 기기에서 "지금 보고 있는 카드"가 PC의 호버 카드 역할을 한다.
+   강조 효과는 위 :hover 규칙을 그대로 나눠 쓴다(.tile.is-active) — 새로 만들지
+   않으므로 나중에 한쪽만 바뀌는 일이 없다. */
+
 /* 좁은 화면에서 16:9를 강제하면 카드 블록이 낮아져 위아래로 빈 공간이 남는다 —
    16:9는 가로 폭이 넉넉한 데스크탑에서만 적용하고, 모바일은 남는 세로를 채운다. */
 .grid {
@@ -123,7 +127,8 @@
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4);
   transition: transform 0.15s ease, box-shadow 0.25s ease;
 }
-.tile:hover {
+.tile:hover,
+.tile.is-active {
   box-shadow:
     0 18px 44px rgba(0, 0, 0, 0.55),
     0 0 0 2px var(--c),
@@ -167,7 +172,9 @@
   opacity: 0;
 }
 .tile:hover .tile-media .thumb,
-.tile:hover .tile-media .preview {
+.tile:hover .tile-media .preview,
+.tile.is-active .tile-media .thumb,
+.tile.is-active .tile-media .preview {
   transform: scale(1.05);
 }
 
@@ -181,7 +188,8 @@
   pointer-events: none;
   transition: opacity 0.25s ease;
 }
-.tile:hover .tile-tint {
+.tile:hover .tile-tint,
+.tile.is-active .tile-tint {
   opacity: 0.4;
 }
 .tile-scrim {

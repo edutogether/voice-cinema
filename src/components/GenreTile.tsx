@@ -1,25 +1,16 @@
 import { useEffect, useRef } from 'react';
 import { clipUrl, thumbUrl, type Genre } from '../genres';
-
-// 마우스 호버가 실제로 되는 입력장치인지. 여기서 갈리는 건 "영상을 보여줄지"가
-// 아니라 "무엇이 재생을 시작시키는지"다 — 마우스가 있으면 호버가, 없으면 화면에
-// 들어오는 것이 방아쇠가 된다. 터치 기기에서 카드가 정지 이미지로만 남으면 그건
-// 설계가 아니라 그 사용자에게는 고장난 화면이다(2026-09-09 대표 지적).
-const SUPPORTS_HOVER = window.matchMedia?.('(hover: hover) and (pointer: fine)').matches ?? false;
-
-// 마우스가 없는 기기에서 6장이 동시에 내려받기를 시작하면 행사장 와이파이에서
-// 첫 화면이 한참 멈춘다(클립 6개 합쳐 약 37MB). 카드마다 이만큼씩 늦춰 시작해
-// 요청이 줄을 서게 한다.
-const STAGGER_MS = 250;
+import { SUPPORTS_HOVER } from '../lib/pointer';
 
 interface Props {
   genre: Genre;
-  index: number;
+  /** 마우스가 없는 기기에서 "지금 보고 있는 카드"인지. 마우스가 있으면 항상 false다(호버가 그 역할을 한다). */
+  active: boolean;
   onSelect: (genre: Genre) => void;
+  registerRef: (el: HTMLDivElement | null) => void;
 }
 
-export function GenreTile({ genre, index, onSelect }: Props) {
-  const tileRef = useRef<HTMLDivElement>(null);
+export function GenreTile({ genre, active, onSelect, registerRef }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hoveringRef = useRef(false);
 
@@ -54,63 +45,45 @@ export function GenreTile({ genre, index, onSelect }: Props) {
     v.load();
   };
 
-  // 마우스가 없는 기기: 카드가 화면에 들어오면 음소거로 재생하고, 나가면 멈춘다.
+  // 마우스가 없는 기기: 활성 카드가 되면 재생하고, 벗어나면 멈춘다. 한 번에 한 장만
+  // 재생되므로 PC에서 마우스를 옮길 때와 같은 모양이고, 클립도 그 한 장만 내려받는다.
   //
-  // 음소거는 타협이 아니라 필수다. 소리가 있으면 브라우저가 자동재생을 막고(그러면
-  // 정지 화면 그대로다), 부스에서 여섯 개가 동시에 소리를 내는 사고도 난다.
-  // 학생이 원본 소리를 듣는 자리는 스튜디오 화면의 "미리 보기"이고 그건 그대로다.
+  // 음소거는 타협이 아니라 필수다. 소리가 있으면 브라우저가 자동재생을 막아 정지
+  // 화면 그대로가 되고, 부스에서 여러 개가 동시에 소리를 내는 사고도 난다. 학생이
+  // 원본 소리를 듣는 자리는 스튜디오 화면의 "미리 보기"이고 그건 그대로다.
   useEffect(() => {
     if (SUPPORTS_HOVER) return;
-    const tile = tileRef.current;
     const v = videoRef.current;
-    if (!tile || !v) return;
-
-    let timer: number | undefined;
-
-    const start = () => {
-      if (!v.src) v.src = clipUrl(genre.id);
-      v.muted = true; // 자동재생 정책을 통과하는 유일한 조건이다
-      v.loop = true; // 10초짜리라 반복하지 않으면 곧 마지막 프레임에서 멈춘다
-      v.play()
-        .then(() => v.classList.add('playing'))
-        .catch((e) => console.warn(`[카드 자동재생 실패] ${genre.id}`, e));
-    };
+    if (!v) return;
 
     const stop = () => {
-      window.clearTimeout(timer);
       v.pause();
       v.classList.remove('playing');
       // 호버 경로와 같은 이유로 자원을 놓아준다 — 보이지 않는 카드가 디코더를
-      // 쥐고 있으면 실제로 보이는 카드가 재생되지 못한다.
+      // 쥐고 있으면 정작 보이는 카드가 재생되지 못한다.
       v.removeAttribute('src');
       v.load();
     };
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) {
-            window.clearTimeout(timer);
-            timer = window.setTimeout(start, index * STAGGER_MS);
-          } else {
-            stop();
-          }
-        }
-      },
-      // 살짝만 걸쳐도 시작하면 스크롤 중에 켜졌다 꺼졌다 한다.
-      { threshold: 0.35 }
-    );
-    io.observe(tile);
-    return () => {
-      io.disconnect();
+    if (!active) {
       stop();
-    };
-  }, [genre.id, index]);
+      return;
+    }
+
+    if (!v.src) v.src = clipUrl(genre.id);
+    v.muted = true; // 자동재생 정책을 통과하는 유일한 조건이다
+    v.loop = true; // 10초짜리라 반복하지 않으면 곧 마지막 프레임에서 멈춘다
+    v.play()
+      .then(() => v.classList.add('playing'))
+      .catch((e) => console.warn(`[카드 자동재생 실패] ${genre.id}`, e));
+
+    return stop;
+  }, [active, genre.id]);
 
   return (
     <div
-      ref={tileRef}
-      className="tile"
+      ref={registerRef}
+      className={`tile${active ? ' is-active' : ''}`}
       style={{ '--c': genre.color } as React.CSSProperties}
       onClick={() => onSelect(genre)}
       onMouseEnter={SUPPORTS_HOVER ? onEnter : undefined}
