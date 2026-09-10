@@ -106,9 +106,13 @@ Functions 도메인, `media-src`/`img-src`에 `blob:`/`data:`).
   시작하므로, 그때까지 Storage에 쌓인 시험용 녹음은 저절로 지워지지 않는다.
 - **아이패드(사파리)는 권장하지 않는다** — 마이크 호환 문제. 노트북 또는 안드로이드 태블릿을 쓴다.
 - **`npm audit fix --force`를 실행하지 말 것** — `firebase-admin`을 10.3.0으로 다운그레이드해 지금
-  쓰는 모듈형 API가 사라진다. 남은 moderate 취약점은 `uuid<11.1.1`이 근본 원인인데 Google 자신의
-  `@google-cloud/storage`가 아직 안 올린 전이 의존성이라 최신 조합에서도 그대로 남는다 —
-  **할 수 있는 최선은 이미 했고 남은 것은 업스트림 대기**라 §4-1 구조적 상한으로 처리한다(2026-08-27 대표 확인).
+  쓰는 모듈형 API가 사라진다.
+- **`functions/package.json`의 `overrides: { "uuid": "^11.1.1" }`을 지우지 말 것** — 이것 하나로
+  moderate 6건이 0건이 된다. 취약한 `uuid@9`는 `firebase-admin` → `@google-cloud/storage@7` →
+  `teeny-request@9`로 딸려 오는 전이 의존성이고, `firebase-admin`은 **최신본(14.3.0)도 아직
+  `@google-cloud/storage@8`을 안 쓴다.** 오래 "업스트림 대기"로 두었으나, `teeny-request`가 uuid를
+  쓰는 자리는 `index.js` 135행의 `uuid.v4()` **한 곳뿐**이라 override로 안전하게 올릴 수 있다 —
+  그 호출과 `Storage` 생성, `functions/index.js` 로드까지 실제로 실행해 확인했다(2026-09-10).
 
 ## 자율 권한
 `bypassPermissions`는 커밋되는 `.claude/settings.json`이 아니라 gitignore된
