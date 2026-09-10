@@ -22,6 +22,14 @@ jobs:
         with:
           node-version: 22
       - run: npm install
+      # 🔴 functions 의존성을 테스트 **전에** 깔아야 한다. 루트 `npm test`는
+      # `vitest run && cd functions && npm test`라 functions 테스트까지 이어서 도는데,
+      # 그때 functions/node_modules가 없으면 그쪽 소스를 import하는 테스트가 죽는다
+      # (vitest 자체는 npm이 상위 node_modules/.bin을 PATH에 넣어줘서 돌아간다 —
+      # 그래서 여태 안 터졌을 뿐이고, 의존성을 import하는 테스트가 처음 생긴
+      # 2026-09-10에 `Cannot find package 'firebase-functions/v2/https'`로 드러났다).
+      - run: npm install
+        working-directory: functions
       - run: npm run lint
       - run: npm test
       - name: functions 의존성 취약점 확인 (참고용, 실패해도 CI를 막지 않음)
@@ -32,7 +40,7 @@ jobs:
         # 전체가 막혔다 — Google 쪽 전이 의존성에 high 하나만 새로 잡혀도
         # 긴급 수정조차 배포할 수 없는 상태였다. 참고용이라는 주석 그대로
         # 동작하도록 continue-on-error를 추가한다.
-        run: npm install && npm audit --audit-level=high
+        run: npm audit --audit-level=high
         continue-on-error: true
 
   e2e:

@@ -239,6 +239,20 @@ D-7인 이유는 예열과 실기기 리허설(노트북·안드로이드 태블
 - 🔴 **"설치가 성공했다"와 "테스트가 실제로 돌았다"는 다르다** — CI 로그에서 **실행된 테스트 수**를
   본다. 0개인데 초록불이면 게이트가 비어 있는 것이다
 
+## CI에서 functions 의존성은 테스트 **전에** 깔아야 한다 (2026-09-10)
+루트 `npm test`는 `vitest run && cd functions && npm test`라 functions 테스트까지 이어서 돈다.
+그런데 `ci.yml`은 functions의 `npm install`을 **테스트 뒤**(취약점 확인 단계)에 두고 있었다.
+
+**여태 안 터진 이유가 함정이다** — vitest 자체는 npm이 상위 `node_modules/.bin`을 PATH에 넣어줘서
+돌아가고, 그때까지의 functions 테스트는 `validate.js`처럼 **의존성이 없는 파일만** import하거나
+`index.js`를 **텍스트로 읽기만** 했다. 그래서 `functions/node_modules`가 없어도 38개가 전부
+통과했다. 의존성을 실제로 import하는 테스트가 처음 생기자 바로 드러났다 —
+`Cannot find package 'firebase-functions/v2/https'`.
+
+- **`ci.yml`의 `npm install`(working-directory: functions)을 테스트 뒤로 옮기지 말 것**
+- **로컬에서 통과했다고 CI도 통과한다고 보지 말 것** — 로컬에는 `functions/node_modules`가
+  이미 있어서 이 차이가 안 보인다. 의심되면 그 폴더를 잠깐 치우고 돌려보면 재현된다
+
 ## 레이트리밋은 "있다"가 아니라 "그 자리에서 불린다"를 검사한다 (2026-09-10)
 `functions/test/validate.test.js`는 `createRateLimiter`라는 **순수 함수만** 검사한다. 그래서
 `/upload` 핸들러가 그 함수를 **부르지 않게** 만들어도 유닛 57개가 전부 통과했다 — 실제로
