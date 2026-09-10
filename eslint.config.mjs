@@ -40,11 +40,13 @@ export default [
     },
   },
   {
+    // functions 유닛테스트. upload-rate-limit.test.js는 진짜 핸들러를 로컬 서버에
+    // 띄워 요청을 보내므로 process(환경변수)와 fetch가 필요하다.
     files: ['functions/test/**/*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
-      globals: { console: 'readonly', Buffer: 'readonly' },
+      globals: { console: 'readonly', Buffer: 'readonly', process: 'readonly', fetch: 'readonly' },
     },
   },
   {
