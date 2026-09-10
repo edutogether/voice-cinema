@@ -1,50 +1,133 @@
 # CLAUDE.md — Voice Cinema (잉키 보이스 시네마)
 
-InKY Festival(제4회 인천어린이청소년영화제, 2026.11.14. 인천 CGV) "InKY 놀이터" 6부스 중 하나. 상위 원칙은 [D:\Projects\CLAUDE.md](../../CLAUDE.md) 상속 — 여기는 이 저장소 전용 상태/규칙만 기록한다.
+InKY Festival(제4회 인천어린이청소년영화제, **2026-11-14**, 인천 CGV) "InKY 놀이터" 6부스 중 하나.
+상위 원칙은 [D:\Projects\CLAUDE.md](../../CLAUDE.md) 상속 — 여기는 이 저장소 전용 규칙만 둔다.
 
-## 정체성
+> **이 파일에는 "지금도 살아있는 규칙"과 "신입이 첫날 알아야 할 것"만 둔다.**
+> 날짜별 작업 이력은 [`_docs/CHANGELOG.md`](_docs/CHANGELOG.md), 지나간 사건 기록은
+> [`_docs/archive/`](_docs/archive/), 이 앱만의 함정과 상세 규칙은
+> [`.claude/rules/app.md`](.claude/rules/app.md), 타 도구(Codex 등)용 요약은 [AGENTS.md](AGENTS.md),
+> 사람이 처음 여는 곳은 [README.md](README.md)에 있다.
+
+## 이 앱이 무엇인가
 - **위치**: `D:\Projects\inky-festival\voice-cinema`
-- **스택(2026-08-26 재설계, 2026-09-01 Hosting 이전, 2026-09-08 리액트 전환)**: **Vite + React + TypeScript**(`src/`, 빌드 산출물 `dist/`를 Firebase Hosting 배포) — 영상 합성이 서버가 아니라 브라우저 안 ffmpeg.wasm으로 처리됨. 저장소는 Google Apps Script+Drive에서 poster-studio와 동일한 **Firebase Functions + Firebase Storage + Firebase Hosting**(`inky-voice-cinema` 프로젝트)로 교체 — 특정 개인 구글 계정에 소유권이 묶이는 문제를 없애기 위함(대표 판단, 2026-08-26). 예전 Node.js/Express 로컬 서버(`server.js`, `public/`, `config.json`, `start.bat`/`start.command`)와 `apps-script/Code.gs`는 회귀 대비용으로 한동안 저장소에 남겨뒀었으나, **2026-09-03 대표 확인(Bumm님이 별도로 그 파일을 보관 중)으로 전부 삭제 완료**(커밋 `cf1ab65`) — server.js 전용 의존성(`express`/`ffmpeg-static`/`qrcode`/`selfsigned`)과 `package.json`의 죽은 `main`/`start` 참조도 함께 정리했다. 2026-09-08 리액트 전환으로 `docs/`(소스가 곧 배포 폴더이던 구조)는 사라지고 `src/`→`dist/` 빌드 구조가 됐다.
-- **기능**: 무성영상 6종(장르별)에 더빙 → 브라우저에서 합성 → Firebase Storage 자동저장 → QR 전달
-- **자동삭제**: 2026년 12월 1일부터 예약 함수(`cleanupAfterCutoff`, Cloud Scheduler)가 매일 자정(KST)에 저장된 영상을 전부 삭제 — "다운로드는 11월 안에만 가능" 정책, 결과 화면에도 안내 문구 표시됨.
-- **배포**: 정본 주소는 **`https://voice.edutogether.kr`**(2026-09-09 커스텀 도메인 연결, Firebase Hosting, `firebase.json`의 `public: dist`). 옛 주소 `voice-cinema.web.app`·`voice-cinema.firebaseapp.com`은 같은 Hosting 사이트라 계속 살아 있다 — 문제가 생기면 포털 링크만 되돌리면 즉시 복구되므로 행사 전에는 죽이지 않는다. 커스텀 도메인은 `voice-cinema` 사이트에 붙어 있다(프로젝트 기본 사이트 `inky-voice-cinema`는 빈 사이트라 404 — 도메인을 붙일 때 잘못 고르면 404가 서빙된다). 배포처는 Firebase Hosting 한 곳뿐이다. 2026-09-01에 GitHub Pages에서 이전해 한동안 병행 운영했으나, **2026-09-08 대표 지시로 GitHub Pages를 폐지했다**(포털 카드가 이미 Firebase 주소를 가리키는 것을 확인 후). 옛 주소 `edutogether.github.io/voice-cinema`는 이제 404이며 이는 의도된 결과다 — 되살릴 일이 생기면 폐지 전 설정은 `build_type: legacy`, `source: master /docs`였다. Firebase Hosting 사이트 ID `voice-cinema`를 `hosting:sites:create`로 새로 만들고 `.firebaserc`에 `voice-cinema` 타겟으로 매핑했다. **Firebase 백엔드(Functions+Storage)도 정상 운영중** — `voiceCinema`/`cleanupAfterCutoff` 함수 둘 다 라이브. 실제 업로드→`makePublic()`→공개 URL 접근까지, CORS(허용/차단 출처 둘 다)까지 curl로 직접 실측 확인함(2026-08-26 프리즈 후 정밀감사), `functions/index.js`의 `ALLOWED_ORIGINS`에 `voice-cinema.web.app`/`voice-cinema.firebaseapp.com` 추가 완료.
-- **Hosting 보안헤더(`firebase.json`)**: codyssey의 `firebase.json` 패턴을 그대로 베끼지 않고 이 앱 특성에 맞게 조정했다 — codyssey는 `Permissions-Policy`에 `microphone=()`(마이크 전면 차단)를 쓰는데 그대로 가져오면 이 앱의 핵심 기능(마이크 녹음)이 죽는다는 걸 배포 전에 알아차려 `microphone=(self)`로 바꿨다. CSP도 ffmpeg.wasm(Worker+WebAssembly+blob: URL 로딩)·MediaRecorder(blob: 재생)·Cloud Functions fetch를 전부 실사용 흐름으로 검증하며 맞췄다(`script-src 'self' blob: 'wasm-unsafe-eval'`, `worker-src 'self' blob:`, `connect-src`에 Cloud Functions 도메인, `media-src`/`img-src`에 `blob:`/`data:`).
-  - **배포 직후 실측으로 발견한 회귀**: `index.html`의 버튼 8개가 전부 `onclick="..."` 인라인 속성이었는데, CSP의 `script-src`는 인라인 스크립트 블록엔 해시로 예외를 둘 수 있어도 **인라인 이벤트 핸들러 속성 자체는 별도로 막는다**(`'unsafe-hashes'` 없이는 해시도 안 통함) — 배포 직후 라이브 E2E(Playwright, `baseURL`을 잠깐 `voice-cinema.web.app`으로 바꿔 재실행)를 돌려서 8개 중 6개 테스트가 "버튼이 반응 안 함"으로 실패하는 걸 실측으로 잡아냈다. `onclick=""` 속성을 전부 제거하고 `docs/app.js`의 `init()`에서 `addEventListener`로 다시 연결(`window.goHome` 등 전역 노출도 더 이상 필요 없어 같이 제거)해서 해결, 재검증 시 라이브 E2E 8/8 통과 확인.
-- **백엔드 자동배포 — 완전히 정상화됨(2026-09-02)**: `.github/workflows/deploy.yml`(2026-08-29 추가, 2026-09-01 hosting 배포 단계 추가) — `CI` 워크플로우(lint+유닛테스트+E2E)가 성공한 뒤에만 `workflow_run`으로 이어져 `storage,functions`를 배포하고, 그 다음 `hosting:voice-cinema`를 배포한다. 2026-09-01에 이 서비스계정에 `cleanupAfterCutoff`의 Cloud Scheduler 잡을 갱신할 권한(`cloudscheduler.jobs.update`)이 없어 403으로 막히는 문제가 발견됐었는데(그동안의 "성공"은 함수 코드가 안 바뀌어 Skipped로만 지나갔기 때문), **Bumm님이 콘솔에서 `roles/cloudscheduler.admin` 부여를 완료(2026-09-02)** — 이 세션이 실제로 functions 코드를 바꾼 커밋을 로컬 사전배포 없이 push만 해서 `cleanupAfterCutoff(asia-northeast3)`가 CI에서 `Successful update operation`으로 실제 갱신되는 것까지 실측 확인했다(run [33592042295], 이전엔 이 지점에서 403). **이제부터는 로컬 `firebase deploy` 우회 없이 그냥 `git push`만으로 CI가 끝까지 자동 배포한다** — 이전 항목들("이 세션이 로컬 firebase deploy로 우회했다")은 전부 이 날짜 이전 상태였다는 뜻으로 읽을 것.
+- **기능**: 무성 클립 6종(장르별)에 학생이 자기 목소리로 더빙 → **브라우저 안 ffmpeg.wasm으로 합성**
+  → Firebase Storage 저장 → QR 전달. 합성이 서버가 아니라 학생 기기에서 돈다는 것이 이 앱의 성격을
+  거의 다 정한다(첫 로딩에 엔진 31MB, 부스 와이파이 부담, 캐시 예열 필요).
+- **스택**: Vite + React + TypeScript. 소스는 `src/`, 빌드 산출물 `dist/`가 그대로 배포 폴더다.
+- **백엔드**: Firebase Functions + Storage (`inky-voice-cinema`, `asia-northeast3`). 특정 개인 구글
+  계정에 소유권이 묶이지 않게 하려고 Apps Script+Drive에서 옮겨왔다(대표 판단, 2026-08-26).
+- **자동삭제**: 2026-12-01부터 예약 함수 `cleanupAfterCutoff`가 **매일 자정(KST)** 저장된 영상을 전부
+  삭제한다("다운로드는 11월 안에만 가능" 정책). **고지문(`privacy.html`)의 시각과 예약 시각은 반드시
+  같아야 하고**, `test/contract.test.js`가 두 값을 대조한다.
 
-> **이력은 여기 없다.** 날짜별 작업 이력(감사 라운드, 홈 화면 개편 1~5차, 클립 재인코딩,
-> 타임아웃 조정, 스트레스테스트 등)은 전부 [`_docs/CHANGELOG.md`](_docs/CHANGELOG.md)로 옮겼다.
-> 이 파일에는 "지금도 살아있는 규칙"과 "신입이 첫날 알아야 할 것"만 둔다.
-> 타 도구(Codex 등)용 요약은 [AGENTS.md](AGENTS.md), 이 앱 개별법은 [.claude/rules/app.md](.claude/rules/app.md).
+## 배포
+- **정본 주소는 `https://voice.edutogether.kr`다.** 옛 주소 `voice-cinema.web.app`·
+  `voice-cinema.firebaseapp.com`은 같은 Hosting 사이트라 계속 살아 있다 — **이미 나간 QR과 링크가
+  죽으면 안 되므로 행사 전에는 끄지 않는다.** 문제가 생기면 포털 링크만 되돌리면 즉시 복구된다.
+- **Hosting 사이트가 두 개다.** 커스텀 도메인은 `voice-cinema` 사이트에 붙어 있고, 프로젝트 기본
+  사이트 `inky-voice-cinema`는 빈 사이트(404)다 — 도메인을 붙일 때 잘못 고르면 404가 서빙된다.
+- **`master`에 push하면 끝이다.** `CI`(린트+유닛+E2E)가 성공한 뒤에만 `deploy.yml`이
+  `storage,functions` → `hosting:voice-cinema` 순으로 배포한다. 로컬 `firebase deploy` 우회는
+  필요 없다. **CI가 실패하면 아무것도 배포되지 않는다.**
+- **`deploy.yml`·`firebase.json`·`.firebaserc`의 `voice-cinema`는 주소가 아니라 배포 대상
+  식별자다.** 주소를 바꾼다고 이것을 건드리면 배포가 깨진다.
+- **되돌리기**: `git revert` 후 push하면 CI를 거쳐 복구된다. 다만 프론트가 바뀌면 부스 기기가
+  엔진 31MB를 다시 받으므로 되돌리기도 비용이 두 배다 — 자세한 것은 `app.md`의 "행사 직전 배포 동결".
 
-## 운영 모드 — 9월 30일 정기감사까지 실운영 (2026-09-03 대표 지시, Portal과 동일 방침)
-100/100 확정 이후 대표 지시: **9월 30일 정기감사 때까지는 실운영 모드로 둔다.** 이 세션은 그 전까지 먼저 재감사나 추가 개선 작업을 제안하지 않는다 — 팀장이나 대표가 먼저 요청하는 건(버그 리포트, 새 기능 요청 등)에는 당연히 정상 대응한다. 이 방침은 "할 일이 없어서 방치"가 아니라 "확정된 상태를 다음 정기 점검 시점까지 안정적으로 유지"가 목적이므로, 스스로 감사를 다시 시작하거나 코드를 건드리지 않는다.
+## Hosting 보안헤더 (`firebase.json`)
+다른 앱의 `firebase.json`을 그대로 베끼지 말 것. 이 앱은 **마이크 녹음이 핵심 기능**이라
+`Permissions-Policy`가 `microphone=(self)`여야 한다(codyssey는 `microphone=()`로 전면 차단한다 —
+그대로 가져오면 앱이 죽는다). CSP도 ffmpeg.wasm(Worker+WebAssembly+`blob:` 로딩)·
+MediaRecorder(`blob:` 재생)·Cloud Functions fetch를 실사용 흐름으로 검증하며 맞춘 것이다
+(`script-src 'self' blob: 'wasm-unsafe-eval'`, `worker-src 'self' blob:`, `connect-src`에 Cloud
+Functions 도메인, `media-src`/`img-src`에 `blob:`/`data:`).
 
-## 아동 개인정보 동의 — 이미 오프라인으로 존재함 (2026-08-27 대표 확인)
-"앱 안에 동의 절차/수집 고지가 없다"는 정밀감사 발견은 **새 절차를 코드로 만들어야 할 미해결 리스크가 아니다.** 이 행사는 인천광역시교육청이 주최하고, 참가 학교(교사·학생)는 사전에 **동의서를 전부 걷고 명단을 제출한 뒤에만 참가**하는 구조다 — 즉 동의는 이미 학교/교육청 행정 절차로 존재한다. 현장에서 이 프로그램을 운영하는 스태프도 무작위 외부인이 아니라 같이교육 소속 교사들이다. Portal의 BGM 라이선스 건과 같은 성격 — "코드로 새로 만들 것"이 아니라 "이미 있는 절차를 문서화하는 것"으로 처리한다. 앱 화면에도 이 취지의 안내를 넣었다(`privacy.html`).
+## 지금 진행 중인 것 — 종합감사 (2026-09-10 대표 지시)
+직전 방침은 "9월 30일 정기감사까지 실운영"이었으나, **2026-09-10 대표 지시로 문서 정리 → 종합감사
+100점 → 배포 → 프리즈 태그 전체를 완주한다.** 9/7에 100점을 받은 뒤 React 전환·주소 이전·스플래시·
+공유 카드·CI가 바뀌었고, 그 변경분이 감사 대상이다.
 
-## 테스트/린트/캐싱 (2026-08-27 추가, 대표 승인)
-- 검증 로직(mimeType/mp4 시그니처/크기/파일명 규칙, sanitize, 레이트리밋)은 `functions/validate.js`, 프론트 핵심 로직(오디오 확장자 매핑, 업로드 파일명 생성, mimeType 선택, 재시도 판단)은 `src/logic.ts`로 각각 분리해 순수 함수로 뒀다. `test/contract.test.js`(BOOTH_TOKEN 일치, 업로드 타임아웃 클라이언트·서버 일치 검사)는 두 소스 파일을 직접 읽어 비교하는 별도 루트 테스트다 — 루트에서 `npm test`로 전체 실행, 또는 `cd functions && npm test`로 개별 실행. 앞으로 이 쪽 로직을 고칠 땐 여기부터 본다.
-- **2026-09-07, 대표 승인으로 유닛테스트를 `node --test`에서 vitest로 이전**(기존 21개 전부 그대로, 새 테스트 추가 없음). 이 저장소는 순수 함수만 테스트해서 mock/vm 트릭이 필요 없었다. `functions/`가 루트와 별개인 독립 npm 패키지(자체 `node_modules`/`package-lock.json`)라 vitest workspace로 묶지 않고 **각자 따로 설치**하는 더 단순한 쪽을 택했다 — 루트 `vitest.config.js`(`docs/test/*.test.js`, `test/*.test.js`만 포함)와 `functions/vitest.config.js`(`test/*.test.js`만 포함, `node_modules/**` 명시적 제외)가 서로 독립적이다. 루트 `include`도 `functions/`를 아예 안 건드리게 좁혀서, `functions/node_modules` 안 서드파티 패키지의 테스트 파일이 잘못 주워지는 문제(팀장 사전조사에서 실제로 확인됨)를 원천적으로 피했다. 마이그레이션 전 상태는 태그 `voice-cinema-freeze-20260907-pre-vitest`로 남아있다. 루트 `package.json`에 `"type": "module"`도 추가했다(vitest config 로더가 CJS로 오인해서 뜨던 경고 해결 — 이 저장소에 `require()`를 쓰는 파일이 전혀 없어서 안전하게 추가 가능했다).
-- **실사용 흐름 E2E 테스트**(`e2e/dubbing-flow.spec.js`, Playwright)도 있다 — 진짜 Chromium을 내장 가짜 마이크 장치로 띄워 마이크 권한→녹음→ffmpeg.wasm 실제 합성→업로드(가로채서 프로덕션에 안 쌓이게 함)→QR/폴백까지 8개 시나리오를 끝까지 실행한다. 여기에 오프라인 부팅 1개, 세션 초기화 2개, 합성 실패 경로 1개, 새 배포가 기기에 바로 반영되는지 1개, 마우스 없는 기기에서 카드 영상·강조가 켜지는지 1개, 마우스 있는 기기의 호버가 그대로인지 1개, 스플래시가 다시 뜨지 않는지 1개, 누를 때 강조 1개, 한 번 탭에 들어가는지 1개, 멈춘 영상이 다시 살아나는지 1개, 한 장만 재생되는 환경의 대체 동작 1개를 더해 총 20개다. `npm run test:e2e`로 실행하며, 최초 1회 `npx playwright install chromium`으로 브라우저를 받아둬야 한다(약 150MB, 저장소에는 안 들어감). 클립을 실제 영상으로 교체한 뒤에도 다시 돌려서 회귀가 없는지 확인할 것 — 영상 길이가 달라져도 코드가 `v.duration`을 그대로 읽어 쓰므로 대부분 그대로 통과해야 하지만, 12MB 업로드 한도는 실사 클립에서 걸릴 수 있어 그 부분은 실제 클립으로 별도 확인 필요(`_docs/CHANGELOG.md`의 "콘텐츠 미완성" 항목 참고 — 현재 한도는 20MB).
-- `eslint.config.mjs`로 저장소 전체 린트 가능 — 루트에서 `npm run lint`. 빈 `catch(e){}`는 이 코드베이스가 "실패해도 무시" 용도로 의도적으로 많이 쓰는 패턴이라 허용해뒀다(버그 아님).
-- **서비스워커 캐시 목록은 빌드가 자동 생성한다**(2026-09-08 전환) — `tools/precache-plugin.js`가 산출물에서 목록과 캐시 버전을 뽑아 `tools/sw-template.js`에 채워 `dist/sw.js`를 만든다. 앱 셸·`vendor/`가 목록에서 비면 빌드가 실패하고, `CACHE_NAME`을 사람이 올릴 필요도 없다. `clips/`(37MB)만 일부러 제외해 런타임 캐싱으로 남긴다(install에서 한꺼번에 받으면 느린 와이파이에서 설치 자체가 실패). `dist/sw.js`를 직접 고치지 말 것 — 매 빌드 덮어쓴다. 캐시 조회에는 `ignoreVary: true`가 반드시 필요하다(Hosting이 `Vary: Origin`을 붙여, 없으면 캐시에 있는데도 못 찾아 오프라인에서 앱이 안 뜬다 — 전환 중 실측). `e2e/offline-boot.spec.js`가 실제 오프라인 상태를 만들어 매번 검증한다.
-- `functions/`의 `firebase-admin`을 14.x로 올렸다(2026-08-27) — 예전엔 `firebase-functions@6.x`의 peer dependency가 11~13.x만 허용해 막혔는데, `firebase-functions`가 7.x로 오르며 14.x를 지원하게 됐다. 실제 재배포+curl 검증 완료. 남은 moderate 취약점 7건은 `uuid<11.1.1`이 근본 원인인데 Google 자신의 `@google-cloud/storage`가 아직 안 올린 전이 의존성이라, 최신 버전 조합에서도 그대로 남는다 — 진짜 업스트림 대기 상태(`npm audit fix --force`가 제안하는 firebase-admin 10.3.0 다운그레이드는 지금 쓰는 모듈형 API가 없던 버전이라 코드가 깨져서 절대 하면 안 됨). 할 수 있는 최선(최신 버전 업그레이드)은 이미 했고 남은 취약점은 Google 쪽 문제라 §4-1 구조적 상한으로 **기술부채 항목 100점 처리**(2026-08-27 대표 확인).
+**대표가 명시적으로 보류한 것은 결함이 아니다**(COMMON_STANDARDS §4-4). 감점하지 말고 삭제를
+제안하지도 말 것 — 보류 목록은 `app.md`의 "보류 중" 절에 있다.
+
+## 아동 개인정보 동의 — 이미 오프라인으로 존재한다 (2026-08-27 대표 확인)
+"앱 안에 동의 절차가 없다"는 **미해결 리스크가 아니다.** 인천광역시교육청이 주최하고, 참가 학교가
+사전에 동의서를 전부 걷고 명단을 제출한 뒤에만 참가하는 구조다. 현장 스태프도 무작위 외부인이 아니라
+같이교육 소속 교사들이다. **코드로 동의 절차를 새로 만들지 말 것** — 이미 있는 절차를 문서화하는
+것으로 처리한다. 앱 화면에도 그 취지의 안내를 넣었다(`privacy.html`).
+
+## 검증 체계
+- **순수 함수로 분리해 테스트한다.** 서버 검증 로직(mimeType·mp4 시그니처·크기·파일명 규칙·sanitize·레이트리밋)은
+  `functions/validate.js`, 프론트 핵심 로직(오디오 확장자 매핑, 업로드 파일명 생성, mimeType 선택,
+  재시도 판단)은 `src/logic.ts`. 이쪽 로직을 고칠 땐 여기부터 본다.
+- **계약 테스트** `test/contract.test.js` — 두 소스 파일을 직접 읽어 `BOOTH_TOKEN`, 업로드 타임아웃,
+  자동삭제 시각과 고지문이 서로 맞는지 대조한다. **어긋나면 테스트를 고치지 말고 값을 맞춘다.**
+- **유닛 52개**(루트 14 + `functions/` 38, vitest). `functions/`는 자체 `node_modules`를 가진
+  **독립 패키지**라 루트와 따로 설치·실행한다. 루트 `vitest.config.js`의 `include`가 `functions/`를
+  아예 안 건드리게 좁혀둔 것은 그 안 서드파티 테스트가 딸려 들어오는 걸 막기 위한 것이니 넓히지 말 것.
+- **E2E 20개**(`e2e/`, Playwright) — 진짜 Chromium을 가짜 마이크로 띄워 **녹음→ffmpeg.wasm 실제
+  합성→업로드(가로채서 프로덕션에 안 쌓이게 함)→QR/폴백**까지 끝까지 돌린다. 여기에 오프라인 부팅,
+  세션 초기화, 합성 실패 경로, 새 배포의 즉시 반영, 모바일 카드 재생·강조, PC 호버, 스플래시가 붙는다.
+  **클립을 실제 영상으로 교체하면 다시 돌릴 것** — 코드가 `v.duration`을 그대로 읽어 길이 변화는
+  대부분 통과하지만, **업로드 한도 20MB**는 실사 클립에서 걸릴 수 있어 별도 확인이 필요하다.
+- **린트**: `eslint.config.mjs`로 저장소 전체를 훑는다 — 루트에서 `npm run lint`. `src/`는 `tsc`가 담당하므로 eslint 대상에서 뺐다. 빈 `catch{}`는 이
+  코드베이스가 "실패해도 무시" 용도로 의도적으로 쓰는 패턴이라 허용해뒀다 — 버그가 아니다.
+- **서비스워커 캐시 목록은 빌드가 자동 생성한다** — `tools/precache-plugin.js`가 산출물에서 목록과
+  캐시 버전을 뽑는다. 사람이 목록이나 `CACHE_NAME`을 관리하지 않는다. `clips/`(37MB)만 일부러 제외해
+  런타임 캐싱으로 남긴다. **관련 함정은 `app.md`에 모여 있다**(`dist/sw.js` 직접 수정 금지,
+  `ignoreVary: true` 필수, 탐색 분기 순서).
+- **CI의 브라우저 설치에 `--with-deps`를 붙이지 말 것** — apt를 건드리는 유일한 부분이고,
+  2026-09-10에 Google apt 저장소 인덱스가 깨져 **테스트가 한 개도 실행되지 못한 채** CI가 세 번
+  떨어졌다. 브라우저는 `actions/cache`로 캐시한다. 자세한 것은 `app.md`.
+- 🔴 **"설치가 성공했다"와 "테스트가 실제로 돌았다"는 다르다.** CI 로그에서 **실행된 테스트 수**를
+  본다. 0개인데 초록불이면 게이트가 비어 있는 것이다.
 
 ## 알아야 할 것
-- Firebase Functions의 CORS 허용 출처(`functions/index.js`의 `ALLOWED_ORIGINS`): voice-cinema.web.app/.firebaseapp.com, Portal 리버스 프록시 도메인(edutogether.kr, 2026-09-02부터), 로컬 개발용 4321 포트, 그리고 2026-09-09부터 정본 주소 voice.edutogether.kr(도메인이 붙기 전에 미리 넣어뒀다 — `edutogether.kr` 항목은 서브도메인을 매치하지 않아 별도 항목이 필요하다). 이 목록의 허용/차단 경계는 `functions/test/allowed-origins.test.js`가 고정한다 — 앵커를 풀어 "다 되게" 만드는 변경을 CI가 잡는다. **GitHub Pages 출처는 2026-09-08 폐지와 함께 제거했다** — poster-studio와 동일 패턴. 프록시는 정적 콘텐츠만 다루고 이 Cloud Functions 도메인은 직접 호출되므로 프록시 뒤 페이지에서도 Origin은 edutogether.kr 그대로 넘어온다.
-- `/upload`는 `functions/index.js`의 `BOOTH_TOKEN` 상수와 `src/config.ts`의 동일 상수가 일치해야 동작한다 — 진짜 비밀이 아니라(공개 프론트에 그대로 노출됨) 무차별 스크립트 시도를 막는 1차 방어선일 뿐이다(`test/contract.test.js`가 이 둘의 일치를 자동 검사한다). mimeType(video/mp4만 + 2026-09-01부로 실제 파일 내용의 mp4 시그니처까지 검사, `functions/validate.js`의 `hasMp4Signature()`)·디코딩 후 크기(20MB)·파일명 길이(120자)·**분당 요청수(60회, 클라이언트 IP별)**도 서버단에서 강제한다(2026-08-26 정밀감사 반영, 한도는 2026-08-28에 10→60으로 조정 — 아래 항목 참고).
-- **레이트리밋은 `app.set('trust proxy', 1)`이 반드시 필요하다** — Cloud Run 뒤에서 이 설정 없이는 서로 다른 클라이언트가 전부 같은 IP로 뭉뚱그려진다(실제로 curl로 재현·확인함, 2026-08-28). 값은 꼭 `1`이어야 하고 `true`로 하면 안 된다 — `true`는 클라이언트가 스스로 `X-Forwarded-For`를 지어내 레이트리밋을 완전히 무력화할 수 있는 우회로가 된다(브라우저는 이 헤더를 못 건드리지만 curl 같은 비브라우저 클라이언트는 가능 — 65회 스푸핑 시도로 실제 재현·검증함). 부스 와이파이는 보통 NAT로 공인 IP 하나를 같이 쓰므로, 여러 학생이 동시에 태블릿을 쓰면 한 버킷을 자연스럽게 공유한다 — 그래서 상한을 분당 10에서 60으로 올려뒀다(2000명/일 규모로 계산해도 여유 있음, 대표 문의로 실측 확인 2026-08-28).
-- 인터넷이 끊기면 클라우드 업로드가 실패하고, 그 기기에서 직접 다운로드하는 방식으로 폴백된다(코드상 `local_fallback` 처리, 1회 자동 재시도 후 폴백).
-- 영상 코덱은 반드시 **H.264**(H.265/HEVC는 브라우저에서 화면 검게 나옴) — 프로그램 시작 시 자동 코덱점검 있음.
-- 학생 음성 녹음 임시저장 — **12월 1일부터 자동삭제되지만, 그 전에 남은 테스트 파일은 대표가 수동 확인·삭제 필요.**
-- 아이패드(사파리)는 마이크 호환 문제 있어 권장 안 함 — 노트북 또는 안드로이드 태블릿 권장.
-
-## 다음 단계 (사용자 요청 시 진행)
-"프론트 백엔드 전부 풀스택으로 100점 만점으로" — GitHub 업로드는 완료됐음(edutogether 조직 등록·포탈 카드 추가는 미확인, 필요 시 팀장에게 확인). 처음 코드 감사는 `COMMON_STANDARDS.md` §4-1(2026-08-25 갱신: 모호한 "~점 근처" 표현 금지, 결함 근거 기반 감점, 수정 완료 시 정확히 100점) 기준 최대강도(실행+실측 포함)로 한 번에 진행할 것.
+- **CORS 허용 출처**(`functions/index.js`의 `ALLOWED_ORIGINS`): `voice.edutogether.kr`(정본),
+  `voice-cinema.web.app`/`.firebaseapp.com`(옛 주소), Portal 리버스 프록시 도메인 `edutogether.kr`,
+  로컬 개발용 4321 포트. **GitHub Pages 출처는 2026-09-08 폐지와 함께 목록에서 제거했다**(poster-studio와 동일 패턴).
+  프록시는 정적 콘텐츠만 다루고 이 Cloud Functions 도메인은 직접 호출되므로, 프록시 뒤 페이지에서도
+  Origin은 `edutogether.kr` 그대로 넘어온다. **`edutogether.kr` 항목은 서브도메인을 매치하지 않아 정본 주소가 별도
+  항목으로 들어가 있다** — 앵커를 풀어 해결하려 하지 말 것. `functions/test/allowed-origins.test.js`가
+  앵커와 점 이스케이프까지 고정한다.
+- **`BOOTH_TOKEN`은 진짜 비밀이 아니다** — 공개 프론트에 그대로 노출된다. 무차별 스크립트 시도를
+  막는 1차 방어선일 뿐이고, `functions/index.js`와 `src/config.ts` 양쪽이 일치해야 동작한다.
+- **서버단 강제**: mimeType(`video/mp4`만 + 실제 파일 내용의 mp4 시그니처), 디코딩 후 크기 20MB,
+  파일명 120자, **분당 60회(클라이언트 IP별)**. 부스 와이파이는 NAT로 공인 IP 하나를 같이 쓰므로
+  여러 학생이 한 버킷을 공유한다 — 그래서 분당 10에서 60으로 올렸다(2000명/일로 계산해도 여유).
+- **레이트리밋에는 `app.set('trust proxy', 1)`이 반드시 필요하다.** Cloud Run 뒤에서 이게 없으면
+  서로 다른 클라이언트가 전부 같은 IP로 뭉뚱그려진다. **값은 꼭 `1`이어야 한다** — `true`로 하면
+  클라이언트가 `X-Forwarded-For`를 지어내 레이트리밋을 무력화할 수 있다(실제 스푸핑으로 재현·검증됨).
+- **인터넷이 끊기면 로컬 폴백**이 발동한다(1회 자동 재시도 후 기기에 직접 다운로드). **그렇게
+  내려받은 파일은 자동 삭제 대상이 아니다** — 화면 안내의 "운영자가 이 파일을 꼭 삭제해 주세요"를 지우지 말 것.
+- **영상 코덱은 반드시 H.264.** H.265/HEVC는 브라우저에서 화면이 검게 나온다. 시작 시 자동 코덱 점검이 있다.
+- 🔴 **행사 전에 남아 있는 테스트 파일은 대표가 직접 확인·삭제해야 한다.** 자동삭제는 2026-12-01부터
+  시작하므로, 그때까지 Storage에 쌓인 시험용 녹음은 저절로 지워지지 않는다.
+- **아이패드(사파리)는 권장하지 않는다** — 마이크 호환 문제. 노트북 또는 안드로이드 태블릿을 쓴다.
+- **`npm audit fix --force`를 실행하지 말 것** — `firebase-admin`을 10.3.0으로 다운그레이드해 지금
+  쓰는 모듈형 API가 사라진다. 남은 moderate 취약점은 `uuid<11.1.1`이 근본 원인인데 Google 자신의
+  `@google-cloud/storage`가 아직 안 올린 전이 의존성이라 최신 조합에서도 그대로 남는다 —
+  **할 수 있는 최선은 이미 했고 남은 것은 업스트림 대기**라 §4-1 구조적 상한으로 처리한다(2026-08-27 대표 확인).
 
 ## 자율 권한
-**2026-09-02부로 `bypassPermissions`는 커밋되는 `.claude/settings.json`이 아니라 gitignore된 `.claude/settings.local.json`에 있다**(대표 직접 커밋, COMMON_STANDARDS.md §9 — 세션 자신의 권한/설정 파일은 대표 본인이 그 세션 창에서 직접 지시할 때만 수정, 팀장 경유 지시로는 수정하지 않는다). push/배포/프리즈태그는 COMMON_STANDARDS.md §11(2026-09-02 확정)에 따라 팀장이 "대표님이 승인하셨습니다"라고 전달하면 충분하고 대표 본인이 매번 이 세션 창에 들어올 필요는 없다 — 완료 후 팀장에게 결과만 보고(코디세이만 예외). 단, 파일 삭제 등 이 세션의 자동 모드 분류기가 직접 막는 행위는 §9/§11 승인 경로와 무관하게 세션 밖에서 사용자가 직접 처리해야 한다(2026-09-03, 레거시 삭제 건에서 실제로 겪음 — 대표님이 직접 삭제 커밋).
+`bypassPermissions`는 커밋되는 `.claude/settings.json`이 아니라 gitignore된
+`.claude/settings.local.json`에 있다(대표 직접 커밋, COMMON_STANDARDS §9). **세션 자신의 권한·설정
+파일은 대표 본인이 이 세션 창에서 직접 지시할 때만 수정하고, 팀장 경유 지시로는 수정하지 않는다.**
 
-## 대표와의 소통 경로 (2026-08-26 확정 — 반드시 지킬 것)
-이 세션은 대표와 직접 대화를 시작하지 않는다. 진행상황 공유·질문·의사결정 요청은 전부 **팀장(D:\Projects 최상위 세션, "Project Engineering")을 거쳐서만** 한다 — 대표가 이 세션 창을 직접 열어서 먼저 말을 걸어온 경우에만 그 건에 한해 답한다(최상위 CLAUDE.md "조직 구조" 섹션 참고). 팀장에게서 온 메시지("Project Engineering의 메시지")는 곧 대표의 지시가 전달된 것이므로 별도로 대표에게 재확인하지 말고 그대로 실행한다.
+push·배포·프리즈태그는 COMMON_STANDARDS §11에 따라 **팀장이 "대표님이 승인하셨습니다"라고 전달하면
+충분하다** — 대표 본인이 매번 이 창에 들어올 필요는 없고, 완료 후 팀장에게 결과만 보고한다.
+단, **파일 삭제처럼 이 세션의 자동 모드 분류기가 직접 막는 행위**는 승인 경로와 무관하게 세션 밖에서
+사용자가 직접 처리해야 한다.
+
+## 대표와의 소통 경로 (반드시 지킬 것)
+이 세션은 대표와 **직접 대화를 시작하지 않는다.** 진행상황 공유·질문·의사결정 요청은 전부
+**팀장(D:\Projects 최상위 세션, "Project Engineering")을 거쳐서만** 한다. 팀장에게서 온 메시지는
+곧 대표의 지시가 전달된 것이므로 별도로 재확인하지 말고 그대로 실행한다.
+
+**예외는 하나** — 대표가 이 세션 창을 직접 열어 먼저 말을 걸어온 경우, 그 건에 한해 직접 답한다.
+🔴 **그때 팀장 지시가 대표의 직접 지시보다 오래된 것일 수 있다**(팀장은 여러 앱을 동시에 보느라 이
+창에서 방금 오간 대화를 모른다). **팀장 지시를 따르려고 대표가 직접 정한 것을 되돌리지 않는다** —
+되돌리는 대신 무엇이 직접 지시였고 언제였는지를 밝혀 팀장에게 알린다. 반대로 **직접 받은 지시를
+수행했으면 팀장에게도 알린다** — 모르면 같은 자리에 어긋나는 지시가 또 온다(COMMON_STANDARDS §12-1,
+2026-09-10에 실제로 겪어 신설).

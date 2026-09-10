@@ -1,7 +1,9 @@
 # AGENTS.md — InKY Voice Cinema
 
 이 저장소에서 작업하는 **모든 도구(Claude Code, Codex 등)**가 읽는 문서. 도구에 상관없이 알아야
-하는 것만 여기 둔다 — 조직 운영 규칙·상세 이력은 [CLAUDE.md](CLAUDE.md)에 있다.
+하는 것만 여기 둔다 — 조직 운영 규칙은 [CLAUDE.md](CLAUDE.md), 이 앱만의 상세 규칙은
+[.claude/rules/app.md](.claude/rules/app.md), 날짜별 이력은 [_docs/CHANGELOG.md](_docs/CHANGELOG.md),
+지나간 사건 기록은 [_docs/archive/](_docs/archive/)에 있다.
 
 ## 이 앱이 하는 일
 
@@ -133,6 +135,16 @@ CSP의 `script-src`는 인라인 스크립트를 해시로만 허용하는데, �
 (저절로 하지 않는다 — 녹음 중이면 작업이 날아간다).
 (`assets/**`는 해시가 붙어 1년 불변, `sw.js`는 no-cache, `clips/**`·`vendor/**`는 1일).
 서버 원본은 `curl`로 확인하고, 브라우저는 강력 새로고침이나 시크릿 창으로 다시 볼 것.
+
+### 9. CI에서 브라우저를 설치할 때 `--with-deps`를 붙이지 말 것
+`npx playwright install chromium`만 쓴다. `--with-deps`는 apt를 건드리는 유일한 부분인데,
+2026-09-10에 Google apt 저장소가 자기 `Release` 파일과 어긋나는 `Packages.gz`를 내려주는 바람에
+**테스트가 한 개도 실행되지 못한 채** CI가 세 번 연속 떨어졌다. `ubuntu-latest`에는 크로미움 구동에
+필요한 라이브러리가 이미 있다. 브라우저는 `actions/cache`로 `~/.cache/ms-playwright`에 캐시하며
+**키는 Playwright 버전**이다 — 캐시 미스는 실패가 아니라 정상 경로다.
+
+**원격이 깨진 장애는 재시도로 풀리지 않는다** — 캐시를 지우고 다시 받아도 같은 파일을 받는다.
+그리고 **"설치가 성공했다"와 "테스트가 실제로 돌았다"는 다르다**: CI 로그에서 실행된 테스트 수를 본다.
 
 ## 서버 측 업로드 제약 (`functions/validate.js`)
 
