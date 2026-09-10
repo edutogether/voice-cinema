@@ -61,6 +61,41 @@ export function unescapeUnicode(text) {
     .replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
 }
 
+// 🔴 이 검사가 없으면 "글자를 하나도 못 모았다"와 "잘 모았다"가 똑같이 통과한다.
+// 서브셋이 원본보다 작아졌는지만 보는 가드는 **글자가 적을수록 더 잘 통과**하므로
+// 이쪽을 전혀 막지 못한다 — 실제로 훑을 파일을 0건으로 만들어 보니 한글이 한 글자도
+// 없는 95자짜리 폰트가 그대로 빌드됐고 유닛테스트 52개도 전부 통과했다(2026-09-10 실측).
+// 그대로 나갔으면 Pretendard가 없는 기기에서 화면의 모든 한글이 두부(□)로 찍힌다.
+//
+// 그래서 세 가지를 본다.
+//  (1) 실제로 몇 개의 파일을 훑었는가 — 0이면 통과가 아니라 실패다(§21-1)
+//  (2) 화면에 반드시 나오는 문구가 모인 글자 안에 들어 있는가 — 훑기와 **독립적으로**
+//      여기 적어둔 문자열이라, 훑기가 깨지면 이쪽이 먼저 빈다
+//  (3) 한글 음절 수가 바닥 아래로 떨어지지 않았는가 — 일부만 깨지는 경우를 잡는다
+const 반드시_있어야_할_문구 = [
+  '무성영화에 내 목소리를 더빙해', // 스플래시 태그라인
+  '판타지', '호러', '액션', '드라마', '시트콤', '애니메이션', // 장르 여섯 개
+  '녹음', '저장', '다시', '완성', // 스튜디오 화면 버튼
+];
+// 2026-09-10 기준 650자. 문구를 지우는 정상적인 변경도 있으므로 바닥은 넉넉히 잡되,
+// "거의 다 날아간" 상태는 반드시 걸리게 한다.
+const 한글_최소 = 400;
+
+function 모은글자를_검사한다(chars, 훑은파일수) {
+  if (훑은파일수 === 0) {
+    throw new Error('글자를 모을 파일을 하나도 찾지 못했습니다 — 훑을 경로가 바뀐 것입니다.');
+  }
+  const 빠진문구 = 반드시_있어야_할_문구.filter((t) => [...t].some((c) => c !== ' ' && !chars.includes(c)));
+  if (빠진문구.length) {
+    throw new Error(`화면에 반드시 나오는 문구의 글자가 서브셋에서 빠집니다: ${빠진문구.join(', ')}`);
+  }
+  const 한글수 = [...chars].filter((c) => c >= '가' && c <= '힣').length;
+  if (한글수 < 한글_최소) {
+    throw new Error(`한글 음절이 ${한글수}자뿐입니다(최소 ${한글_최소}자) — 글자 수집이 깨졌습니다.`);
+  }
+  return { 훑은파일수, 한글수 };
+}
+
 /** 산출물과 소스에서 화면에 나올 수 있는 글자를 모은다. */
 export async function collectChars(outDir, root) {
   const chars = new Set(BASE_CHARS);
@@ -77,8 +112,12 @@ export async function collectChars(outDir, root) {
     const cp = ch.codePointAt(0);
     if (cp < 0x20 || (cp >= 0x1f000 && cp <= 0x1ffff) || cp === 0xfe0f) chars.delete(ch);
   }
-  return [...chars].sort().join('');
+  const 모은것 = [...chars].sort().join('');
+  collectChars.마지막검사 = 모은글자를_검사한다(모은것, files.length);
+  return 모은것;
 }
+
+export { 모은글자를_검사한다 };
 
 /**
  * Vite 플러그인. 산출물이 다 만들어진 뒤에 돌아야 글자를 셀 수 있으므로
@@ -119,7 +158,9 @@ export function subsetFonts({ srcDir, outSubdir = 'fonts' }) {
       }
       // 앱과 개인정보처리방침이 같은 정의를 쓴다 — 두 곳에 따로 적으면 갈라진다.
       await writeFile(path.join(outDir, outSubdir, 'pretendard.css'), faces.join(String.fromCharCode(10)) + String.fromCharCode(10));
-      console.log(`  폰트 서브셋 ${chars.length}자 · ${written.join(' / ')}`);
+      const 검사 = collectChars.마지막검사;
+      // 무엇을 몇 개 봤는지 먼저 말한다 — 0건 통과를 사람이 눈으로도 잡을 수 있게.
+      console.log(`  폰트 서브셋 ${chars.length}자(한글 ${검사.한글수}자, 파일 ${검사.훑은파일수}개 훑음) · ${written.join(' / ')}`);
     },
   };
 }
