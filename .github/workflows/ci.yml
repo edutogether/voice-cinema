@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [master]
 
+# CodeQL 지적 반영(2026-09-10, actions/missing-workflow-permissions).
+# 적지 않으면 저장소 기본값이 적용되는데, 그 기본값은 언제든 넓어질 수 있다.
+# 이 워크플로는 코드를 읽어 검사만 하므로 읽기 하나면 충분하다 — 배포는
+# deploy.yml이 따로 하고 그쪽은 자기 권한을 따로 적어 뒀다.
+permissions:
+  contents: read
+
 jobs:
   lint-and-unit-test:
     runs-on: ubuntu-latest
