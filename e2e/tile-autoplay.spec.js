@@ -150,6 +150,47 @@ test.describe('마우스가 없는 기기', () => {
       .not.toBe(처음.find((s) => s.강조).장르);
   });
 
+  // 카드를 채우는 것들이 **스스로도** 카드와 같은 반경을 갖는지 본다.
+  // 전부 반경 0이고 부모의 overflow: hidden에만 기대고 있었는데, iOS 사파리·WKWebView는
+  // 자식에 transform이 걸리면 둥근 모서리 잘라내기를 놓친다 — 누를 때 카드는 scale(0.97),
+  // 안쪽 영상은 scale(1.05)가 걸리므로 바로 그 조건이라, 그 순간 각진 모서리가 둥근
+  // 모서리를 덮어 "떡네모"로 보였다(2026-09-11 대표가 아이폰 카카오톡 인앱에서 발견).
+  //
+  // 🔴 그리고 강조 테두리가 살아 있는지도 같이 본다. 이 결함을 고치려고 흔히 쓰는
+  // `-webkit-mask-image` 우회를 넣었다가, **마스크가 테두리 박스 밖을 잘라내 box-shadow로
+  // 그리는 강조가 통째로 사라지는 것**을 캡처로 보고 뺐다. 모서리만 검사하면 그 회귀를
+  // 못 잡는다 — 둘을 한 테스트에서 같이 본다.
+  test('카드를 채우는 것들이 카드와 같은 모서리를 갖고, 강조 테두리도 살아 있다', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
+
+    const 반경 = await page.evaluate(() => {
+      const t = document.querySelector('.tile');
+      const 값 = (el) => parseFloat(getComputedStyle(el).borderTopLeftRadius);
+      const 자식 = ['.tile-media', '.tile-media .thumb', '.tile-media .preview', '.tile-tint', '.tile-scrim']
+        .map((sel) => [sel, t.querySelector(sel)])
+        .filter(([, el]) => el)
+        .map(([sel, el]) => [sel, 값(el)]);
+      자식.push(['::after', parseFloat(getComputedStyle(t, '::after').borderTopLeftRadius)]);
+      return { 카드: 값(t), 자식 };
+    });
+
+    // 검사 대상이 0건이면 통과가 아니라 실패다(§21-1).
+    expect(반경.자식.length, '검사할 자식을 하나도 못 찾았다').toBeGreaterThan(3);
+    expect(반경.카드, '카드에 모서리 반경이 없다').toBeGreaterThan(0);
+    const 각진것 = 반경.자식.filter(([, r]) => r !== 반경.카드).map(([sel, r]) => `${sel}=${r}px`);
+    expect(각진것, `카드는 ${반경.카드}px인데 다른 것이 있다`).toEqual([]);
+
+    // 누르고 있는 동안 강조 테두리가 실제로 그려지는지 — 마스크류 회귀를 잡는다.
+    const box = await page.locator('.tile').first().boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(500);
+    const 그림자 = await page.evaluate(() => getComputedStyle(document.querySelector('.tile')).boxShadow);
+    await page.mouse.up();
+    expect(그림자, '누르는데 강조 테두리가 없다').toContain('0px 0px 0px 2px');
+  });
+
   test('카드를 한 번 탭하면 그 장르로 들어간다', async ({ page }) => {
     await page.goto('/');
     await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
