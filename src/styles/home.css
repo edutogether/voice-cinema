@@ -148,7 +148,10 @@
   cursor: pointer;
   overflow: hidden;
   min-height: 0;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4);
+  /* 왼쪽 색 띠를 별도 요소(::after) 대신 inset 그림자로 그린다 — 얹는 요소가 없으면
+     iOS가 둥근 모서리 잘라내기를 놓쳐도 각질 것이 없다. inset 그림자는 border-radius를
+     그대로 따른다. */
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4), inset 5px 0 0 0 var(--c);
   transition: transform 0.15s ease, box-shadow 0.25s ease;
   /* 강조 그림자는 여기 한 번만 적는다. 아래 :hover와 :active가 이 값을 가리키기만
      하므로 둘이 갈라질 수 없다. 커스텀 속성은 쓰는 자리에서 치환돼 var(--c)가
@@ -157,9 +160,15 @@
      카드 반경이 24px인데 번짐이 48px + 퍼짐 6px이라, 둥근 구간이 빛에 파묻혀 카드보다
      훨씬 큰 사각형 후광으로 읽혔다(모서리 확대로 확인). 모양이 아니라 크기 문제였다.
      번짐을 16px로 줄이고 퍼짐을 없앴다 — 테두리 주변만 은은하게 감싼다. */
+  /* 2026-09-11: 색 덮기를 `.tile-tint`(mix-blend-mode를 쓰는 별도 레이어)에서 inset 그림자로
+     옮겼다. 대표가 아이폰에서 "떡네모"를 지적했고, 얹는 요소를 없애자는 방향을 직접 지목했다 —
+     blend가 걸린 레이어는 iOS가 부모의 둥근 모서리로 안 잘라내는 대표적인 대상이다.
+     inset은 요소가 아니라 카드 자신의 그림자라 모서리를 그대로 따른다. */
   --hl-shadow:
     0 14px 30px rgba(0, 0, 0, 0.5),
     0 0 0 2px var(--c),
+    inset 5px 0 0 0 var(--c),
+    inset 0 0 0 100vmax var(--c-wash),
     /* color-mix를 쓰지 않는다 — 모르는 브라우저에서는 이 box-shadow 선언 전체가
      무시돼 테두리와 번짐이 같이 사라진다(인앱 브라우저에서 실제로 그렇게 보였다).
      --c-glow는 같은 색을 미리 계산한 rgba다(src/genres.ts의 withAlpha). */
@@ -176,11 +185,7 @@
   .tile:hover .tile-media .preview {
     transform: scale(1.05);
   }
-  .tile:hover .tile-tint {
-    /* :active 쪽과 같은 값이어야 한다 — 두 화면이 갈라지면 안 된다. */
-    opacity: 0.12;
-  }
-  .privacylink:hover {
+  .tile:hover   .privacylink:hover {
     color: var(--gold);
     text-decoration: underline;
   }
@@ -196,20 +201,6 @@
 .tile:active {
   transform: scale(0.97);
 }
-.tile::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 5px;
-  background: var(--c);
-  z-index: 2;
-  /* 이것도 반경 0이라 잘라내기에만 기대고 있었다. 5px 폭에는 24px 반경이 들어가지
-     않으므로 브라우저가 알아서 줄여 넣는다 — 끝이 살짝 둥근 띠가 된다. */
-  border-radius: inherit;
-}
-
 /* 카드를 채우는 것들은 **스스로도** 카드와 같은 반경을 갖는다.
    지금까지는 전부 반경 0이고 부모의 `overflow: hidden`이 잘라주는 것에만 기댔는데,
    iOS 사파리·WKWebView는 **자식에 transform이 걸리면 둥근 모서리 잘라내기를 놓친다.**
@@ -220,7 +211,6 @@
 .tile-media,
 .tile-media .thumb,
 .tile-media .preview,
-.tile-tint,
 .tile-scrim {
   border-radius: inherit;
 }
@@ -255,22 +245,6 @@
   transform: scale(1.05);
 }
 
-.tile-tint {
-  position: absolute;
-  inset: 0;
-  background: var(--c);
-  opacity: 0;
-  mix-blend-mode: overlay;
-  z-index: 1;
-  pointer-events: none;
-  transition: opacity 0.25s ease;
-}
-/* 색 덮기를 0.4에서 낮췄다 — 사진 위에 색을 진하게 덮으면 원래 색이 죽고 탁해 보인다.
-   어느 카드를 눌렀는지는 테두리가 알려주므로 여기서는 아주 옅게만 거든다. */
-.tile:active .tile-tint,
-.tile.is-solo .tile-tint {
-  opacity: 0.12;
-}
 .tile-scrim {
   position: absolute;
   inset: 0;

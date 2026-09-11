@@ -84,16 +84,21 @@ test.describe('마우스가 없는 기기', () => {
     await page.goto('/');
     await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
 
+    // 2026-09-11: 색 덮기가 별도 요소(.tile-tint)에서 카드 자신의 inset 그림자로 옮겨졌다.
+    // 얹는 요소를 없애 iOS에서 각진 모서리가 덮이던 것을 구조적으로 막은 것이라,
+    // 검사도 "얹힌 것의 투명도"가 아니라 "카드 그림자에 색 덮기가 있는가"를 본다.
     const 강조 = () =>
       page.evaluate(() => {
         const tile = document.querySelector('.tile');
+        const cs = window.getComputedStyle(tile);
         return {
-          틴트: Number(window.getComputedStyle(tile.querySelector('.tile-tint')).opacity),
+          그림자: cs.boxShadow,
           확대: window.getComputedStyle(tile.querySelector('.thumb')).transform,
         };
       });
 
-    expect((await 강조()).틴트).toBe(0);
+    // 안 누른 상태에는 색 덮기가 없다 — 있으면 항상 덮여 있는 것이다.
+    expect((await 강조()).그림자).not.toContain('inset 0px 0px 0px 100vmax');
 
     // 손가락을 대고 있는 상태를 만든다(떼지 않는다).
     const box = await page.locator('.tile').first().boundingBox();
@@ -105,7 +110,9 @@ test.describe('마우스가 없는 기기', () => {
     await page.mouse.up();
 
     // PC의 :hover가 주는 것과 같은 값이어야 한다(같은 CSS 선언을 나눠 쓴다).
-    expect(누른중.틴트).toBeCloseTo(0.12, 2);
+    // 색 덮기·테두리·왼쪽 띠가 전부 카드 자신의 그림자로 그려진다 — 얹는 요소가 0개다.
+    expect(누른중.그림자, '누르는데 테두리가 없다').toContain('0px 0px 0px 2px');
+    expect(누른중.그림자, '누르는데 색 덮기가 없다').toContain('inset');
     expect(누른중.확대).toBe('matrix(1.05, 0, 0, 1.05, 0, 0)');
   });
 
@@ -167,16 +174,15 @@ test.describe('마우스가 없는 기기', () => {
     const 반경 = await page.evaluate(() => {
       const t = document.querySelector('.tile');
       const 값 = (el) => parseFloat(getComputedStyle(el).borderTopLeftRadius);
-      const 자식 = ['.tile-media', '.tile-media .thumb', '.tile-media .preview', '.tile-tint', '.tile-scrim']
+      const 자식 = ['.tile-media', '.tile-media .thumb', '.tile-media .preview', '.tile-scrim']
         .map((sel) => [sel, t.querySelector(sel)])
         .filter(([, el]) => el)
         .map(([sel, el]) => [sel, 값(el)]);
-      자식.push(['::after', parseFloat(getComputedStyle(t, '::after').borderTopLeftRadius)]);
       return { 카드: 값(t), 자식 };
     });
 
     // 검사 대상이 0건이면 통과가 아니라 실패다(§21-1).
-    expect(반경.자식.length, '검사할 자식을 하나도 못 찾았다').toBeGreaterThan(3);
+    expect(반경.자식.length, '검사할 자식을 하나도 못 찾았다').toBeGreaterThan(2);
     expect(반경.카드, '카드에 모서리 반경이 없다').toBeGreaterThan(0);
     const 각진것 = 반경.자식.filter(([, r]) => r !== 반경.카드).map(([sel, r]) => `${sel}=${r}px`);
     expect(각진것, `카드는 ${반경.카드}px인데 다른 것이 있다`).toEqual([]);

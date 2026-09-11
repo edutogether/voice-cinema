@@ -122,7 +122,14 @@ export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }
   return (
     <div
       className={`tile${solo ? ' is-solo' : ''}`}
-      style={{ '--c': genre.color, '--c-glow': withAlpha(genre.color, 0.45) } as React.CSSProperties}
+      style={
+        {
+          '--c': genre.color,
+          '--c-glow': withAlpha(genre.color, 0.45),
+          // 색 덮기를 얹는 요소 없이 inset 그림자로 그리려면 미리 계산한 rgba가 필요하다.
+          '--c-wash': withAlpha(genre.color, 0.12),
+        } as React.CSSProperties
+      }
       onClick={() => onSelect(genre)}
       onMouseEnter={SUPPORTS_HOVER ? onEnter : undefined}
       onMouseLeave={SUPPORTS_HOVER ? onLeave : undefined}
@@ -131,7 +138,6 @@ export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }
         <img className="thumb" src={thumbUrl(genre.id)} alt="" />
         <video className="preview" ref={videoRef} muted playsInline preload="none" />
       </div>
-      <div className="tile-tint" />
       <div className="tile-scrim" />
       <div className="tile-body">
         <div className="gname-row">
