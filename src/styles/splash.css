@@ -50,7 +50,12 @@ body:not(.app-ready) #splash {
 }
 #splash .logo {
   font-size: clamp(48px, 10vw, 72px);
-  filter: drop-shadow(0 10px 24px rgba(233, 196, 106, 0.35));
+  /* filter가 아니라 text-shadow다 — filter는 이 요소를 별도 레이어로 떼어 그리는데,
+     스플래시 배경이 거의 단색에 가까운 미세한 그라데이션이라 그 레이어와 배경의
+     검은 정도가 조금만 어긋나도 **사각형 얼룩**이 보인다(2026-09-10 대표가 아이폰
+     카카오톡 인앱에서 발견, 캡처 확인). text-shadow는 글자 모양 그대로 번지고
+     레이어를 만들지 않는다. 값은 같다. */
+  text-shadow: 0 10px 24px rgba(233, 196, 106, 0.35);
   animation: splashPop 0.6s ease;
   /* will-change를 여기 붙이지 말 것 — 2026-09-10에 붙였다가 측정으로 되돌렸다.
      "로고만 합성 레이어 밖이라 끊긴다"는 가설로 `will-change: transform, opacity`를
