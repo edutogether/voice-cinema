@@ -1,5 +1,7 @@
 # CLAUDE.md — Voice Cinema (잉키 보이스 시네마)
 
+> 표시: 🔴 어기면 실사용자 화면이 깨지거나 개인정보가 샌다 · 🟠 중간 · 🟡 낮음 · 🟢 확인 끝남 (COMMON_STANDARDS §30)
+
 InKY Festival(제4회 인천어린이청소년영화제, **2026-11-14**, 인천 CGV) "InKY 놀이터" 6부스 중 하나.
 상위 원칙은 [D:\Projects\CLAUDE.md](../../CLAUDE.md) 상속 — 여기는 이 저장소 전용 규칙만 둔다.
 

@@ -1,6 +1,8 @@
 # InKY Voice Cinema 개별 규칙
 헌법(D:\Projects\CLAUDE.md → _shared/CONVENTIONS.md)에 없는 것만.
 
+> 표시: 🔴 어기면 실사용자 화면이 깨지거나 개인정보가 샌다 · 🟠 중간 · 🟡 낮음 · 🟢 확인 끝남 (COMMON_STANDARDS §30)
+
 ## 앱
 - 무엇: 무성 클립 6종에 학생이 자기 목소리로 더빙 → 브라우저 ffmpeg.wasm으로 합성 → Firebase Storage 저장 → QR 전달
 - 사용자: 제4회 인천어린이청소년영화제 "InKY 놀이터" 부스 방문 학생. **행사일 2026-11-14(인천 CGV), 하루짜리 행사.**
