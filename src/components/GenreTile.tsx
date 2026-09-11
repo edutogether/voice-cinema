@@ -138,6 +138,9 @@ export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }
         <img className="thumb" src={thumbUrl(genre.id)} alt="" />
         <video className="preview" ref={videoRef} muted playsInline preload="none" />
       </div>
+      {/* PC에서만 쓰이는 색 덮기 레이어. 마우스가 없는 기기에서는 CSS가 blend도
+          투명도도 주지 않아 합성 레이어를 만들지 않는다 — 그래서 아이폰에서 각지지 않는다. */}
+      <div className="tile-tint" />
       <div className="tile-scrim" />
       <div className="tile-body">
         <div className="gname-row">

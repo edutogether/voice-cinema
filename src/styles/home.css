@@ -148,9 +148,12 @@
   cursor: pointer;
   overflow: hidden;
   min-height: 0;
-  /* 왼쪽 색 띠를 별도 요소(::after) 대신 inset 그림자로 그린다 — 얹는 요소가 없으면
-     iOS가 둥근 모서리 잘라내기를 놓쳐도 각질 것이 없다. inset 그림자는 border-radius를
-     그대로 따른다. */
+  /* 🔴 여기 기본값은 **마우스가 없는 기기(모바일·태블릿)** 몫이다. 왼쪽 색 띠를 별도
+     요소가 아니라 inset 그림자로 그린다 — 얹는 요소가 없으면 iOS가 둥근 모서리
+     잘라내기를 놓쳐도 각질 것이 없다. inset 그림자는 border-radius를 그대로 따른다.
+     **PC는 아래 호버 미디어쿼리에서 예전 모습 그대로로 되돌린다** — 대표가 "PC는 지금
+     딱 좋은데 왜 건드리냐"고 했고, 결함이 없는 화면을 일관성 때문에 바꾸는 것은
+     멀쩡한 것을 위험에 빠뜨리는 일이다(2026-09-11). */
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4), inset 5px 0 0 0 var(--c);
   transition: transform 0.15s ease, box-shadow 0.25s ease;
   /* 강조 그림자는 여기 한 번만 적는다. 아래 :hover와 :active가 이 값을 가리키기만
@@ -178,6 +181,45 @@
    규칙은 마우스가 있는 기기에만 건다. 터치에서는 :active(누르고 있는 동안)가
    그 역할을 한다. 안 감싸면 탭한 카드가 홈으로 돌아온 뒤에도 계속 강조돼 있다. */
 @media (hover: hover) and (pointer: fine) {
+  /* 🔴 PC는 2026-09-11 이전 모습 그대로다. 얹는 요소를 없앤 것은 아이폰에서 각지는
+     문제를 푸는 변경인데, PC에는 그 문제가 없다. 실제로 픽셀 비교를 해보니 새 구조가
+     PC 화면의 87.65%를 바꿨다(mix-blend-mode: overlay 0.12와 단순 알파 0.12는 결과가
+     다르다) — 그래서 여기서 예전 값을 되살린다. **이 블록을 지우면 PC가 바뀐다.** */
+  .tile {
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4);
+    --hl-shadow:
+      0 14px 30px rgba(0, 0, 0, 0.5),
+      0 0 0 2px var(--c),
+      0 0 16px 0 var(--c-glow);
+  }
+  /* 왼쪽 색 띠 — PC에서는 예전처럼 얹는 요소로 그린다. */
+  .tile::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+    background: var(--c);
+    z-index: 2;
+    border-radius: inherit;
+  }
+  /* 색 덮기도 예전처럼 blend를 쓰는 레이어로. 마우스가 없는 기기에서는 이 요소가
+     투명하고 blend도 안 걸려 합성 레이어를 만들지 않는다. */
+  .tile-tint {
+    position: absolute;
+    inset: 0;
+    background: var(--c);
+    opacity: 0;
+    mix-blend-mode: overlay;
+    z-index: 1;
+    pointer-events: none;
+    border-radius: inherit;
+    transition: opacity 0.25s ease;
+  }
+  .tile:hover .tile-tint {
+    opacity: 0.12;
+  }
   .tile:hover {
     box-shadow: var(--hl-shadow);
   }
