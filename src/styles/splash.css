@@ -21,7 +21,19 @@ body:not(.app-ready) #splash {
 }
 
 #splash {
-  animation: splashOut 2400ms ease forwards;
+  /* 로딩바 한 바퀴. 아래 하한이 이 값에서 계산되므로 **여기만 고치면 따라온다.**
+     `.sbar i`의 animation도 이 변수를 쓴다 — 두 곳에 따로 적으면 갈라진다. */
+  --bar-cycle: 1.15s;
+  /* COMMON_STANDARDS §27 — 스플래시는 **자기 애니메이션이 최소 두 바퀴 도는 동안**
+     떠 있는다. "초"가 아니라 "바퀴"로 적는 이유가 이것이다: 주기를 바꿔도 하한이
+     저절로 따라오고, 누가 2400ms 같은 숫자를 보고 "좀 줄이지" 하며 깎을 수 없다.
+     이 앱은 기기별 분기가 없어 PC·패드·모바일이 같은 값을 쓴다(실측 확인 2026-09-11). */
+  --hold: calc(var(--bar-cycle) * 2);
+  --fade: 600ms;
+  /* 유지 구간은 animation-delay로 둔다 — 예전처럼 keyframes 안에 75%·95.83% 같은
+     퍼센트로 박아두면 총 길이를 바꿀 때마다 사람이 그 숫자들을 다시 계산해야 하고,
+     한 번이라도 틀리면 하한이 조용히 무너진다. 지금은 유지와 사라짐이 서로 독립이다. */
+  animation: splashOut var(--fade) ease var(--hold) forwards;
   position: fixed;
   inset: 0;
   z-index: 999;
@@ -32,18 +44,14 @@ body:not(.app-ready) #splash {
   gap: 14px;
   background: linear-gradient(180deg, var(--bg), var(--bg2));
 }
+/* 유지 구간은 animation-delay가 맡는다 — 그동안은 이 요소의 평소 스타일(불투명,
+   클릭 막음)이 그대로 적용되고, 여기서는 사라지는 동작만 정의한다. */
 @keyframes splashOut {
-  0%,
-  74.99% {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  75% {
+  from {
     opacity: 1;
     pointer-events: none;
   }
-  95.83%,
-  100% {
+  to {
     opacity: 0;
     pointer-events: none;
   }
@@ -94,7 +102,7 @@ body:not(.app-ready) #splash {
   /* ease-in-out이 아니라 linear다. 끝에서 감속해 거의 서 있다가(실측 0.3px/프레임)
      다음 프레임에 -266px로 순간이동해서 1.15초마다 울컥거렸다. 등속이면 되돌아가는
      불연속 자체는 남지만 그 앞에서 서지 않아 훨씬 덜 튄다. */
-  animation: splashBar 1.15s linear infinite;
+  animation: splashBar var(--bar-cycle) linear infinite;
   will-change: transform;
 }
 @keyframes splashPop {

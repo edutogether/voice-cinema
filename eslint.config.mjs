@@ -86,6 +86,8 @@ export default [
         process: 'readonly', console: 'readonly',
         // page.evaluate() 안에서 실행돼 브라우저 컨텍스트를 쓰는 코드가 있다.
         navigator: 'readonly', caches: 'readonly', document: 'readonly', window: 'readonly',
+        performance: 'readonly', getComputedStyle: 'readonly', MutationObserver: 'readonly',
+        requestAnimationFrame: 'readonly',
       },
     },
   },
