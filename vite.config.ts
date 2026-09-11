@@ -11,9 +11,7 @@ export default defineConfig({
     react(),
     // 순서가 중요하다 — 서브셋이 먼저 dist/fonts/를 만들어야 프리캐시 목록에 들어간다.
     subsetFonts({ srcDir: root + 'fonts' }),
-    // diag은 아이폰에서만 나는 결함을 가리려고 잠깐 올린 진단 화면이라 프리캐시에서 뺀다 —
-    // 부스 기기가 오프라인용으로 들고 다닐 이유가 없다. 원인이 갈리면 폴더째 지운다.
-    precacheSW({ swSource: root + 'tools/sw-template.js', excludeDirs: ['clips', 'diag'] }),
+    precacheSW({ swSource: root + 'tools/sw-template.js' }),
   ],
   build: {
     // 인라인 스크립트를 하나도 만들지 않는다. CSP의 script-src에 해시를 박아두면
