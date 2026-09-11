@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>진단용 — 아이폰에서 무엇이 네모를 만드는지</title>
+<style>
+  /* 임시 진단 페이지. 원인이 갈리면 지운다.
+     여기서 재현되지 않는 결함(아이폰 카카오톡 인앱)을 한 번에 가리려고 만든 것이라,
+     조건을 하나씩 다르게 한 칸을 나란히 둔다 — 한 장만 찍으면 어느 조건에서
+     네모가 나오는지 바로 갈린다. */
+  :root {
+    --bg: #0a0e1c;
+    --bg2: #0a0e20;
+    --cream: #f2e9d8;
+    --gold: #e9c46a;
+    --muted: #9aa3b2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Pretendard, system-ui, -apple-system, sans-serif;
+    color: var(--cream);
+    background: #000;
+  }
+  h1 { font-size: 17px; margin: 0; padding: 14px 12px 4px; }
+  h2 { font-size: 15px; margin: 22px 12px 6px; color: var(--gold); }
+  p.note { font-size: 12px; color: var(--muted); margin: 0; padding: 0 12px 10px; line-height: 1.5; }
+  .cell {
+    /* 실제 스플래시와 같은 배경 — 이 미세한 그라데이션 위에서만 네모가 드러난다. */
+    background: linear-gradient(180deg, var(--bg), var(--bg2));
+    height: 190px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border-top: 1px solid #222;
+  }
+  .cell.flat { background: var(--bg); }
+  .cell.white { background: #fff; }
+  .tag {
+    position: absolute; left: 8px; top: 6px;
+    font-size: 12px; font-weight: 700; color: var(--gold);
+    background: rgba(0,0,0,0.55); padding: 2px 7px; border-radius: 6px;
+  }
+  .logo { font-size: 72px; line-height: 1; }
+
+  /* ── 조건들 ───────────────────────────────────────── */
+  .s-none   { }                                                            /* 그림자 없음 */
+  .s-text   { text-shadow: 0 10px 24px rgba(233,196,106,0.35); }           /* 지금 라이브 */
+  .s-filter { filter: drop-shadow(0 10px 24px rgba(233,196,106,0.35)); }   /* 9/10 이전 */
+  .a-pop    { animation: splashPop 0.6s ease; }
+  .a-loop   { animation: splashPop 2.4s ease infinite; }                   /* 계속 돌려 찍기 쉽게 */
+  @keyframes splashPop {
+    0%   { transform: scale(0.6); opacity: 0; }
+    60%  { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); }
+  }
+
+  /* ── 카드 ─────────────────────────────────────────── */
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 12px; }
+  .card {
+    position: relative; height: 165px; border-radius: 24px; overflow: hidden;
+    background: #05070f; --c: #8a63d2; --cg: rgba(138,99,210,0.45);
+    box-shadow: 0 14px 30px rgba(0,0,0,0.5), 0 0 0 2px var(--c), 0 0 16px 0 var(--cg);
+    transform: scale(0.97);           /* 누른 상태를 고정해 둔다 */
+  }
+  .card .img {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, #6b4fa0, #c0a0ff);
+    transform: scale(1.05);           /* 누를 때 안쪽이 커지는 그 조건 */
+  }
+  .card .tint { position: absolute; inset: 0; background: var(--c); opacity: 0.12; mix-blend-mode: overlay; }
+  .card .bar  { position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--c); z-index: 2; }
+  .card .lab  { position: absolute; left: 10px; bottom: 8px; z-index: 3; font-size: 13px; font-weight: 700; }
+
+  /* A = 지금 라이브: 자식들이 스스로도 둥글다 */
+  .card.A .img, .card.A .tint, .card.A .bar { border-radius: inherit; }
+  /* B = 9/11 이전: 자식 반경 0, 부모의 잘라내기에만 기댐 */
+  /* C = 얹는 요소를 아예 안 씀 — 카드 자체 테두리로만 */
+  .card.C { box-shadow: 0 14px 30px rgba(0,0,0,0.5); border: 2px solid var(--c); }
+  .card.C .tint, .card.C .bar { display: none; }
+  .card.C .img { border-radius: inherit; }
+  /* D = 안쪽 확대를 빼면 */
+  .card.D .img { transform: none; border-radius: inherit; }
+  .card.D .tint, .card.D .bar { border-radius: inherit; }
+
+  /* 직접 눌러 보는 칸 */
+  .live { transform: none; }
+  .live:active { transform: scale(0.97); }
+  .live .img { transform: none; }
+  .live:active .img { transform: scale(1.05); }
+</style>
+</head>
+<body>
+
+<h1>진단용 화면 — 어느 조건에서 네모가 나오는지</h1>
+<p class="note">
+  아이폰 카카오톡 인앱에서 이 주소를 열고, <b>①과 ② 각각 한 장씩</b> 찍어 주세요.
+  칸마다 조건이 하나씩만 다릅니다. 네모가 <b>보이는 칸과 안 보이는 칸</b>이 갈리면 원인이 정해집니다.
+</p>
+
+<h2>① 스플래시 마이크 — 여섯 조건</h2>
+<p class="note">각 칸의 마이크 <b>뒤쪽</b>을 봐 주세요. 사각형 얼룩이 있는 칸이 어느 것인지가 답입니다.</p>
+
+<div class="cell"><span class="tag">1. 그림자 없음 · 애니메이션 없음</span><div class="logo s-none">🎙️</div></div>
+<div class="cell"><span class="tag">2. 그림자 없음 · 커지는 애니메이션만</span><div class="logo s-none a-loop">🎙️</div></div>
+<div class="cell"><span class="tag">3. 지금 라이브 (text-shadow)</span><div class="logo s-text">🎙️</div></div>
+<div class="cell"><span class="tag">4. 9/10 이전 (filter)</span><div class="logo s-filter">🎙️</div></div>
+<div class="cell flat"><span class="tag">5. 그림자 없음 · 배경 단색</span><div class="logo s-none">🎙️</div></div>
+<div class="cell white"><span class="tag" style="color:#333;background:rgba(255,255,255,.7)">6. 그림자 없음 · 흰 배경</span><div class="logo s-none">🎙️</div></div>
+
+<h2>② 카드 누를 때 모서리 — 네 구조</h2>
+<p class="note">
+  아래 네 칸은 <b>누른 상태로 고정</b>해 둔 것이라 누르지 않아도 그대로 보입니다.
+  <b>모서리가 각진 칸</b>이 어느 것인지 봐 주세요. 맨 아래 칸은 직접 눌러 보는 칸입니다.
+</p>
+
+<div class="cards">
+  <div class="card A"><div class="img"></div><div class="tint"></div><div class="bar"></div><div class="lab">A 지금 라이브</div></div>
+  <div class="card B"><div class="img"></div><div class="tint"></div><div class="bar"></div><div class="lab">B 9/11 이전</div></div>
+  <div class="card C"><div class="img"></div><div class="tint"></div><div class="bar"></div><div class="lab">C 얹는 것 없음</div></div>
+  <div class="card D"><div class="img"></div><div class="tint"></div><div class="bar"></div><div class="lab">D 안쪽 확대 없음</div></div>
+</div>
+
+<p class="note">아래는 <b>직접 눌러</b> 보는 칸입니다 — 손가락을 대고 있는 동안의 모서리를 봐 주세요.</p>
+<div class="cards">
+  <div class="card A live"><div class="img"></div><div class="tint"></div><div class="bar"></div><div class="lab">눌러 보기 (지금 구조)</div></div>
+  <div class="card C live"><div class="img"></div><div class="tint"></div><div class="bar"></div><div class="lab">눌러 보기 (얹는 것 없음)</div></div>
+</div>
+
+<p class="note" style="padding-bottom:40px">
+  이 페이지는 원인을 가리기 위한 임시 화면입니다. 확인이 끝나면 지웁니다.
+</p>
+
+</body>
+</html>
