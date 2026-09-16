@@ -1,0 +1,28 @@
+{
+  "$comment": "배포 후 검증용 주요 화면 선언 (_shared/CONVENTIONS.md §3.5). 화면 문구를 바꾸면 이 파일의 expect도 같은 커밋에서 고친다.",
+  "baseUrl": "https://voice.edutogether.kr",
+  "screens": [
+    {
+      "name": "첫 화면 (장르 고르기)",
+      "path": "/",
+      "expect": [
+        "InKY Voice Cinema",
+        "상상을 현실로 — 내 목소리로 완성하는 영화"
+      ]
+    }
+  ],
+  "excluded": [
+    {
+      "screen": "‘엔진 준비 중…’ 진행률",
+      "reason": "퍼센트가 매번 다르게 찍히는 로딩 표시다."
+    },
+    {
+      "screen": "녹음·더빙 화면",
+      "reason": "마이크 권한이 필요하고 장르를 눌러 들어가야 한다. 공개 첫 화면 밖이다."
+    },
+    {
+      "screen": "장르 카드 목록(판타지·애니메이션·호러 등)",
+      "reason": "장르는 추가·교체될 수 있어 expect로 쓰지 않는다."
+    }
+  ]
+}
