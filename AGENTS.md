@@ -78,7 +78,9 @@ npm run test:e2e  # Playwright 25개. 빌드 후 dist/를 서빙해 실제 산�
 
 ## 이 저장소의 함정 — 실제로 사고가 났던 것들
 
-상세 경위는 `app.md`에 있다. 여기는 규칙과 이유 한 줄씩이다.
+🔴 **작업 전에 [`.claude/rules/app.md`](.claude/rules/app.md)의 금지·함정 목록도 반드시 읽는다** — Codex 등은 그 파일을
+자동으로 읽지 않는데, 거기에만 있는 금지가 있다(`npm audit fix --force`, CORS 정규식 앵커, `-webkit-mask-image` 등).
+아래는 그중 자주 걸리는 것만 규칙과 이유 한 줄씩 옮긴 것이다.
 
 ### 1. Functions의 `concurrency: 1`을 올리지 말 것
 `/upload`는 요청 하나가 약 47MB를 붙든다. 기본값(80)으로 겹치면 256MiB 인스턴스가 OOM으로 죽고
