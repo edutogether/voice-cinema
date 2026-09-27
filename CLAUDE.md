@@ -99,7 +99,7 @@ git rev-list --count voice-cinema-freeze-20260910-audited-100..master
 - 🟢 **유닛 58개**(루트 19 + `functions/` 39, vitest). `functions/`는 자체 `node_modules`를 가진
   **독립 패키지**라 루트와 따로 설치·실행한다. 루트 `vitest.config.js`의 `include`가 `functions/`를
   아예 안 건드리게 좁혀둔 것은 그 안 서드파티 테스트가 딸려 들어오는 걸 막기 위한 것이니 넓히지 말 것.
-- 🟢 **E2E 24개**(`e2e/` 7개 파일, Playwright) — 진짜 Chromium을 가짜 마이크로 띄워 **녹음→ffmpeg.wasm 실제
+- 🟢 **E2E 25개**(`e2e/` 7개 파일, Playwright) — 진짜 Chromium을 가짜 마이크로 띄워 **녹음→ffmpeg.wasm 실제
   합성→업로드(가로채서 프로덕션에 안 쌓이게 함)→QR/폴백**까지 끝까지 돌린다. 여기에 오프라인 부팅,
   세션 초기화, 합성 실패 경로, 새 배포의 즉시 반영, 모바일 카드 재생·강조, PC 호버, 스플래시가 붙는다.
   **클립을 실제 영상으로 교체하면 다시 돌릴 것** — 코드가 `v.duration`을 그대로 읽어 길이 변화는
