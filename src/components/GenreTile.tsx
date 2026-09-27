@@ -16,8 +16,12 @@ interface Props {
   delayMs: number;
   /** 한 장씩 돌려 재생하는 환경에서 "지금 이 카드"임을 알린다 — 강조가 함께 걸린다. */
   solo: boolean;
-  /** 재생이 거부됐을 때 알린다. 동시 재생을 하나로 제한하는 환경을 알아내는 신호다. */
-  onBlocked: () => void;
+  /**
+   * 재생이 거부됐을 때 장르 id와 함께 알린다. 동시 재생을 하나로 제한하는 환경을 알아내는 신호다.
+   * 🟠 부모는 **렌더마다 새로 만들지 않은 함수**를 넘겨야 한다 — 아래 재생 효과가 이 함수에
+   * 걸려 있어서, 매번 새 함수가 오면 부모가 다시 그려질 때마다 여섯 장이 멈췄다 다시 튼다.
+   */
+  onBlocked: (id: string) => void;
   onSelect: (genre: Genre) => void;
 }
 
@@ -75,7 +79,17 @@ export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }
 
     let timer: number | undefined;
     let watch: number | undefined;
+    // 우리가 멈춘 것인지 가린다. stop()의 pause()·load()는 진행 중이던 play()를 끊어
+    // 거부로 돌려보내는데, 그건 환경이 막은 것이 아니라 이 효과가 스스로 끝난 것이다.
+    // 그것까지 "막혔다"로 세면 멀쩡한 브라우저가 한 장씩 돌리는 모드로 떨어진다.
+    let 끝남 = false;
+    const 막힘 = (e?: unknown) => {
+      if (끝남) return;
+      onBlocked(genre.id);
+      if (e !== undefined) console.warn(`[카드 자동재생 실패] ${genre.id}`, e);
+    };
     const stop = () => {
+      끝남 = true;
       window.clearTimeout(timer);
       window.clearInterval(watch);
       v.pause();
@@ -99,20 +113,17 @@ export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }
       v.loop = true; // 10초짜리라 반복하지 않으면 곧 마지막 프레임에서 멈춘다
       v.play()
         .then(() => v.classList.add('playing'))
-        .catch((e) => {
-          // 거부는 곧 "이 환경은 이 카드를 지금 재생할 수 없다"는 뜻이다. 느린 회선과
-          // 달리 시간이 지나도 저절로 풀리지 않으므로, 동시 재생 제한을 알아내는
-          // 신호로 이것을 쓴다(재생 장수를 세는 방식은 회선이 느릴 때 오판한다).
-          onBlocked();
-          console.warn(`[카드 자동재생 실패] ${genre.id}`, e);
-        });
+        // 거부는 곧 "이 환경은 이 카드를 지금 재생할 수 없다"는 뜻이다. 느린 회선과
+        // 달리 시간이 지나도 저절로 풀리지 않으므로, 동시 재생 제한을 알아내는
+        // 신호로 이것을 쓴다(재생 장수를 세는 방식은 회선이 느릴 때 오판한다).
+        .catch(막힘);
 
       // loop를 걸어도 실제 기기에서는 브라우저가 임의로 멈출 수 있다. 멈춰 있으면
       // 다시 튼다 — 끝난 영상에 play()를 부르면 처음부터 다시 재생된다.
       watch = window.setInterval(() => {
         if (!v.paused || !v.isConnected) return;
         // 다시 시도해서 또 거부되면 일시적인 것이 아니다 — 그 사실을 알린다.
-        v.play().catch(onBlocked);
+        v.play().catch(() => 막힘());
       }, WATCH_MS);
     }, delayMs);
 

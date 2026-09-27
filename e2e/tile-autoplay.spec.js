@@ -80,6 +80,49 @@ test.describe('마우스가 없는 기기', () => {
       .toBe(6);
   });
 
+  // 홈이 다시 그려져도 카드는 멈췄다 다시 틀지 않아야 한다.
+  //
+  // 2026-09-27까지 홈이 카드에 넘기는 콜백을 렌더마다 새로 만들고 있었고, 카드의 재생
+  // 효과가 그 콜백에 걸려 있었다. 그래서 엔진 내려받기 진행률(0~100%)이 바뀔 때마다
+  // 여섯 장이 전부 멈췄다(src까지 비우고) 다시 틀었다. 끊긴 play()는 "거부"로 세어져
+  // 기기가 조금만 느려도 멀쩡한 브라우저가 한 장씩 돌리는 모드로 떨어졌다 — 위
+  // "멈춰도 다시 재생된다"가 전체 실행에서 가끔 1/6으로 떨어진 원인이 이것이다.
+  // 모바일 콘솔에는 "[카드 자동재생 실패] … interrupted by a call to pause()"가 수십 건 찍혔다.
+  //
+  // 그래서 진행률이 **실제로 여러 번 바뀌는 동안**을 지켜보며, 그 사이 카드 영상이 한
+  // 번도 다시 불러와지지 않고 실패 경고가 0건인지 본다. 진행률 변화를 못 봤으면 이
+  // 검사는 아무것도 안 본 것이므로 통과가 아니라 실패다(§21-1).
+  test('엔진을 내려받는 동안에도 카드가 멈췄다 다시 틀지 않는다', async ({ page, context }) => {
+    await context.addInitScript(() => {
+      window.__관찰 = { 진행: new Set(), 다시불러옴: 0 };
+      const load = window.HTMLMediaElement.prototype.load;
+      window.HTMLMediaElement.prototype.load = function () {
+        if (this.closest('.tile')) window.__관찰.다시불러옴++;
+        return load.call(this);
+      };
+      new MutationObserver(() => {
+        const b = document.getElementById('engineProg');
+        if (b) window.__관찰.진행.add(b.textContent);
+      }).observe(document, { subtree: true, childList: true, characterData: true });
+    });
+    const 경고 = [];
+    page.on('console', (m) => {
+      if (m.text().includes('카드 자동재생 실패')) 경고.push(m.text());
+    });
+
+    await page.goto('/');
+    await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
+    // 엔진을 다 받을 때까지(배너가 닫힐 때까지) 본다.
+    await page.waitForFunction(() => !document.querySelector('#enginebar.show'), null, { timeout: 60000 });
+    await page.waitForTimeout(1000);
+
+    const 관찰 = await page.evaluate(() => ({ 진행: window.__관찰.진행.size, 다시불러옴: window.__관찰.다시불러옴 }));
+    expect(관찰.진행, '엔진 진행률이 바뀌는 것을 못 봤다 — 이 검사가 빈 검사가 됐다').toBeGreaterThanOrEqual(5);
+    expect(관찰.다시불러옴, '홈이 다시 그려질 때 카드 영상이 멈췄다 다시 불러와졌다').toBe(0);
+    expect(경고).toEqual([]);
+    expect(await page.locator('.tile.is-solo').count(), '멀쩡한 브라우저가 한 장씩 돌리는 모드로 떨어졌다').toBe(0);
+  });
+
   test('카드를 누르고 있는 동안 PC 호버와 같은 강조가 걸린다', async ({ page }) => {
     await page.goto('/');
     await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });

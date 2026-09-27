@@ -95,7 +95,11 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
             playing={자동재생 && (!solo || i === soloIndex)}
             delayMs={solo ? 0 : i * STAGGER_MS}
             solo={solo && i === soloIndex}
-            onBlocked={() => onBlocked(genre.id)}
+            // 여기서 `() => onBlocked(genre.id)`처럼 감싸 넘기지 않는다 — 렌더마다 새 함수가
+            // 되어, 엔진 내려받기 진행률(0~100%)이 바뀔 때마다 여섯 장이 전부 멈췄다 다시
+            // 틀었다. 그 끊김이 "거부"로 세어져 멀쩡한 브라우저가 한 장씩 돌리는 모드로
+            // 떨어졌고(E2E가 가끔 1/6으로 실패), 경고가 수십 건씩 찍혔다(2026-09-27).
+            onBlocked={onBlocked}
             onSelect={onSelect}
           />
         ))}
