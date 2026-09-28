@@ -8,6 +8,16 @@
 
 ---
 
+## 클라우드 세션 준비 — SessionStart 훅 (2026-09-29, 대표 지시 — 가지에만, 미배포)
+
+- `scripts/cloud-session-start.sh`(원본은 `817beatles/projects`의 `_shared/cloud/`)와 `.claude/settings.json`의
+  `SessionStart` 훅. **Anthropic 클라우드 세션(`CLAUDE_CODE_REMOTE=true`)에서만** 돈다 — ① `node_modules`가 없는
+  패키지만 `npm ci` ② Playwright 설정이 있으면 이 저장소가 고정한 Chromium ③ `AGENTS.md`의 «조직 공통 규칙» 절을
+  세션 컨텍스트에 넣는다(클라우드에는 상위 `D:\Projects\CLAUDE.md`가 없다). 집 PC 로컬 세션에서는 첫 줄에서 끝나
+  아무 일도 하지 않는다. 가지 `claude/cloud-session-setup`에만 있고 `master` 반영은 팀장 확인 뒤.
+  설정·여는 법 원문은 `_shared/CLAUDE-CLOUD.md`.
+- 클라우드 실측(2026-09-29, Anthropic 클라우드 Ubuntu 24.04 · Node 22): lint·test(루트+functions)·build 통과. `test:e2e`는 환경 네트워크가 `cdn.playwright.dev`를 막아 브라우저를 못 받았다 — 환경의 허용 도메인에 추가하면 된다(`_shared/CLAUDE-CLOUD.md` §3).
+
 ## PR 검사를 배포 전 단계와 맞춤 (2026-09-27, 대표 지시)
 
 Codex 등이 올리는 PR이 배포가 할 검사를 먼저 거치도록 `ci.yml`을 배포 잡과 대조했다. 설치를 `npm install`에서
