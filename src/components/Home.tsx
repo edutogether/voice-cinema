@@ -83,8 +83,8 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
 
       <div className="cinema-intro desktop-home">
         <div className="cinema-intro-copy">
-          <h1>내 목소리로 <span>완성하는 영화</span></h1>
-          <p className="cinema-description">어떤 영화의 주인공이 될까요? 마음에 드는 장면을 골라주세요.</p>
+          <h1>이 장면의 목소리는, <span>나.</span></h1>
+          <p className="cinema-description">장면을 고르고, 목소리를 더해 나만의 영화를 만드세요.</p>
         </div>
         <div className="cinema-preview-hint">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="4" /><path d="m10 8 6 4-6 4z" /></svg>

@@ -3,6 +3,12 @@
 2026-09-29 Bumm님 직접 지시: Windows의 마이크 이모지 대신 아이폰에서 보이는
 마이크 그림을 사용한다. 스플래시와 파비콘이 같은 원본을 사용한다.
 
+**PC 전용이 아니다.** 동일한 `index.html`의 이미지가 PC·아이폰·안드로이드에 공통 적용된다.
+기기별 이모지 글꼴이나 모바일 전용 이모지 분기는 없다. 2026-09-30 라이브를 Pixel 7·iPhone 13
+화면·UA·터치 설정으로 열어 동일 PNG 해시, 원본 160px·표시 48px를 확인했다(Chromium 에뮬레이션).
+실제 안드로이드 기기나 Safari에서 수행한 검사라는 뜻은 아니다. 이 조건은 `e2e/mobile-splash.spec.js`로
+추가했다. PC만 적용했다는 앞선 보고를 정정하며, 이를 위해 같은 이미지를 다시 배포할 필요는 없다.
+
 - 파일: `public/icons/studio-microphone.png`
 - 원본: [Apple iOS 26.4 스튜디오 마이크](https://emojipedia.org/apple/ios-26.4/studio-microphone)
 - 이미지 주소: https://em-content.zobj.net/source/apple/453/studio-microphone_1f399-fe0f.png

@@ -268,6 +268,21 @@
     padding: 0 40px;
   }
   :is(#studio, #result) .cinema-header { display: flex; }
+  .workflow-heading { padding: 28px 0 24px; }
+  .workflow-heading h1 { font-weight: 600; }
+  .studio-workspace { grid-template-columns: minmax(0, 1fr) 300px; gap: 40px; }
+  .stage { border-radius: 12px; }
+  #studio .controls {
+    align-self: center;
+    padding: 8px 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  #studio .control-symbol { display: none; }
+  #studio .hint { min-height: 0; margin-bottom: 32px; }
+  #studio .controls h2 { font-size: 1.375rem; font-weight: 600; }
+  #studio .studio-note { border-color: #303644; }
   #studio .btn-ghost:hover, #result .btn-ghost:hover, .back:hover { background: #30394c; }
   #studio .btn-save:hover, #result .btn-save:hover, #result .btn-gold:hover, #studio .btn-rec:not(:disabled):hover { background: #ffe096; }
 }

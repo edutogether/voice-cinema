@@ -49,7 +49,7 @@ export function Studio({ active, genre, onHome, onSave }: Props) {
     <section id="studio" className={`view${active ? ' active' : ''}`}>
       <CinemaHeader step={2} />
       <div className="workflow-heading">
-        <div><p className="workflow-eyebrow">나만의 더빙 스튜디오</p><h1 ref={titleRef} tabIndex={-1}>장면에 목소리를 더해요</h1></div>
+        <div><p className="workflow-eyebrow">내 목소리로 완성하는 한 장면</p><h1 ref={titleRef} tabIndex={-1}>{genre.name} 더빙</h1></div>
         <button className="back" id="studioBackBtn" onClick={onHome}><ActionIcon name="back" /> 처음으로</button>
       </div>
       <div className="studio-workspace">
