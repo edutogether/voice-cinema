@@ -10,7 +10,6 @@ const WATCH_MS = 2000;
 
 interface Props {
   genre: Genre;
-  order: number;
   /** 이 카드가 지금 재생돼야 하는지. 마우스가 있는 기기에서는 호버가 정하므로 쓰이지 않는다. */
   playing: boolean;
   /** 재생을 이만큼 늦춰 시작한다 — 여섯 장이 한꺼번에 내려받기를 시작하지 않게 하려는 것이다. */
@@ -26,7 +25,7 @@ interface Props {
   onSelect: (genre: Genre) => void;
 }
 
-export function GenreTile({ genre, order, playing, delayMs, solo, onBlocked, onSelect }: Props) {
+export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hoveringRef = useRef(false);
 
@@ -132,10 +131,9 @@ export function GenreTile({ genre, order, playing, delayMs, solo, onBlocked, onS
   }, [playing, delayMs, genre.id, onBlocked]);
 
   return (
-    <div
+    <button
+      type="button"
       className={`tile${solo ? ' is-solo' : ''}`}
-      role="button"
-      tabIndex={0}
       aria-label={`${genre.name} 더빙 시작`}
       style={
         {
@@ -146,33 +144,28 @@ export function GenreTile({ genre, order, playing, delayMs, solo, onBlocked, onS
         } as React.CSSProperties
       }
       onClick={() => onSelect(genre)}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          onSelect(genre);
-        }
-      }}
       onMouseEnter={SUPPORTS_HOVER ? onEnter : undefined}
       onMouseLeave={SUPPORTS_HOVER ? onLeave : undefined}
     >
-      <div className="tile-media">
+      <span className="tile-media" aria-hidden="true">
         <img className="thumb" src={thumbUrl(genre.id)} alt="" />
         <video className="preview" ref={videoRef} muted playsInline preload="none" />
-      </div>
+        <span className="tile-preview-label desktop-home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m8 5 11 7-11 7z" /></svg> 미리보기 재생 중</span>
+      </span>
       {/* PC에서만 쓰이는 색 덮기 레이어. 마우스가 없는 기기에서는 CSS가 blend도
           투명도도 주지 않아 합성 레이어를 만들지 않는다 — 그래서 아이폰에서 각지지 않는다. */}
-      <div className="tile-tint" />
-      <div className="tile-scrim" />
-      <div className="tile-scene desktop-home" aria-hidden="true"><span>장면</span> {String(order).padStart(2, '0')}</div>
-      <div className="tile-body">
-        <div className="gname-row">
-          <div className="ic" dangerouslySetInnerHTML={{ __html: iconSvg(genre) }} />
-          <div className="gname">{genre.name}</div>
-        </div>
-        <div className="gsub">{genre.sub}</div>
-      </div>
-      <span className="tile-enter desktop-home" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></span>
-    </div>
+      <span className="tile-tint" />
+      <span className="tile-scrim" />
+      <span className="tile-body">
+        <span className="gname-row">
+          <span className="ic" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconSvg(genre) }} />
+          <span className="gname">{genre.name}</span>
+        </span>
+        <span className="gsub mobile-home">{genre.sub}</span>
+        <span className="gsub desktop-home">{genre.summary}</span>
+        <span className="tile-enter desktop-home" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></span>
+      </span>
+    </button>
   );
 }
 

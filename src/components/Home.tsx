@@ -75,9 +75,13 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
         <div className="cinema-wordmark">
           <img src="/icons/studio-microphone.png" width="40" height="40" alt="" />
           <span>Voice <strong>Cinema</strong></span>
-          <span className="cinema-edition">InKY 놀이터</span>
         </div>
-        <span className="cinema-festival">제4회 인천어린이청소년영화제</span>
+        <ol className="cinema-steps" aria-label="더빙 이용 순서">
+          <li aria-current="step"><span>1</span> 장면 선택</li>
+          <li><span>2</span> 목소리 녹음</li>
+          <li><span>3</span> 영화 저장</li>
+        </ol>
+        <span className="cinema-festival">InKY 놀이터</span>
       </header>
 
       <div className="brand mobile-home">
@@ -89,41 +93,29 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
 
       <div className="cinema-intro desktop-home">
         <div className="cinema-intro-copy">
-          <p className="cinema-eyebrow"><span /> 나의 첫 번째 더빙 스튜디오</p>
-          <h1>오늘은 내가,<br /><span>영화의 주인공.</span></h1>
-          <p className="cinema-description">마음에 드는 장면에 목소리를 더해, 나만의 영화를 만들어 보세요.</p>
+          <h1>내 목소리로 <span>완성하는 영화</span></h1>
+          <p className="cinema-description">어떤 영화의 주인공이 될까요? 마음에 드는 장면을 골라주세요.</p>
         </div>
-        <div className="cinema-guide" aria-label="더빙 이용 순서">
-          <p className="cinema-guide-title">목소리 하나면, 준비 끝.</p>
-          <ol>
-            <li><span className="guide-number">01</span><strong>장면 고르기</strong><span>끌리는 이야기 선택</span></li>
-            <li><span className="guide-number">02</span><strong>목소리 더하기</strong><span>내가 직접 주인공으로</span></li>
-            <li><span className="guide-number">03</span><strong>내 영화 간직하기</strong><span>완성하고 저장하기</span></li>
-          </ol>
+        <div className="cinema-preview-hint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="4" /><path d="m10 8 6 4-6 4z" /></svg>
+          <p>마우스를 올리면 미리보기<span>장면을 누르면 더빙이 시작돼요</span></p>
         </div>
       </div>
 
-      {/* 배너는 항상 DOM에 두고 `.show`로만 여닫는다(전환 전과 동일).
-          문구도 그대로 — 앞의 "엔진 준비 중…"은 고정이고 굵은 부분만 바뀐다. */}
+      {/* 준비 상태가 장면 선택을 가로막지 않게 같은 배너에서 진행률만 갱신한다. */}
       <div
         id="enginebar"
         role="status"
         className={`enginebar${engineLoading || engineFailed ? ' show' : ''}${engineFailed ? ' err' : ''}`}
       >
-        엔진 준비 중… <b id="engineProg">{engineFailed ? '실패 — 저장 시 다시 시도됩니다' : `${enginePercent}%`}</b>
+        영상 저장 준비 중… <b id="engineProg">{engineFailed ? '저장할 때 다시 시도할게요' : `${enginePercent}%`}</b>
       </div>
 
-      <div className="cinema-selection desktop-home">
-        <h2>어떤 이야기의 주인공이 될까요? <span>6개의 장면</span></h2>
-        <p><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="m9 5 10 7-10 7z" /></svg> 마우스를 올려 미리 보고, 눌러서 시작하세요</p>
-      </div>
-
-      <div className="grid" id="grid">
+      <div className="grid" id="grid" role="group" aria-label="더빙할 장면 선택">
         {GENRES.map((genre, i) => (
           <GenreTile
             key={genre.id}
             genre={genre}
-            order={i + 1}
             playing={자동재생 && (!solo || i === soloIndex)}
             delayMs={solo ? 0 : i * STAGGER_MS}
             solo={solo && i === soloIndex}
@@ -138,7 +130,7 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
       </div>
 
       <footer className="cinema-footer">
-        <p className="desktop-home"><span className="footer-spark" aria-hidden="true">✦</span> 작은 목소리로 시작하는, 커다란 영화.</p>
+        <p className="desktop-home">제4회 인천어린이청소년영화제 <span>나만의 목소리, 나만의 영화.</span></p>
         <a className="privacylink" href="./privacy.html" target="_blank" rel="noopener">개인정보처리방침</a>
       </footer>
     </section>

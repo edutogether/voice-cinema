@@ -12,6 +12,8 @@ export interface Genre {
   name: string;
   color: string;
   sub: string;
+  /** PC 선택 화면에서는 장면의 차이를 짧게 읽을 수 있게 한다. */
+  summary: string;
   icon: string;
 }
 
@@ -32,6 +34,7 @@ export function withAlpha(hex: string, alpha: number): string {
 export const GENRES: Genre[] = [
   {
     id: 'fantasy',
+    summary: '주문 한마디로 펼치는 마법',
     name: '판타지',
     color: '#8a63d2',
     sub: '마법 지팡이를 들고, 주문 한 줄로 세상을 뒤바꿔보세요 !',
@@ -39,6 +42,7 @@ export const GENRES: Genre[] = [
   },
   {
     id: 'animation',
+    summary: '상상 속 친구와 나누는 이야기',
     name: '애니메이션',
     color: '#d97b3f',
     sub: '친구가 되어, 마음을 담은 목소리로 대화를 나눠보세요 !',
@@ -46,6 +50,7 @@ export const GENRES: Genre[] = [
   },
   {
     id: 'horror',
+    summary: '어둠 속에서 마주친 낯선 소리',
     name: '호러',
     color: '#2f9e6e',
     sub: '어둠 속 발소리, 온몸이 서늘해지는 비명을 질러보세요 !',
@@ -53,6 +58,7 @@ export const GENRES: Genre[] = [
   },
   {
     id: 'action',
+    summary: '위기의 순간을 뒤집는 한마디',
     name: '액션',
     color: '#c94f5c',
     sub: '위기의 순간, 가장 멋진 한마디로 상황을 뒤집어보세요 !',
@@ -60,6 +66,7 @@ export const GENRES: Genre[] = [
   },
   {
     id: 'drama',
+    summary: '마음 깊이 전하고 싶은 진심',
     name: '드라마',
     color: '#c9a24b',
     sub: '말하지 못했던 진심을, 떨리는 목소리에 담아보세요 !',
@@ -67,6 +74,7 @@ export const GENRES: Genre[] = [
   },
   {
     id: 'sitcom',
+    summary: '웃음이 터지는 우리들의 일상',
     name: '시트콤',
     color: '#3f7fb8',
     sub: '빵 터지는 타이밍, 웃음 가득한 만담을 펼쳐보세요 !',
