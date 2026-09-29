@@ -5,6 +5,9 @@
 [.claude/rules/app.md](.claude/rules/app.md), 날짜별 이력은 [_docs/CHANGELOG.md](_docs/CHANGELOG.md),
 지나간 사건 기록은 [_docs/archive/](_docs/archive/)에 있다.
 
+🔴 **작업을 시작하기 전에 공식 인계 문서 [`_docs/ops/HANDOFF_CURRENT.md`](_docs/ops/HANDOFF_CURRENT.md)부터 읽는다** —
+지금 담당(Claude/Codex), 진행·다음 작업, 고정된 영역이 거기 있다. Claude와 Codex가 같은 문서를 쓰고, 넘길 때 갱신한다.
+
 ## 조직 공통 규칙 — 다른 도구·클라우드에서도 (D:\Projects 헌법 요약)
 
 이 저장소만 받아서 일하는 도구(Codex 클라우드, Claude Code 클라우드, 다른 기기)는 `D:\Projects`의 공통
