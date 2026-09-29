@@ -11,6 +11,9 @@ InKY Festival(제4회 인천어린이청소년영화제, **2026-11-14**, 인천 
 > [`.claude/rules/app.md`](.claude/rules/app.md), 타 도구(Codex 등)용 요약은 [AGENTS.md](AGENTS.md),
 > 사람이 처음 여는 곳은 [README.md](README.md)에 있다.
 
+> 🔴 **작업을 시작하기 전에 공식 인계 문서 [`_docs/ops/HANDOFF_CURRENT.md`](_docs/ops/HANDOFF_CURRENT.md)부터 확인한다** —
+> Claude와 Codex가 이 앱을 오가며 작업한다. 지금 담당이 누구인지, 어디까지 했는지가 거기 있다.
+
 ## 이 앱이 무엇인가
 - **위치**: `D:\Projects\inky-festival\voice-cinema`
 - **기능**: 무성 클립 6종(장르별)에 학생이 자기 목소리로 더빙 → **브라우저 안 ffmpeg.wasm으로 합성**
