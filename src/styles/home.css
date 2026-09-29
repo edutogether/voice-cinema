@@ -376,7 +376,7 @@ button.tile {
   outline-offset: 5px;
 }
 @media (hover: hover) and (pointer: fine) {
-  #home {
+  :is(#home, #studio, #result) {
     --home-text: #f5f6fa;
     --home-secondary: #b8bfce;
     --home-surface: #181d2a;

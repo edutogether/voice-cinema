@@ -133,6 +133,7 @@ export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }
   return (
     <button
       type="button"
+      data-genre={genre.id}
       className={`tile${solo ? ' is-solo' : ''}`}
       aria-label={`${genre.name} 더빙 시작`}
       style={

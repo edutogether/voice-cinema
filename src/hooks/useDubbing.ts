@@ -12,10 +12,10 @@ export type Phase = 'idle' | 'ready' | 'preview' | 'countdown' | 'recording' | '
 const HINT = {
   idle: '먼저 [미리 보기]로 영상을 확인하고, 준비되면 녹음하세요',
   ready: '준비됐나요? [녹음 시작]을 누르면 3·2·1 후 시작돼요',
-  preview: '👀 영상을 보며 어떤 더빙을 할지 생각해 보세요',
-  recording: '🎙️ 지금 목소리를 연기해 보세요!',
+  preview: '영상을 보며 어떤 더빙을 할지 생각해 보세요',
+  recording: '지금 목소리를 연기해 보세요 !',
   recorded: '잘했어요! 다시 듣고, 마음에 들면 저장하세요',
-  replaying: '▶ 내 더빙 영화 재생 중…',
+  replaying: '내 더빙 영화 재생 중…',
   micDenied: '⚠️ 마이크 사용을 허용해 주세요 (브라우저 권한)',
   insecure: '⚠️ 이 페이지는 https 주소여야 마이크가 켜져요',
   micBroken: '⚠ 마이크에 문제가 생겼어요 — 연결 확인 후 다시 눌러 주세요',

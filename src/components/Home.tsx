@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { GENRES, type Genre } from '../genres';
 import { SUPPORTS_HOVER } from '../lib/pointer';
 import { GenreTile } from './GenreTile';
+import { CinemaHeader } from './CinemaHeader';
 
 interface Props {
   active: boolean;
@@ -71,18 +72,7 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
 
   return (
     <section id="home" className={`view${active ? ' active' : ''}`}>
-      <header className="cinema-header desktop-home">
-        <div className="cinema-wordmark">
-          <img src="/icons/studio-microphone.png" width="40" height="40" alt="" />
-          <span>Voice <strong>Cinema</strong></span>
-        </div>
-        <ol className="cinema-steps" aria-label="더빙 이용 순서">
-          <li aria-current="step"><span>1</span> 장면 선택</li>
-          <li><span>2</span> 목소리 녹음</li>
-          <li><span>3</span> 영화 저장</li>
-        </ol>
-        <span className="cinema-festival">InKY 놀이터</span>
-      </header>
+      <CinemaHeader step={1} />
 
       <div className="brand mobile-home">
         <h1>

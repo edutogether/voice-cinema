@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Home } from './components/Home';
 import { Result, type SaveJob } from './components/Result';
 import { Studio } from './components/Studio';
@@ -10,6 +10,8 @@ import { initAppCheck } from './lib/upload';
 type View = 'home' | 'studio' | 'result';
 
 export function App() {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const lastGenreRef = useRef<string | null>(null);
   const [view, setView] = useState<View>('home');
   const [genre, setGenre] = useState<Genre | null>(null);
   // 스튜디오에 들어갈 때마다 증가시켜 컴포넌트를 새로 마운트한다 — 같은 장르를
@@ -23,6 +25,12 @@ export function App() {
   // 새 버전이 준비됐는지. 저절로 새로고침하지 않고 사람이 누를 때만 한다 —
   // 부스에서 아이가 녹음·합성 중에 화면이 다시 시작되면 작업이 통째로 날아간다.
   const [updateReady, setUpdateReady] = useState(false);
+
+  useEffect(() => {
+    if (view === 'home' && lastGenreRef.current) {
+      wrapRef.current?.querySelector<HTMLButtonElement>(`[data-genre="${lastGenreRef.current}"]`)?.focus({ preventScroll: true });
+    }
+  }, [view]);
 
   // 화면이 실제로 붙었다고 알린다 — 스플래시가 이 신호를 기다렸다가 걷힌다
   // (src/styles/splash.css의 로드 게이트). 시간은 CSS가 재고 여기서는 조건만 준다.
@@ -46,6 +54,7 @@ export function App() {
   }, []);
 
   const openStudio = (g: Genre) => {
+    lastGenreRef.current = g.id;
     setGenre(g);
     setStudioKey((k) => k + 1);
     setView('studio');
@@ -63,7 +72,7 @@ export function App() {
   };
 
   return (
-    <div className="wrap">
+    <div className="wrap" ref={wrapRef}>
       <Home
         active={view === 'home'}
         enginePercent={enginePercent}

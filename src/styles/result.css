@@ -1,64 +1,160 @@
-/* 결과: 합성/업로드 진행 → QR 또는 로컬 폴백 */
-
+/* 합성·완성·실패 상태도 같은 배치에서 진행 상황을 안내한다. */
 .result-card {
-  margin: auto;
-  text-align: center;
-  max-width: 520px;
+  margin: 32px auto;
+  padding: 28px 36px;
+  max-width: 680px;
   width: 100%;
+  text-align: center;
+  background: #181d2a;
+  border: 1px solid #303644;
+  border-radius: 24px;
+}
+.result-scene {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  padding-bottom: 20px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #353c4c;
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 600;
+}
+.result-scene img {
+  width: 80px;
+  height: 45px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.result-scene span > span {
+  display: block;
+  font-size: 0.875rem;
+  color: #b8bfce;
+  font-weight: 400;
 }
 .result-card h2 {
-  font-size: clamp(24px, 4vw, 34px);
-  margin: 6px 0;
+  margin: 0 0 12px;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+  line-height: 1.4;
+  letter-spacing: -0.03em;
+  word-break: keep-all;
 }
 .result-card p {
-  color: var(--muted);
-  font-size: clamp(14px, 2vw, 17px);
-  margin: 6px 0 22px;
+  color: #b8bfce;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0 0 24px;
+  word-break: keep-all;
 }
-
-.spinner {
-  width: 64px;
-  height: 64px;
+.result-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
   border-radius: 50%;
-  border: 5px solid rgba(233, 196, 106, 0.2);
-  border-top-color: var(--gold);
-  margin: 0 auto 22px;
+  color: #8fdec0;
+  background: #173b32;
+}
+.result-symbol .action-icon { width: 26px; height: 26px; }
+.result-symbol.warning { color: #f2cf6b; background: #3c3320; }
+.spinner {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 4px solid #41403a;
+  border-top-color: var(--gold-soft);
+  margin: 32px auto 28px;
   animation: spin 1s linear infinite;
 }
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+@keyframes spin { to { transform: rotate(360deg); } }
+.save-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 28px auto;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #b8bfce;
 }
-
+.save-steps li { display: flex; align-items: center; gap: 12px; }
+.save-steps li > span {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: #2b3242;
+}
+.save-steps [aria-current] { color: var(--gold-soft); font-weight: 600; }
+.save-steps [aria-current] > span { background: #3c3320; }
+.result-card .result-wait-note { font-size: 0.875rem; margin-bottom: 8px; }
 .qrbox {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
   background: #fff;
   padding: 20px;
-  border-radius: 24px;
-  display: inline-block;
-  box-shadow: var(--shadow);
-  margin: 10px 0 6px;
+  border-radius: 18px;
+  margin: 0 0 20px;
 }
 .qrbox img {
   display: block;
-  width: clamp(220px, 55vw, 300px);
+  width: 224px;
+  max-width: 100%;
   height: auto;
 }
-
-.savemode {
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 14px;
+.qrbox > span {
+  margin-top: 12px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #343d51;
 }
-
-.errbox {
-  border: 1px solid rgba(255, 84, 112, 0.4);
-  background: rgba(255, 84, 112, 0.08);
-  color: #ffd7df;
-  border-radius: 16px;
-  padding: 18px;
-  margin: 18px 0;
+.savemode, .result-card p.savemode {
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: #b8bfce;
+  margin: 0;
+  word-break: keep-all;
+}
+.result-card .retention-note { margin-top: 8px; }
+.result-actions { margin-top: 24px; }
+#result .btn { max-width: none; min-width: 200px; flex: none; }
+#downloadRow { margin: 0 0 24px; }
+.result-fallback #savemode {
+  padding: 16px;
+  border: 1px solid #685632;
+  border-radius: 12px;
+  background: #302a1f;
+  color: #eddbb4;
   text-align: left;
-  font-size: 14px;
-  line-height: 1.6;
+}
+.result-fallback #doneHomeBtn { background: #232a3a; color: #edf0f6; border-color: #434c60; }
+.errbox {
+  border: 1px solid #91475a;
+  background: #35232f;
+  color: #ffdce5;
+  border-radius: 12px;
+  padding: 18px;
+  margin: 24px 0;
+  text-align: left;
+  font-size: 1rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .result-card { margin: 24px auto; padding: 24px 20px; border-radius: 18px; }
+  .result-scene { flex-wrap: wrap; }
+  #result .btn { width: 100%; min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
 }

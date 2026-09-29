@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Genre } from '../genres';
+import { thumbUrl, type Genre } from '../genres';
+import { CinemaHeader } from './CinemaHeader';
+import { ActionIcon } from './ActionIcon';
 import { mergeClip } from '../lib/ffmpeg';
 import { downloadBlob, uploadToCloud } from '../lib/upload';
 import { buildUploadFilename } from '../logic';
@@ -28,6 +30,11 @@ interface Props {
 export function Result({ active, job, onHome, onBack }: Props) {
   const [stage, setStage] = useState<Stage>({ kind: 'merging' });
   const revokeRef = useRef<(() => void) | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (active) cardRef.current?.querySelector('h2')?.focus({ preventScroll: true });
+  }, [active, stage.kind]);
 
   useEffect(() => {
     let cancelled = false;
@@ -72,18 +79,26 @@ export function Result({ active, job, onHome, onBack }: Props) {
 
   return (
     <section id="result" className={`view${active ? ' active' : ''}`}>
-      <div className="result-card">
+      <CinemaHeader step={3} />
+      <div className={`result-card result-${stage.kind}`} ref={cardRef}>
+        <div className="result-scene"><img src={thumbUrl(job.genre.id)} alt="" /><span>{job.genre.name}<span>내 목소리로 완성하는 영화</span></span></div>
         {loading && (
-          <div id="loading">
-            <div className="spinner" />
-            <h2 id="loadingTitle">{stage.kind === 'merging' ? '영화를 만들고 있어요…' : '저장하고 있어요…'}</h2>
+          <div id="loading" role="status" aria-busy="true">
+            <div className="spinner" aria-hidden="true" />
+            <h2 id="loadingTitle" tabIndex={-1}>{stage.kind === 'merging' ? '영화를 만들고 있어요' : '내 영화를 저장하고 있어요'}</h2>
             <p id="loadingSub">{stage.kind === 'merging' ? '목소리를 영상에 입히는 중입니다' : '완성된 영화를 전달 중입니다'}</p>
+            <ol className="save-steps" aria-label="저장 진행">
+              <li aria-current={stage.kind === 'merging' ? 'step' : undefined}><span>{stage.kind === 'uploading' ? <ActionIcon name="check" /> : '1'}</span> 영상과 목소리 합치기</li>
+              <li aria-current={stage.kind === 'uploading' ? 'step' : undefined}><span>2</span> 저장하고 QR 만들기</li>
+            </ol>
+            <p className="result-wait-note">완료될 때까지 이 화면을 열어두세요.</p>
           </div>
         )}
 
         {(stage.kind === 'cloud' || stage.kind === 'fallback') && (
           <div id="done">
-            <h2>🎉 <span className="gold">완성!</span></h2>
+            <span className={`result-symbol${stage.kind === 'fallback' ? ' warning' : ''}`}><ActionIcon name={stage.kind === 'cloud' ? 'check' : 'download'} /></span>
+            <h2 tabIndex={-1}>{stage.kind === 'cloud' ? '내 영화가 완성됐어요' : '영화를 이 기기에 저장해 주세요'}</h2>
             <p id="doneMsg">
               {stage.kind === 'cloud'
                 ? '휴대폰 카메라로 QR을 스캔하면 내 영화를 받을 수 있어요'
@@ -93,11 +108,12 @@ export function Result({ active, job, onHome, onBack }: Props) {
             {stage.kind === 'cloud' && (
               <div className="qrbox" id="qrbox">
                 <img id="qrImg" src={stage.qr} alt="QR 코드" />
+                <span>내 영화 받기</span>
               </div>
             )}
 
             {stage.kind === 'fallback' && (
-              <div className="row" id="downloadRow" style={{ marginTop: 10 }}>
+              <div className="row" id="downloadRow">
                 <button
                   className="btn btn-lg btn-save"
                   id="downloadBtn"
@@ -106,7 +122,7 @@ export function Result({ active, job, onHome, onBack }: Props) {
                     revokeRef.current = downloadBlob(stage.blob, `잉키보이스시네마_${job.genre.name}.mp4`);
                   }}
                 >
-                  📥 이 기기에 저장
+                  <ActionIcon name="download" /> 이 기기에 저장
                 </button>
               </div>
             )}
@@ -114,27 +130,27 @@ export function Result({ active, job, onHome, onBack }: Props) {
             <div className="savemode" id="savemode">
               {stage.kind === 'cloud'
                 ? '클라우드에 저장되었습니다 (이 QR/링크를 아는 사람은 누구나 볼 수 있어요, 11/30까지)'
-                : '⚠ 클라우드 업로드 실패 — 이 기기 다운로드 폴더에만 저장됨 (학생에게 전달 후 운영자가 이 파일을 꼭 삭제해 주세요 — 자동삭제 대상 아님)'}
+                : '클라우드 업로드 실패 — 위 버튼을 누르면 이 기기 다운로드 폴더에 저장됩니다. 학생에게 전달 후 운영자가 이 파일을 꼭 삭제해 주세요 — 자동삭제 대상이 아닙니다.'}
             </div>
-            <p className="savemode" style={{ marginTop: 4 }}>
-              ⏰ 다운로드는 2026년 11월 30일까지만 가능해요 — 그 이후엔 자동으로 삭제됩니다
-            </p>
+            {stage.kind === 'cloud' && <p className="savemode retention-note">다운로드는 2026년 11월 30일까지만 가능해요 — 그 이후엔 자동으로 삭제됩니다</p>}
 
-            <div className="row" style={{ marginTop: 26 }}>
-              <button className="btn btn-lg btn-gold" id="doneHomeBtn" onClick={onHome}>🎬 다른 더빙 하기</button>
+            <div className="row result-actions">
+              <button className="btn btn-lg btn-gold" id="doneHomeBtn" onClick={onHome}>다른 더빙 하기 <ActionIcon name="arrow" /></button>
             </div>
           </div>
         )}
 
         {stage.kind === 'error' && (
           <>
+            <span className="result-symbol warning"><ActionIcon name="warning" /></span>
+            <h2 tabIndex={-1}>녹음이 남아 있어요</h2>
             <div className="errbox show" id="errbox">
               <b>영상 합성 중 문제가 생겼어요.</b>
               <br />
               {stage.message}
             </div>
             <div className="row" id="errRow">
-              <button className="btn btn-lg btn-ghost" id="errBackBtn" onClick={onBack}>← 돌아가기</button>
+              <button className="btn btn-lg btn-ghost" id="errBackBtn" onClick={onBack}><ActionIcon name="back" /> 돌아가기</button>
             </div>
           </>
         )}
