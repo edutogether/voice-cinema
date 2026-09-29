@@ -3,14 +3,13 @@
    알 수 없었고, 순서에 의존해 겨우 맞아 있는 상태였다. */
 
 :root {
-  --bg: #0a0e1c;
-  /* 아래쪽 색. 예전에는 #0b1128이라 위(#0a0e1c)보다 더 파랗고 더 밝아서, 화면 아래가
-     떠 보이며 곤색으로 읽혔다(2026-09-10 대표 지적). 파란 기를 덜어내 위와 이어지게 했다. */
-  --bg2: #0a0e20;
+  --bg: #111510;
+  /* 2026-09-30 전면 개편: 영화 이미지와 티켓의 크림색을 받치는 짙은 올리브 바탕. */
+  --bg2: #111510;
   --gold: #e9c46a;
   --gold-soft: #f2cf6b;
   --cream: #f6f1e6;
-  --muted: #9aa6cc;
+  --muted: #bfc2b9;
   --line: rgba(233, 196, 106, 0.22);
   --ok: #39d59a;
   --danger: #ff5470;
@@ -38,23 +37,16 @@ body {
      "폰트는 똑같아졌는데 얇다"고 지적). 빼면 애플 기기가 PC 쪽으로 맞춰진다. */
   text-rendering: optimizeLegibility;
   color: var(--cream);
-  background:
-    radial-gradient(1400px 700px at 50% -12%, rgba(233, 196, 106, 0.11), transparent 60%),
-    /* 하단 양쪽 모서리의 보라·파랑 번짐. 0.07이던 것을 절반으로 낮췄다 — 두 번짐이 아래에서
-       겹치면서 배경이 지저분해지고, 카드마다 있는 색 띠와도 부딪혔다(2026-09-10 대표 지적).
-       색조는 남기고 번지는 양만 줄인 것이라 화면 인상은 그대로다. */
-    radial-gradient(1100px 600px at 8% 105%, rgba(139, 108, 255, 0.035), transparent 55%),
-    radial-gradient(1100px 600px at 96% 105%, rgba(77, 166, 255, 0.035), transparent 55%),
-    linear-gradient(180deg, var(--bg), var(--bg2));
+  background: var(--bg);
   min-height: 100dvh;
   overflow-x: hidden;
   user-select: none;
 }
 
 .wrap {
-  max-width: min(1900px, 96vw);
+  max-width: 1520px;
   margin: 0 auto;
-  padding: clamp(10px, 1.8vw, 22px) clamp(16px, 4vw, 32px);
+  padding: 0 48px;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -70,6 +62,9 @@ body {
   display: flex;
   animation: fade 0.35s ease;
 }
+@media (max-width: 900px) { .wrap { padding: 0 24px; } }
+@media (max-width: 600px) { .wrap { padding: 0 20px; } }
+@media (prefers-reduced-motion: reduce) { .view.active { animation: none; } }
 @keyframes fade {
   from {
     opacity: 0;

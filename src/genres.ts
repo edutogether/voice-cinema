@@ -84,3 +84,5 @@ export const GENRES: Genre[] = [
 
 export const clipUrl = (genreId: string) => `/clips/${genreId}.mp4`;
 export const thumbUrl = (genreId: string) => `/clips/thumbs/${genreId}.jpg`;
+// 선택한 영화만 큰 원본 프레임을 불러와, 로비의 여섯 미리보기는 가볍게 유지한다.
+export const stillUrl = (genreId: string) => `/clips/stills/${genreId}.jpg`;

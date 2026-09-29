@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { thumbUrl, type Genre } from '../genres';
+import { stillUrl, type Genre } from '../genres';
 import { CinemaHeader } from './CinemaHeader';
 import { ActionIcon } from './ActionIcon';
 import { mergeClip } from '../lib/ffmpeg';
@@ -81,7 +81,13 @@ export function Result({ active, job, onHome, onBack }: Props) {
     <section id="result" className={`view${active ? ' active' : ''}`}>
       <CinemaHeader step={3} />
       <div className={`result-card result-${stage.kind}`} ref={cardRef}>
-        <div className="result-scene"><img src={thumbUrl(job.genre.id)} alt="" /><span>{job.genre.name}<span>내 목소리로 완성하는 영화</span></span></div>
+        <div className="result-poster">
+          <img src={stillUrl(job.genre.id)} alt="" />
+          <span className="poster-brand">Voice Cinema</span>
+          <div className="poster-credit"><p>내 목소리로 완성하는 영화</p><strong>{job.genre.name}<br />더빙</strong><span>목소리 출연 · 나</span></div>
+        </div>
+        <div className="result-details">
+        <p className="ticket-label">{stage.kind === 'cloud' ? '나만의 영화 티켓' : loading ? '영화 완성 중' : '내 영화 보관하기'}</p>
         {loading && (
           <div id="loading" role="status" aria-busy="true">
             <div className="spinner" aria-hidden="true" />
@@ -98,7 +104,7 @@ export function Result({ active, job, onHome, onBack }: Props) {
         {(stage.kind === 'cloud' || stage.kind === 'fallback') && (
           <div id="done">
             <span className={`result-symbol${stage.kind === 'fallback' ? ' warning' : ''}`}><ActionIcon name={stage.kind === 'cloud' ? 'check' : 'download'} /></span>
-            <h2 tabIndex={-1}>{stage.kind === 'cloud' ? '내 영화가 완성됐어요' : '영화를 이 기기에 저장해 주세요'}</h2>
+            <h2 tabIndex={-1}>{stage.kind === 'cloud' ? '세상에 하나뿐인, 내 영화.' : '영화를 이 기기에 저장해 주세요'}</h2>
             <p id="doneMsg">
               {stage.kind === 'cloud'
                 ? '휴대폰 카메라로 QR을 스캔하면 내 영화를 받을 수 있어요'
@@ -154,7 +160,9 @@ export function Result({ active, job, onHome, onBack }: Props) {
             </div>
           </>
         )}
+        </div>
       </div>
+      <p className="workflow-footer">제4회 인천어린이청소년영화제 · InKY 놀이터</p>
     </section>
   );
 }

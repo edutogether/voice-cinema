@@ -74,23 +74,20 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
     <section id="home" className={`view${active ? ' active' : ''}`}>
       <CinemaHeader step={1} />
 
-      <div className="brand mobile-home">
-        <h1>
-          InKY <span className="gold">Voice Cinema</span>
-        </h1>
-        <p className="tagline-top">상상을 현실로 — 내 목소리로 완성하는 영화</p>
-      </div>
+      <div className="cinema-lobby">
+        <div className="cinema-intro">
+          <p className="eyebrow">오늘, 영화의 주인공이 되는 곳</p>
+          <h1>내 목소리로 <br />완성하는 <br /><em>한 편의 영화.</em></h1>
+          <p className="cinema-description">마음에 드는 장면에 목소리를 더해보세요. <br />대사는 자유롭게, 연기는 나답게.</p>
+          <div className="lobby-invitation">
+            <img src="/icons/studio-microphone.png" alt="" width="64" height="64" />
+            <p>약 10초의 더빙,<br /><strong>세상에 하나뿐인 내 영화.</strong></p>
+          </div>
+        </div>
 
-      <div className="cinema-intro desktop-home">
-        <div className="cinema-intro-copy">
-          <h1>이 장면의 목소리는, <span>나.</span></h1>
-          <p className="cinema-description">장면을 고르고, 목소리를 더해 나만의 영화를 만드세요.</p>
-        </div>
-        <div className="cinema-preview-hint">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="4" /><path d="m10 8 6 4-6 4z" /></svg>
-          <p>마우스를 올리면 미리보기<span>장면을 누르면 더빙이 시작돼요</span></p>
-        </div>
-      </div>
+        <div className="cinema-program">
+          <div className="program-heading"><h2>어떤 장면에 출연할까요?</h2><span>6개의 장면</span></div>
+          <p className="program-hint">{SUPPORTS_HOVER && '마우스를 올려 미리 보고, '}장면을 누르면 녹음실로 들어가요.</p>
 
       {/* 준비 상태가 장면 선택을 가로막지 않게 같은 배너에서 진행률만 갱신한다. */}
       <div
@@ -118,9 +115,11 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
           />
         ))}
       </div>
+        </div>
+      </div>
 
       <footer className="cinema-footer">
-        <p className="desktop-home">제4회 인천어린이청소년영화제 <span>나만의 목소리, 나만의 영화.</span></p>
+        <p>제4회 인천어린이청소년영화제 <span>InKY 놀이터</span></p>
         <a className="privacylink" href="./privacy.html" target="_blank" rel="noopener">개인정보처리방침</a>
       </footer>
     </section>

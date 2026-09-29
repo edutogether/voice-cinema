@@ -1,837 +1,113 @@
-/* 홈: 제목 + 장르 타일 6개 */
-
-.brand {
-  text-align: center;
-  margin: 0 auto clamp(10px, 1.6vw, 18px);
+/* 영화제 로비: 소개와 상영 프로그램을 나란히 배치한다. */
+.cinema-header { display:flex; align-items:center; justify-content:space-between; gap:28px; min-height:96px; border-bottom:1px solid #333633; }
+.cinema-wordmark { display:flex; align-items:center; gap:12px; font-size:1.5rem; font-weight:700; letter-spacing:-.035em; white-space:nowrap; }
+.cinema-wordmark img { width:36px; height:36px; }
+.cinema-wordmark strong { font-weight:700; }
+.cinema-wordmark small { display:block; margin-top:5px; font-size:.75rem; font-weight:500; letter-spacing:.07em; color:#b8b9b1; }
+.cinema-steps { display:flex; gap:26px; list-style:none; padding:0; margin:0; color:#a7aba6; font-size:.875rem; }
+.cinema-steps li { display:flex; align-items:center; gap:9px; padding:12px 0; border-bottom:2px solid transparent; white-space:nowrap; }
+.cinema-steps li > span { font-variant-numeric:tabular-nums; font-size:.75rem; color:inherit; }
+.cinema-steps [aria-current] { color:#f2cf6b; border-bottom-color:#f2cf6b; font-weight:600; }
+.cinema-festival { font-size:.875rem; color:#b8b9b1; }
+.cinema-lobby { display:grid; grid-template-columns:minmax(260px,.85fr) minmax(0,2fr); gap:64px; align-items:center; flex:1; padding:40px 0; }
+.cinema-intro { padding-bottom:16px; }
+.eyebrow { color:#d1b66d; font-size:.875rem; font-weight:500; line-height:1.5; letter-spacing:.045em; margin:0 0 24px; }
+.cinema-intro h1 { font-size:clamp(2.75rem,4.3vw,4.25rem); line-height:1.16; letter-spacing:-.065em; font-weight:600; margin:0; word-break:keep-all; }
+.cinema-intro h1 em { color:#f2cf6b; font-style:normal; }
+.cinema-description { margin:28px 0 0; color:#bfc2b9; font-size:1.0625rem; line-height:1.85; word-break:keep-all; }
+.lobby-invitation { display:flex; align-items:center; gap:18px; margin-top:48px; padding-top:28px; border-top:1px solid #3b3d35; }
+.lobby-invitation img { width:52px; height:52px; }
+.lobby-invitation p { margin:0; font-size:.9375rem; color:#bfc2b9; line-height:1.8; }
+.lobby-invitation strong { color:#f3f0e5; font-weight:500; }
+.cinema-program { min-width:0; }
+.program-heading { display:flex; justify-content:space-between; align-items:baseline; gap:16px; }
+.program-heading h2 { margin:0; font-size:1.375rem; font-weight:600; letter-spacing:-.035em; }
+.program-heading > span { color:#bfc2b9; font-size:.875rem; white-space:nowrap; }
+.program-hint { margin:8px 0 24px; font-size:.875rem; line-height:1.6; color:#bfc2b9; }
+.grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:28px 20px; }
+.tile { position:relative; display:flex; flex-direction:column; width:100%; min-width:0; appearance:none; border:0; padding:0; text-align:left; background:transparent; color:inherit; font:inherit; cursor:pointer; border-radius:8px; transition:box-shadow .18s, transform .18s; --hl-shadow:0 0 0 2px var(--c),0 0 12px var(--c-glow),inset 0 0 0 100vmax var(--c-wash); }
+.tile-media { display:block; position:relative; width:100%; aspect-ratio:1.6; overflow:hidden; background:#20251f; }
+/* 자식이 스스로 같은 반경을 가져야 iOS 합성 시에도 각진 모서리가 드러나지 않는다. */
+.tile-media,.tile-media .thumb,.tile-media .preview { border-radius:inherit; }
+.tile-media .thumb,.tile-media .preview { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:opacity .2s,transform .3s; }
+.tile-media .preview { opacity:0; }
+.tile-media .preview.playing { opacity:1; }
+.tile-media:has(.preview.playing) .thumb { opacity:0; }
+.tile-preview-label { display:none; position:absolute; left:10px; top:10px; align-items:center; gap:5px; background:#111712; color:white; padding:6px 8px; border-radius:4px; font-size:.75rem; line-height:1.5; }
+.tile-preview-label svg { width:12px; height:12px; }
+.tile-body { display:flex; flex-direction:column; gap:5px; position:relative; padding:14px 28px 10px 2px; }
+.gname { font-size:1.25rem; line-height:1.4; font-weight:600; letter-spacing:-.025em; }
+.gsub { color:#bfc2b9; font-size:1rem; line-height:1.5; word-break:keep-all; }
+.tile-enter { display:flex; position:absolute; right:0; top:19px; color:#dadbd2; }
+.tile-enter svg { width:20px; height:20px; }
+.tile:active,.tile.is-solo { box-shadow:var(--hl-shadow); }
+.tile:active { transform:scale(.985); }
+.tile:active .tile-media .thumb,.tile:active .tile-media .preview,.tile.is-solo .tile-media .thumb,.tile.is-solo .tile-media .preview { transform:scale(1.05); }
+.tile:focus-visible { outline:3px solid #f2cf6b; outline-offset:5px; }
+.cinema-footer { display:flex; align-items:center; justify-content:space-between; gap:20px; border-top:1px solid #333633; padding:20px 0; font-size:.8125rem; line-height:1.5; color:#bfc2b9; }
+.cinema-footer p { margin:0; }
+.cinema-footer p span { margin-left:16px; color:#f3f0e5; }
+.privacylink { display:inline-flex; min-height:44px; align-items:center; color:inherit; text-decoration:none; font-size:.875rem; }
+.privacylink:hover { color:white; text-decoration:underline; }
+.enginebar { display:none; color:#bfc2b9; font-size:.875rem; line-height:1.5; margin:0 0 16px; padding:10px 0; border-top:1px solid #333633; }
+.enginebar.show { display:block; }
+.enginebar b { color:#f2cf6b; font-weight:500; }
+.enginebar.err b { color:#ffafa0; }
+.desktop-home { display:none; }
+@media (hover:hover) and (pointer:fine) {
+ .desktop-home { display:inline; }
+ .tile { --hl-shadow:0 0 0 2px #f2cf6b; }
+ .tile:hover { box-shadow:var(--hl-shadow); }
+ .tile:hover .tile-enter { color:#f2cf6b; }
+ .tile-media:has(.playing) .tile-preview-label { display:flex; }
 }
-.brand h1 {
-  font-size: clamp(32px, 5.6vw, 54px);
-  line-height: 1.05;
-  margin: 0;
-  font-weight: 800;
-  letter-spacing: -0.01em;
+@media (min-width:1100px) and (max-height:800px) {
+ .cinema-header { min-height:80px; }
+ .cinema-lobby { gap:44px; padding:28px 0; }
+ .cinema-intro h1 { font-size:3rem; }
+ .lobby-invitation { margin-top:32px; padding-top:22px; }
+ .grid { gap:20px 18px; }
+ .tile-media { aspect-ratio:1.8; }
+ .cinema-footer { padding:8px 0; }
 }
-.brand h1 .gold {
-  background: linear-gradient(135deg, var(--gold-soft) 0%, var(--gold) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+@media (max-width:1150px) {
+ .cinema-festival { display:none; }
+ .cinema-lobby { grid-template-columns:minmax(230px,.8fr) minmax(0,2fr); gap:32px; }
+ .cinema-intro h1 { font-size:2.625rem; }
+ .cinema-description { font-size:1rem; }
+ .grid { gap:24px 16px; }
 }
-.tagline-top {
-  display: inline-block;
-  color: var(--muted);
-  font-size: clamp(13px, 1.7vw, 17px);
-  margin: 10px 0 0;
-  letter-spacing: 0.04em;
-  font-weight: 500;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012));
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 7px 20px;
+@media (max-width:900px) {
+ .cinema-lobby { display:block; padding:32px 0; }
+ .cinema-intro { margin-bottom:32px; }
+ .cinema-intro h1 { font-size:2.75rem; }
+ .cinema-intro h1 br { display:none; }
+ .cinema-intro h1 em { display:block; }
+ .cinema-description { margin-top:16px; }
+ .lobby-invitation { display:none; }
+ .eyebrow { margin-bottom:14px; }
+ .cinema-program { border-top:1px solid #333633; padding-top:28px; }
+ .cinema-steps { gap:20px; }
+ .cinema-header { flex-wrap:wrap; padding:20px 0 0; gap:16px; }
+ .cinema-steps { flex-basis:100%; justify-content:space-between; }
+ .cinema-steps li { flex:1; justify-content:center; }
+ .cinema-wordmark { font-size:1.25rem; }
+ .cinema-wordmark small { display:none; }
 }
-
-/* 엔진(31MB) 준비 배너 */
-.enginebar {
-  max-width: 520px;
-  margin: 14px auto 0;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.03);
-  font-size: 13px;
-  color: var(--muted);
-  text-align: center;
-  display: none;
+@media (max-width:600px) {
+ .grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px 16px; }
+ .tile-media { aspect-ratio:4 / 3; }
+ .gname { font-size:1.125rem; }
+ .gsub { font-size:.875rem; }
+ .tile-body { padding-right:0; }
+ .tile-enter { display:none; }
+ .cinema-lobby { padding-top:28px; }
+ .cinema-intro h1 { font-size:2.375rem; }
+ .cinema-description br { display:none; }
+ .program-heading h2 { font-size:1.125rem; }
+ .program-heading > span { display:none; }
+ .cinema-footer { align-items:flex-start; flex-direction:column; gap:4px; padding:16px 0; }
+ .cinema-footer p span { display:none; }
 }
-.enginebar.show {
-  display: block;
-}
-.enginebar b {
-  color: var(--gold);
-}
-.enginebar.err {
-  border-color: rgba(255, 84, 112, 0.4);
-  background: rgba(255, 84, 112, 0.08);
-}
-.enginebar.err b {
-  color: var(--danger);
-}
-
-/* 터치 기기에서 PC의 호버에 해당하는 것은 "손가락을 대고 있는 순간"이다.
-   그래서 강조 효과를 :active에 건다 — 값은 --hl-shadow 한 곳에만 적고 :hover와
-   :active가 그것을 가리키므로 둘이 갈라질 수 없다. 화면 가운데 카드 한 장만 강조하던 방식은 걷어냈다.
-   여섯 장이 다 재생되는 상태에서 한 장만 빛내면 "왜 저것만"이 되고, 스크롤이 없는
-   화면(375px)에서는 그 한 장이 영영 바뀌지 않아 나머지가 죽은 것처럼 보였다
-   (2026-09-09 대표 지적: "계속 호러만 재생됨"). */
-
-/* 좁은 화면에서 16:9를 강제하면 카드 블록이 낮아져 위아래로 빈 공간이 남는다 —
-   16:9는 가로 폭이 넉넉한 데스크탑에서만 적용하고, 모바일은 남는 세로를 채운다. */
-.grid {
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  gap: clamp(14px, 2.3vw, 24px);
-}
-@media (min-width: 760px) {
-  .grid {
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: none;
-    align-content: center;
-  }
-  #home {
-    /* 세로 여유. 아래 두 값이 모두 여기서 나오므로, 창이 짧아지면 제목도 설명줄도
-       같이 원위치로 돌아가 화면 밖으로 밀려나지 않는다.
-       세로가 짧을 때 반드시 0이 되어야 하는 이유: 데스크탑 타일은 16:9로 높이가
-       고정돼 있어 세로가 모자라도 줄어들지 못하고 화면 밖으로 밀린다(1440x700에서
-       93px 넘치는 것을 실측으로 확인했다). */
-    --room: max(0px, 100dvh - 780px);
-    --title-drop: min(119px, var(--room));
-    /* 설명줄은 제목보다 이만큼 더 내려간다 — 그만큼 둘 사이 간격이 벌어진다
-       (대표 지시 2026-09-09: 제목은 많이 내리고 설명줄은 제목에 더 붙인다). */
-    --tagline-extra: min(5px, var(--room));
-    /* 화면 전체(제목·부제·카드·방침 링크)를 한 덩어리로 내리는 양(대표 지시 2026-09-09).
-       위·아래 여백을 55:45로 두려고 잰 값이다 — 1440x900에서 제목 위 141px,
-       카드 아래 끝에서 화면 끝까지 152px이라 총 293px이고, 목표(위 161)까지 20px 모자랐다.
-       여기서도 여백이 아니라 transform을 쓴다 — 여백을 주면 문서가 길어져 아래가 잘린다. */
-    --screen-drop: min(20px, var(--room));
-  }
-  /* 여백이 아니라 transform으로 옮긴다. 여백을 주면 그만큼 문서가 길어져 카드가 따라
-     내려가고(그리드가 남는 세로를 나눠 갖기 때문) 세로가 빠듯한 창에서는 화면 밖으로
-     밀려난다 — 제목을 99px로 올렸을 때 1440x900에서 실제로 5px 넘쳤다. transform은
-     레이아웃에 영향이 없어 카드가 제자리에 그대로 있고 넘침도 생기지 않는다.
-     그래서 그리드 쪽 상쇄 패딩도 더는 필요 없어 걷어냈다.
-     .tagline-top은 .brand의 자식이라 두 이동이 겹친다 — 설명줄은 제목보다
-     --tagline-extra만큼 더 내려간다. */
-  #home.view {
-    transform: translateY(var(--screen-drop));
-  }
-  .brand {
-    transform: translateY(var(--title-drop));
-  }
-  /* 모바일은 카드가 남는 세로를 그대로 채우고 있어 건드리지 않는다 — 그래서 이
-     블록(가로 760px 이상) 안에만 둔다. */
-  .tagline-top {
-    transform: translateY(var(--tagline-extra));
-  }
-  .tile {
-    aspect-ratio: 16 / 9;
-  }
-}
-@media (min-width: 760px) and (max-height: 720px) {
-  .brand {
-    margin-bottom: 8px;
-  }
-}
-/* 개인정보처리방침을 20px 위로 올린다(대표 지시 2026-09-09). 아래 여백을 늘리는 방식은
-   문서가 그만큼 길어져 세로가 짧은 창에서 화면 밖으로 밀려나므로, 자리는 그대로 두고
-   그린 위치만 옮긴다.
-   조건이 붙은 이유: 카드가 남는 세로를 다 채우는 화면(모바일 전부, 세로가 짧은 데스크탑)
-   에서는 이 링크와 마지막 카드 사이가 10px밖에 없어서, 20px를 올리면 카드 위에 겹쳐
-   글자가 반쯤 가려진다(실측으로 확인). 제목을 내릴 여유가 있는 창에서만 함께 올린다. */
-@media (min-width: 760px) and (min-height: 780px) {
-  .privacylink {
-    top: -20px;
-  }
-}
-
-.tile {
-  position: relative;
-  border-radius: 24px;
-  /* 🔴 `-webkit-mask-image: -webkit-radial-gradient(white, black)`을 넣지 말 것.
-     iOS의 둥근 모서리 잘라내기 결함에 흔히 쓰는 우회인데, **마스크가 테두리 박스 밖을
-     전부 잘라내므로 `box-shadow`로 그리는 강조 테두리와 번짐이 통째로 사라진다.**
-     2026-09-11에 넣었다가 캡처로 확인하고 즉시 뺐다 — 누를 때 반응이 없어지는 쪽이
-     각진 모서리보다 훨씬 나쁘다. 잘라내기는 아래 자식 반경으로 해결한다. */
-  background: #05070f;
-  cursor: pointer;
-  overflow: hidden;
-  min-height: 0;
-  /* 🔴 여기 기본값은 **마우스가 없는 기기(모바일·태블릿)** 몫이다. 왼쪽 색 띠를 별도
-     요소가 아니라 inset 그림자로 그린다 — 얹는 요소가 없으면 iOS가 둥근 모서리
-     잘라내기를 놓쳐도 각질 것이 없다. inset 그림자는 border-radius를 그대로 따른다.
-     **PC는 아래 호버 미디어쿼리에서 예전 모습 그대로로 되돌린다** — 대표가 "PC는 지금
-     딱 좋은데 왜 건드리냐"고 했고, 결함이 없는 화면을 일관성 때문에 바꾸는 것은
-     멀쩡한 것을 위험에 빠뜨리는 일이다(2026-09-11). */
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4), inset 5px 0 0 0 var(--c);
-  transition: transform 0.15s ease, box-shadow 0.25s ease;
-  /* 강조 그림자는 여기 한 번만 적는다. 아래 :hover와 :active가 이 값을 가리키기만
-     하므로 둘이 갈라질 수 없다. 커스텀 속성은 쓰는 자리에서 치환돼 var(--c)가
-     타일마다 제 색으로 풀린다. */
-  /* 2026-09-09: 번짐이 과해 "큰 네모"로 보였다. box-shadow는 모서리를 정확히 따르지만
-     카드 반경이 24px인데 번짐이 48px + 퍼짐 6px이라, 둥근 구간이 빛에 파묻혀 카드보다
-     훨씬 큰 사각형 후광으로 읽혔다(모서리 확대로 확인). 모양이 아니라 크기 문제였다.
-     번짐을 16px로 줄이고 퍼짐을 없앴다 — 테두리 주변만 은은하게 감싼다. */
-  /* 2026-09-11: 색 덮기를 `.tile-tint`(mix-blend-mode를 쓰는 별도 레이어)에서 inset 그림자로
-     옮겼다. 대표가 아이폰에서 "떡네모"를 지적했고, 얹는 요소를 없애자는 방향을 직접 지목했다 —
-     blend가 걸린 레이어는 iOS가 부모의 둥근 모서리로 안 잘라내는 대표적인 대상이다.
-     inset은 요소가 아니라 카드 자신의 그림자라 모서리를 그대로 따른다. */
-  --hl-shadow:
-    0 14px 30px rgba(0, 0, 0, 0.5),
-    0 0 0 2px var(--c),
-    inset 5px 0 0 0 var(--c),
-    inset 0 0 0 100vmax var(--c-wash),
-    /* color-mix를 쓰지 않는다 — 모르는 브라우저에서는 이 box-shadow 선언 전체가
-     무시돼 테두리와 번짐이 같이 사라진다(인앱 브라우저에서 실제로 그렇게 보였다).
-     --c-glow는 같은 색을 미리 계산한 rgba다(src/genres.ts의 withAlpha). */
-    0 0 16px 0 var(--c-glow);
-}
-/* 터치 기기에서는 :hover가 한 번 닿으면 손을 떼도 그대로 붙어 있다 — 그래서 호버
-   규칙은 마우스가 있는 기기에만 건다. 터치에서는 :active(누르고 있는 동안)가
-   그 역할을 한다. 안 감싸면 탭한 카드가 홈으로 돌아온 뒤에도 계속 강조돼 있다. */
-@media (hover: hover) and (pointer: fine) {
-  /* 🔴 PC는 2026-09-11 이전 모습 그대로다. 얹는 요소를 없앤 것은 아이폰에서 각지는
-     문제를 푸는 변경인데, PC에는 그 문제가 없다. 실제로 픽셀 비교를 해보니 새 구조가
-     PC 화면의 87.65%를 바꿨다(mix-blend-mode: overlay 0.12와 단순 알파 0.12는 결과가
-     다르다) — 그래서 여기서 예전 값을 되살린다. **이 블록을 지우면 PC가 바뀐다.** */
-  .tile {
-    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4);
-    --hl-shadow:
-      0 14px 30px rgba(0, 0, 0, 0.5),
-      0 0 0 2px var(--c),
-      0 0 16px 0 var(--c-glow);
-  }
-  /* 왼쪽 색 띠 — PC에서는 예전처럼 얹는 요소로 그린다. */
-  .tile::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 5px;
-    background: var(--c);
-    z-index: 2;
-    border-radius: inherit;
-  }
-  /* 색 덮기도 예전처럼 blend를 쓰는 레이어로. 마우스가 없는 기기에서는 이 요소가
-     투명하고 blend도 안 걸려 합성 레이어를 만들지 않는다. */
-  .tile-tint {
-    position: absolute;
-    inset: 0;
-    background: var(--c);
-    opacity: 0;
-    mix-blend-mode: overlay;
-    z-index: 1;
-    pointer-events: none;
-    border-radius: inherit;
-    transition: opacity 0.25s ease;
-  }
-  .tile:hover .tile-tint {
-    opacity: 0.12;
-  }
-  .tile:hover {
-    box-shadow: var(--hl-shadow);
-  }
-  .tile:hover .tile-media .thumb,
-  .tile:hover .tile-media .preview {
-    transform: scale(1.05);
-  }
-  .tile:hover   .privacylink:hover {
-    color: var(--gold);
-    text-decoration: underline;
-  }
-}
-.tile:active,
-/* 한 장씩 돌려 재생하는 환경(인앱 브라우저 등)에서 "지금 이 카드"를 알린다 —
-   누를 때와 같은 값을 쓴다. */
-.tile.is-solo {
-  box-shadow: var(--hl-shadow);
-}
-/* 카드 자체는 살짝 눌리고(아래), 그 안의 영상·썸네일은 확대된다(위) — 서로 다른
-   요소라 겹쳐도 하나의 누름 효과로 읽힌다. */
-.tile:active {
-  transform: scale(0.97);
-}
-/* 카드를 채우는 것들은 **스스로도** 카드와 같은 반경을 갖는다.
-   지금까지는 전부 반경 0이고 부모의 `overflow: hidden`이 잘라주는 것에만 기댔는데,
-   iOS 사파리·WKWebView는 **자식에 transform이 걸리면 둥근 모서리 잘라내기를 놓친다.**
-   누를 때 카드는 `scale(0.97)`, 안쪽 영상·썸네일은 `scale(1.05)`가 걸리므로 바로 그
-   조건이 된다 — 그 순간 자식의 각진 모서리가 둥근 모서리를 덮어 **떡네모**로 보인다
-   (2026-09-11 대표가 아이폰 카카오톡 인앱에서 발견). 자식이 스스로 둥글면 잘라내기가
-   실패해도 모양이 유지된다. 데스크톱에서는 원래 잘 잘려서 보이는 변화가 없다. */
-.tile-media,
-.tile-media .thumb,
-.tile-media .preview,
-.tile-scrim {
-  border-radius: inherit;
-}
-
-.tile-media {
-  position: absolute;
-  inset: 0;
-}
-.tile-media .thumb,
-.tile-media .preview {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: opacity 0.25s ease, transform 0.3s ease;
-}
-.tile-media .preview {
-  opacity: 0;
-}
-/* 호버 재생이 실제로 시작된 순간에만 영상이 썸네일을 대체한다. */
-.tile-media .preview.playing {
-  opacity: 1;
-}
-.tile-media:has(.preview.playing) .thumb {
-  opacity: 0;
-}
-.tile:active .tile-media .thumb,
-.tile:active .tile-media .preview,
-.tile.is-solo .tile-media .thumb,
-.tile.is-solo .tile-media .preview {
-  transform: scale(1.05);
-}
-
-.tile-scrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(5, 7, 15, 0.05) 35%, rgba(5, 7, 15, 0.92) 100%);
-  z-index: 1;
-}
-.tile-body {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 2;
-  padding: clamp(14px, 2.4vw, 24px);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.tile-body .gname-row {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-.tile-body .ic {
-  color: #fff;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
-  display: flex;
-  flex: none;
-}
-.tile-body .ic svg {
-  width: clamp(20px, 2.8vw, 28px);
-  height: clamp(20px, 2.8vw, 28px);
-  display: block;
-}
-.tile-body .gname {
-  font-size: clamp(19px, 2.6vw, 28px);
-  font-weight: 800;
-}
-.tile-body .gsub {
-  font-size: clamp(12px, 1.6vw, 15px);
-  color: var(--muted);
-  line-height: 1.4;
-}
-
-/* 참고 사이트의 실제 computed style에 맞춘 값(2026-09-03, 팀장 확인). */
-.privacylink {
-  display: inline-block;
-  margin: 10px auto 0;
-  position: relative;
-  font-family: 'Pretendard', 'Pretendard Variable', 'SUIT', 'Noto Sans KR', system-ui, sans-serif;
-  font-size: 13px;
-  /* 700 — 한 단계 굵게(대표 지시 2026-09-09). 서브셋에 700이 있어야 합성으로
-     뭉개지지 않는다(이 저장소는 400·500·600·700·800을 만든다). */
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.82);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-/* PC에서만 한 단계 더 크게(대표 지시 2026-09-09). 모바일은 13px 그대로 둔다.
-   이 블록은 반드시 위 .privacylink 기본 선언보다 **뒤에** 있어야 한다 — 명시도가
-   같아서 순서로 이기기 때문이다. 앞에 뒀다가 13px에 덮여 라이브에서 그대로였다
-   (2026-09-09 실측으로 발견). */
-@media (min-width: 760px) {
-  .privacylink {
-    font-size: 14px;
-  }
-}
-
-/* PC 선택 화면. 글자는 영상 위에 겹치지 않고 고정된 면에서 읽는다.
-   rem 단위와 자동 높이를 사용해 글자를 키워도 설명을 잘라내지 않는다. */
-button.tile {
-  appearance: none;
-  border: 0;
-  padding: 0;
-  font: inherit;
-  color: inherit;
-  text-align: left;
-}
-.desktop-home {
-  display: none;
-}
-.cinema-footer {
-  display: contents;
-}
-.tile:focus-visible {
-  outline: 3px solid var(--gold-soft);
-  outline-offset: 5px;
-}
-@media (hover: hover) and (pointer: fine) {
-  :is(#home, #studio, #result) {
-    --home-text: #f5f6fa;
-    --home-secondary: #b8bfce;
-    --home-surface: #181d2a;
-    --home-title: 2.5rem;
-    --home-card-title: 1.375rem;
-    --home-body: 1rem;
-    --home-caption: 0.875rem;
-    color: var(--home-text);
-  }
-  body:has(#home.active) .wrap {
-    width: 100%;
-    max-width: 1360px;
-    padding: 0 40px;
-  }
-  #home.view {
-    transform: none;
-  }
-  #home .desktop-home {
-    display: flex;
-  }
-  #home .mobile-home {
-    display: none;
-  }
-  .cinema-header {
-    min-height: 72px;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
-    flex-wrap: wrap;
-    padding: 12px 0;
-    border-bottom: 1px solid #292e3b;
-  }
-  .cinema-wordmark {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 1.375rem;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    white-space: nowrap;
-  }
-  .cinema-wordmark img {
-    width: 32px;
-    height: 32px;
-  }
-  .cinema-wordmark strong {
-    color: var(--gold-soft);
-    font-weight: inherit;
-  }
-  .cinema-steps {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    flex-wrap: wrap;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    color: var(--home-secondary);
-    font-size: var(--home-caption);
-    line-height: 1.5;
-  }
-  .cinema-steps li {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    white-space: nowrap;
-  }
-  .cinema-steps li + li::before {
-    content: '';
-    width: 16px;
-    height: 1px;
-    margin-right: 8px;
-    background: #414654;
-  }
-  .cinema-steps li > span {
-    display: grid;
-    place-items: center;
-    width: 1.625rem;
-    height: 1.625rem;
-    flex-shrink: 0;
-    border-radius: 50%;
-    background: transparent;
-    font-size: var(--home-caption);
-    font-weight: 600;
-  }
-  .cinema-steps [aria-current] {
-    color: var(--home-text);
-    font-weight: 600;
-  }
-  .cinema-steps [aria-current] > span {
-    background: transparent;
-    color: var(--gold-soft);
-    border: 1px solid #8c7948;
-  }
-  .cinema-festival {
-    color: var(--home-secondary);
-    font-size: var(--home-caption);
-    white-space: nowrap;
-  }
-  #home .cinema-intro {
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 24px;
-    flex-wrap: wrap;
-    padding: 32px 0 28px;
-  }
-  .cinema-intro-copy {
-    min-width: 0;
-    max-width: 100%;
-  }
-  .cinema-intro h1 {
-    margin: 0;
-    font-size: var(--home-title);
-    font-weight: 600;
-    line-height: 1.3;
-    letter-spacing: -0.04em;
-    word-break: keep-all;
-  }
-  .cinema-intro h1 > span {
-    color: var(--gold-soft);
-  }
-  .cinema-description {
-    margin: 12px 0 0;
-    color: var(--home-secondary);
-    font-size: 1.125rem;
-    line-height: 1.6;
-    word-break: keep-all;
-  }
-  .cinema-preview-hint {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    flex-shrink: 0;
-  }
-  .cinema-preview-hint > svg {
-    width: 40px;
-    height: 40px;
-    padding: 8px;
-    border-radius: 12px;
-    background: #232938;
-    color: var(--home-text);
-  }
-  .cinema-preview-hint p {
-    margin: 0;
-    font-size: var(--home-body);
-    font-weight: 500;
-    line-height: 1.5;
-  }
-  .cinema-preview-hint p > span {
-    display: block;
-    margin-top: 4px;
-    color: var(--home-secondary);
-    font-size: var(--home-caption);
-    font-weight: 400;
-  }
-  #home .grid {
-    flex: none;
-    gap: 24px;
-    align-content: start;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  #home .tile {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    min-width: 0;
-    aspect-ratio: 16 / 11;
-    min-height: 16rem;
-    overflow: hidden;
-    border-radius: 12px;
-    background: #10131c;
-    box-shadow: 0 0 0 1px #303644;
-    /* 미리보기의 영상만 바뀌고 카드 밖으로 번짐은 키우지 않는다. */
-    --hl-shadow: 0 0 0 2px var(--gold-soft), 0 8px 24px rgba(0, 0, 0, 0.22);
-    transition: box-shadow 0.18s ease, transform 0.18s ease;
-  }
-  #home .tile::after,
-  #home .tile-tint,
-  #home .tile-scrim {
-    display: none;
-  }
-  #home .tile-media {
-    display: block;
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    border-radius: 12px;
-  }
-  #home .tile-media .thumb,
-  #home .tile-media .preview {
-    border-radius: 0;
-    transform: none;
-  }
-  #home .tile-preview-label {
-    display: none;
-    position: absolute;
-    left: 16px;
-    top: 16px;
-    bottom: auto;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
-    border-radius: 8px;
-    background: #101521;
-    color: #f5f6fa;
-    font-size: var(--home-caption);
-    font-weight: 500;
-    line-height: 1.5;
-  }
-  #home .tile-preview-label svg {
-    width: 16px;
-    height: 16px;
-  }
-  #home .tile-media:has(.playing) .tile-preview-label {
-    display: flex;
-  }
-  #home .tile-body {
-    position: relative;
-    inset: auto;
-    flex: none;
-    margin-top: auto;
-    width: 100%;
-    gap: 4px;
-    padding: 44px 76px 24px 24px;
-    /* 밝은 영상에서도 두 텍스트 줄 뒤에는 거의 불투명한 바탕이 놓인다. */
-    background: linear-gradient(180deg, transparent, rgba(5, 8, 16, 0.95) 40px, #050810);
-  }
-  #home .tile-body .gname-row {
-    gap: 9px;
-  }
-  #home .tile-body .gname {
-    font-size: 1.625rem;
-    font-weight: 600;
-    line-height: 1.4;
-    letter-spacing: -0.025em;
-  }
-  #home .tile-body .ic {
-    display: none;
-    filter: none;
-  }
-  #home .tile-body .ic svg {
-    width: 21px;
-    height: 21px;
-  }
-  #home .tile-body .gsub {
-    color: #d6d9e2;
-    font-size: var(--home-body);
-    font-weight: 400;
-    line-height: 1.5;
-    letter-spacing: -0.025em;
-    word-break: keep-all;
-  }
-  #home .tile-enter {
-    position: absolute;
-    right: 18px;
-    top: auto;
-    bottom: 26px;
-    transform: none;
-    width: 40px;
-    height: 40px;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    border: 1px solid #77808e;
-    background: #111725;
-    color: #fff;
-    transition: background 0.18s, color 0.18s;
-  }
-  .tile-enter svg {
-    width: 20px;
-    height: 20px;
-  }
-  #home .tile:hover,
-  #home .tile:active,
-  #home .tile.is-solo {
-    box-shadow: var(--hl-shadow);
-  }
-  #home .tile:active {
-    transform: scale(0.99);
-  }
-  #home .tile:hover .tile-enter,
-  #home .tile:focus-visible .tile-enter {
-    background: var(--gold-soft);
-    color: #221c0d;
-  }
-  #home .cinema-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
-    margin-top: auto;
-    padding: 10px 0;
-    font-size: var(--home-caption);
-    line-height: 1.5;
-    color: var(--home-secondary);
-  }
-  #home .cinema-footer p {
-    margin: 0;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-  .cinema-footer p > span {
-    padding-left: 16px;
-    border-left: 1px solid #414654;
-  }
-  #home .privacylink {
-    top: auto;
-    display: flex;
-    align-items: center;
-    min-height: 44px;
-    margin: 0;
-    font-size: var(--home-caption);
-    font-weight: 400;
-    color: var(--home-secondary);
-    white-space: nowrap;
-  }
-  #home .privacylink:hover {
-    color: var(--home-text);
-  }
-  #home .enginebar {
-    max-width: none;
-    margin: 0 0 20px;
-    padding: 12px 16px;
-    text-align: left;
-    font-size: var(--home-body);
-    line-height: 1.5;
-  }
-}
-/* 폭이 좁은 PC 창에서도 문구를 줄이거나 작게 만들지 않고 줄을 나눈다. */
-@media (min-width: 1000px) and (max-width: 1150px) and (hover: hover) and (pointer: fine) {
-  #home {
-    --home-title: 2rem;
-  }
-  .cinema-steps {
-    gap: 12px;
-  }
-  .cinema-festival {
-    display: none;
-  }
-  .cinema-preview-hint {
-    max-width: 228px;
-  }
-  #home .tile-body {
-    padding-left: 16px;
-    padding-right: 60px;
-  }
-  #home .tile-enter {
-    right: 12px;
-  }
-}
-@media (min-width: 1000px) and (max-height: 800px) and (hover: hover) and (pointer: fine) {
-  body:has(#home.active) .wrap {
-    max-width: 1280px;
-  }
-  #home {
-    --home-title: 2rem;
-  }
-  .cinema-header {
-    min-height: 64px;
-  }
-  #home .cinema-intro {
-    padding: 16px 0;
-  }
-  .cinema-description {
-    margin-top: 8px;
-  }
-  #home .tile {
-    aspect-ratio: 16 / 10;
-    min-height: 14.5rem;
-  }
-  #home .grid {
-    gap: 20px;
-  }
-  #home .cinema-footer {
-    padding: 4px 0;
-  }
-}
-@media (min-width: 1600px) and (min-height: 960px) and (hover: hover) and (pointer: fine) {
-  body:has(#home.active) .wrap {
-    max-width: 1440px;
-  }
-  #home {
-    --home-title: 2.75rem;
-    --home-card-title: 1.5rem;
-  }
-  .cinema-header {
-    min-height: 88px;
-  }
-  #home .cinema-intro {
-    padding: 40px 0;
-  }
-  #home .tile-body {
-    padding-top: 44px;
-    padding-bottom: 24px;
-  }
-}
-@media (max-width: 999px) and (hover: hover) and (pointer: fine) {
-  #home {
-    --home-title: 2rem;
-  }
-  body:has(#home.active) .wrap {
-    padding: 0 24px;
-  }
-  .cinema-header {
-    gap: 16px;
-    padding: 20px 0;
-  }
-  .cinema-steps {
-    order: 3;
-    flex-basis: 100%;
-    gap: 12px;
-  }
-  .cinema-festival {
-    margin-left: auto;
-  }
-  #home .cinema-intro {
-    gap: 20px;
-  }
-  #home .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px;
-  }
-  #home .tile-body {
-    padding: 44px 60px 22px 20px;
-  }
-  #home .tile-enter {
-    right: 12px;
-  }
-  #home .cinema-footer {
-    flex-wrap: wrap;
-    gap: 4px 20px;
-    padding: 20px 0;
-  }
-  .cinema-footer p > span {
-    display: none;
-  }
-}
-@media (max-width: 539px) and (hover: hover) and (pointer: fine) {
-  #home .grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .cinema-steps {
-    gap: 12px 16px;
-  }
-  .cinema-steps li + li::before {
-    display: none;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .tile,
-  .tile-media .thumb,
-  .tile-media .preview,
-  .tile-enter {
-    transition: none;
-  }
-}
+@media (max-width:340px) { .grid { grid-template-columns:minmax(0,1fr); } .tile-media { aspect-ratio:4 / 3; } }
+@media (prefers-reduced-motion:reduce) { .tile,.tile-media .thumb,.tile-media .preview { transition:none; } }

@@ -151,20 +151,14 @@ export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }
       <span className="tile-media" aria-hidden="true">
         <img className="thumb" src={thumbUrl(genre.id)} alt="" />
         <video className="preview" ref={videoRef} muted playsInline preload="none" />
-        <span className="tile-preview-label desktop-home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m8 5 11 7-11 7z" /></svg> 미리보기 재생 중</span>
+        {SUPPORTS_HOVER && <span className="tile-preview-label"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m8 5 11 7-11 7z" /></svg> 미리보기 재생 중</span>}
       </span>
-      {/* PC에서만 쓰이는 색 덮기 레이어. 마우스가 없는 기기에서는 CSS가 blend도
-          투명도도 주지 않아 합성 레이어를 만들지 않는다 — 그래서 아이폰에서 각지지 않는다. */}
-      <span className="tile-tint" />
-      <span className="tile-scrim" />
       <span className="tile-body">
         <span className="gname-row">
-          <span className="ic" aria-hidden="true" dangerouslySetInnerHTML={{ __html: iconSvg(genre) }} />
           <span className="gname">{genre.name}</span>
         </span>
-        <span className="gsub mobile-home">{genre.sub}</span>
-        <span className="gsub desktop-home">{genre.summary}</span>
-        <span className="tile-enter desktop-home" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></span>
+        <span className="gsub">{genre.summary}</span>
+        <span className="tile-enter" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></span>
       </span>
     </button>
   );

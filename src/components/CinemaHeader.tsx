@@ -2,10 +2,10 @@ interface Props { step: 1 | 2 | 3 }
 
 export function CinemaHeader({ step }: Props) {
   return (
-    <header className="cinema-header desktop-home">
+    <header className="cinema-header">
       <div className="cinema-wordmark">
         <img src="/icons/studio-microphone.png" width="40" height="40" alt="" />
-        <span>Voice <strong>Cinema</strong></span>
+        <span>Voice <strong>Cinema</strong><small>InKY 더빙 스튜디오</small></span>
       </div>
       <ol className="cinema-steps" aria-label="더빙 이용 순서">
         {['장면 선택', '목소리 녹음', '영화 저장'].map((label, index) => (
@@ -14,7 +14,7 @@ export function CinemaHeader({ step }: Props) {
           </li>
         ))}
       </ol>
-      <span className="cinema-festival">InKY 놀이터</span>
+      <span className="cinema-festival">내 목소리로 만드는 영화</span>
     </header>
   );
 }
