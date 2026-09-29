@@ -15,6 +15,7 @@ test.setTimeout(180000);
 const REQUIRED = [
   '/index.html',
   '/privacy.html',
+  '/icons/studio-microphone.png',
   '/vendor/firebase/firebase-app-check.js',
   '/vendor/ffmpeg/index.js',
   '/vendor/ffmpeg-core/ffmpeg-core.wasm',
@@ -63,6 +64,16 @@ test('인터넷이 끊긴 상태에서 탭을 새로 열어도 앱이 정상 부
   // 진짜로 인터넷을 끊고 탭을 새로 연다.
   await context.setOffline(true);
   await page.reload();
+
+  // HTTP 캐시가 없는 오프라인 상태에서도 마이크 원본을 서비스워커가 돌려줘야 한다.
+  const 마이크크기 = await page.evaluate(async () => {
+    const response = await window.fetch('/icons/studio-microphone.png', { cache: 'no-store' });
+    const image = await window.createImageBitmap(await response.blob());
+    const size = [image.width, image.height];
+    image.close();
+    return size;
+  });
+  expect(마이크크기).toEqual([160, 160]);
 
   await expect(page.locator('.tile')).toHaveCount(6);
   await expect(page.locator('.tile', { hasText: '판타지' })).toBeVisible();
