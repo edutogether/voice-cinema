@@ -278,7 +278,7 @@ test.describe('마우스가 있는 기기', () => {
 
     // 카드 밖으로 마우스를 옮긴다. 좌표를 찍는 대신 실제 요소 위로 옮겨야
     // 어떤 화면 크기에서도 확실히 카드를 벗어난다.
-    await page.locator('.brand h1').hover();
+    await page.getByRole('heading', { level: 1 }).hover();
     await expect
       .poll(async () => (await tileStates(page)).filter((s) => !s.paused).length, { timeout: 20000 })
       .toBe(0);
