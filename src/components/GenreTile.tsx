@@ -13,7 +13,7 @@ interface Props {
   sceneNumber: number;
   /** PC 입체 목록의 주변 카드는 재생·탭 이동 없이 가운데로 고르는 역할이다. */
   previewOnly?: boolean;
-  /** 이 카드가 지금 재생돼야 하는지. PC에서는 목록이 선택·호버 상태를 전달한다. */
+  /** 이 카드가 지금 재생돼야 하는지. PC에서는 선택된 중앙 장면만 재생한다. */
   playing: boolean;
   /** 재생을 이만큼 늦춰 시작한다 — 여섯 장이 한꺼번에 내려받기를 시작하지 않게 하려는 것이다. */
   delayMs: number;
@@ -31,7 +31,7 @@ interface Props {
 export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, delayMs, solo, onBlocked, onSelect }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const releaseTimer = useRef<number | undefined>(undefined);
-  // PC는 선택 순간 재생한다. 장면 변경·목록 이탈·녹음실 진입 시 이전 요청까지 무효화한다.
+  // PC는 선택 순간 재생한다. 장면 변경·탭 숨김·녹음실 진입 시 이전 요청까지 무효화한다.
   useEffect(() => {
     if (!SUPPORTS_HOVER || !playing) return;
     const v = videoRef.current;
@@ -40,17 +40,13 @@ export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, de
     window.clearTimeout(releaseTimer.current);
     // 짧게 왕복하면 마지막 프레임에서 이어 재생한다. 매번 첫 프레임으로 튀지 않는다.
     if (!v.getAttribute('src')) v.src = previewUrl(genre.id);
-    v.muted = false;
+    // 홈에서는 조작 없이도 시작해야 하므로 음소거한다. 원본 소리는 녹음실 미리보기에서 듣는다.
+    v.muted = true;
     v.loop = true;
     const reveal = () => {
       if (!cancelled) v.classList.add('playing');
     };
-    v.play().then(reveal).catch(() => {
-      if (cancelled) return;
-      // 소리 있는 자동재생이 거부된 브라우저에서도 미리보기는 움직인다.
-      v.muted = true;
-      v.play().then(reveal).catch(() => {});
-    });
+    v.play().then(reveal).catch(() => {});
     return () => {
       cancelled = true;
       v.pause();

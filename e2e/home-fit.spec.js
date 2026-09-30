@@ -34,10 +34,10 @@ test('PC: 선택한 카드만 경량 영상으로 재생하고 녹음실 진입 
   page.on('request', request => { if (/\/clips\/.*\.mp4/.test(request.url())) clips.push(request.url()); });
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
-  expect(clips).toEqual([]);
   const tile = page.locator('.tile').first();
-  await tile.hover();
+  // 홈에 진입하면 마우스 조작 없이 첫 장면부터 자동 재생한다.
   await expect.poll(() => tile.locator('video').evaluate(v => v.currentTime)).toBeGreaterThan(.1);
+  expect(await tile.locator('video').evaluate(v => v.muted)).toBe(true);
   expect(clips.length).toBeGreaterThan(0);
   expect(clips.every(url => url.includes('/clips/previews/'))).toBe(true);
   expect(await tile.locator('video').evaluate(v => v.videoWidth)).toBe(640);

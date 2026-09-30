@@ -6,11 +6,27 @@ import { useSceneMotion } from '../hooks/useSceneMotion';
 const ignoreBlocked = () => {};
 // Bumm님 속도 피드백: 900ms 감속 뒤 장면을 볼 시간 900ms를 둔다. Apple 지정값은 아니다.
 const ARROW_REPEAT_MS = 1800;
+// 대기 화면은 한 장면을 충분히 본 뒤 다음 장면을 소개한다. 직접 조작하는 간격과 구분한다.
+const AUTO_ADVANCE_MS = 6000;
 
 /** 중앙 작품은 앞으로, 이웃 작품은 뒤로 놓는다. 여섯 장면의 바로가기는 항상 보인다. */
 export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect: (genre: Genre) => void }) {
   const [selected, setSelected] = useState(0);
-  const [previewing, setPreviewing] = useState(false);
+  const [ready, setReady] = useState(() => !document.getElementById('splash'));
+  const [autoPaused, setAutoPaused] = useState(false);
+  const [keyboardPaused, setKeyboardPaused] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  useEffect(() => {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setReducedMotion(reduced.matches);
+    reduced.addEventListener('change', update);
+    const observer = new MutationObserver(() => {
+      if (!document.getElementById('splash')) { setReady(true); observer.disconnect(); }
+    });
+    if (!document.getElementById('splash')) setReady(true);
+    else observer.observe(document.body, { childList: true, subtree: true });
+    return () => { observer.disconnect(); reduced.removeEventListener('change', update); };
+  }, []);
   const shells = useSceneMotion(selected, GENRES.length, active);
   const hoverArrow = useRef<number | null>(null);
   const arrowTimer = useRef<number | null>(null);
@@ -33,7 +49,6 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
   }, [active, stopArrow]);
   const choose = (index: number) => {
     setSelected(index);
-    setPreviewing(true);
   };
   const [flowPaused, setFlowPaused] = useState(false);
   const [keyboardChoices, setKeyboardChoices] = useState(false);
@@ -43,6 +58,13 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
     document.addEventListener('visibilitychange', update);
     return () => document.removeEventListener('visibilitychange', update);
   }, []);
+  useEffect(() => {
+    if (!active || !ready || !visible || autoPaused || keyboardPaused || reducedMotion) return;
+    const timer = window.setTimeout(() => {
+      if (hoverArrow.current === null) setSelected(index => (index + 1) % GENRES.length);
+    }, AUTO_ADVANCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [active, ready, visible, autoPaused, keyboardPaused, reducedMotion, selected]);
   const choiceViewport = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => { if (keyboardChoices && choiceViewport.current) choiceViewport.current.scrollLeft = 0; }, [keyboardChoices]);
   useLayoutEffect(() => {
@@ -72,18 +94,19 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
   };
 
   return (
-    <div className="scene-carousel" onMouseLeave={() => { setPreviewing(false); stopArrow(); }} onKeyDown={event => {
+    <div className="scene-carousel" onMouseLeave={stopArrow}
+      onPointerDownCapture={() => setKeyboardPaused(false)}
+      onFocusCapture={event => { if ((event.target as HTMLElement).matches(':focus-visible')) setKeyboardPaused(true); }}
+      onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setKeyboardPaused(false); }}
+      onKeyDown={event => {
       stopArrow();
+      setKeyboardPaused(true);
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
       event.preventDefault();
       move(event.key === 'ArrowRight' ? 1 : -1, true);
     }}>
       <div className="scene-stage" aria-label="장면 미리보기"
-        onPointerMove={event => {
-          if (event.pointerType !== 'mouse' || event.buttons !== 0) return;
-          // 영상 위에서는 현재 장면만 재생한다. 방향 선택은 고정된 화살표 영역이 맡는다.
-          if ((event.target as HTMLElement).closest('.scene-shell.is-current')) setPreviewing(true);
-        }} onDragStart={event => event.preventDefault()}
+        onDragStart={event => event.preventDefault()}
         onPointerDown={event => {
           if ((event.target as HTMLElement).closest('.scene-arrow')) return;
           pointerStart.current = event.clientX; dragged.current = false;
@@ -106,7 +129,7 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
             <div key={genre.id} className={`scene-shell${offset === 0 ? ' is-current' : ''}`}
               data-index={index} data-offset={offset} aria-hidden={offset !== 0 || undefined}
               ref={node => { shells.current[index] = node; }}>
-              <GenreTile genre={genre} sceneNumber={index + 1} playing={active && previewing && offset === 0} delayMs={0} solo={false}
+              <GenreTile genre={genre} sceneNumber={index + 1} playing={active && ready && visible && offset === 0} delayMs={0} solo={false}
                 previewOnly={offset !== 0} onBlocked={ignoreBlocked}
                 onSelect={offset === 0 ? onSelect : () => choose(index)} />
             </div>
@@ -123,7 +146,6 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
               if (!active || document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
               arrowTimer.current = window.setInterval(() => {
                 setSelected(index => (index + direction + GENRES.length) % GENRES.length);
-                setPreviewing(true);
               }, ARROW_REPEAT_MS);
             }}
             onPointerLeave={stopArrow}
@@ -139,7 +161,10 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
         ))}
       </div>
       <div className="scene-navigation">
-        <p className="scene-position" aria-live="polite"><strong>{String(selected + 1).padStart(2, '0')}</strong><span>/ 06</span><span className="scene-current-name">{GENRES[selected].name}</span></p>
+        <p className="scene-position" aria-live={autoPaused || keyboardPaused ? 'polite' : 'off'}><strong>{String(selected + 1).padStart(2, '0')}</strong><span>/ 06</span><span className="scene-current-name">{GENRES[selected].name}</span></p>
+        {!reducedMotion && <button className="scene-auto-toggle" type="button" aria-label={autoPaused ? '장면 자동 넘김 재생' : '장면 자동 넘김 일시정지'} aria-pressed={autoPaused} onClick={() => setAutoPaused(value => !value)}>
+          {autoPaused ? <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6z" /></svg> : <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 4h3v12H6zM12 4h3v12h-3z" /></svg>}
+        </button>}
       </div>
       <div className="scene-choice-row">
         <div className="scene-choices" ref={choiceViewport} role="group" aria-label="여섯 장면 바로 고르기"

@@ -77,7 +77,7 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
 
       <div className="chart-layout">
         <aside className="chart-aside" aria-label="Voice Cinema 체험 안내">
-          <p className="chart-app"><strong>Voice <em>Cinema</em></strong><span>CGV 인천 · InKY 놀이터</span></p>
+          <p className="chart-app"><strong>Voice <em>Cinema</em></strong><span>CGV 인천 · 인천광역시교육청</span></p>
           <div className="chart-invitation">
             <img src="/icons/studio-microphone.png" alt="" width="160" height="160" />
             <p className="chart-label">나만의 더빙 극장</p>
@@ -85,12 +85,8 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
             <p>마법사도, 히어로도.<br />오늘은 내가 주인공이에요.</p>
           </div>
           <div className="chart-guide">
-            <strong>이렇게 즐겨보세요</strong>
-            <ol aria-label="체험 방법">
-              <li><span aria-hidden="true">01</span>장면 선택</li>
-              <li><span aria-hidden="true">02</span>목소리 녹음</li>
-              <li><span aria-hidden="true">03</span>QR 저장</li>
-            </ol>
+            <strong>목소리만 준비하세요.</strong>
+            <p>마음에 드는 장면에 더빙하고,<br />내 영화를 QR로 가져가세요.</p>
             <span className="chart-guide-date">2026. 11. 14 <i aria-hidden="true">·</i> CGV 인천</span>
           </div>
         </aside>
@@ -131,7 +127,7 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
       </div>
 
       <footer className="cinema-footer">
-        <p>제4회 인천어린이청소년영화제 <span>InKY 놀이터</span></p>
+        <p>제4회 인천어린이청소년영화제</p>
       </footer>
     </section>
   );

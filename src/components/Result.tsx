@@ -162,7 +162,7 @@ export function Result({ active, job, onHome, onBack }: Props) {
         )}
         </div>
       </div>
-      <p className="workflow-footer">제4회 인천어린이청소년영화제 · InKY 놀이터</p>
+      <p className="workflow-footer">제4회 인천어린이청소년영화제</p>
     </section>
   );
 }
