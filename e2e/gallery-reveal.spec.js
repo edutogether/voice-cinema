@@ -1,5 +1,19 @@
 import { test, expect } from '@playwright/test';
 
+test('PC: 겹친 여섯 카드의 더빙 버튼이 가려지지 않고 각각의 장면으로 들어간다', async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto('/');
+  await page.locator('#splash').waitFor({ state: 'detached' });
+  for (const name of ['판타지', '애니메이션', '호러', '액션', '드라마', '시트콤']) {
+    const tile = page.getByRole('button', { name: `${name} 더빙 시작`, exact: true });
+    await expect(tile.locator('.gname')).toBeInViewport({ ratio: 1 });
+    // 강제 클릭 없이 실제로 누를 수 있어야 한다. 이웃 카드의 겹침이 가리면 실패한다.
+    await tile.locator('.tile-enter').click();
+    await expect(page.locator('#chipName')).toHaveText(name);
+    await page.locator('#studioBackBtn').click();
+  }
+});
+
 test('PC: 설명은 항상 보이고 호버해도 영상 위치와 크기가 변하지 않는다', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');

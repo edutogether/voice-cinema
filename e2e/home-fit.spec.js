@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [1024, 768, true], [375, 812, true], [360, 640, true]]) {
+for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [655, 760, false], [1024, 768, true], [375, 812, true], [360, 640, true]]) {
   test(`${width}×${height}: 여섯 장면과 이름이 첫 화면에 모두 보인다`, async ({ browser }) => {
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: touch, isMobile: touch });
     await page.goto('/');
