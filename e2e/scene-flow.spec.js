@@ -6,7 +6,7 @@ async function open(page) {
   await page.locator('#splash').waitFor({ state: 'detached' });
 }
 
-test('하단 흐름: 왼쪽 등속 이동, 호버 정지와 이어 흐르기, 수동 정지', async ({ page }) => {
+test('하단 흐름: 호버 중에도 왼쪽 등속 이동하며 수동 정지 가능', async ({ page }) => {
   await open(page);
   const start = await offset(page);
   await page.waitForTimeout(500);
@@ -14,7 +14,7 @@ test('하단 흐름: 왼쪽 등속 이동, 호버 정지와 이어 흐르기, �
   await page.locator('.scene-choices').hover({ position: { x: 4, y: 3 } });
   const paused = await offset(page);
   await page.waitForTimeout(300);
-  expect(await offset(page)).toBeCloseTo(paused, 0);
+  expect(await offset(page)).toBeLessThan(paused - 2);
   await page.mouse.move(1, 1);
   await page.waitForTimeout(300);
   expect(await offset(page)).toBeLessThan(paused - 1);

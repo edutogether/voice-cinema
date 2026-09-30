@@ -10,7 +10,7 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
   const [selected, setSelected] = useState(0);
   const [previewing, setPreviewing] = useState(false);
   const shells = useSceneMotion(selected, GENRES.length, active);
-  const hoverZone = useRef<number | null>(null);
+  const hoverArrow = useRef<number | null>(null);
   const choose = (index: number) => {
     setSelected(index);
     setPreviewing(true);
@@ -52,7 +52,7 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
   };
 
   return (
-    <div className="scene-carousel" onMouseLeave={() => { setPreviewing(false); hoverZone.current = null; }} onKeyDown={event => {
+    <div className="scene-carousel" onMouseLeave={() => { setPreviewing(false); hoverArrow.current = null; }} onKeyDown={event => {
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
       event.preventDefault();
       move(event.key === 'ArrowRight' ? 1 : -1, true);
@@ -60,17 +60,13 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
       <div className="scene-stage" aria-label="장면 미리보기"
         onPointerMove={event => {
           if (event.pointerType !== 'mouse' || event.buttons !== 0) return;
-          // 움직이는 카드의 경계를 따라 선택이 연쇄 변경되지 않게 화면의 고정 구역을 사용한다.
-          const bounds = event.currentTarget.getBoundingClientRect();
-          const ratio = (event.clientX - bounds.left) / bounds.width;
-          const zone = ratio < .25 ? -1 : ratio > .75 ? 1 : 0;
-          if (hoverZone.current === zone) return;
-          const shell = (event.target as HTMLElement).closest<HTMLElement>('.scene-shell');
-          if (!shell) return;
-          hoverZone.current = zone;
-          choose((selected + zone + GENRES.length) % GENRES.length);
-        }} onPointerLeave={() => { hoverZone.current = null; }} onDragStart={event => event.preventDefault()}
-        onPointerDown={event => { pointerStart.current = event.clientX; dragged.current = false; }}
+          // 영상 위에서는 현재 장면만 재생한다. 방향 선택은 고정된 화살표 영역이 맡는다.
+          if ((event.target as HTMLElement).closest('.scene-shell.is-current')) setPreviewing(true);
+        }} onDragStart={event => event.preventDefault()}
+        onPointerDown={event => {
+          if ((event.target as HTMLElement).closest('.scene-arrow')) return;
+          pointerStart.current = event.clientX; dragged.current = false;
+        }}
         onPointerUp={event => {
           const start = pointerStart.current;
           pointerStart.current = null;
@@ -95,11 +91,27 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
             </div>
           );
         })}
+        {[-1, 1].map(direction => (
+          <button key={direction} type="button" className={`scene-arrow ${direction < 0 ? 'scene-arrow-prev' : 'scene-arrow-next'}`}
+            aria-label={direction < 0 ? '이전 장면' : '다음 장면'}
+            onPointerEnter={event => {
+              if (event.pointerType !== 'mouse') return;
+              hoverArrow.current = direction;
+              move(direction);
+            }}
+            onPointerLeave={() => { hoverArrow.current = null; }}
+            onClick={event => {
+              // 마우스 진입으로 이미 한 칸 이동했으면 클릭으로 두 번 넘기지 않는다.
+              if (event.detail === 0 || hoverArrow.current !== direction) move(direction);
+            }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d={direction < 0 ? 'm14 6-6 6 6 6' : 'm10 6 6 6-6 6'} />
+            </svg>
+          </button>
+        ))}
       </div>
       <div className="scene-navigation">
-        <button type="button" className="scene-arrow" aria-label="이전 장면" onClick={() => move(-1)}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m14 6-6 6 6 6" /></svg></button>
         <p className="scene-position" aria-live="polite"><strong>{String(selected + 1).padStart(2, '0')}</strong><span>/ 06</span><span className="scene-current-name">{GENRES[selected].name}</span></p>
-        <button type="button" className="scene-arrow" aria-label="다음 장면" onClick={() => move(1)}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m10 6 6 6-6 6" /></svg></button>
       </div>
       <div className="scene-choice-row">
         <div className="scene-choices" ref={choiceViewport} role="group" aria-label="여섯 장면 바로 고르기"

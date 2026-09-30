@@ -1,12 +1,31 @@
 import { test, expect } from '@playwright/test';
 
+// 흐르는 카드의 정지를 기다리는 locator.hover/click 대신 사용자가 보는 현재 위치를 가리킨다.
+async function pointChoice(page, name, area = '사진', click = false) {
+  const point = await page.locator('.scene-choice-card').evaluateAll((cards, { name, area }) => {
+    const bounds = document.querySelector('.scene-choices').getBoundingClientRect();
+    const card = cards.find(card => {
+      const r = card.getBoundingClientRect();
+      return card.getAttribute('aria-label') === `${name} 미리보기 선택` && r.left >= bounds.left && r.right <= bounds.right;
+    });
+    if (!card) return null;
+    const rect = card.getBoundingClientRect();
+    const image = card.querySelector('img').getBoundingClientRect();
+    const label = card.querySelector('span').getBoundingClientRect();
+    return { x: rect.x + rect.width / 2, y: area === '글씨' ? label.y + label.height / 2 : area === '빈 영역' ? image.bottom + 4 : image.y + image.height / 2 };
+  }, { name, area });
+  expect(point, `${name} 선택지가 온전히 보여야 한다`).not.toBeNull();
+  await page.mouse.move(point.x, point.y);
+  if (click) await page.mouse.click(point.x, point.y);
+}
+
+
 test('PC: 여섯 바로가기로 고른 중앙 장면에서 각각 더빙을 시작한다', async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   for (const name of ['판타지', '애니메이션', '호러', '액션', '드라마', '시트콤']) {
-    await page.locator('.scene-choices').hover({ position: { x: 4, y: 3 } });
-    await page.getByRole('button', { name: `${name} 미리보기 선택`, exact: true }).hover();
+    await pointChoice(page, name);
     const tile = page.getByRole('button', { name: `${name} 더빙 시작`, exact: true });
     await expect(tile.locator('.gname')).toBeInViewport({ ratio: 1 });
     // 강제 클릭 없이 실제로 누를 수 있어야 한다. 이웃 카드의 겹침이 가리면 실패한다.
@@ -76,7 +95,7 @@ test('PC: 다음·이전·드래그로 넘기며 이전 장면의 재생 자원�
 });
 
 
-test('PC: 옆 장면에 올리면 전환·재생하고 정지한 마우스 아래에서 연속 이동하지 않는다', async ({ page }) => {
+test('PC: 영상 위는 선택을 유지하고 흰 화살표 영역에 진입할 때만 한 칸 이동한다', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
@@ -91,6 +110,11 @@ test('PC: 옆 장면에 올리면 전환·재생하고 정지한 마우스 아�
   });
   expect(point, '오른쪽 장면이 가려져 호버할 수 없다').not.toBeNull();
   await page.mouse.move(point.x, point.y);
+  await expect(page.locator('.scene-shell.is-current')).toHaveAttribute('data-index', '0');
+  const arrow = page.getByRole('button', { name: '다음 장면', exact: true });
+  await expect(arrow).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(arrow).toHaveCSS('color', 'rgb(255, 255, 255)');
+  await arrow.hover();
   const choice = page.getByRole('button', { name: '애니메이션 미리보기 선택' });
   const video = page.locator('[data-genre="animation"] video');
   await expect(choice).toHaveAttribute('aria-pressed', 'true');
@@ -100,6 +124,14 @@ test('PC: 옆 장면에 올리면 전환·재생하고 정지한 마우스 아�
   await expect(choice).toHaveAttribute('aria-pressed', 'true');
   expect(await video.evaluate(v => v.currentTime)).toBeGreaterThan(before);
   await expect(page.locator('.tile video[src]')).toHaveCount(1);
+  await arrow.click();
+  await expect(choice).toHaveAttribute('aria-pressed', 'true');
+  const hit = await arrow.boundingBox();
+  // 투명 원 바깥의 사각 모서리에는 반응하지 않는다.
+  await page.mouse.move(hit.x + 1, hit.y + 1);
+  await expect(choice).toHaveAttribute('aria-pressed', 'true');
+  await arrow.hover();
+  await expect(page.locator('.scene-shell.is-current')).toHaveAttribute('data-index', '2');
 });
 
 test('PC: 썸네일 호버 즉시 재생을 요청하고 빠르게 훑은 뒤 마지막 선택만 재생한다', async ({ page }) => {
@@ -118,8 +150,7 @@ test('PC: 썸네일 호버 즉시 재생을 요청하고 빠르게 훑은 뒤 �
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   for (const name of ['애니메이션', '호러', '액션', '드라마', '시트콤']) {
-    await page.locator('.scene-choices').hover({ position: { x: 4, y: 3 } });
-    await page.getByRole('button', { name: `${name} 미리보기 선택` }).hover();
+    await pointChoice(page, name);
     await expect(page.getByRole('button', { name: `${name} 미리보기 선택` })).toHaveAttribute('aria-pressed', 'true');
   }
   const video = page.locator('[data-genre="sitcom"] video');
@@ -145,8 +176,7 @@ for (const area of ['사진', '제목', '소개', '빈 영역', '아래 사진',
     const names = ['판타지', '애니메이션', '호러', '액션', '드라마', '시트콤'];
     for (const [index, name] of names.entries()) {
       const choice = page.getByRole('button', { name: `${name} 미리보기 선택`, exact: true });
-      await page.locator('.scene-choices').hover({ position: { x: 4, y: 3 } });
-      await choice.hover();
+      await pointChoice(page, name);
       await expect(choice).toHaveAttribute('aria-pressed', 'true');
       await expect(page.locator('.scene-choice[aria-pressed="true"]')).toHaveCount(1);
       const shell = page.locator('.scene-shell.is-current');
@@ -157,12 +187,7 @@ for (const area of ['사진', '제목', '소개', '빈 영역', '아래 사진',
       if (area === '제목') await tile.locator('.gname').click();
       if (area === '소개') await tile.locator('.gsub').click();
       if (area === '빈 영역') await tile.locator('.tile-body').click({ position: { x: 8, y: 5 } });
-      if (area === '아래 사진') await choice.locator('img').click();
-      if (area === '아래 글씨') await choice.locator('span').click();
-      if (area === '아래 빈 영역') {
-        const img = await choice.locator('img').boundingBox();
-        await choice.click({ position: { x: 4, y: img.height + 4 } });
-      }
+      if (area.startsWith('아래 ')) await pointChoice(page, name, area.slice(3), true);
       await expect(page.locator('#studio')).toHaveClass(/active/);
       await expect(page.locator('#chipName')).toHaveText(name);
       await expect(page.locator('.tile video[src]')).toHaveCount(0);
@@ -197,9 +222,7 @@ test('PC: 순환 카드는 보이지 않는 뒤편에서 이동하고 연속 호
     };
     requestAnimationFrame(sample);
   });
-  const next = page.getByRole('button', { name: '애니메이션 미리보기 선택' });
-  await page.locator('.scene-choices').hover({ position: { x: 4, y: 3 } });
-  await next.hover();
+  await pointChoice(page, '애니메이션');
   await expect(page.locator('.scene-stage')).toHaveAttribute('data-moving', 'true');
   await expect(page.locator('.scene-stage')).toHaveAttribute('data-moving', 'false');
   const frames = await page.evaluate(() => { window.__motion.done = true; return window.__motion.frames; });
@@ -217,8 +240,7 @@ test('PC: 순환 카드는 보이지 않는 뒤편에서 이동하고 연속 호
   }
   expect(recycled, '순환 경계를 실제로 관찰해야 한다').toBeGreaterThan(0);
   for (const name of ['드라마', '판타지', '액션', '시트콤']) {
-    await page.locator('.scene-choices').hover({ position: { x: 4, y: 3 } });
-    await page.getByRole('button', { name: `${name} 미리보기 선택` }).hover();
+    await pointChoice(page, name);
   }
   await expect(page.locator('.scene-stage')).toHaveAttribute('data-moving', 'false');
   await expect(page.locator('.scene-shell.is-current')).toHaveAttribute('data-index', '5');
@@ -244,8 +266,7 @@ test('PC: 썸네일에서 이동 중인 중앙으로 마우스를 옮겨도 선�
   await page.locator('#splash').waitFor({ state: 'detached' });
   const stage = await page.locator('.scene-stage').boundingBox();
   const choice = page.getByRole('button', { name: '액션 미리보기 선택' });
-  await page.locator('.scene-choices').hover({ position: { x: 4, y: 3 } });
-  await choice.hover();
+  await pointChoice(page, '액션');
   await page.mouse.move(stage.x + stage.width / 2, stage.y + stage.height / 3);
   await expect(choice).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.scene-stage')).toHaveAttribute('data-moving', 'false');
