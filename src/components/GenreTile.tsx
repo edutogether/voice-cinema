@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { clipUrl, thumbUrl, withAlpha, type Genre } from '../genres';
+import { clipUrl, thumbUrl, stillUrl, withAlpha, type Genre } from '../genres';
 import { SUPPORTS_HOVER } from '../lib/pointer';
 
 // 재생이 멈췄는지 되돌아보는 간격. loop만으로는 실제 기기에서 계속 돈다는 보장이
@@ -149,16 +149,17 @@ export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }
       onMouseLeave={SUPPORTS_HOVER ? onLeave : undefined}
     >
       <span className="tile-media" aria-hidden="true">
-        <img className="thumb" src={thumbUrl(genre.id)} alt="" />
+        <img className="thumb" src={thumbUrl(genre.id)} srcSet={`${thumbUrl(genre.id)} 320w, ${stillUrl(genre.id)} 1280w`} sizes="(max-width: 340px) 100vw, 50vw" alt="" />
         <video className="preview" ref={videoRef} muted playsInline preload="none" />
         {SUPPORTS_HOVER && <span className="tile-preview-label"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m8 5 11 7-11 7z" /></svg> 미리보기 재생 중</span>}
       </span>
       <span className="tile-body">
+        <span className="tile-meta" aria-hidden="true">10초의 장면, 나만의 대사</span>
         <span className="gname-row">
           <span className="gname">{genre.name}</span>
         </span>
         <span className="gsub">{genre.summary}</span>
-        <span className="tile-enter" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></span>
+        <span className="tile-enter" aria-hidden="true">더빙 시작 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></span>
       </span>
     </button>
   );

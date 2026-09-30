@@ -28,7 +28,7 @@ export function App() {
 
   useEffect(() => {
     if (view === 'home' && lastGenreRef.current) {
-      wrapRef.current?.querySelector<HTMLButtonElement>(`[data-genre="${lastGenreRef.current}"]`)?.focus({ preventScroll: true });
+      wrapRef.current?.querySelector<HTMLButtonElement>(`[data-genre="${lastGenreRef.current}"]`)?.focus();
     }
   }, [view]);
 

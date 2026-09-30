@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { GENRES, type Genre } from '../genres';
 import { SUPPORTS_HOVER } from '../lib/pointer';
 import { GenreTile } from './GenreTile';
-import { CinemaHeader } from './CinemaHeader';
 
 interface Props {
   active: boolean;
@@ -72,22 +71,23 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
 
   return (
     <section id="home" className={`view${active ? ' active' : ''}`}>
-      <CinemaHeader step={1} />
-
-      <div className="cinema-lobby">
-        <div className="cinema-intro">
-          <p className="eyebrow">오늘, 영화의 주인공이 되는 곳</p>
-          <h1>내 목소리로 <br />완성하는 <br /><em>한 편의 영화.</em></h1>
-          <p className="cinema-description">마음에 드는 장면에 목소리를 더해보세요. <br />대사는 자유롭게, 연기는 나답게.</p>
-          <div className="lobby-invitation">
-            <img src="/icons/studio-microphone.png" alt="" width="64" height="64" />
-            <p>약 10초의 더빙,<br /><strong>세상에 하나뿐인 내 영화.</strong></p>
-          </div>
+      <header className="gallery-header">
+        <div className="gallery-brand">
+          <img src="/icons/studio-microphone.png" alt="" width="32" height="32" />
+          <span>Voice Cinema</span>
         </div>
+        <p>내 목소리로 만드는 한 편의 영화</p>
+        <ol className="gallery-steps" aria-label="더빙 이용 순서">
+          <li aria-current="step">01 장면 선택</li>
+          <li>02 목소리 녹음</li>
+          <li>03 영화 저장</li>
+        </ol>
+      </header>
 
-        <div className="cinema-program">
-          <div className="program-heading"><h2>어떤 장면에 출연할까요?</h2><span>6개의 장면</span></div>
-          <p className="program-hint">{SUPPORTS_HOVER && '마우스를 올려 미리 보고, '}장면을 누르면 녹음실로 들어가요.</p>
+      <div className="gallery-intro">
+        <h1>어떤 장면에 출연할까요?</h1>
+        <p>{SUPPORTS_HOVER ? '마우스를 올려 미리 보고, 마음에 드는 장면을 골라보세요.' : '마음에 드는 장면을 누르면 녹음실로 들어가요.'}</p>
+      </div>
 
       {/* 준비 상태가 장면 선택을 가로막지 않게 같은 배너에서 진행률만 갱신한다. */}
       <div
@@ -114,8 +114,6 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
             onSelect={onSelect}
           />
         ))}
-      </div>
-        </div>
       </div>
 
       <footer className="cinema-footer">
