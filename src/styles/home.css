@@ -32,16 +32,16 @@ body:has(#home.active) { background:#fff; }
 .festival-symbol img { position:absolute; left:-36px; top:0; width:240px; height:auto; max-width:none; }
 
 .festival-header { margin-inline:-28px; }
-.chart-layout { display:flex; flex:1; min-height:0; gap:36px; padding-top:26px; }
-.chart-aside { display:flex; flex-direction:column; width:190px; flex-shrink:0; padding-right:24px; border-right:1px solid #ededed; }
+.chart-layout { display:flex; flex:1; min-height:0; gap:28px; padding-top:26px; }
+.chart-aside { display:flex; flex-direction:column; width:clamp(14.5rem,17vw,16.5rem); flex-shrink:0; padding-right:24px; border-right:1px solid #ededed; }
 .chart-app { margin:0; font-size:1.125rem; font-weight:750; letter-spacing:-.03em; }
 .chart-app span { display:block; margin-top:8px; color:#727272; font-size:.75rem; font-weight:400; letter-spacing:0; }
 .chart-invitation { margin-top:auto; padding-block:32px; }
 .chart-label { display:inline-block; margin:0 0 20px; padding:7px 11px; border-radius:30px; background:#191919; color:white; font-size:.75rem; font-weight:600; }
 .chart-invitation h2 { margin:0; font-size:clamp(1.75rem,2.2vw,2.25rem); line-height:1.3; letter-spacing:-.055em; font-weight:750; }
-.chart-invitation em { font-style:normal; color:#df291f; }
+.chart-invitation em { display:inline-block; white-space:nowrap; font-style:normal; color:#df291f; }
 .chart-invitation > p:last-of-type { color:#626262; font-size:.875rem; line-height:1.75; margin:20px 0 0; }
-.chart-invitation img { display:block; width:100px; height:100px; margin:28px auto 0; }
+.chart-invitation img { display:block; width:72px; height:72px; margin:0 0 18px; }
 .chart-guide { margin-top:auto; padding-top:20px; border-top:1px solid #e5e5e5; }
 .chart-guide strong { font-size:.875rem; }
 .chart-guide p { font-size:.75rem; line-height:1.75; color:#626262; margin:10px 0 20px; }
@@ -144,7 +144,7 @@ body:has(#home.active) { background:#fff; }
 }
 @media (max-height:780px) and (min-width:1251px) {
   .chart-invitation { padding-block:24px; }
-  .chart-invitation img { width:64px; height:64px; margin-top:18px; }
+  .chart-invitation img { width:56px; height:56px; margin:0 0 16px; }
   .chart-invitation h2 { font-size:1.75rem; }
   .chart-guide p { margin-bottom:10px; }
 }
@@ -152,8 +152,8 @@ body:has(#home.active) { background:#fff; }
 
 /* CGV 실사이트의 중앙 확대·양옆 후퇴 구조. 여섯 선택지는 아래에서 모두 보인다. */
 .scene-carousel { display:flex; flex-direction:column; flex:1; min-height:0; }
-.scene-stage { position:relative; flex:1; min-height:200px; overflow:hidden; perspective:1100px; perspective-origin:50% 42%; touch-action:pan-y; }
-.scene-shell { position:absolute; left:50%; top:10px; bottom:12px; width:64%; max-width:820px; will-change:transform,opacity; }
+.scene-stage { position:relative; flex:1; min-height:200px; overflow:hidden; touch-action:pan-y; }
+.scene-shell { position:absolute; left:50%; top:10px; bottom:12px; width:64%; max-width:820px; transform-origin:50% 42%; will-change:transform,opacity; }
 .scene-shell .tile { width:100%; height:100%; margin:0; padding:0; box-shadow:none; border-radius:16px; background:transparent; }
 .scene-shell .tile-media { border-radius:16px; box-shadow:0 8px 24px #17202c12; }
 .scene-shell .tile-body { min-height:94px; padding:18px 4px 4px; gap:20px; opacity:1; transition:opacity .18s ease; }

@@ -98,7 +98,7 @@ test('PC: 옆 장면에 올리면 전환·재생하고 정지한 마우스 아�
   await page.waitForTimeout(700);
   await expect(choice).toHaveAttribute('aria-pressed', 'true');
   expect(await video.evaluate(v => v.currentTime)).toBeGreaterThan(before);
-  expect(await page.locator('.tile video[src]').count()).toBe(1);
+  await expect(page.locator('.tile video[src]')).toHaveCount(1);
 });
 
 test('PC: 썸네일 호버 즉시 재생을 요청하고 빠르게 훑은 뒤 마지막 선택만 재생한다', async ({ page }) => {
@@ -126,7 +126,7 @@ test('PC: 썸네일 호버 즉시 재생을 요청하고 빠르게 훑은 뒤 �
   expect(timing.length).toBeGreaterThanOrEqual(5);
   // 기존 280ms 대기를 제거했다. 다운로드 완료 시간과 재생 요청 시점은 구분한다.
   expect(timing[0]).toBeLessThan(200);
-  expect(await page.locator('.tile video[src]').count()).toBe(1);
+  await expect(page.locator('.tile video[src]')).toHaveCount(1);
   await expect(page.locator('.tile video[src]')).toHaveAttribute('src', '/clips/previews/sitcom.mp4');
   await page.getByRole('button', { name: '시트콤 더빙 시작', exact: true }).click();
   await expect(page.locator('#studio')).toHaveClass(/active/);

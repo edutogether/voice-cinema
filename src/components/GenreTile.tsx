@@ -30,13 +30,16 @@ interface Props {
 
 export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, delayMs, solo, onBlocked, onSelect }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const releaseTimer = useRef<number | undefined>(undefined);
   // PC는 선택 순간 재생한다. 장면 변경·목록 이탈·녹음실 진입 시 이전 요청까지 무효화한다.
   useEffect(() => {
     if (!SUPPORTS_HOVER || !playing) return;
     const v = videoRef.current;
     if (!v) return;
     let cancelled = false;
-    v.src = previewUrl(genre.id);
+    window.clearTimeout(releaseTimer.current);
+    // 짧게 왕복하면 마지막 프레임에서 이어 재생한다. 매번 첫 프레임으로 튀지 않는다.
+    if (!v.getAttribute('src')) v.src = previewUrl(genre.id);
     v.muted = false;
     v.loop = true;
     const reveal = () => {
@@ -52,10 +55,23 @@ export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, de
       cancelled = true;
       v.pause();
       v.classList.remove('playing');
-      v.removeAttribute('src');
-      v.load();
+      // 140ms 페이드 동안 정지한 마지막 프레임을 보존한 뒤 디코더를 해제한다.
+      releaseTimer.current = window.setTimeout(() => {
+        v.removeAttribute('src');
+        v.load();
+      }, 160);
     };
   }, [playing, genre.id]);
+  useEffect(() => {
+    if (!SUPPORTS_HOVER) return;
+    const v = videoRef.current;
+    return () => {
+      window.clearTimeout(releaseTimer.current);
+      v?.pause();
+      v?.removeAttribute('src');
+      v?.load();
+    };
+  }, []);
 
   // 마우스가 없는 기기: 여섯 장이 전부 재생된다. 한 장만 고르면 사용자는 "왜 저것만"이
   // 되고, 스크롤이 없는 화면에서는 그 한 장이 영영 바뀌지 않아 나머지가 죽은 것처럼

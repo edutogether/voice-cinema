@@ -79,10 +79,10 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
         <aside className="chart-aside" aria-label="Voice Cinema 체험 안내">
           <p className="chart-app">Voice Cinema<span>CGV 인천 · InKY 놀이터</span></p>
           <div className="chart-invitation">
+            <img src="/icons/studio-microphone.png" alt="" width="160" height="160" />
             <p className="chart-label">나만의 더빙 극장</p>
             <h2>내 목소리로<br />완성하는<br /><em>10초의 영화.</em></h2>
             <p>마법사도, 히어로도.<br />오늘은 내가 주인공이에요.</p>
-            <img src="/icons/studio-microphone.png" alt="" width="160" height="160" />
           </div>
           <div className="chart-guide"><strong>이렇게 즐겨보세요</strong><p>장면을 고르고, 목소리를 녹음해요.<br />완성된 영화는 QR로 가져가요.</p><span>2026. 11. 14 · CGV 인천</span></div>
         </aside>

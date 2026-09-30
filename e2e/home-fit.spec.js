@@ -34,3 +34,27 @@ test('PC: 선택한 카드만 경량 영상으로 재생하고 녹음실 진입 
   await expect(page.locator('#clip')).toHaveAttribute('src', '/clips/fantasy.mp4');
   await expect(tile.locator('video')).not.toHaveAttribute('src');
 });
+
+
+for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080]]) {
+  test(`${width}×${height}: 왼쪽 제목은 한 줄이고 작은 마이크는 소개 위에 왼쪽 정렬된다`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.locator('#splash').waitFor({ state: 'detached' });
+    const layout = await page.evaluate(() => {
+      const title = document.querySelector('.chart-invitation em');
+      const range = document.createRange();
+      range.selectNodeContents(title);
+      const img = document.querySelector('.chart-invitation img').getBoundingClientRect();
+      const label = document.querySelector('.chart-label').getBoundingClientRect();
+      const aside = document.querySelector('.chart-aside').getBoundingClientRect();
+      return { lines: range.getClientRects().length, right: title.getBoundingClientRect().right, asideRight: aside.right, imgX: img.x, labelX: label.x, imgBottom: img.bottom, labelTop: label.top, size: img.width };
+    });
+    expect(layout.lines).toBe(1);
+    expect(layout.right).toBeLessThan(layout.asideRight);
+    expect(layout.imgX).toBeCloseTo(layout.labelX, 0);
+    expect(layout.imgBottom).toBeLessThan(layout.labelTop);
+    expect(layout.size).toBeLessThanOrEqual(72);
+    await page.screenshot({ path: `tmp/apple-layout-${width}.png` });
+  });
+}

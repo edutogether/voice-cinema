@@ -41,7 +41,7 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
           const shell = (event.target as HTMLElement).closest<HTMLElement>('.scene-shell');
           if (!shell) return;
           hoverZone.current = zone;
-          choose(zone === 0 ? selected : Number(shell.dataset.index));
+          choose((selected + zone + GENRES.length) % GENRES.length);
         }} onPointerLeave={() => { hoverZone.current = null; }} onDragStart={event => event.preventDefault()}
         onPointerDown={event => { pointerStart.current = event.clientX; dragged.current = false; }}
         onPointerUp={event => {
