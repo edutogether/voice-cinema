@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { CLIP_SECONDS } from '../config';
 import { clipUrl, stillUrl, type Genre } from '../genres';
 import { useDubbing } from '../hooks/useDubbing';
 
 import { ActionIcon } from './ActionIcon';
+import { ClipClock } from './ClipClock';
 
 interface Props {
   active: boolean;
@@ -74,7 +74,7 @@ export function Studio({ active, genre, onHome, onSave }: Props) {
               <div className="studio-timeline">
                 <span className="timeline-state">{phase === 'recorded' ? '녹음 완료' : phase === 'requesting' ? '마이크 연결 중' : phase === 'countdown' ? '녹음 준비' : phase === 'recording' ? '녹음 중' : phase === 'replaying' ? '내 목소리 다시 듣기' : '장면 미리보기'}</span>
                 <div className={`progress${dub.showProgress ? ' show' : ''}`} id="progress" role="progressbar" aria-label="영상 진행" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(displayProgress)}><i id="bar" style={{ width: `${displayProgress}%` }} /></div>
-                <span className="clip-time" aria-hidden="true">{Math.round(displayProgress * CLIP_SECONDS / 100)} / {CLIP_SECONDS}초</span>
+                <ClipClock phase={phase} videoRef={videoRef} />
               </div>
               <div className={`controls${recording ? ' is-recording' : ''}${done ? ' is-recorded' : ''}`}>
                 <div className="controls-copy">
