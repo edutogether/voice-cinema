@@ -77,14 +77,22 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
 
       <div className="chart-layout">
         <aside className="chart-aside" aria-label="Voice Cinema 체험 안내">
-          <p className="chart-app">Voice Cinema<span>CGV 인천 · InKY 놀이터</span></p>
+          <p className="chart-app"><strong>Voice <em>Cinema</em></strong><span>CGV 인천 · InKY 놀이터</span></p>
           <div className="chart-invitation">
             <img src="/icons/studio-microphone.png" alt="" width="160" height="160" />
             <p className="chart-label">나만의 더빙 극장</p>
             <h2>내 목소리로<br />완성하는<br /><em>10초의 영화.</em></h2>
             <p>마법사도, 히어로도.<br />오늘은 내가 주인공이에요.</p>
           </div>
-          <div className="chart-guide"><strong>이렇게 즐겨보세요</strong><p>장면을 고르고, 목소리를 녹음해요.<br />완성된 영화는 QR로 가져가요.</p><span>2026. 11. 14 · CGV 인천</span></div>
+          <div className="chart-guide">
+            <strong>이렇게 즐겨보세요</strong>
+            <ol aria-label="체험 방법">
+              <li><span aria-hidden="true">01</span>장면 선택</li>
+              <li><span aria-hidden="true">02</span>목소리 녹음</li>
+              <li><span aria-hidden="true">03</span>QR 저장</li>
+            </ol>
+            <span className="chart-guide-date">2026. 11. 14 <i aria-hidden="true">·</i> CGV 인천</span>
+          </div>
         </aside>
         <div className="chart-main">
           <div className="chart-heading">
