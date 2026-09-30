@@ -1,6 +1,7 @@
-import { useRef, useState, type CSSProperties } from 'react';
+import { useRef, useState } from 'react';
 import { GENRES, thumbUrl, type Genre } from '../genres';
 import { GenreTile } from './GenreTile';
+import { useSceneMotion } from '../hooks/useSceneMotion';
 
 const ignoreBlocked = () => {};
 
@@ -8,7 +9,8 @@ const ignoreBlocked = () => {};
 export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect: (genre: Genre) => void }) {
   const [selected, setSelected] = useState(0);
   const [previewing, setPreviewing] = useState(false);
-  const hoverPoint = useRef<{ x: number; y: number } | null>(null);
+  const shells = useSceneMotion(selected, GENRES.length, active);
+  const hoverZone = useRef<number | null>(null);
   const choose = (index: number) => {
     setSelected(index);
     setPreviewing(true);
@@ -23,7 +25,7 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
   };
 
   return (
-    <div className="scene-carousel" onMouseLeave={() => { setPreviewing(false); hoverPoint.current = null; }} onKeyDown={event => {
+    <div className="scene-carousel" onMouseLeave={() => { setPreviewing(false); hoverZone.current = null; }} onKeyDown={event => {
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
       event.preventDefault();
       move(event.key === 'ArrowRight' ? 1 : -1, true);
@@ -31,14 +33,16 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
       <div className="scene-stage" aria-label="장면 미리보기"
         onPointerMove={event => {
           if (event.pointerType !== 'mouse' || event.buttons !== 0) return;
-          const point = hoverPoint.current;
-          // 카드가 이동하며 생기는 경계 이벤트·손떨림으로 연속 전환하지 않는다.
-          if (point && Math.hypot(event.clientX - point.x, event.clientY - point.y) < 8) return;
+          // 움직이는 카드의 경계를 따라 선택이 연쇄 변경되지 않게 화면의 고정 구역을 사용한다.
+          const bounds = event.currentTarget.getBoundingClientRect();
+          const ratio = (event.clientX - bounds.left) / bounds.width;
+          const zone = ratio < .25 ? -1 : ratio > .75 ? 1 : 0;
+          if (hoverZone.current === zone) return;
           const shell = (event.target as HTMLElement).closest<HTMLElement>('.scene-shell');
           if (!shell) return;
-          hoverPoint.current = { x: event.clientX, y: event.clientY };
-          choose(Number(shell.dataset.index));
-        }} onDragStart={event => event.preventDefault()}
+          hoverZone.current = zone;
+          choose(zone === 0 ? selected : Number(shell.dataset.index));
+        }} onPointerLeave={() => { hoverZone.current = null; }} onDragStart={event => event.preventDefault()}
         onPointerDown={event => { pointerStart.current = event.clientX; dragged.current = false; }}
         onPointerUp={event => {
           const start = pointerStart.current;
@@ -54,11 +58,10 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
         }}>
         {GENRES.map((genre, index) => {
           const offset = ((index - selected + GENRES.length + 2) % GENRES.length) - 2;
-          const depth = Math.abs(offset);
           return (
             <div key={genre.id} className={`scene-shell${offset === 0 ? ' is-current' : ''}`}
               data-index={index} data-offset={offset} aria-hidden={offset !== 0 || undefined}
-              style={{ '--offset': offset, '--depth': depth, zIndex: GENRES.length - depth } as CSSProperties}>
+              ref={node => { shells.current[index] = node; }}>
               <GenreTile genre={genre} sceneNumber={index + 1} playing={active && previewing && offset === 0} delayMs={0} solo={false}
                 previewOnly={offset !== 0} onBlocked={ignoreBlocked}
                 onSelect={offset === 0 ? onSelect : () => choose(index)} />

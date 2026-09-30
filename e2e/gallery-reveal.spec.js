@@ -178,3 +178,70 @@ test('PC: 아래 썸네일을 키보드로 고르면 위아래가 맞춰지고 �
   await page.keyboard.press('Enter');
   await expect(page.locator('#chipName')).toHaveText('드라마');
 });
+
+
+test('PC: 순환 카드는 보이지 않는 뒤편에서 이동하고 연속 호버 뒤 마지막 장면에 안착한다', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#splash').waitFor({ state: 'detached' });
+  await page.evaluate(() => {
+    window.__motion = { frames: [], done: false };
+    const sample = () => {
+      window.__motion.frames.push([...document.querySelectorAll('.scene-shell')].map(shell => {
+        const style = getComputedStyle(shell);
+        return { x: new window.DOMMatrix(style.transform).m41, opacity: Number(style.opacity), width: shell.offsetWidth };
+      }));
+      if (!window.__motion.done) requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  });
+  const next = page.getByRole('button', { name: '애니메이션 미리보기 선택' });
+  await next.hover();
+  await expect(page.locator('.scene-stage')).toHaveAttribute('data-moving', 'true');
+  await expect(page.locator('.scene-stage')).toHaveAttribute('data-moving', 'false');
+  const frames = await page.evaluate(() => { window.__motion.done = true; return window.__motion.frames; });
+  expect(frames.length).toBeGreaterThan(10);
+  let recycled = 0;
+  for (let frame = 1; frame < frames.length; frame++) {
+    frames[frame].forEach((card, index) => {
+      const before = frames[frame - 1][index];
+      if (Math.abs(card.x - before.x) > card.width) {
+        recycled++;
+        expect(before.opacity).toBeLessThan(.1);
+        expect(card.opacity).toBeLessThan(.1);
+      }
+    });
+  }
+  expect(recycled, '순환 경계를 실제로 관찰해야 한다').toBeGreaterThan(0);
+  for (const name of ['드라마', '판타지', '액션', '시트콤']) {
+    await page.getByRole('button', { name: `${name} 미리보기 선택` }).hover();
+  }
+  await expect(page.locator('.scene-stage')).toHaveAttribute('data-moving', 'false');
+  await expect(page.locator('.scene-shell.is-current')).toHaveAttribute('data-index', '5');
+  const center = await page.locator('.scene-shell.is-current').boundingBox();
+  const stage = await page.locator('.scene-stage').boundingBox();
+  expect(center.x + center.width / 2).toBeCloseTo(stage.x + stage.width / 2, 0);
+  await expect(page.locator('.scene-choice[aria-pressed="true"]')).toHaveAttribute('aria-label', '시트콤 미리보기 선택');
+});
+
+test('PC: 움직임 줄이기 설정에서는 입체 전환 없이 즉시 고른다', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  await page.locator('#splash').waitFor({ state: 'detached' });
+  await page.getByRole('button', { name: '드라마 미리보기 선택' }).hover();
+  await expect(page.locator('.scene-stage')).toHaveAttribute('data-moving', 'false');
+  await expect(page.locator('.scene-shell.is-current')).toHaveAttribute('data-index', '4');
+  await expect(page.locator('.scene-shell.is-current .tile-body')).toHaveCSS('transition-duration', '0s');
+});
+
+
+test('PC: 썸네일에서 이동 중인 중앙으로 마우스를 옮겨도 선택이 되돌아가지 않는다', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#splash').waitFor({ state: 'detached' });
+  const stage = await page.locator('.scene-stage').boundingBox();
+  const choice = page.getByRole('button', { name: '액션 미리보기 선택' });
+  await choice.hover();
+  await page.mouse.move(stage.x + stage.width / 2, stage.y + stage.height / 3);
+  await expect(choice).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.scene-stage')).toHaveAttribute('data-moving', 'false');
+  await expect(page.locator('.scene-shell.is-current')).toHaveAttribute('data-index', '3');
+});
