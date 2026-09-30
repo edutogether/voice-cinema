@@ -9,7 +9,7 @@ for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [
     await expect(tiles).toHaveCount(6);
     for (const tile of await tiles.all()) {
       await expect(tile).toBeInViewport({ ratio: 1 });
-      const name = tile.locator(touch ? '.gname' : '.tile-caption strong');
+      const name = tile.locator('.gname');
       await expect(name).toBeInViewport({ ratio: 1 });
     }
     expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1)).toBe(true);
