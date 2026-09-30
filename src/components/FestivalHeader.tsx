@@ -19,6 +19,7 @@ export function FestivalHeader() {
         <span className="festival-symbol" aria-hidden="true"><img src="/brands/inky.png" alt="" /></span>
         <span><strong>InKY</strong> <span className="festival-english">Film Festival</span></span>
       </div>
+      <a className="privacylink" href="./privacy.html" target="_blank" rel="noopener" aria-label="개인정보처리방침 (새 탭)">개인정보처리방침</a>
     </header>
   );
 }

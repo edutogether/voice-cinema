@@ -89,7 +89,7 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
         <div className="chart-main">
           <div className="chart-heading">
             <div><p className="chart-eyebrow">오늘, 내가 출연할 영화</p><h1>장면 고르기 <span>6</span></h1></div>
-            <p>{SUPPORTS_HOVER ? '마우스를 올려 미리 보고, 마음에 들면 더빙을 시작하세요.' : '마음에 드는 장면을 누르면 녹음실로 들어가요.'}</p>
+            {!SUPPORTS_HOVER && <p>마음에 드는 장면을 누르면 녹음실로 들어가요.</p>}
           </div>
 
           {/* 준비 상태가 장면 선택을 가로막지 않게 같은 배너에서 진행률만 갱신한다. */}
@@ -124,7 +124,6 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
 
       <footer className="cinema-footer">
         <p>제4회 인천어린이청소년영화제 <span>InKY 놀이터</span></p>
-        <a className="privacylink" href="./privacy.html" target="_blank" rel="noopener">개인정보처리방침</a>
       </footer>
     </section>
   );
