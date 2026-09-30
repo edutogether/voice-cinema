@@ -92,7 +92,7 @@ body:not(.app-ready) #splash {
   letter-spacing: -0.01em;
   color: #171717;
 }
-#splash .name .gold { color: inherit; }
+#splash .name .cinema { color: #ed3124; }
 #splash .stagline {
   font-size: clamp(13px, 2vw, 16px);
   color: #626262;
