@@ -3,6 +3,7 @@ import { GENRES, type Genre } from '../genres';
 import { SUPPORTS_HOVER } from '../lib/pointer';
 import { GenreTile } from './GenreTile';
 import { FestivalHeader } from './FestivalHeader';
+import { SceneCarousel } from './SceneCarousel';
 
 interface Props {
   active: boolean;
@@ -88,7 +89,7 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
         <div className="chart-main">
           <div className="chart-heading">
             <div><p className="chart-eyebrow">오늘, 내가 출연할 영화</p><h1>장면 고르기 <span>6</span></h1></div>
-            <p>{SUPPORTS_HOVER ? '마우스를 올려 미리 보고, 마음에 드는 장면을 골라보세요.' : '마음에 드는 장면을 누르면 녹음실로 들어가요.'}</p>
+            <p>{SUPPORTS_HOVER ? '옆으로 넘겨 미리 보고, 마음에 들면 더빙을 시작하세요.' : '마음에 드는 장면을 누르면 녹음실로 들어가요.'}</p>
           </div>
 
           {/* 준비 상태가 장면 선택을 가로막지 않게 같은 배너에서 진행률만 갱신한다. */}
@@ -100,7 +101,7 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
             영상 저장 준비 중… <b id="engineProg">{engineFailed ? '저장할 때 다시 시도할게요' : `${enginePercent}%`}</b>
           </div>
 
-          <div className="grid" id="grid" role="group" aria-label="더빙할 장면 선택">
+          {SUPPORTS_HOVER ? <SceneCarousel onSelect={onSelect} /> : <div className="grid" id="grid" role="group" aria-label="더빙할 장면 선택">
             {GENRES.map((genre, i) => (
               <GenreTile
                 key={genre.id}
@@ -117,7 +118,7 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
                 onSelect={onSelect}
               />
             ))}
-          </div>
+          </div>}
         </div>
       </div>
 

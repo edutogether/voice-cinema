@@ -1,15 +1,16 @@
 import { test, expect } from '@playwright/test';
 
 for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [655, 760, false], [1024, 768, true], [375, 812, true], [360, 640, true]]) {
-  test(`${width}×${height}: 여섯 장면과 이름이 첫 화면에 모두 보인다`, async ({ browser }) => {
+  test(`${width}×${height}: 여섯 장면 선택지와 이름이 첫 화면에 모두 보인다`, async ({ browser }) => {
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: touch, isMobile: touch });
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
-    const tiles = page.locator('.tile');
+    // PC 입체 미리보기 아래의 여섯 바로가기가 모두 보여야 한다. 터치는 카드 자체를 고른다.
+    const tiles = page.locator(touch ? '.tile' : '.scene-choice');
     await expect(tiles).toHaveCount(6);
     for (const tile of await tiles.all()) {
       await expect(tile).toBeInViewport({ ratio: 1 });
-      const name = tile.locator('.gname');
+      const name = tile.locator(touch ? '.gname' : 'span');
       await expect(name).toBeInViewport({ ratio: 1 });
     }
     expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1)).toBe(true);

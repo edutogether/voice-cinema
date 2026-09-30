@@ -11,6 +11,8 @@ const WATCH_MS = 2000;
 interface Props {
   genre: Genre;
   sceneNumber: number;
+  /** PC 입체 목록의 주변 카드는 재생·탭 이동 없이 가운데로 고르는 역할이다. */
+  previewOnly?: boolean;
   /** 이 카드가 지금 재생돼야 하는지. 마우스가 있는 기기에서는 호버가 정하므로 쓰이지 않는다. */
   playing: boolean;
   /** 재생을 이만큼 늦춰 시작한다 — 여섯 장이 한꺼번에 내려받기를 시작하지 않게 하려는 것이다. */
@@ -26,7 +28,7 @@ interface Props {
   onSelect: (genre: Genre) => void;
 }
 
-export function GenreTile({ genre, sceneNumber, playing, delayMs, solo, onBlocked, onSelect }: Props) {
+export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, delayMs, solo, onBlocked, onSelect }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hoveringRef = useRef(false);
   const hoverTimerRef = useRef<number | undefined>(undefined);
@@ -82,6 +84,11 @@ export function GenreTile({ genre, sceneNumber, playing, delayMs, solo, onBlocke
     v.removeAttribute('src');
     v.load();
   };
+
+  useEffect(() => {
+    // 옆으로 넘어간 카드가 디코더와 소리를 계속 쥐지 않게 한다.
+    if (previewOnly) onLeave();
+  }, [previewOnly]);
 
   // 마우스가 없는 기기: 여섯 장이 전부 재생된다. 한 장만 고르면 사용자는 "왜 저것만"이
   // 되고, 스크롤이 없는 화면에서는 그 한 장이 영영 바뀌지 않아 나머지가 죽은 것처럼
@@ -151,6 +158,7 @@ export function GenreTile({ genre, sceneNumber, playing, delayMs, solo, onBlocke
   return (
     <button
       type="button"
+      tabIndex={previewOnly ? -1 : 0}
       data-genre={genre.id}
       className={`tile${solo ? ' is-solo' : ''}`}
       aria-label={`${genre.name} 더빙 시작`}
@@ -163,7 +171,7 @@ export function GenreTile({ genre, sceneNumber, playing, delayMs, solo, onBlocke
         } as React.CSSProperties
       }
       onClick={() => { if (SUPPORTS_HOVER) onLeave(); onSelect(genre); }}
-      onMouseEnter={SUPPORTS_HOVER ? onEnter : undefined}
+      onMouseEnter={SUPPORTS_HOVER && !previewOnly ? onEnter : undefined}
       onMouseLeave={SUPPORTS_HOVER ? onLeave : undefined}
     >
       <span className="tile-media" aria-hidden="true">
