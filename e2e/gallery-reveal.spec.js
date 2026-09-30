@@ -5,7 +5,7 @@ test('PC: 여섯 바로가기로 고른 중앙 장면에서 각각 더빙을 시
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   for (const name of ['판타지', '애니메이션', '호러', '액션', '드라마', '시트콤']) {
-    await page.getByRole('button', { name: `${name} 미리보기 선택`, exact: true }).click();
+    await page.getByRole('button', { name: `${name} 미리보기 선택`, exact: true }).hover();
     const tile = page.getByRole('button', { name: `${name} 더빙 시작`, exact: true });
     await expect(tile.locator('.gname')).toBeInViewport({ ratio: 1 });
     // 강제 클릭 없이 실제로 누를 수 있어야 한다. 이웃 카드의 겹침이 가리면 실패한다.
@@ -132,4 +132,49 @@ test('PC: 썸네일 호버 즉시 재생을 요청하고 빠르게 훑은 뒤 �
   await expect(page.locator('#studio')).toHaveClass(/active/);
   await expect(page.locator('.tile video[src]')).toHaveCount(0);
   expect(await page.locator('.tile video').evaluateAll(videos => videos.every(v => v.paused))).toBe(true);
+});
+
+
+// 버튼 모양의 "더빙하기"뿐 아니라, 활성 장면 전체가 같은 진입 대상이어야 한다.
+for (const area of ['사진', '제목', '소개', '빈 영역', '아래 사진', '아래 글씨', '아래 빈 영역']) {
+  test(`PC: 호버로 위아래 선택을 맞추고 ${area} 클릭으로 같은 녹음실에 들어간다`, async ({ page }) => {
+    await page.goto('/');
+    await page.locator('#splash').waitFor({ state: 'detached' });
+    const names = ['판타지', '애니메이션', '호러', '액션', '드라마', '시트콤'];
+    for (const [index, name] of names.entries()) {
+      const choice = page.getByRole('button', { name: `${name} 미리보기 선택`, exact: true });
+      await choice.hover();
+      await expect(choice).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.locator('.scene-choice[aria-pressed="true"]')).toHaveCount(1);
+      const shell = page.locator('.scene-shell.is-current');
+      await expect(shell).toHaveAttribute('data-index', String(index));
+      const tile = shell.locator('.tile');
+      await expect(tile.locator('.gname')).toContainText(name);
+      if (area === '사진') await tile.locator('.tile-media').click();
+      if (area === '제목') await tile.locator('.gname').click();
+      if (area === '소개') await tile.locator('.gsub').click();
+      if (area === '빈 영역') await tile.locator('.tile-body').click({ position: { x: 8, y: 5 } });
+      if (area === '아래 사진') await choice.locator('img').click();
+      if (area === '아래 글씨') await choice.locator('span').click();
+      if (area === '아래 빈 영역') {
+        const img = await choice.locator('img').boundingBox();
+        await choice.click({ position: { x: 4, y: img.height + 4 } });
+      }
+      await expect(page.locator('#studio')).toHaveClass(/active/);
+      await expect(page.locator('#chipName')).toHaveText(name);
+      await expect(page.locator('.tile video[src]')).toHaveCount(0);
+      await page.locator('#studioBackBtn').click();
+    }
+  });
+}
+
+test('PC: 아래 썸네일을 키보드로 고르면 위아래가 맞춰지고 엔터로 진입한다', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#splash').waitFor({ state: 'detached' });
+  const choice = page.getByRole('button', { name: '드라마 미리보기 선택' });
+  await choice.focus();
+  await expect(choice).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.scene-shell.is-current .gname')).toContainText('드라마');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#chipName')).toHaveText('드라마');
 });

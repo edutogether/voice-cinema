@@ -74,7 +74,11 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
       <div className="scene-choices" role="group" aria-label="여섯 장면 바로 고르기">
         {GENRES.map((genre, index) => (
           <button key={genre.id} type="button" className="scene-choice" aria-pressed={selected === index}
-            aria-label={`${genre.name} 미리보기 선택`} ref={node => { choices.current[index] = node; }} onMouseEnter={() => choose(index)} onClick={() => choose(index)}>
+            aria-label={`${genre.name} 미리보기 선택`}
+            aria-description="마우스를 올리거나 키보드로 선택하면 큰 장면이 바뀌고, 클릭하거나 엔터를 누르면 녹음실로 들어갑니다."
+            ref={node => { choices.current[index] = node; }}
+            onPointerEnter={event => { if (event.pointerType === 'mouse') choose(index); }}
+            onFocus={() => choose(index)} onClick={() => onSelect(genre)}>
             <img src={thumbUrl(genre.id)} alt="" width="320" height="180" />
             <span><small>{String(index + 1).padStart(2, '0')}</small>{genre.name}</span>
           </button>
