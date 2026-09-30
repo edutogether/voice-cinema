@@ -4,8 +4,8 @@ import { GenreTile } from './GenreTile';
 import { useSceneMotion } from '../hooks/useSceneMotion';
 
 const ignoreBlocked = () => {};
-// 900ms 감속이 끝난 뒤 200ms 여유를 둔다. Apple의 지정 수치가 아닌 이 화면의 탐색 간격이다.
-const ARROW_REPEAT_MS = 1100;
+// Bumm님 속도 피드백: 900ms 감속 뒤 장면을 볼 시간 900ms를 둔다. Apple 지정값은 아니다.
+const ARROW_REPEAT_MS = 1800;
 
 /** 중앙 작품은 앞으로, 이웃 작품은 뒤로 놓는다. 여섯 장면의 바로가기는 항상 보인다. */
 export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect: (genre: Genre) => void }) {
