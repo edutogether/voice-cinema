@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { GENRES, thumbUrl, type Genre } from '../genres';
 import { GenreTile } from './GenreTile';
 import { useSceneMotion } from '../hooks/useSceneMotion';
@@ -15,13 +15,23 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
     setSelected(index);
     setPreviewing(true);
   };
+  const [flowPaused, setFlowPaused] = useState(false);
+  const [keyboardChoices, setKeyboardChoices] = useState(false);
+  const [visible, setVisible] = useState(!document.hidden);
+  useEffect(() => {
+    const update = () => setVisible(!document.hidden);
+    document.addEventListener('visibilitychange', update);
+    return () => document.removeEventListener('visibilitychange', update);
+  }, []);
+  const choiceViewport = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => { if (keyboardChoices && choiceViewport.current) choiceViewport.current.scrollLeft = 0; }, [keyboardChoices]);
   const choices = useRef<(HTMLButtonElement | null)[]>([]);
   const pointerStart = useRef<number | null>(null);
   const dragged = useRef(false);
   const move = (step: number, keyboard = false) => {
     const next = (selected + step + GENRES.length) % GENRES.length;
     choose(next);
-    if (keyboard) choices.current[next]?.focus();
+    if (keyboard) choices.current[next]?.focus({ preventScroll: true });
   };
 
   return (
@@ -74,18 +84,37 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
         <p className="scene-position" aria-live="polite"><strong>{String(selected + 1).padStart(2, '0')}</strong><span>/ 06</span><span className="scene-current-name">{GENRES[selected].name}</span></p>
         <button type="button" className="scene-arrow" aria-label="다음 장면" onClick={() => move(1)}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m10 6 6 6-6 6" /></svg></button>
       </div>
-      <div className="scene-choices" role="group" aria-label="여섯 장면 바로 고르기">
-        {GENRES.map((genre, index) => (
-          <button key={genre.id} type="button" className="scene-choice" aria-pressed={selected === index}
-            aria-label={`${genre.name} 미리보기 선택`}
-            aria-description="마우스를 올리거나 키보드로 선택하면 큰 장면이 바뀌고, 클릭하거나 엔터를 누르면 녹음실로 들어갑니다."
-            ref={node => { choices.current[index] = node; }}
-            onPointerEnter={event => { if (event.pointerType === 'mouse') choose(index); }}
-            onFocus={() => choose(index)} onClick={() => onSelect(genre)}>
-            <img src={thumbUrl(genre.id)} alt="" width="320" height="180" />
-            <span><small>{String(index + 1).padStart(2, '0')}</small>{genre.name}</span>
-          </button>
-        ))}
+      <div className="scene-choice-row">
+        <div className="scene-choices" ref={choiceViewport} role="group" aria-label="여섯 장면 바로 고르기"
+          data-paused={!active || !visible || flowPaused} data-keyboard={keyboardChoices}
+          onKeyDownCapture={() => setKeyboardChoices(true)}
+          onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setKeyboardChoices(false); }}>
+          <div className="scene-choice-track">
+            {[0, 1, 2].map(copy => (
+              <div className="scene-choice-set" key={String(copy)} aria-hidden={copy > 0 || undefined}>
+                {GENRES.map((genre, index) => (
+                  <button key={genre.id} type="button" className={`scene-choice-card ${copy ? 'scene-choice-copy' : 'scene-choice'}`}
+                    data-genre={genre.id} aria-pressed={selected === index} tabIndex={copy ? -1 : undefined}
+                    aria-label={`${genre.name} 미리보기 선택`}
+                    aria-description="마우스를 올리거나 키보드로 선택하면 큰 장면이 바뀌고, 클릭하거나 엔터를 누르면 녹음실로 들어갑니다."
+                    ref={copy ? undefined : node => { choices.current[index] = node; }}
+                    onPointerDown={copy ? event => event.preventDefault() : undefined}
+                    onPointerEnter={event => { if (event.pointerType === 'mouse') choose(index); }}
+                    onFocus={event => { if (event.currentTarget.matches(':focus-visible')) setKeyboardChoices(true); choose(index); }}
+                    onClick={() => onSelect(genre)}>
+                    <img src={thumbUrl(genre.id)} alt="" width="320" height="180" />
+                    <span><small>{String(index + 1).padStart(2, '0')}</small>{genre.name}</span>
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+        <button type="button" className="scene-flow-toggle" aria-label={flowPaused ? '장면 흐름 재생' : '장면 흐름 일시정지'}
+          aria-pressed={flowPaused} onClick={() => setFlowPaused(value => !value)}>
+          {flowPaused ? <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6z" /></svg>
+            : <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 4h3v12H6zM12 4h3v12h-3z" /></svg>}
+        </button>
       </div>
     </div>
   );

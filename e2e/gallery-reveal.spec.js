@@ -5,6 +5,7 @@ test('PC: 여섯 바로가기로 고른 중앙 장면에서 각각 더빙을 시
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   for (const name of ['판타지', '애니메이션', '호러', '액션', '드라마', '시트콤']) {
+    await page.locator('.scene-choices').hover({ position: { x: 4, y: 3 } });
     await page.getByRole('button', { name: `${name} 미리보기 선택`, exact: true }).hover();
     const tile = page.getByRole('button', { name: `${name} 더빙 시작`, exact: true });
     await expect(tile.locator('.gname')).toBeInViewport({ ratio: 1 });
@@ -117,6 +118,7 @@ test('PC: 썸네일 호버 즉시 재생을 요청하고 빠르게 훑은 뒤 �
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   for (const name of ['애니메이션', '호러', '액션', '드라마', '시트콤']) {
+    await page.locator('.scene-choices').hover({ position: { x: 4, y: 3 } });
     await page.getByRole('button', { name: `${name} 미리보기 선택` }).hover();
     await expect(page.getByRole('button', { name: `${name} 미리보기 선택` })).toHaveAttribute('aria-pressed', 'true');
   }
@@ -143,6 +145,7 @@ for (const area of ['사진', '제목', '소개', '빈 영역', '아래 사진',
     const names = ['판타지', '애니메이션', '호러', '액션', '드라마', '시트콤'];
     for (const [index, name] of names.entries()) {
       const choice = page.getByRole('button', { name: `${name} 미리보기 선택`, exact: true });
+      await page.locator('.scene-choices').hover({ position: { x: 4, y: 3 } });
       await choice.hover();
       await expect(choice).toHaveAttribute('aria-pressed', 'true');
       await expect(page.locator('.scene-choice[aria-pressed="true"]')).toHaveCount(1);
@@ -195,6 +198,7 @@ test('PC: 순환 카드는 보이지 않는 뒤편에서 이동하고 연속 호
     requestAnimationFrame(sample);
   });
   const next = page.getByRole('button', { name: '애니메이션 미리보기 선택' });
+  await page.locator('.scene-choices').hover({ position: { x: 4, y: 3 } });
   await next.hover();
   await expect(page.locator('.scene-stage')).toHaveAttribute('data-moving', 'true');
   await expect(page.locator('.scene-stage')).toHaveAttribute('data-moving', 'false');
@@ -213,6 +217,7 @@ test('PC: 순환 카드는 보이지 않는 뒤편에서 이동하고 연속 호
   }
   expect(recycled, '순환 경계를 실제로 관찰해야 한다').toBeGreaterThan(0);
   for (const name of ['드라마', '판타지', '액션', '시트콤']) {
+    await page.locator('.scene-choices').hover({ position: { x: 4, y: 3 } });
     await page.getByRole('button', { name: `${name} 미리보기 선택` }).hover();
   }
   await expect(page.locator('.scene-stage')).toHaveAttribute('data-moving', 'false');
@@ -239,6 +244,7 @@ test('PC: 썸네일에서 이동 중인 중앙으로 마우스를 옮겨도 선�
   await page.locator('#splash').waitFor({ state: 'detached' });
   const stage = await page.locator('.scene-stage').boundingBox();
   const choice = page.getByRole('button', { name: '액션 미리보기 선택' });
+  await page.locator('.scene-choices').hover({ position: { x: 4, y: 3 } });
   await choice.hover();
   await page.mouse.move(stage.x + stage.width / 2, stage.y + stage.height / 3);
   await expect(choice).toHaveAttribute('aria-pressed', 'true');

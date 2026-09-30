@@ -8,10 +8,21 @@ for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [
     // PC 입체 미리보기 아래의 여섯 바로가기가 모두 보여야 한다. 터치는 카드 자체를 고른다.
     const tiles = page.locator(touch ? '.tile' : '.scene-choice');
     await expect(tiles).toHaveCount(6);
-    for (const tile of await tiles.all()) {
-      await expect(tile).toBeInViewport({ ratio: 1 });
-      const name = tile.locator(touch ? '.gname' : 'span');
-      await expect(name).toBeInViewport({ ratio: 1 });
+    if (touch) {
+      for (const tile of await tiles.all()) {
+        await expect(tile).toBeInViewport({ ratio: 1 });
+        await expect(tile.locator('.gname')).toBeInViewport({ ratio: 1 });
+      }
+    } else {
+      // 흐르는 줄은 순환용 사본까지 포함해 각 장르의 온전한 선택지가 하나 이상 보여야 한다.
+      expect(await page.locator('.scene-choices').evaluate(view => {
+        const bounds = view.getBoundingClientRect();
+        const visible = [...view.querySelectorAll('.scene-choice-card')].filter(card => {
+          const r = card.getBoundingClientRect();
+          return r.left >= bounds.left && r.right <= bounds.right && r.bottom <= window.innerHeight;
+        });
+        return new Set(visible.map(card => card.dataset.genre)).size;
+      })).toBe(6);
     }
     expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1)).toBe(true);
     await page.close();

@@ -173,14 +173,31 @@ body:has(#home.active) { background:#fff; }
 .scene-position { display:flex; align-items:center; gap:8px; font-size:.875rem; font-variant-numeric:tabular-nums; margin:0; }
 .scene-position > span { color:#777; }
 .scene-position .scene-current-name { display:none; }
-.scene-choices { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:14px; flex-shrink:0; padding:14px 4px 2px; border-top:1px solid #ececec; }
-.scene-choice { border:0; padding:0; min-width:0; background:none; color:#666; cursor:pointer; font:inherit; }
-.scene-choice img { width:100%; height:clamp(46px,7vh,80px); display:block; object-fit:cover; border-radius:7px; }
-.scene-choice > span { display:flex; justify-content:center; align-items:center; gap:6px; margin-top:8px; font-size:.875rem; font-weight:600; line-height:1.5; white-space:nowrap; }
-.scene-choice small { font-size:.6875rem; font-weight:400; color:#767676; }
-.scene-choice[aria-pressed=true] { color:#d9271d; }
-.scene-choice[aria-pressed=true] img { outline:2px solid #df291f; outline-offset:3px; }
-.scene-choice:focus-visible,.scene-arrow:focus-visible { outline:3px solid #171717; outline-offset:4px; }
+/* 여섯 장 + 한 칸의 여유로 순환 중에도 모든 장르의 온전한 선택지를 노출한다. */
+.scene-choice-row { position:relative; flex-shrink:0; padding-right:28px; border-top:1px solid #ececec; }
+.scene-choices { --choice-gap:14px; overflow:hidden; padding:14px 4px 6px; }
+.scene-choice-track { display:flex; width:calc(1800% / 7); animation:sceneChoicesFlow 72s linear infinite; will-change:transform; }
+.scene-choice-set { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:var(--choice-gap); padding-right:var(--choice-gap); flex:0 0 33.333333%; min-width:0; }
+@keyframes sceneChoicesFlow { to { transform:translateX(-33.333333%); } }
+.scene-choices:is(:hover,:focus-within,[data-paused=true]) .scene-choice-track,
+body:has(#splash) .scene-choice-track { animation-play-state:paused; }
+.scene-choices[data-keyboard=true] .scene-choice-track { animation:none; transform:none; width:300%; }
+.scene-flow-toggle { position:absolute; right:0; top:50%; transform:translateY(-50%); display:grid; place-items:center; width:24px; height:36px; padding:3px; border:0; border-radius:5px; background:none; color:#767676; cursor:pointer; }
+.scene-flow-toggle svg { width:16px; height:16px; fill:currentColor; }
+.scene-flow-toggle:hover { background:#f0f0f0; color:#171717; }
+.scene-flow-toggle:focus-visible { outline:2px solid #171717; }
+@media (prefers-reduced-motion:reduce) {
+ .scene-choice-track { animation:none; transform:none; width:300%; }
+ .scene-flow-toggle { display:none; }
+ .scene-choice-row { padding-right:0; }
+}
+.scene-choice-card { border:0; padding:0; min-width:0; background:none; color:#666; cursor:pointer; font:inherit; }
+.scene-choice-card img { width:100%; height:clamp(46px,7vh,80px); display:block; object-fit:cover; border-radius:7px; }
+.scene-choice-card > span { display:flex; justify-content:center; align-items:center; gap:6px; margin-top:8px; font-size:.875rem; font-weight:600; line-height:1.5; white-space:nowrap; }
+.scene-choice-card small { font-size:.6875rem; font-weight:400; color:#767676; }
+.scene-choice-card[aria-pressed=true] { color:#d9271d; }
+.scene-choice-card[aria-pressed=true] img { outline:2px solid #df291f; outline-offset:3px; }
+.scene-choice-card:focus-visible,.scene-arrow:focus-visible { outline:3px solid #171717; outline-offset:4px; }
 @media (max-width:1250px) { .scene-shell { width:68%; } }
 @media (max-width:760px) {
  .scene-stage { min-height:190px; }
@@ -191,10 +208,10 @@ body:has(#home.active) { background:#fff; }
  .scene-shell .tile-enter { display:flex; font-size:.8125rem; padding:10px 12px; }
  .scene-shell .tile-enter svg { display:none; }
  .scene-shell .tile-number { font-size:3rem; left:16px; bottom:12px; }
- .scene-choices { gap:8px; padding-top:12px; }
- .scene-choice > span { font-size:.6875rem; gap:0; }
- .scene-choice small { display:none; }
- .scene-choice img { height:44px; }
+ .scene-choices { --choice-gap:8px; padding-top:12px; }
+ .scene-choice-card > span { font-size:.6875rem; gap:0; }
+ .scene-choice-card small { display:none; }
+ .scene-choice-card img { height:44px; }
  .scene-navigation { height:42px; }
 }
 @media (max-height:700px) { .scene-choices img { height:40px; } .scene-shell .tile-body { min-height:76px; } }
