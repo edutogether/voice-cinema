@@ -5,24 +5,40 @@ import { GenreTile } from './GenreTile';
 const ignoreBlocked = () => {};
 
 /** 중앙 작품은 앞으로, 이웃 작품은 뒤로 놓는다. 여섯 장면의 바로가기는 항상 보인다. */
-export function SceneCarousel({ onSelect }: { onSelect: (genre: Genre) => void }) {
+export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect: (genre: Genre) => void }) {
   const [selected, setSelected] = useState(0);
+  const [previewing, setPreviewing] = useState(false);
+  const hoverPoint = useRef<{ x: number; y: number } | null>(null);
+  const choose = (index: number) => {
+    setSelected(index);
+    setPreviewing(true);
+  };
   const choices = useRef<(HTMLButtonElement | null)[]>([]);
   const pointerStart = useRef<number | null>(null);
   const dragged = useRef(false);
   const move = (step: number, keyboard = false) => {
     const next = (selected + step + GENRES.length) % GENRES.length;
-    setSelected(next);
+    choose(next);
     if (keyboard) choices.current[next]?.focus();
   };
 
   return (
-    <div className="scene-carousel" onKeyDown={event => {
+    <div className="scene-carousel" onMouseLeave={() => { setPreviewing(false); hoverPoint.current = null; }} onKeyDown={event => {
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
       event.preventDefault();
       move(event.key === 'ArrowRight' ? 1 : -1, true);
     }}>
-      <div className="scene-stage" aria-label="장면 미리보기" onDragStart={event => event.preventDefault()}
+      <div className="scene-stage" aria-label="장면 미리보기"
+        onPointerMove={event => {
+          if (event.pointerType !== 'mouse' || event.buttons !== 0) return;
+          const point = hoverPoint.current;
+          // 카드가 이동하며 생기는 경계 이벤트·손떨림으로 연속 전환하지 않는다.
+          if (point && Math.hypot(event.clientX - point.x, event.clientY - point.y) < 8) return;
+          const shell = (event.target as HTMLElement).closest<HTMLElement>('.scene-shell');
+          if (!shell) return;
+          hoverPoint.current = { x: event.clientX, y: event.clientY };
+          choose(Number(shell.dataset.index));
+        }} onDragStart={event => event.preventDefault()}
         onPointerDown={event => { pointerStart.current = event.clientX; dragged.current = false; }}
         onPointerUp={event => {
           const start = pointerStart.current;
@@ -41,11 +57,11 @@ export function SceneCarousel({ onSelect }: { onSelect: (genre: Genre) => void }
           const depth = Math.abs(offset);
           return (
             <div key={genre.id} className={`scene-shell${offset === 0 ? ' is-current' : ''}`}
-              data-offset={offset} aria-hidden={offset !== 0 || undefined}
+              data-index={index} data-offset={offset} aria-hidden={offset !== 0 || undefined}
               style={{ '--offset': offset, '--depth': depth, zIndex: GENRES.length - depth } as CSSProperties}>
-              <GenreTile genre={genre} sceneNumber={index + 1} playing={false} delayMs={0} solo={false}
+              <GenreTile genre={genre} sceneNumber={index + 1} playing={active && previewing && offset === 0} delayMs={0} solo={false}
                 previewOnly={offset !== 0} onBlocked={ignoreBlocked}
-                onSelect={offset === 0 ? onSelect : () => setSelected(index)} />
+                onSelect={offset === 0 ? onSelect : () => choose(index)} />
             </div>
           );
         })}
@@ -58,7 +74,7 @@ export function SceneCarousel({ onSelect }: { onSelect: (genre: Genre) => void }
       <div className="scene-choices" role="group" aria-label="여섯 장면 바로 고르기">
         {GENRES.map((genre, index) => (
           <button key={genre.id} type="button" className="scene-choice" aria-pressed={selected === index}
-            aria-label={`${genre.name} 미리보기 선택`} ref={node => { choices.current[index] = node; }} onClick={() => setSelected(index)}>
+            aria-label={`${genre.name} 미리보기 선택`} ref={node => { choices.current[index] = node; }} onMouseEnter={() => choose(index)} onClick={() => choose(index)}>
             <img src={thumbUrl(genre.id)} alt="" width="320" height="180" />
             <span><small>{String(index + 1).padStart(2, '0')}</small>{genre.name}</span>
           </button>

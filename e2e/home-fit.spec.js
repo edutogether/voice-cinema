@@ -18,17 +18,13 @@ for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [
   });
 }
 
-test('PC: 스쳐간 카드는 다운로드하지 않고 머문 카드만 경량 영상을 사용한다', async ({ page }) => {
+test('PC: 선택한 카드만 경량 영상으로 재생하고 녹음실 진입 시 해제한다', async ({ page }) => {
   const clips = [];
   page.on('request', request => { if (/\/clips\/.*\.mp4/.test(request.url())) clips.push(request.url()); });
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
-  const tile = page.locator('.tile').first();
-  const box = await tile.boundingBox();
-  await page.mouse.move(box.x + 20, box.y + 20);
-  await page.mouse.move(1, 1);
-  await page.waitForTimeout(200);
   expect(clips).toEqual([]);
+  const tile = page.locator('.tile').first();
   await tile.hover();
   await expect.poll(() => tile.locator('video').evaluate(v => v.currentTime)).toBeGreaterThan(.1);
   expect(clips.length).toBeGreaterThan(0);

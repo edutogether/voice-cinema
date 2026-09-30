@@ -13,7 +13,7 @@ interface Props {
   sceneNumber: number;
   /** PC 입체 목록의 주변 카드는 재생·탭 이동 없이 가운데로 고르는 역할이다. */
   previewOnly?: boolean;
-  /** 이 카드가 지금 재생돼야 하는지. 마우스가 있는 기기에서는 호버가 정하므로 쓰이지 않는다. */
+  /** 이 카드가 지금 재생돼야 하는지. PC에서는 목록이 선택·호버 상태를 전달한다. */
   playing: boolean;
   /** 재생을 이만큼 늦춰 시작한다 — 여섯 장이 한꺼번에 내려받기를 시작하지 않게 하려는 것이다. */
   delayMs: number;
@@ -30,65 +30,32 @@ interface Props {
 
 export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, delayMs, solo, onBlocked, onSelect }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const hoveringRef = useRef(false);
-  const hoverTimerRef = useRef<number | undefined>(undefined);
-  const hoverRunRef = useRef(0);
-  useEffect(() => () => {
-    window.clearTimeout(hoverTimerRef.current);
-    hoveringRef.current = false;
-    hoverRunRef.current++;
-  }, []);
-
-  // 유튜브 썸네일 방식: 평소엔 첫 프레임 이미지만 보여주다가, 마우스를 올리면
-  // 잠깐 스쳐가는 카드에서는 요청·디코더를 만들지 않고, 머문 카드의 360p 사본만 재생한다.
-  const playHover = (run: number) => {
+  // PC는 선택 순간 재생한다. 장면 변경·목록 이탈·녹음실 진입 시 이전 요청까지 무효화한다.
+  useEffect(() => {
+    if (!SUPPORTS_HOVER || !playing) return;
     const v = videoRef.current;
     if (!v) return;
-    if (!hoveringRef.current || hoverRunRef.current !== run) return;
-    if (!v.src) v.src = previewUrl(genre.id);
-    v.currentTime = 0;
+    let cancelled = false;
+    v.src = previewUrl(genre.id);
     v.muted = false;
+    v.loop = true;
     const reveal = () => {
-      if (hoveringRef.current && hoverRunRef.current === run) v.classList.add('playing');
+      if (!cancelled) v.classList.add('playing');
     };
     v.play().then(reveal).catch(() => {
-      // 브라우저가 소리 있는 자동재생을 막으면 무음으로라도 재생을 시도한다.
-      // 단, 그 사이 마우스가 이미 벗어났으면 되살리지 않는다 — 첫 시도의 거부는
-      // onLeave의 pause()가 부른 것일 수도 있어서, 그대로 재시도하면 방금 멈춘
-      // 영상을 다시 튼다. 소스는 이미 지워진 뒤라 화면에는 아무것도 안 보이는데
-      // paused만 false로 남는 상태가 된다(2026-09-09 CI 실패로 드러남).
-      if (!hoveringRef.current || hoverRunRef.current !== run) return;
+      if (cancelled) return;
+      // 소리 있는 자동재생이 거부된 브라우저에서도 미리보기는 움직인다.
       v.muted = true;
       v.play().then(reveal).catch(() => {});
     });
-  };
-
-  const onEnter = () => {
-    hoveringRef.current = true;
-    const run = ++hoverRunRef.current;
-    window.clearTimeout(hoverTimerRef.current);
-    // 고르려고 머문 카드만 재생한다. 지나가는 카드까지 디코더를 만들지 않는다.
-    hoverTimerRef.current = window.setTimeout(() => playHover(run), 280);
-  };
-
-  const onLeave = () => {
-    const v = videoRef.current;
-    if (!v) return;
-    hoveringRef.current = false;
-    hoverRunRef.current++;
-    window.clearTimeout(hoverTimerRef.current);
-    v.pause();
-    v.classList.remove('playing');
-    // pause()만 하고 src를 남기면 여러 카드를 잇달아 호버할수록 디코더 자원을 쥔
-    // <video>가 쌓여 브라우저의 동시 디코드 한도에 걸린다(2026-09-03 실사용에서 확인).
-    v.removeAttribute('src');
-    v.load();
-  };
-
-  useEffect(() => {
-    // 옆으로 넘어간 카드가 디코더와 소리를 계속 쥐지 않게 한다.
-    if (previewOnly) onLeave();
-  }, [previewOnly]);
+    return () => {
+      cancelled = true;
+      v.pause();
+      v.classList.remove('playing');
+      v.removeAttribute('src');
+      v.load();
+    };
+  }, [playing, genre.id]);
 
   // 마우스가 없는 기기: 여섯 장이 전부 재생된다. 한 장만 고르면 사용자는 "왜 저것만"이
   // 되고, 스크롤이 없는 화면에서는 그 한 장이 영영 바뀌지 않아 나머지가 죽은 것처럼
@@ -170,9 +137,7 @@ export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, de
           '--c-wash': withAlpha(genre.color, 0.12),
         } as React.CSSProperties
       }
-      onClick={() => { if (SUPPORTS_HOVER) onLeave(); onSelect(genre); }}
-      onMouseEnter={SUPPORTS_HOVER && !previewOnly ? onEnter : undefined}
-      onMouseLeave={SUPPORTS_HOVER ? onLeave : undefined}
+      onClick={() => onSelect(genre)}
     >
       <span className="tile-media" aria-hidden="true">
         <span className="tile-visual">

@@ -73,3 +73,63 @@ test('PC: 다음·이전·드래그로 넘기며 이전 장면의 재생 자원�
   await expect(page.getByRole('button', { name: '애니메이션 미리보기 선택' })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#home')).toHaveClass(/active/);
 });
+
+
+test('PC: 옆 장면에 올리면 전환·재생하고 정지한 마우스 아래에서 연속 이동하지 않는다', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await page.locator('#splash').waitFor({ state: 'detached' });
+  // 겹친 카드의 중심은 중앙 카드에 가려져 있다. 실제로 노출된 오른쪽 영상 위에 올린다.
+  const point = await page.evaluate(() => {
+    const stage = document.querySelector('.scene-stage').getBoundingClientRect();
+    const y = stage.y + stage.height / 3;
+    for (let x = stage.right - 2; x > stage.left; x -= 4) {
+      if (document.elementFromPoint(x, y)?.closest('.scene-shell')?.dataset.index === '1') return { x, y };
+    }
+    return null;
+  });
+  expect(point, '오른쪽 장면이 가려져 호버할 수 없다').not.toBeNull();
+  await page.mouse.move(point.x, point.y);
+  const choice = page.getByRole('button', { name: '애니메이션 미리보기 선택' });
+  const video = page.locator('[data-genre="animation"] video');
+  await expect(choice).toHaveAttribute('aria-pressed', 'true');
+  await expect.poll(() => video.evaluate(v => v.currentTime)).toBeGreaterThan(.1);
+  const before = await video.evaluate(v => v.currentTime);
+  await page.waitForTimeout(700);
+  await expect(choice).toHaveAttribute('aria-pressed', 'true');
+  expect(await video.evaluate(v => v.currentTime)).toBeGreaterThan(before);
+  expect(await page.locator('.tile video[src]').count()).toBe(1);
+});
+
+test('PC: 썸네일 호버 즉시 재생을 요청하고 빠르게 훑은 뒤 마지막 선택만 재생한다', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.__previewTiming = [];
+    let entered = 0;
+    document.addEventListener('pointerover', event => {
+      if (event.target.closest?.('.scene-choice')) entered = performance.now();
+    }, true);
+    const original = window.HTMLMediaElement.prototype.play;
+    window.HTMLMediaElement.prototype.play = function () {
+      if (this.closest('.tile') && entered) window.__previewTiming.push(performance.now() - entered);
+      return original.call(this);
+    };
+  });
+  await page.goto('/');
+  await page.locator('#splash').waitFor({ state: 'detached' });
+  for (const name of ['애니메이션', '호러', '액션', '드라마', '시트콤']) {
+    await page.getByRole('button', { name: `${name} 미리보기 선택` }).hover();
+    await expect(page.getByRole('button', { name: `${name} 미리보기 선택` })).toHaveAttribute('aria-pressed', 'true');
+  }
+  const video = page.locator('[data-genre="sitcom"] video');
+  await expect.poll(() => video.evaluate(v => v.currentTime)).toBeGreaterThan(.1);
+  const timing = await page.evaluate(() => window.__previewTiming);
+  expect(timing.length).toBeGreaterThanOrEqual(5);
+  // 기존 280ms 대기를 제거했다. 다운로드 완료 시간과 재생 요청 시점은 구분한다.
+  expect(timing[0]).toBeLessThan(200);
+  expect(await page.locator('.tile video[src]').count()).toBe(1);
+  await expect(page.locator('.tile video[src]')).toHaveAttribute('src', '/clips/previews/sitcom.mp4');
+  await page.getByRole('button', { name: '시트콤 더빙 시작', exact: true }).click();
+  await expect(page.locator('#studio')).toHaveClass(/active/);
+  await expect(page.locator('.tile video[src]')).toHaveCount(0);
+  expect(await page.locator('.tile video').evaluateAll(videos => videos.every(v => v.paused))).toBe(true);
+});
