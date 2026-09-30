@@ -3,7 +3,6 @@ import { CLIP_SECONDS } from '../config';
 import { clipUrl, stillUrl, type Genre } from '../genres';
 import { useDubbing } from '../hooks/useDubbing';
 
-import { CinemaHeader } from './CinemaHeader';
 import { ActionIcon } from './ActionIcon';
 
 interface Props {
@@ -47,16 +46,15 @@ export function Studio({ active, genre, onHome, onSave }: Props) {
 
   return (
     <section id="studio" className={`view${active ? ' active' : ''}`}>
-      <CinemaHeader step={2} />
-      <div className="studio-heading">
-        <button className="back" id="studioBackBtn" onClick={onHome}><ActionIcon name="back" /> 장면 바꾸기</button>
-        <div className="studio-title"><p className="eyebrow">나만의 녹음 부스</p><h1 ref={titleRef} tabIndex={-1}><span id="chipName">{genre.name}</span> <span>더빙</span></h1></div>
-        <p className="studio-scene-summary">{genre.summary}<span>약 {CLIP_SECONDS}초 · 자유롭게 연기해요</span></p>
-      </div>
       <div className="studio-workspace">
         <div className="studio-screen">
           <div className="stage">
             <video id="clip" ref={videoRef} poster={stillUrl(genre.id)} playsInline muted preload="auto" />
+            <div className="studio-heading">
+              <button className="back" id="studioBackBtn" onClick={onHome}><ActionIcon name="back" /> 장면 바꾸기</button>
+              <h1 ref={titleRef} tabIndex={-1}><span id="chipName">{genre.name}</span> <span>더빙</span></h1>
+              <span className="studio-brand">Voice Cinema</span>
+            </div>
             {phase === 'recording' && <div className="recpill show" id="recpill"><span className="d" /> 녹음 중</div>}
             {dub.countdown > 0 && <div className="overlay show" id="overlay"><div className="count" id="count" key={dub.countdown} aria-label={`${dub.countdown}초 뒤 녹음 시작`}>{dub.countdown}<span>곧 내 목소리가 시작돼요</span></div></div>}
           </div>
@@ -70,6 +68,7 @@ export function Studio({ active, genre, onHome, onSave }: Props) {
           <div className="controls-copy">
             <h2>{done ? '내 목소리, 마음에 드나요?' : phase === 'countdown' ? '마이크에 목소리를 준비해요' : phase === 'recording' ? '지금, 나만의 대사를 들려주세요' : '이 장면에 내 목소리를 입혀보세요'}</h2>
             <div className="hint" id="hint" role="status">{dub.hint}</div>
+            <p className="studio-note" id="studioFoot">{done ? '저장하면 영상과 목소리를 합쳐 QR로 전달해요.' : `3·2·1 카운트다운 후, 약 ${CLIP_SECONDS}초 동안 녹음해요.`}</p>
           </div>
           {!done && <div className="record-actions">
             {!recording && <button className="btn btn-ghost" id="previewBtn" onClick={dub.togglePreview}><ActionIcon name={phase === 'preview' ? 'stop' : 'play'} />{phase === 'preview' ? '미리보기 정지' : '미리 보기'}</button>}
@@ -81,9 +80,7 @@ export function Studio({ active, genre, onHome, onSave }: Props) {
             <button className="btn btn-save" id="saveBtn" onClick={() => dub.recordedBlob && onSave(dub.recordedBlob, dub.recordedMime)}>저장하기 <ActionIcon name="arrow" /></button>
           </div>}
         </div>
-        <p className="studio-note" id="studioFoot">{done ? '저장하면 영상과 목소리를 합쳐 QR로 전달해요.' : `녹음 시작 → 3·2·1 → 약 ${CLIP_SECONDS}초 뒤 자동으로 끝나요.`}</p>
       </div>
-      <p className="workflow-footer">한 번에 잘하지 않아도 괜찮아요. 마음에 들 때까지 다시 녹음해보세요.</p>
     </section>
   );
 }
