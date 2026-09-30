@@ -95,7 +95,7 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
           <button key={direction} type="button" className={`scene-arrow ${direction < 0 ? 'scene-arrow-prev' : 'scene-arrow-next'}`}
             aria-label={direction < 0 ? '이전 장면' : '다음 장면'}
             onPointerEnter={event => {
-              if (event.pointerType !== 'mouse') return;
+              if (event.pointerType !== 'mouse' || event.buttons !== 0) return;
               hoverArrow.current = direction;
               move(direction);
             }}

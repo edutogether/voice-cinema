@@ -60,6 +60,8 @@ test('PC: 화살표 키로 마지막 장면을 고른 뒤 녹음실에서 돌아
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   await page.keyboard.press('Tab');
+  await expect(page.getByRole('link', { name: '개인정보처리방침 (새 탭)' })).toBeFocused();
+  await page.keyboard.press('Tab');
   const first = page.getByRole('button', { name: '판타지 더빙 시작', exact: true });
   await expect(first).toBeFocused();
   await expect(first.locator('.tile-body')).toHaveCSS('opacity', '1');
@@ -85,6 +87,8 @@ test('PC: 다음·이전·드래그로 넘기며 이전 장면의 재생 자원�
   await expect(page.locator('[data-genre="fantasy"] video')).not.toHaveAttribute('src');
   await page.getByRole('button', { name: '이전 장면', exact: true }).click();
   await expect(page.getByRole('button', { name: '판타지 미리보기 선택' })).toHaveAttribute('aria-pressed', 'true');
+  // 이동 중인 카드 좌표 대신 정착한 중앙 이미지에서 드래그를 시작한다.
+  await expect(page.locator('.scene-stage')).toHaveAttribute('data-moving', 'false');
   const box = await first.boundingBox();
   await page.mouse.move(box.x + box.width * .65, box.y + 70);
   await page.mouse.down();
