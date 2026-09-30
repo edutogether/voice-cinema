@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { clipUrl, thumbUrl, stillUrl, withAlpha, type Genre } from '../genres';
+import { previewUrl, thumbUrl, stillUrl, withAlpha, type Genre } from '../genres';
 import { SUPPORTS_HOVER } from '../lib/pointer';
 
 // 재생이 멈췄는지 되돌아보는 간격. loop만으로는 실제 기기에서 계속 돈다는 보장이
@@ -28,18 +28,25 @@ interface Props {
 export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hoveringRef = useRef(false);
+  const hoverTimerRef = useRef<number | undefined>(undefined);
+  const hoverRunRef = useRef(0);
+  useEffect(() => () => {
+    window.clearTimeout(hoverTimerRef.current);
+    hoveringRef.current = false;
+    hoverRunRef.current++;
+  }, []);
 
   // 유튜브 썸네일 방식: 평소엔 첫 프레임 이미지만 보여주다가, 마우스를 올리면
-  // 그때 그 클립만 내려받아 재생한다. 6개를 미리 받으면 37MB라 첫 화면이 느려진다.
-  const onEnter = () => {
+  // 잠깐 스쳐가는 카드에서는 요청·디코더를 만들지 않고, 머문 카드의 360p 사본만 재생한다.
+  const playHover = (run: number) => {
     const v = videoRef.current;
     if (!v) return;
-    hoveringRef.current = true;
-    if (!v.src) v.src = clipUrl(genre.id);
+    if (!hoveringRef.current || hoverRunRef.current !== run) return;
+    if (!v.src) v.src = previewUrl(genre.id);
     v.currentTime = 0;
     v.muted = false;
     const reveal = () => {
-      if (hoveringRef.current) v.classList.add('playing');
+      if (hoveringRef.current && hoverRunRef.current === run) v.classList.add('playing');
     };
     v.play().then(reveal).catch(() => {
       // 브라우저가 소리 있는 자동재생을 막으면 무음으로라도 재생을 시도한다.
@@ -47,16 +54,25 @@ export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }
       // onLeave의 pause()가 부른 것일 수도 있어서, 그대로 재시도하면 방금 멈춘
       // 영상을 다시 튼다. 소스는 이미 지워진 뒤라 화면에는 아무것도 안 보이는데
       // paused만 false로 남는 상태가 된다(2026-09-09 CI 실패로 드러남).
-      if (!hoveringRef.current) return;
+      if (!hoveringRef.current || hoverRunRef.current !== run) return;
       v.muted = true;
       v.play().then(reveal).catch(() => {});
     });
+  };
+
+  const onEnter = () => {
+    hoveringRef.current = true;
+    const run = ++hoverRunRef.current;
+    window.clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = window.setTimeout(() => playHover(run), 140);
   };
 
   const onLeave = () => {
     const v = videoRef.current;
     if (!v) return;
     hoveringRef.current = false;
+    hoverRunRef.current++;
+    window.clearTimeout(hoverTimerRef.current);
     v.pause();
     v.classList.remove('playing');
     // pause()만 하고 src를 남기면 여러 카드를 잇달아 호버할수록 디코더 자원을 쥔
@@ -108,7 +124,7 @@ export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }
     // 처음 받을 때만 시차를 준다 — 여섯 장이 한꺼번에 내려받기를 시작하지 않게 하려는
     // 것이라, 이미 받아둔 뒤 반복될 때는 그냥 이어서 돌면 된다.
     timer = window.setTimeout(() => {
-      if (!v.src) v.src = clipUrl(genre.id);
+      if (!v.src) v.src = previewUrl(genre.id);
       v.muted = true; // 자동재생 정책을 통과하는 유일한 조건이다
       v.loop = true; // 10초짜리라 반복하지 않으면 곧 마지막 프레임에서 멈춘다
       v.play()
@@ -144,15 +160,16 @@ export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }
           '--c-wash': withAlpha(genre.color, 0.12),
         } as React.CSSProperties
       }
-      onClick={() => onSelect(genre)}
+      onClick={() => { if (SUPPORTS_HOVER) onLeave(); onSelect(genre); }}
       onMouseEnter={SUPPORTS_HOVER ? onEnter : undefined}
       onMouseLeave={SUPPORTS_HOVER ? onLeave : undefined}
     >
       <span className="tile-media" aria-hidden="true">
-        <img className="thumb" src={thumbUrl(genre.id)} srcSet={`${thumbUrl(genre.id)} 320w, ${stillUrl(genre.id)} 1280w`} sizes="(max-width: 340px) 100vw, 50vw" alt="" />
+        <img className="thumb" src={thumbUrl(genre.id)} srcSet={`${thumbUrl(genre.id)} 320w, ${stillUrl(genre.id)} 1280w`} sizes="(min-width: 1000px) 33vw, 50vw" alt="" />
         <video className="preview" ref={videoRef} muted playsInline preload="none" />
         {SUPPORTS_HOVER && <span className="tile-preview-label"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m8 5 11 7-11 7z" /></svg> 미리보기 재생 중</span>}
       </span>
+      <span className="tile-caption" aria-hidden="true"><strong>{genre.name}</strong><span>10초 <span className="caption-arrow">↗</span></span></span>
       <span className="tile-body">
         <span className="tile-meta" aria-hidden="true">10초의 장면, 나만의 대사</span>
         <span className="gname-row">

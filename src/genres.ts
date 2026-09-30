@@ -83,6 +83,8 @@ export const GENRES: Genre[] = [
 ];
 
 export const clipUrl = (genreId: string) => `/clips/${genreId}.mp4`;
+// 선택 화면만 가벼운 사본을 쓴다. 상세 미리보기·녹음·최종 합성은 원본을 유지한다.
+export const previewUrl = (genreId: string) => `/clips/previews/${genreId}.mp4`;
 export const thumbUrl = (genreId: string) => `/clips/thumbs/${genreId}.jpg`;
 // 큰 녹음 화면과 메인의 넓은 영상 벽에 사용한다. 메인은 srcSet으로 화면 크기에 맞춰 선택한다.
 export const stillUrl = (genreId: string) => `/clips/stills/${genreId}.jpg`;
