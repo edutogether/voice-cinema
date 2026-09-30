@@ -53,17 +53,19 @@
 .enginebar.show { display:block; }
 .enginebar b { color:#222; font-weight:600; }
 .enginebar.err b { color:#a2202b; }
-/* 패널은 영상 위를 덮지 않는다. 영상의 폭을 줄여 오른쪽에 실제 자리를 만든다. */
+/* 영상 크기를 매 프레임 바꾸면 레이아웃·영상 표면을 계속 갱신한다.
+   원래 크기 그대로 왼쪽으로 이동해 오른쪽 설명을 드러낸다. */
 @media (hover:hover) and (pointer:fine) and (min-width:761px) {
   .desktop-home { display:inline; }
   .tile { aspect-ratio:16 / 9; min-height:20rem; border-radius:0; overflow:hidden; --panel-width:36%; }
-  .tile-media { position:absolute; inset:0 auto 0 0; height:100%; aspect-ratio:auto; transition:width .5s cubic-bezier(.22,1,.36,1); }
+  .tile-media { position:absolute; inset:0 auto 0 0; height:100%; aspect-ratio:auto; transition:transform .5s cubic-bezier(.22,1,.36,1); }
   .tile-body { position:absolute; inset:0 0 0 auto; width:var(--panel-width); padding:clamp(18px,2.3vw,38px); gap:12px; opacity:0; transform:translateX(20px); transition:opacity .25s ease,transform .5s cubic-bezier(.22,1,.36,1); }
   .tile-meta { margin-bottom:auto; }
   .gname { font-size:clamp(1.5rem,2.2vw,2.5rem); }
-  .tile:is(:hover,:focus-visible) .tile-media { width:calc(100% - var(--panel-width)); }
+  .tile:is(:hover,:focus-visible) .tile-media { transform:translateX(calc(-1 * var(--panel-width))); }
   .tile:is(:hover,:focus-visible) .tile-body { opacity:1; transform:none; }
   .tile-media:has(.playing) .tile-preview-label { display:flex; }
+  .tile-preview-label { left:auto; right:16px; }
   .tile-enter { margin-top:12px; }
 }
 @media (max-width:1150px) {

@@ -11,10 +11,13 @@ test('PC: 호버하면 영상 옆에 설명 자리가 생기고 패널을 눌러
   const fullWidth = (await media.boundingBox()).width;
   await tile.hover();
   await expect(body).toHaveCSS('opacity', '1');
-  await expect.poll(async () => (await media.boundingBox()).width).toBeLessThan(fullWidth * .7);
   await media.evaluate(async el => { await Promise.all(el.getAnimations().map(animation => animation.finished)); });
   const mediaBox = await media.boundingBox();
   const bodyBox = await body.boundingBox();
+  const tileBox = await tile.boundingBox();
+  // 원본 크기를 고정하고 옆으로 밀어야 동영상이 늘었다 줄며 끊기지 않는다.
+  expect(mediaBox.width).toBeCloseTo(fullWidth, 0);
+  expect(mediaBox.x + mediaBox.width - tileBox.x).toBeLessThan(fullWidth * .7);
   expect(mediaBox.x + mediaBox.width).toBeLessThanOrEqual(bodyBox.x + 1);
   await tile.locator('.gname').click();
   await expect(page.locator('#chipName')).toHaveText('판타지');
