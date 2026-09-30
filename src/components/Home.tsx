@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { GENRES, type Genre } from '../genres';
 import { SUPPORTS_HOVER } from '../lib/pointer';
 import { GenreTile } from './GenreTile';
+import { FestivalHeader } from './FestivalHeader';
 
 interface Props {
   active: boolean;
@@ -71,21 +72,10 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
 
   return (
     <section id="home" className={`view${active ? ' active' : ''}`}>
-      <header className="gallery-header">
-        <div className="gallery-brand">
-          <img src="/icons/studio-microphone.png" alt="" width="32" height="32" />
-          <span>Voice Cinema</span>
-        </div>
-        <p>내 목소리로 만드는 한 편의 영화</p>
-        <ol className="gallery-steps" aria-label="더빙 이용 순서">
-          <li aria-current="step">01 장면 선택</li>
-          <li>02 목소리 녹음</li>
-          <li>03 영화 저장</li>
-        </ol>
-      </header>
+      <FestivalHeader />
 
       <div className="gallery-intro">
-        <h1>어떤 장면에 출연할까요?</h1>
+        <div><p className="gallery-kicker">Voice Cinema <span>·</span> CGV 인천</p><h1>어떤 장면에 출연할까요?</h1></div>
         <p>{SUPPORTS_HOVER ? '마우스를 올려 미리 보고, 마음에 드는 장면을 골라보세요.' : '마음에 드는 장면을 누르면 녹음실로 들어가요.'}</p>
       </div>
 

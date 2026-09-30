@@ -13,25 +13,37 @@
 
 /* 여섯 장면을 모두 보고 고른다. 확대 글자는 최소 높이가 늘어나 자연스럽게 스크롤된다. */
 #home { width:100vw; margin-inline:calc((100% - 100vw) / 2); padding:0 16px; height:100svh; min-height:40rem; flex:none; background:#fafafa; color:#181818; }
-.gallery-header { display:flex; flex-shrink:0; align-items:center; justify-content:space-between; gap:24px; padding:16px 12px; min-height:66px; border-bottom:1px solid #dedede; }
-.gallery-brand { display:flex; align-items:center; gap:10px; font-size:1.625rem; font-weight:700; letter-spacing:-.055em; white-space:nowrap; }
-.gallery-brand img { width:32px; height:32px; }
-.gallery-header > p { margin:0; color:#575757; font-size:.9375rem; }
-.gallery-steps { display:flex; gap:24px; list-style:none; padding:0; margin:0; color:#626262; font-size:.8125rem; }
-.gallery-steps li { white-space:nowrap; }
-.gallery-steps [aria-current] { color:#151515; font-weight:700; }
+.festival-header { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:24px; flex-shrink:0; min-height:80px; margin-inline:-16px; padding:14px 28px; background:white; border-bottom:1px solid #ddd; }
+.festival-partners { display:flex; align-items:center; gap:12px; }
+.festival-partners > span { color:#aaa; font-size:1.125rem; }
+.partner-cgv { width:76px; height:auto; }
+.partner-education { width:174px; height:auto; }
+.festival-steps { display:flex; align-items:center; gap:20px; list-style:none; padding:0; margin:0; font-size:.8125rem; color:#757575; }
+.festival-steps li { display:flex; align-items:center; gap:8px; white-space:nowrap; }
+.festival-steps li + li::before { content:''; width:20px; height:1px; margin-right:12px; background:#ddd; }
+.festival-steps li > span { display:grid; place-items:center; width:24px; height:24px; border:1px solid #ccc; border-radius:50%; font-weight:600; }
+.festival-steps b { font-weight:500; }
+.festival-steps [aria-current] { color:#171717; }
+.festival-steps [aria-current] > span { color:white; background:#171717; border-color:#171717; }
+.festival-steps [aria-current] b { font-weight:700; }
+.festival-signature { justify-self:end; display:flex; align-items:center; gap:8px; font-size:.9375rem; white-space:nowrap; }
+.festival-symbol { position:relative; display:block; overflow:hidden; width:44px; height:25px; flex-shrink:0; }
+.festival-symbol img { position:absolute; left:-36px; top:0; width:240px; height:auto; max-width:none; }
 .gallery-intro { display:flex; flex-shrink:0; justify-content:space-between; align-items:baseline; gap:20px; padding:18px 12px; }
 .gallery-intro h1 { margin:0; font-size:1.625rem; font-weight:600; letter-spacing:-.04em; line-height:1.4; word-break:keep-all; }
 .gallery-intro p { margin:0; font-size:.9375rem; line-height:1.6; color:#575757; word-break:keep-all; }
+.gallery-intro .gallery-kicker { display:flex; align-items:center; gap:8px; margin:0 0 6px; color:#303030; font-size:.75rem; font-weight:600; }
+.gallery-kicker::before { content:''; width:6px; height:6px; background:#ed3124; border-radius:50%; }
+.gallery-kicker span { color:#929292; }
 .grid { display:grid; flex:1; min-height:0; grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:repeat(3,minmax(0,1fr)); gap:12px; }
 .tile { position:relative; display:flex; flex-direction:column; width:100%; min-width:0; min-height:0; appearance:none; border:0; padding:0; text-align:left; background:#f0f0ee; color:#171717; font:inherit; cursor:pointer; border-radius:8px; transition:box-shadow .18s,transform .18s; --hl-shadow:0 0 0 2px var(--c),0 0 12px var(--c-glow),inset 0 0 0 100vmax var(--c-wash); }
 .tile-media { display:block; position:relative; flex:1; min-height:0; z-index:1; width:100%; overflow:hidden; background:#181818; }
 /* iOS에서도 확대되는 자식 자신의 모서리가 카드와 같아야 한다. */
-.tile-media,.tile-media .thumb,.tile-media .preview { border-radius:inherit; }
+.tile-media,.tile-visual,.tile-media .thumb,.tile-media .preview { border-radius:inherit; }
+.tile-visual { display:block; position:absolute; inset:0; }
 .tile-media .thumb,.tile-media .preview { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:opacity .2s,transform .3s; }
 .tile-media .preview { opacity:0; }
 .tile-media .preview.playing { opacity:1; }
-.tile-media:has(.preview.playing) .thumb { opacity:0; }
 .tile-preview-label { display:none; position:absolute; left:16px; top:16px; align-items:center; gap:5px; background:#111d; color:white; padding:6px 9px; border-radius:3px; font-size:.75rem; line-height:1.5; }
 .tile-preview-label svg { width:12px; height:12px; }
 .tile-caption { display:none; }
@@ -60,7 +72,7 @@
   .desktop-home { display:inline; }
   .tile { border-radius:0; overflow:hidden; --panel-width:44%; --caption-height:3rem; }
   .tile-media { position:absolute; inset:0 auto var(--caption-height) 0; transition:transform .24s ease-out; }
-  .tile-body { position:absolute; inset:0 0 var(--caption-height) auto; width:var(--panel-width); justify-content:center; padding:16px; gap:12px; opacity:0; transform:translateX(12px); transition:opacity .18s ease,transform .24s ease-out; }
+  .tile-body { position:absolute; inset:0 0 var(--caption-height) auto; width:var(--panel-width); justify-content:center; padding:16px; gap:12px; opacity:0; transition:opacity .16s ease; }
   .tile-caption { position:absolute; inset:auto 0 0; height:var(--caption-height); display:flex; justify-content:space-between; align-items:center; gap:12px; padding:0 12px; background:#fafafa; }
   .tile-caption strong { font-size:1.125rem; font-weight:600; }
   .tile-caption > span { display:flex; align-items:center; gap:16px; font-size:.75rem; color:#626262; }
@@ -69,9 +81,10 @@
   .gname { font-size:1.5rem; }
   .gsub { font-size:.9375rem; }
   .tile:is(:hover,:focus-visible) .tile-media { transform:translateX(calc(-1 * var(--panel-width))); }
-  .tile-media .thumb,.tile-media .preview { transition:opacity .15s,transform .24s ease-out; }
-  .tile:is(:hover,:focus-visible) .thumb,.tile:is(:hover,:focus-visible) .preview { transform:translateX(calc(var(--panel-width) / 2)); }
-  .tile:is(:hover,:focus-visible) .tile-body { opacity:1; transform:none; }
+  .tile-visual { transition:transform .24s ease-out; }
+  .tile-media .thumb,.tile-media .preview { transition:none; }
+  .tile:is(:hover,:focus-visible) .tile-visual { transform:translateX(calc(var(--panel-width) / 2)); }
+  .tile:is(:hover,:focus-visible) .tile-body { opacity:1; }
   .tile-media:has(.playing) .tile-preview-label { display:flex; }
   .tile-preview-label { left:auto; right:16px; }
   .tile-enter { margin-top:0; padding-top:12px; }
@@ -80,8 +93,9 @@
   .grid { grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-rows:repeat(2,minmax(0,1fr)); }
 }
 @media (max-width:1150px) {
-  .cinema-festival,.gallery-header > p { display:none; }
-  .gallery-steps { gap:18px; }
+  .cinema-festival,.festival-english { display:none; }
+  .festival-header { gap:14px; padding-inline:20px; }
+  .festival-steps { gap:12px; }
   .gallery-intro { align-items:flex-start; }
   .gallery-intro p { max-width:330px; }
 }
@@ -92,6 +106,10 @@
   .gsub { font-size:.9375rem; }
 }
 @media (max-width:900px) {
+  .festival-header { grid-template-columns:1fr auto; gap:10px 16px; padding:10px 20px; }
+  .festival-steps { grid-column:1 / -1; grid-row:2; justify-content:center; }
+  .partner-cgv { width:58px; }
+  .partner-education { width:145px; }
   .cinema-steps { gap:20px; }
   .cinema-header { flex-wrap:wrap; padding:20px 0 0; gap:16px; }
   .cinema-steps { flex-basis:100%; justify-content:space-between; }
@@ -101,9 +119,14 @@
 }
 @media (max-width:760px) {
   #home { padding:0 10px; }
-  .gallery-header { min-height:56px; padding:12px 8px; }
-  .gallery-brand { font-size:1.375rem; }
-  .gallery-steps { display:none; }
+  .festival-header { margin-inline:-10px; padding:10px 16px; }
+  .festival-partners { gap:8px; }
+  .partner-cgv { width:48px; }
+  .partner-education { width:125px; }
+  .festival-symbol { display:none; }
+  .festival-steps { gap:10px; font-size:.75rem; }
+  .festival-steps li { gap:6px; }
+  .festival-steps li + li::before { width:14px; margin-right:4px; }
   .gallery-intro { display:block; padding:12px 8px; }
   .gallery-intro h1 { font-size:1.375rem; }
   .gallery-intro p { font-size:.875rem; margin-top:8px; max-width:none; }
@@ -117,4 +140,4 @@
   .cinema-footer p span { margin-left:8px; }
   .enginebar { margin-inline:8px; }
 }
-@media (prefers-reduced-motion:reduce) { .tile,.tile-media,.tile-media .thumb,.tile-media .preview,.tile-body { transition:none; } }
+@media (prefers-reduced-motion:reduce) { .tile,.tile-media,.tile-visual,.tile-media .thumb,.tile-media .preview,.tile-body { transition:none; } }

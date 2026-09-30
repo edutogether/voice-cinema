@@ -64,7 +64,8 @@ export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }
     hoveringRef.current = true;
     const run = ++hoverRunRef.current;
     window.clearTimeout(hoverTimerRef.current);
-    hoverTimerRef.current = window.setTimeout(() => playHover(run), 140);
+    // 240ms 패널 이동이 끝난 뒤 디코더를 시작해 영상 표면 교체가 이동 중에 겹치지 않게 한다.
+    hoverTimerRef.current = window.setTimeout(() => playHover(run), 280);
   };
 
   const onLeave = () => {
@@ -165,8 +166,10 @@ export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }
       onMouseLeave={SUPPORTS_HOVER ? onLeave : undefined}
     >
       <span className="tile-media" aria-hidden="true">
-        <img className="thumb" src={thumbUrl(genre.id)} srcSet={`${thumbUrl(genre.id)} 320w, ${stillUrl(genre.id)} 1280w`} sizes="(min-width: 1000px) 33vw, 50vw" alt="" />
-        <video className="preview" ref={videoRef} muted playsInline preload="none" />
+        <span className="tile-visual">
+          <img className="thumb" src={thumbUrl(genre.id)} srcSet={`${thumbUrl(genre.id)} 320w, ${stillUrl(genre.id)} 1280w`} sizes="(min-width: 1000px) 33vw, 50vw" alt="" />
+          <video className="preview" ref={videoRef} muted playsInline preload="none" />
+        </span>
         {SUPPORTS_HOVER && <span className="tile-preview-label"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m8 5 11 7-11 7z" /></svg> 미리보기 재생 중</span>}
       </span>
       <span className="tile-caption" aria-hidden="true"><strong>{genre.name}</strong><span>10초 <span className="caption-arrow">↗</span></span></span>
