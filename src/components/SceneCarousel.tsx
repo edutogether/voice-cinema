@@ -1,9 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { GENRES, thumbUrl, type Genre } from '../genres';
 import { GenreTile } from './GenreTile';
 import { useSceneMotion } from '../hooks/useSceneMotion';
 
 const ignoreBlocked = () => {};
+// 900ms 감속이 끝난 뒤 200ms 여유를 둔다. Apple의 지정 수치가 아닌 이 화면의 탐색 간격이다.
+const ARROW_REPEAT_MS = 1100;
 
 /** 중앙 작품은 앞으로, 이웃 작품은 뒤로 놓는다. 여섯 장면의 바로가기는 항상 보인다. */
 export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect: (genre: Genre) => void }) {
@@ -11,6 +13,24 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
   const [previewing, setPreviewing] = useState(false);
   const shells = useSceneMotion(selected, GENRES.length, active);
   const hoverArrow = useRef<number | null>(null);
+  const arrowTimer = useRef<number | null>(null);
+  const stopArrow = useCallback(() => {
+    if (arrowTimer.current !== null) window.clearInterval(arrowTimer.current);
+    arrowTimer.current = null;
+    hoverArrow.current = null;
+  }, []);
+  useEffect(() => {
+    if (!active) stopArrow();
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const cancel = () => { if (document.hidden || reduced.matches) stopArrow(); };
+    document.addEventListener('visibilitychange', cancel);
+    reduced.addEventListener('change', cancel);
+    return () => {
+      stopArrow();
+      document.removeEventListener('visibilitychange', cancel);
+      reduced.removeEventListener('change', cancel);
+    };
+  }, [active, stopArrow]);
   const choose = (index: number) => {
     setSelected(index);
     setPreviewing(true);
@@ -52,7 +72,8 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
   };
 
   return (
-    <div className="scene-carousel" onMouseLeave={() => { setPreviewing(false); hoverArrow.current = null; }} onKeyDown={event => {
+    <div className="scene-carousel" onMouseLeave={() => { setPreviewing(false); stopArrow(); }} onKeyDown={event => {
+      stopArrow();
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
       event.preventDefault();
       move(event.key === 'ArrowRight' ? 1 : -1, true);
@@ -96,10 +117,17 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
             aria-label={direction < 0 ? '이전 장면' : '다음 장면'}
             onPointerEnter={event => {
               if (event.pointerType !== 'mouse' || event.buttons !== 0) return;
+              stopArrow();
               hoverArrow.current = direction;
               move(direction);
+              if (!active || document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+              arrowTimer.current = window.setInterval(() => {
+                setSelected(index => (index + direction + GENRES.length) % GENRES.length);
+                setPreviewing(true);
+              }, ARROW_REPEAT_MS);
             }}
-            onPointerLeave={() => { hoverArrow.current = null; }}
+            onPointerLeave={stopArrow}
+            onPointerCancel={stopArrow}
             onClick={event => {
               // 마우스 진입으로 이미 한 칸 이동했으면 클릭으로 두 번 넘기지 않는다.
               if (event.detail === 0 || hoverArrow.current !== direction) move(direction);
