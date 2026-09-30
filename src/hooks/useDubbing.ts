@@ -9,8 +9,8 @@ export type Phase = 'idle' | 'ready' | 'preview' | 'requesting' | 'countdown' | 
 
 // 권한 대기·카운트다운·실패 원인을 해당 전환 시점의 안내로 보여준다.
 const HINT = {
-  idle: '먼저 [미리 보기]로 영상을 확인하고, 준비되면 녹음하세요',
-  ready: '준비됐나요? [녹음 시작]을 누르면 3·2·1 후 시작돼요',
+  idle: "'녹음 시작'을 누르면 잠시 후 녹음이 시작돼요 !",
+  ready: "'녹음 시작'을 누르면 잠시 후 녹음이 시작돼요 !",
   preview: '영상을 보며 어떤 더빙을 할지 생각해 보세요',
   requesting: '마이크를 준비하고 있어요. 권한 요청이 뜨면 허용해 주세요.',
   countdown: '숫자가 사라지면 장면에 맞춰 목소리를 들려주세요.',
@@ -192,7 +192,8 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
 
       const v = videoRef.current;
       if (!v) return;
-      v.muted = true;
+      // 녹음 중에도 원본 소리를 듣는다. 저장할 음성은 마이크 스트림만 사용한다.
+      v.muted = false;
       v.currentTime = 0;
 
       let limitTimer: ReturnType<typeof setTimeout> | undefined;
@@ -222,6 +223,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
         const vv = videoRef.current;
         if (vv) {
           vv.pause();
+          vv.muted = true;
           vv.currentTime = 0;
         }
       };
@@ -237,6 +239,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
       try {
         recorder.start();
       } catch {
+        resetVideo(v);
         micStream = null;
         setHint(HINT.recordFailed);
         setPhase('idle');

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('상세 미리보기는 원본 소리를 출력하고 정지하면 멈춘다', async ({ page }) => {
+test('미리보기·녹음은 원본 소리를 출력하고 다시 듣기는 녹음한 목소리만 재생한다', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   // 실제 오디오가 있는 원본으로 검사한다. 나머지 다섯 원본은 사실상 무음이다.
@@ -28,6 +28,19 @@ test('상세 미리보기는 원본 소리를 출력하고 정지하면 멈춘�
   await expect(page.locator('#clip')).toHaveJSProperty('muted', false);
   await page.locator('#previewBtn').click();
   await expect(page.locator('#clip')).toHaveJSProperty('paused', true);
+  await expect(page.locator('#clip')).toHaveJSProperty('muted', true);
+  await page.locator('#recBtn').click();
+  await expect(page.locator('#recpill')).toBeVisible();
+  await expect.poll(() => page.locator('#clip').evaluate(video => {
+    const samples = new Float32Array(window.previewAudioProbe.analyser.fftSize);
+    window.previewAudioProbe.analyser.getFloatTimeDomainData(samples);
+    return !video.muted && !video.paused && samples.some(sample => Math.abs(sample) > .005);
+  }), { timeout: 8000, intervals: [100] }).toBe(true);
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#clip')).toHaveJSProperty('paused', true);
+  await expect(page.locator('#clip')).toHaveJSProperty('muted', true);
+  await page.locator('#replayBtn').click();
+  await expect.poll(() => page.locator('#clip').evaluate(video => video.paused)).toBe(false);
   await expect(page.locator('#clip')).toHaveJSProperty('muted', true);
   await page.evaluate(() => window.previewAudioProbe.context.close());
 });

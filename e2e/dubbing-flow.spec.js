@@ -178,7 +178,7 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     await page.locator('button', { hasText: '다시 녹음' }).click();
     await expect(page.locator('#recBtn')).toBeVisible();
     await expect(page.locator('#afterRow')).toBeHidden();
-    await expect(page.locator('#hint')).toContainText('미리 보기');
+    await expect(page.locator('#hint')).toContainText("'녹음 시작'을 누르면 잠시 후 녹음이 시작돼요 !");
     await expect(page.locator('#recBtn')).toBeFocused();
   });
 });

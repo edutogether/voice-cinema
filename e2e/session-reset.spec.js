@@ -33,7 +33,7 @@ test('홈에 나갔다 같은 장르로 다시 들어오면 이전 녹음이 남
   // 이전 녹음이 버려져 처음 상태여야 한다.
   await expect(page.locator('#recBtn')).toBeVisible();
   await expect(page.locator('#afterRow')).toBeHidden();
-  await expect(page.locator('#hint')).toContainText('미리 보기');
+  await expect(page.locator('#hint')).toContainText("'녹음 시작'을 누르면 잠시 후 녹음이 시작돼요 !");
 });
 
 test('녹음 도중 홈으로 나가면 그 녹음 결과가 화면에 반영되지 않는다', async ({ page }) => {

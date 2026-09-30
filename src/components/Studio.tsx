@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CLIP_SECONDS } from '../config';
 import { clipUrl, stillUrl, type Genre } from '../genres';
 import { useDubbing } from '../hooks/useDubbing';
@@ -18,11 +18,17 @@ export function Studio({ active, genre, onHome, onSave }: Props) {
   const replayButtonRef = useRef<HTMLButtonElement>(null);
   const recordButtonRef = useRef<HTMLButtonElement>(null);
   const previousPhaseRef = useRef('idle');
+  const [captionTime, setCaptionTime] = useState(0);
+  const [captionsEnabled, setCaptionsEnabled] = useState(true);
   const dub = useDubbing(genre.id, videoRef);
   const { phase } = dub;
   const recording = phase === 'requesting' || phase === 'countdown' || phase === 'recording';
   const done = phase === 'recorded' || phase === 'replaying';
   const displayProgress = phase === 'recorded' ? 100 : dub.progress;
+  // 원본 음성에서 확인된 구간만 표시한다. 참가자가 녹음한 대사의 자막으로 오인하지 않게
+  // 다시 듣기·완성본에는 원본 자막을 표시하거나 합성하지 않는다.
+  const hasCaptions = genre.id === 'drama';
+  const captionVisible = hasCaptions && captionsEnabled && (phase === 'preview' || phase === 'recording') && captionTime >= 2.64 && captionTime < 4.64;
 
   useEffect(() => {
     if (active) titleRef.current?.focus({ preventScroll: true });
@@ -49,14 +55,21 @@ export function Studio({ active, genre, onHome, onSave }: Props) {
       <div className="studio-workspace">
         <div className="studio-screen">
           <div className="stage">
-            <video id="clip" ref={videoRef} poster={stillUrl(genre.id)} playsInline muted preload="auto" />
             <div className="studio-heading">
               <button className="back" id="studioBackBtn" onClick={onHome}><ActionIcon name="back" /> 장면 바꾸기</button>
-              <h1 ref={titleRef} tabIndex={-1}><span id="chipName">{genre.name}</span> <span>더빙</span></h1>
-              <span className="studio-brand">Voice Cinema</span>
+              <div className="studio-scene-title">
+                <span className="studio-scene-label"><span id="chipName">{genre.name}</span> · 목소리 녹음</span>
+                <h1 ref={titleRef} tabIndex={-1}>{genre.summary}</h1>
+              </div>
+              <span className="studio-brand">Voice <em>Cinema</em></span>
             </div>
+            <div className="studio-video-frame">
+            <video id="clip" ref={videoRef} poster={stillUrl(genre.id)} playsInline muted preload="auto" onTimeUpdate={event => setCaptionTime(event.currentTarget.currentTime)} onSeeking={event => setCaptionTime(event.currentTarget.currentTime)} />
+            {hasCaptions && !done && <button className="studio-caption-toggle" aria-pressed={captionsEnabled} aria-label="원본 자막" onClick={() => setCaptionsEnabled(value => !value)}>자막 {captionsEnabled ? '켜짐' : '꺼짐'}</button>}
+            {captionVisible && <div className="studio-captions"><span lang="en">I wanted to tell you the truth.</span><strong>너에게 진실을 말하고 싶었어.</strong></div>}
             {phase === 'recording' && <div className="recpill show" id="recpill"><span className="d" /> 녹음 중</div>}
             {dub.countdown > 0 && <div className="overlay show" id="overlay"><div className="count" id="count" key={dub.countdown} aria-label={`${dub.countdown}초 뒤 녹음 시작`}>{dub.countdown}<span>곧 내 목소리가 시작돼요</span></div></div>}
+            </div>
             <div className="studio-player-dock">
               <div className="studio-timeline">
                 <span className="timeline-state">{phase === 'recorded' ? '녹음 완료' : phase === 'requesting' ? '마이크 연결 중' : phase === 'countdown' ? '녹음 준비' : phase === 'recording' ? '녹음 중' : phase === 'replaying' ? '내 목소리 다시 듣기' : '장면 미리보기'}</span>
@@ -65,7 +78,7 @@ export function Studio({ active, genre, onHome, onSave }: Props) {
               </div>
               <div className={`controls${recording ? ' is-recording' : ''}${done ? ' is-recorded' : ''}`}>
                 <div className="controls-copy">
-                  <h2>{done ? '내 목소리, 마음에 드나요?' : phase === 'requesting' ? '마이크를 연결하고 있어요' : phase === 'countdown' ? '잠시 후, 내 목소리로' : phase === 'recording' ? '지금, 나만의 대사를 들려주세요' : '이 장면의 목소리가 되어보세요'}</h2>
+                  <h2>{done ? '내 목소리, 마음에 드나요 ?' : phase === 'requesting' ? '마이크를 연결하고 있어요' : phase === 'countdown' ? '잠시 후, 내 목소리로' : phase === 'recording' ? '지금, 나만의 대사를 들려주세요' : '준비됐나요 ?'}</h2>
                   <div className="hint" id="hint" role="status">{dub.hint}</div>
                 </div>
                 {!done && <div className="record-actions">
