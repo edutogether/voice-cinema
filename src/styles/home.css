@@ -175,10 +175,18 @@ body:has(#home.active) { background:#fff; }
 .scene-position .scene-current-name { display:none; }
 /* 여섯 장 + 한 칸의 여유로 순환 중에도 모든 장르의 온전한 선택지를 노출한다. */
 .scene-choice-row { position:relative; flex-shrink:0; padding-right:28px; border-top:1px solid #ececec; }
-.scene-choices { --choice-gap:14px; overflow:hidden; padding:14px 4px 6px; }
-.scene-choice-track { display:flex; width:calc(1800% / 7); animation:sceneChoicesFlow 72s linear infinite; will-change:transform; }
+.scene-choices { --choice-gap:14px; overflow:hidden; contain:paint; padding:14px 4px 6px; }
+.scene-choice-track { display:flex; width:calc(1800% / 7); animation:sceneChoicesFlow var(--flow-duration,48s) linear infinite; transform:translate3d(0,0,0); will-change:transform; }
 .scene-choice-set { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:var(--choice-gap); padding-right:var(--choice-gap); flex:0 0 33.333333%; min-width:0; }
-@keyframes sceneChoicesFlow { to { transform:translateX(-33.333333%); } }
+@keyframes sceneChoicesFlow {
+ from { transform:translate3d(0,0,0); }
+ to { transform:translate3d(var(--flow-distance,-33.333333%),0,0); }
+}
+/* 바깥 테두리는 고정해 지나가는 이미지와 글자가 부드럽게 드러나게 한다. */
+.scene-choice-row::before,.scene-choice-row::after { content:""; position:absolute; z-index:1; top:1px; bottom:0; width:20px; pointer-events:none; }
+.scene-choice-row::before { left:0; background:linear-gradient(90deg,#fff,#ffffff00); }
+.scene-choice-row::after { right:28px; background:linear-gradient(270deg,#fff,#ffffff00); }
+.scene-choice-row:has([data-keyboard=true])::before,.scene-choice-row:has([data-keyboard=true])::after { display:none; }
 .scene-choices:is(:hover,:focus-within,[data-paused=true]) .scene-choice-track,
 body:has(#splash) .scene-choice-track { animation-play-state:paused; }
 .scene-choices[data-keyboard=true] .scene-choice-track { animation:none; transform:none; width:300%; }
@@ -190,6 +198,7 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
  .scene-choice-track { animation:none; transform:none; width:300%; }
  .scene-flow-toggle { display:none; }
  .scene-choice-row { padding-right:0; }
+ .scene-choice-row::before,.scene-choice-row::after { display:none; }
 }
 .scene-choice-card { border:0; padding:0; min-width:0; background:none; color:#666; cursor:pointer; font:inherit; }
 .scene-choice-card img { width:100%; height:clamp(46px,7vh,80px); display:block; object-fit:cover; border-radius:7px; }

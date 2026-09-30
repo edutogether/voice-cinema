@@ -25,6 +25,23 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
   }, []);
   const choiceViewport = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => { if (keyboardChoices && choiceViewport.current) choiceViewport.current.scrollLeft = 0; }, [keyboardChoices]);
+  useLayoutEffect(() => {
+    const track = choiceViewport.current?.querySelector<HTMLElement>('.scene-choice-track');
+    const set = track?.firstElementChild;
+    if (!track || !set) return;
+    // 좁은 화면에서도 지나치게 느려지지 않도록 초당 이동 거리를 고정한다.
+    // 순환 거리도 실제 첫 묶음 너비와 맞춰 마지막 프레임의 위치 오차를 피한다.
+    const measure = () => {
+      const width = set.getBoundingClientRect().width;
+      if (width <= 0) return;
+      track.style.setProperty('--flow-distance', `${-width}px`);
+      track.style.setProperty('--flow-duration', `${width / 22}s`);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(set);
+    return () => observer.disconnect();
+  }, []);
   const choices = useRef<(HTMLButtonElement | null)[]>([]);
   const pointerStart = useRef<number | null>(null);
   const dragged = useRef(false);
