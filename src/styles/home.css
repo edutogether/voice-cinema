@@ -33,7 +33,7 @@ body:has(#home.active) { background:#fff; }
 
 .festival-header { margin-inline:-28px; }
 .chart-layout { display:flex; flex:1; min-height:0; gap:28px; padding-top:26px; }
-.chart-aside { display:flex; flex-direction:column; width:clamp(14.5rem,17vw,16.5rem); flex-shrink:0; padding-right:24px; border-right:1px solid #ededed; }
+.chart-aside { display:flex; flex-direction:column; width:clamp(13rem,15vw,14.5rem); flex-shrink:0; padding-right:24px; border-right:1px solid #ededed; }
 .chart-app { margin:0; font-size:1.125rem; font-weight:750; letter-spacing:-.03em; }
 .chart-app span { display:block; margin-top:8px; color:#727272; font-size:.75rem; font-weight:400; letter-spacing:0; }
 .chart-invitation { margin-top:auto; padding-block:32px; }
@@ -41,7 +41,7 @@ body:has(#home.active) { background:#fff; }
 .chart-invitation h2 { margin:0; font-size:clamp(1.75rem,2.2vw,2.25rem); line-height:1.3; letter-spacing:-.055em; font-weight:750; }
 .chart-invitation em { display:inline-block; white-space:nowrap; font-style:normal; color:#df291f; }
 .chart-invitation > p:last-of-type { color:#626262; font-size:.875rem; line-height:1.75; margin:20px 0 0; }
-.chart-invitation img { display:block; width:72px; height:72px; margin:0 0 18px; }
+.chart-invitation img { display:block; width:60px; height:60px; margin:0 0 16px; }
 .chart-guide { margin-top:auto; padding-top:20px; border-top:1px solid #e5e5e5; }
 .chart-guide strong { font-size:.875rem; }
 .chart-guide p { font-size:.75rem; line-height:1.75; color:#626262; margin:10px 0 20px; }
@@ -144,7 +144,7 @@ body:has(#home.active) { background:#fff; }
 }
 @media (max-height:780px) and (min-width:1251px) {
   .chart-invitation { padding-block:24px; }
-  .chart-invitation img { width:56px; height:56px; margin:0 0 16px; }
+  .chart-invitation img { width:48px; height:48px; margin:0 0 14px; }
   .chart-invitation h2 { font-size:1.75rem; }
   .chart-guide p { margin-bottom:10px; }
 }
