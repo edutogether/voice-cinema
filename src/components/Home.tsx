@@ -86,8 +86,7 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
           </div>
           <div className="chart-guide">
             <strong>목소리만 준비하세요.</strong>
-            <p>마음에 드는 장면에 더빙하고,<br />내 영화를 QR로 가져가세요.</p>
-            <span className="chart-guide-date">2026. 11. 14 <i aria-hidden="true">·</i> CGV 인천</span>
+            <p>마음에 드는 장면에 내 목소리를 입히고,<br />AI가 뚝딱 만든 나만의 영화 장면을 가져가세요.</p>
           </div>
         </aside>
         <div className="chart-main">
@@ -127,7 +126,7 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
       </div>
 
       <footer className="cinema-footer">
-        <p>제4회 인천어린이청소년영화제</p>
+        <p>제4회 인천어린이청소년영화제<br />2026. 11. 14 · CGV 인천</p>
       </footer>
     </section>
   );

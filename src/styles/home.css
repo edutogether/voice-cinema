@@ -48,8 +48,6 @@ body:has(#home.active) { background:#fff; }
 .chart-guide { display:flex; flex-direction:column; flex:0 0 var(--scene-strip-height); height:var(--scene-strip-height); margin-top:auto; padding-top:22px; border-top:1px solid #ececec; }
 .chart-guide strong { font-size:.9375rem; line-height:20px; font-weight:700; letter-spacing:-.035em; }
 .chart-guide p { margin:6px 0 0; color:#626262; font-size:.75rem; line-height:18px; letter-spacing:-.015em; }
-.chart-guide-date { display:block; margin-top:auto; padding-bottom:3px; font-size:.6875rem; line-height:14px; color:#767676; font-variant-numeric:tabular-nums; }
-.chart-guide-date i { padding-inline:4px; font-style:normal; color:#bbb; }
 .chart-main { flex:1; display:flex; flex-direction:column; min-width:0; min-height:0; }
 .chart-heading { display:flex; align-items:center; justify-content:space-between; gap:24px; flex-shrink:0; padding:0 0 20px; }
 .chart-eyebrow { margin:0 0 6px; color:#737373; font-size:.8125rem; }
@@ -80,6 +78,7 @@ body:has(#home.active) { background:#fff; }
 .tile:active .thumb,.tile:active .preview,.tile.is-solo .thumb,.tile.is-solo .preview { transform:scale(1.05); }
 .cinema-footer { display:flex; flex-shrink:0; align-items:center; justify-content:space-between; gap:20px; min-height:34px; font-size:.75rem; line-height:1.5; color:#737373; }
 .cinema-footer p { margin:0; }
+#home .cinema-footer { min-height:52px; padding-block:8px; }
 .cinema-footer p span { margin-left:16px; }
 .privacylink { position:absolute; top:calc(100% + 3px); right:28px; display:inline-flex; min-height:24px; align-items:center; color:#666; text-decoration:none; font-size:.75rem; }
 .privacylink:hover { color:#171717; text-decoration:underline; }
@@ -148,7 +147,7 @@ body:has(#home.active) { background:#fff; }
   .enginebar { right:136px; top:94px; font-size:.625rem; }
 }
 @media (max-height:780px) and (min-width:1251px) {
-  .chart-invitation { padding-block:24px; }
+  .chart-invitation { padding-block:12px; }
   .chart-invitation img { width:48px; height:48px; margin:0 0 14px; }
   .chart-invitation h2 { font-size:1.75rem; }
 }
