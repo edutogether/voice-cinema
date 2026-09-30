@@ -5,14 +5,15 @@ import { pickSupportedMime } from '../logic';
 // 예전 app.js에서는 정리(리셋) 작업이 resetRecord/stopAll/stopPreview/녹음 실패 분기
 // 네 곳에 겹쳐 흩어져 있어, 상태를 하나 추가할 때마다 네 곳을 모두 고쳐야 했다.
 // 여기서는 단계(phase) 하나가 화면 전체를 결정하고, 정리는 effect cleanup이 맡는다.
-export type Phase = 'idle' | 'ready' | 'preview' | 'countdown' | 'recording' | 'recorded' | 'replaying';
+export type Phase = 'idle' | 'ready' | 'preview' | 'requesting' | 'countdown' | 'recording' | 'recorded' | 'replaying';
 
-// 안내 문구는 단계에서 파생하지 않고 전환 시점에 명시적으로 바꾼다 — 카운트다운
-// 동안에는 직전 문구가 그대로 남아야 하기 때문이다(전환 전 동작과 동일).
+// 권한 대기·카운트다운·실패 원인을 해당 전환 시점의 안내로 보여준다.
 const HINT = {
   idle: '먼저 [미리 보기]로 영상을 확인하고, 준비되면 녹음하세요',
   ready: '준비됐나요? [녹음 시작]을 누르면 3·2·1 후 시작돼요',
   preview: '영상을 보며 어떤 더빙을 할지 생각해 보세요',
+  requesting: '마이크를 준비하고 있어요. 권한 요청이 뜨면 허용해 주세요.',
+  countdown: '숫자가 사라지면 장면에 맞춰 목소리를 들려주세요.',
   recording: '지금 목소리를 연기해 보세요 !',
   recorded: '잘했어요! 다시 듣고, 마음에 들면 저장하세요',
   replaying: '내 더빙 영화 재생 중…',
@@ -163,20 +164,25 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
   }, [phase, stopPreview, videoRef]);
 
   const startRecord = useCallback(() => {
-    if (phase !== 'idle' && phase !== 'ready') return;
+    if (phase !== 'idle' && phase !== 'ready' && phase !== 'preview') return;
     const myRun = ++runRef.current;
     const stale = () => myRun !== runRef.current;
+    resetVideo(videoRef.current);
+    setProgress(0);
+    setPhase('requesting');
+    setHint(HINT.requesting);
 
     void (async () => {
       const stream = await ensureMic();
       if (stale()) return;
       if (!stream) {
         setHint(window.isSecureContext ? HINT.micDenied : HINT.insecure);
+        setPhase('idle');
         return;
       }
 
-      // 카운트다운 동안에는 문구를 바꾸지 않는다 — 직전 문구가 그대로 남는다.
       setPhase('countdown');
+      setHint(HINT.countdown);
       for (let n = 3; n > 0; n--) {
         setCountdown(n);
         await new Promise((r) => setTimeout(r, 900));
