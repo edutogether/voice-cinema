@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 // 실제 네트워크 지연을 재현한다. 서비스워커의 클립 캐시 응답은 경로 가로채기를 우회한다.
 test.use({ serviceWorkers: 'block' });
 
-for (const [genre, name] of [['drama', '드라마'], ['action', '액션']]) {
+for (const [genre, name] of [['fantasy', '판타지'], ['animation', '애니메이션'], ['horror', '호러'], ['action', '액션'], ['drama', '드라마'], ['sitcom', '시트콤']]) {
   test(`${name}: 원본 로딩 전 첫 화면부터 최종 크기와 위치로 표시한다`, async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     let releaseVideo;
