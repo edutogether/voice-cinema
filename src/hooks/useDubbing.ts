@@ -15,10 +15,14 @@ const HINT = {
   requesting: '마이크를 준비하고 있어요. 권한 요청이 뜨면 허용해 주세요.',
   countdown: '숫자가 사라지면 장면에 맞춰 목소리를 들려주세요.',
   recording: '지금 목소리를 연기해 보세요 !',
-  recorded: '잘했어요! 다시 듣고, 마음에 들면 저장하세요',
+  recorded: '잘했어요 ! 다시 듣고, 마음에 들면 저장하세요',
   replaying: '내 더빙 영화 재생 중…',
-  micDenied: '⚠️ 마이크 사용을 허용해 주세요 (브라우저 권한)',
-  insecure: '⚠️ 이 페이지는 https 주소여야 마이크가 켜져요',
+  micDenied: '마이크 접근이 차단됐어요. 브라우저의 사이트 권한과 기기의 마이크 권한을 허용한 뒤 다시 눌러 주세요.',
+  micMissing: '연결된 마이크를 찾지 못했어요. 마이크를 연결한 뒤 다시 눌러 주세요.',
+  micBusy: '마이크를 열지 못했어요. 다른 앱의 마이크 사용을 종료하고 연결 상태를 확인한 뒤 다시 눌러 주세요.',
+  micUnsupported: '이 브라우저에서는 녹음을 지원하지 않아요. Chrome 또는 Safari에서 열어 주세요.',
+  micUnknown: '마이크를 연결하지 못했어요. 연결 상태를 확인한 뒤 다시 눌러 주세요.',
+  insecure: '녹음하려면 HTTPS 주소 또는 이 기기의 localhost 주소에서 열어 주세요.',
   micBroken: '⚠ 마이크에 문제가 생겼어요 — 연결 확인 후 다시 눌러 주세요',
   recordFailed: '⚠ 녹음을 시작하지 못했어요 — 다시 눌러 주세요',
 } as const;
@@ -40,16 +44,30 @@ function resetVideo(v: HTMLVideoElement | null): void {
 // 마이크 스트림은 한 번 얻으면 앱이 살아있는 동안 재사용한다(장르를 바꿀 때마다
 // 권한 프롬프트가 다시 뜨지 않도록).
 let micStream: MediaStream | null = null;
-async function ensureMic(): Promise<MediaStream | null> {
-  if (micStream) return micStream;
-  if (!window.isSecureContext) return null;
+type MicFailure = 'denied' | 'missing' | 'busy' | 'unsupported' | 'insecure' | 'unknown';
+type MicResult = { stream: MediaStream; error?: never } | { stream?: never; error: MicFailure };
+const MIC_HINT: Record<MicFailure, string> = {
+  denied: HINT.micDenied, missing: HINT.micMissing, busy: HINT.micBusy,
+  unsupported: HINT.micUnsupported, insecure: HINT.insecure, unknown: HINT.micUnknown,
+};
+async function ensureMic(): Promise<MicResult> {
+  if (!window.isSecureContext) return { error: 'insecure' };
+  if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') return { error: 'unsupported' };
+  if (micStream?.getAudioTracks().some(track => track.readyState === 'live' && track.enabled)) return { stream: micStream };
+  // 끊어진 스트림으로 녹음하지 않고 다음 입력에서 마이크를 다시 연결한다.
+  micStream?.getTracks().forEach(track => track.stop());
+  micStream = null;
   try {
     micStream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true },
     });
-    return micStream;
-  } catch {
-    return null;
+    return { stream: micStream };
+  } catch (error) {
+    const name = error instanceof DOMException ? error.name : '';
+    if (name === 'NotAllowedError' || name === 'SecurityError') return { error: 'denied' };
+    if (name === 'NotFoundError' || name === 'OverconstrainedError') return { error: 'missing' };
+    if (name === 'NotReadableError' || name === 'AbortError') return { error: 'busy' };
+    return { error: 'unknown' };
   }
 }
 
@@ -61,6 +79,7 @@ export interface Dubbing {
   countdown: number;
   recordedBlob: Blob | null;
   recordedMime: string;
+  micError: MicFailure | null;
   togglePreview: () => void;
   startRecord: () => void;
   replay: () => void;
@@ -72,6 +91,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
   const [hint, setHint] = useState<string>(HINT.idle);
   const [progress, setProgress] = useState(0);
   const [countdown, setCountdown] = useState(0);
+  const [micError, setMicError] = useState<MicFailure | null>(null);
   const [recorded, setRecorded] = useState<{ blob: Blob; mime: string } | null>(null);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -104,6 +124,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     setRecorded(null);
     setProgress(0);
     setCountdown(0);
+    setMicError(null);
     setHint(HINT.idle);
     setPhase('idle');
   }, [stopRecorder, stopReplay, videoRef]);
@@ -172,17 +193,20 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     const stale = () => myRun !== runRef.current;
     resetVideo(videoRef.current);
     setProgress(0);
+    setMicError(null);
     setPhase('requesting');
     setHint(HINT.requesting);
 
     void (async () => {
-      const stream = await ensureMic();
+      const result = await ensureMic();
       if (stale()) return;
-      if (!stream) {
-        setHint(window.isSecureContext ? HINT.micDenied : HINT.insecure);
+      if (result.error) {
+        setMicError(result.error);
+        setHint(MIC_HINT[result.error]);
         setPhase('idle');
         return;
       }
+      const stream = result.stream;
 
       setPhase('countdown');
       setHint(HINT.countdown);
@@ -287,6 +311,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     countdown,
     recordedBlob: recorded?.blob ?? null,
     recordedMime: recorded?.mime ?? '',
+    micError,
     togglePreview,
     startRecord,
     replay,

@@ -102,7 +102,7 @@ export function Studio({ active, genre, onHome, onSave, entrance }: Props) {
               <div className={`controls${recording ? ' is-recording' : ''}${done ? ' is-recorded' : ''}`}>
                 <div className="controls-copy">
                   <h2>{done ? '내 목소리, 마음에 드나요 ?' : phase === 'requesting' ? '마이크를 연결하고 있어요' : phase === 'countdown' ? '잠시 후, 내 목소리로' : phase === 'recording' ? '지금, 나만의 대사를 들려주세요' : '준비됐나요 ?'}</h2>
-                  <div className="hint" id="hint" role="status">{dub.hint}</div>
+                  <div className="hint" id="hint" role="status" data-mic-error={dub.micError ?? undefined}>{dub.hint}</div>
                 </div>
                 {!done && <div className="record-actions">
                   {!recording && <button className="btn btn-ghost" id="previewBtn" onClick={dub.togglePreview}><ActionIcon name={phase === 'preview' && !previewPaused ? 'pause' : 'play'} />{phase !== 'preview' ? '미리 보기' : previewEnded ? '다시 재생' : previewPaused ? '계속 재생' : '일시정지'}</button>}
