@@ -4,6 +4,7 @@ test('드라마 원본 자막은 해당 대사 구간에만 보이고 끄거나 
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   await page.getByRole('button', { name: '드라마 더빙 시작', exact: true }).click();
+  await page.locator('#previewBtn').click();
   await page.locator('#clip').evaluate(video => { video.pause(); video.currentTime = 3; });
   await expect(page.locator('.studio-captions')).toContainText('I wanted to tell you the truth.');
   await expect(page.locator('.studio-captions')).toContainText('너에게 진실을 말하고 싶었어.');

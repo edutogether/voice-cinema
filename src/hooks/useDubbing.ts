@@ -61,7 +61,6 @@ export interface Dubbing {
   countdown: number;
   recordedBlob: Blob | null;
   recordedMime: string;
-  startPreview: () => void;
   togglePreview: () => void;
   startRecord: () => void;
   replay: () => void;
@@ -288,7 +287,6 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     countdown,
     recordedBlob: recorded?.blob ?? null,
     recordedMime: recorded?.mime ?? '',
-    startPreview,
     togglePreview,
     startRecord,
     replay,

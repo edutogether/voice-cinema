@@ -32,12 +32,14 @@ test.describe('홈 화면', () => {
 });
 
 test.describe('스튜디오: 미리보기', () => {
-  test('진입하면 미리보기가 재생되고 일시정지 후 같은 위치에서 재개한다', async ({ page }) => {
+  test('진입은 정지하고 미리보기 클릭으로 재생·일시정지·재개한다', async ({ page }) => {
     await page.goto('/');
     await page.locator('.tile', { hasText: '판타지' }).click();
     await expect(page.locator('#chipName')).toHaveText('판타지');
 
     const previewBtn = page.locator('#previewBtn');
+    await expect(page.locator('#clip')).toHaveJSProperty('paused', true);
+    await previewBtn.click();
     await expect(previewBtn).toHaveText('일시정지');
     await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(.2);
     await expect(page.locator('#hint')).toContainText('생각해 보세요');

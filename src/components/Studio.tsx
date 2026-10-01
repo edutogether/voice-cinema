@@ -52,12 +52,13 @@ export function Studio({ active, genre, onHome, onSave, entrance }: Props) {
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    // 캡처는 확대 효과에서만 쓴다. 실제 플레이어는 항상 처음부터 재생한다.
+    // 진입은 첫 장면에서 대기한다. 재생·녹음은 사용자가 누를 때만 시작한다.
     v.src = studioClipUrl(genre.id);
     v.load();
-    dub.startPreview();
-    // 진입마다 한 번만 시작한다. 일시정지·녹음 상태 변화로 자동 재시작하지 않는다.
-  }, [genre.id, dub.startPreview]);
+    v.pause();
+    v.currentTime = 0;
+    v.muted = true;
+  }, [genre.id]);
 
   return (
     <section id="studio" className={`view${active ? ' active' : ''}`}>
@@ -78,7 +79,7 @@ export function Studio({ active, genre, onHome, onSave, entrance }: Props) {
             {canTogglePlayback && <button type="button" className="studio-screen-playback" id="screenPlaybackBtn"
               aria-label={playbackLabel}
               onClick={dub.togglePreview}>
-              {phase === 'preview' && previewPaused && <span aria-hidden="true"><ActionIcon name="play" /></span>}
+              {previewPaused && <span aria-hidden="true"><ActionIcon name="play" /></span>}
             </button>}
             {phase === 'preview' && !previewPaused && buffering && <div className="studio-buffering" role="status">영상을 불러오고 있어요</div>}
             {hasCaptions && !done && <button className="studio-caption-toggle" aria-pressed={captionsEnabled} aria-label="원본 자막" onClick={() => setCaptionsEnabled(value => !value)}>자막 {captionsEnabled ? '켜짐' : '꺼짐'}</button>}

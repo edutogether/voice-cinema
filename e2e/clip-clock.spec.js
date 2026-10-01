@@ -5,6 +5,8 @@ test('대기는 전체 길이, 재생·녹음은 영상 시계의 초와 100분�
   await page.locator('#splash').waitFor({ state: 'detached' });
   await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
   const clock = page.locator('.clip-time');
+  await expect(clock).toHaveText('10:00');
+  await page.locator('#previewBtn').click();
   await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(0);
   await expect(clock).toHaveText(/^\d{2}:\d{2} \/ 10:00$/);
   await page.locator('#clip').evaluate(video => { video.pause(); video.currentTime = 3.45; });
@@ -40,6 +42,7 @@ for (const [width, height] of [[1440, 900], [390, 844]]) {
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
     await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
+    await page.locator('#previewBtn').click();
     await expect.poll(() => page.locator('#clip').evaluate(video => video.currentTime)).toBeGreaterThan(.5);
     const sample = await page.evaluate(() => new Promise(resolve => {
       const video = document.querySelector('#clip');
