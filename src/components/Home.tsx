@@ -86,7 +86,7 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
           </div>
           <div className="chart-guide">
             <strong>목소리만 준비하세요.</strong>
-            <p>마음에 드는 장면에 내 목소리를 입히고,<br />AI가 뚝딱 만든 나만의 영화 장면을 가져가세요.</p>
+            <p>마음에 드는 장면에 내 목소리를 입히고,<br />AI가 만든 나만의 영화 장면을 가져가세요.</p>
           </div>
         </aside>
         <div className="chart-main">
