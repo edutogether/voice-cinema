@@ -22,6 +22,8 @@ build/
 *.log
 .cache/
 tmp/
+# 음향 편집 전 원본 사본은 로컬에 보관하고 해시 명세만 이력에 남긴다.
+_media/originals/**/*.mp4
 cert/
 .env
 test-results/
