@@ -21,7 +21,7 @@ test('마우스 없이 첫 장면을 재생하고 여섯 장면을 순서대로 
   await page.clock.install();
   await page.clock.pauseAt(new Date(Date.now() + 1000));
   // 사용자 선택 뒤에는 그 장면을 볼 시간을 다시 부여한다.
-  await page.getByRole('button', { name: '다음 장면', exact: true }).hover();
+  await page.getByRole('button', { name: '다음 장면', exact: true }).click();
   await page.mouse.move(1, 1);
   await expect(current).toHaveAttribute('data-index', '1');
   let elapsed = 0;

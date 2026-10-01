@@ -99,7 +99,7 @@ test('PC: 다음·이전·드래그로 넘기며 이전 장면의 재생 자원�
 });
 
 
-test('PC: 영상 위는 선택을 유지하고 흰 화살표 진입은 즉시 이동하며 클릭은 중복하지 않는다', async ({ page }) => {
+test('PC: 영상과 화살표 호버는 선택을 유지하고 화살표 클릭은 한 장 이동한다', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
@@ -119,13 +119,14 @@ test('PC: 영상 위는 선택을 유지하고 흰 화살표 진입은 즉시 �
   await expect(arrow).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   await expect(arrow).toHaveCSS('color', 'rgb(255, 255, 255)');
   await arrow.hover();
+  await expect(page.locator('.scene-shell.is-current')).toHaveAttribute('data-index', '0');
+  await expect(arrow).toHaveCSS('background-color', 'rgba(0, 0, 0, 0.2)');
   const choice = page.getByRole('button', { name: '애니메이션 미리보기 선택' });
   const video = page.locator('[data-genre="animation"] video');
-  await expect(choice).toHaveAttribute('aria-pressed', 'true');
   await arrow.click();
   await expect(choice).toHaveAttribute('aria-pressed', 'true');
   const hit = await arrow.boundingBox();
-  // 원형 입력 영역에서 벗어나면 연속 넘김은 멈춘다.
+  // 화살표 주변 영상 위에서도 선택한 장면을 유지한다.
   await page.mouse.move(hit.x + 1, hit.y + 1);
   await expect.poll(() => video.evaluate(v => v.currentTime)).toBeGreaterThan(.1);
   const before = await video.evaluate(v => v.currentTime);
@@ -134,6 +135,8 @@ test('PC: 영상 위는 선택을 유지하고 흰 화살표 진입은 즉시 �
   expect(await video.evaluate(v => v.currentTime)).toBeGreaterThan(before);
   await expect(page.locator('.tile video[src]')).toHaveCount(1);
   await arrow.hover();
+  await expect(page.locator('.scene-shell.is-current')).toHaveAttribute('data-index', '1');
+  await arrow.click();
   await expect(page.locator('.scene-shell.is-current')).toHaveAttribute('data-index', '2');
 });
 

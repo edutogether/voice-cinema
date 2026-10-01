@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { GENRES, thumbUrl, type Genre } from '../genres';
 import { GenreTile } from './GenreTile';
 import { useSceneMotion } from '../hooks/useSceneMotion';
 
 const ignoreBlocked = () => {};
-// Bumm님 속도 피드백: 900ms 감속 뒤 장면을 볼 시간 900ms를 둔다. Apple 지정값은 아니다.
-const ARROW_REPEAT_MS = 1800;
 // 대기 화면은 한 장면을 충분히 본 뒤 다음 장면을 소개한다. 직접 조작하는 간격과 구분한다.
 const AUTO_ADVANCE_MS = 6000;
 
@@ -14,6 +12,7 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
   const [selected, setSelected] = useState(0);
   const [ready, setReady] = useState(() => !document.getElementById('splash'));
   const [autoPaused, setAutoPaused] = useState(false);
+  const [stageHovered, setStageHovered] = useState(false);
   const [keyboardPaused, setKeyboardPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   useEffect(() => {
@@ -28,25 +27,9 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
     return () => { observer.disconnect(); reduced.removeEventListener('change', update); };
   }, []);
   const shells = useSceneMotion(selected, GENRES.length, active);
-  const hoverArrow = useRef<number | null>(null);
-  const arrowTimer = useRef<number | null>(null);
-  const stopArrow = useCallback(() => {
-    if (arrowTimer.current !== null) window.clearInterval(arrowTimer.current);
-    arrowTimer.current = null;
-    hoverArrow.current = null;
-  }, []);
   useEffect(() => {
-    if (!active) stopArrow();
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const cancel = () => { if (document.hidden || reduced.matches) stopArrow(); };
-    document.addEventListener('visibilitychange', cancel);
-    reduced.addEventListener('change', cancel);
-    return () => {
-      stopArrow();
-      document.removeEventListener('visibilitychange', cancel);
-      reduced.removeEventListener('change', cancel);
-    };
-  }, [active, stopArrow]);
+    if (!active) setStageHovered(false);
+  }, [active]);
   const choose = (index: number) => {
     setSelected(index);
   };
@@ -59,12 +42,12 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
     return () => document.removeEventListener('visibilitychange', update);
   }, []);
   useEffect(() => {
-    if (!active || !ready || !visible || autoPaused || keyboardPaused || reducedMotion) return;
+    if (!active || !ready || !visible || autoPaused || stageHovered || keyboardPaused || reducedMotion) return;
     const timer = window.setTimeout(() => {
-      if (hoverArrow.current === null) setSelected(index => (index + 1) % GENRES.length);
+      setSelected(index => (index + 1) % GENRES.length);
     }, AUTO_ADVANCE_MS);
     return () => window.clearTimeout(timer);
-  }, [active, ready, visible, autoPaused, keyboardPaused, reducedMotion, selected]);
+  }, [active, ready, visible, autoPaused, stageHovered, keyboardPaused, reducedMotion, selected]);
   const choiceViewport = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => { if (keyboardChoices && choiceViewport.current) choiceViewport.current.scrollLeft = 0; }, [keyboardChoices]);
   useLayoutEffect(() => {
@@ -94,18 +77,19 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
   };
 
   return (
-    <div className="scene-carousel" onMouseLeave={stopArrow}
+    <div className="scene-carousel"
       onPointerDownCapture={() => setKeyboardPaused(false)}
       onFocusCapture={event => { if ((event.target as HTMLElement).matches(':focus-visible')) setKeyboardPaused(true); }}
       onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setKeyboardPaused(false); }}
       onKeyDown={event => {
-      stopArrow();
       setKeyboardPaused(true);
       if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
       event.preventDefault();
       move(event.key === 'ArrowRight' ? 1 : -1, true);
     }}>
       <div className="scene-stage" aria-label="장면 미리보기"
+        onPointerEnter={event => { if (event.pointerType === 'mouse') setStageHovered(true); }}
+        onPointerLeave={() => setStageHovered(false)}
         onDragStart={event => event.preventDefault()}
         onPointerDown={event => {
           if ((event.target as HTMLElement).closest('.scene-arrow')) return;
@@ -118,7 +102,7 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
           dragged.current = true;
           move(event.clientX < start ? 1 : -1);
         }}
-        onPointerCancel={() => { pointerStart.current = null; }}
+        onPointerCancel={() => { pointerStart.current = null; setStageHovered(false); }}
         onClickCapture={event => {
           if (!dragged.current) return;
           event.preventDefault(); event.stopPropagation(); dragged.current = false;
@@ -138,22 +122,7 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
         {[-1, 1].map(direction => (
           <button key={direction} type="button" className={`scene-arrow ${direction < 0 ? 'scene-arrow-prev' : 'scene-arrow-next'}`}
             aria-label={direction < 0 ? '이전 장면' : '다음 장면'}
-            onPointerEnter={event => {
-              if (event.pointerType !== 'mouse' || event.buttons !== 0) return;
-              stopArrow();
-              hoverArrow.current = direction;
-              move(direction);
-              if (!active || document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-              arrowTimer.current = window.setInterval(() => {
-                setSelected(index => (index + direction + GENRES.length) % GENRES.length);
-              }, ARROW_REPEAT_MS);
-            }}
-            onPointerLeave={stopArrow}
-            onPointerCancel={stopArrow}
-            onClick={event => {
-              // 마우스 진입으로 이미 한 칸 이동했으면 클릭으로 두 번 넘기지 않는다.
-              if (event.detail === 0 || hoverArrow.current !== direction) move(direction);
-            }}>
+            onClick={() => move(direction)}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d={direction < 0 ? 'm14 6-6 6 6 6' : 'm10 6 6 6-6 6'} />
             </svg>
