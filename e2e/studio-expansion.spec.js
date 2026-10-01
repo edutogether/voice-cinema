@@ -12,25 +12,37 @@ for (const origin of ['중앙 카드', '아래 썸네일']) {
     await button.click();
     const start = await page.locator('.studio-entrance').evaluate(el => {
       const animation = el.getAnimations()[0];
+      const image = el.querySelector('.studio-entrance-pixels');
       animation.pause();
       animation.currentTime = 0;
-      const style = getComputedStyle(el);
-      const matrix = new window.DOMMatrixReadOnly(style.transform);
-      const insets = style.clipPath.match(/inset\(([-\d.]+)px ([-\d.]+)px/);
+      image.getAnimations()[0].pause();
+      image.getAnimations()[0].currentTime = 0;
       const rect = el.getBoundingClientRect();
-      return { x: rect.x + Number(insets[2]) * matrix.a, y: rect.y + Number(insets[1]) * matrix.d,
-        width: rect.width - 2 * Number(insets[2]) * matrix.a, height: rect.height - 2 * Number(insets[1]) * matrix.d,
-        scaleX: matrix.a, scaleY: matrix.d };
+      return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
     });
     for (const key of ['x', 'y', 'width', 'height']) expect(Math.abs(start[key] - source[key])).toBeLessThan(2);
-    expect(start.scaleX).toBeCloseTo(start.scaleY, 5);
-    const middle = await page.locator('.studio-entrance').evaluate(el => {
-      el.getAnimations()[0].currentTime = 180;
-      return new window.DOMMatrixReadOnly(getComputedStyle(el).transform).a;
+    await expect(page.locator('.studio-entrance canvas')).toBeVisible();
+    await expect(page.locator('.studio-entrance img')).toHaveCount(0);
+    const samples = await page.locator('.studio-entrance').evaluate(el => {
+      const pixels = el.querySelector('.studio-entrance-pixels');
+      return [0, 70, 140, 210, 280, 350, 420].map(time => {
+        el.getAnimations()[0].currentTime = time;
+        pixels.getAnimations()[0].currentTime = time;
+        const outer = new window.DOMMatrixReadOnly(getComputedStyle(el).transform);
+        const inner = new window.DOMMatrixReadOnly(getComputedStyle(pixels).transform);
+        return { x: outer.a * inner.a, y: outer.d * inner.d, clip: getComputedStyle(el).clipPath };
+      });
     });
-    expect(middle).toBeGreaterThan(start.scaleX);
-    expect(middle).toBeLessThan(1);
-    await page.locator('.studio-entrance').evaluate(el => el.getAnimations()[0].finish());
+    for (const sample of samples) {
+      expect(sample.x).toBeCloseTo(sample.y, 3);
+      expect(sample.clip).toBe('none');
+    }
+    expect(samples[3].x).toBeGreaterThan(samples[0].x);
+    expect(samples[3].x).toBeLessThan(1);
+    await page.locator('.studio-entrance').evaluate(el => {
+      el.querySelector('.studio-entrance-pixels').getAnimations()[0].finish();
+      el.getAnimations()[0].finish();
+    });
     await expect(page.locator('.studio-entrance')).toBeHidden();
     await expect(page.locator('.studio-video-frame')).toBeVisible();
     await expect(page.locator('#previewBtn')).toBeEnabled();
@@ -108,4 +120,34 @@ test('자동재생이 거부되어도 재생 버튼으로 복구하고 확대 �
   await expect(page.locator('#previewBtn')).toHaveText('계속 재생');
   await page.locator('#previewBtn').click();
   await expect.poll(() => page.locator('#clip').evaluate(v => !v.paused && !v.muted && v.currentTime > 0)).toBe(true);
+});
+
+
+test('확대 중 JPEG 재인코딩 없이 픽셀이 표시되고 전환 뒤 실제 영상이 남는다', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#splash').waitFor({ state: 'detached' });
+  await page.getByRole('button', { name: '장면 흐름 일시정지', exact: true }).click();
+  await page.evaluate(() => {
+    window.entranceFrameTimes = [];
+    const original = window.HTMLCanvasElement.prototype.toDataURL;
+    window.HTMLCanvasElement.prototype.toDataURL = function (...args) {
+      window.entranceEncodes = (window.entranceEncodes || 0) + 1;
+      return original.apply(this, args);
+    };
+    const started = performance.now();
+    const sample = now => {
+      window.entranceFrameTimes.push(now);
+      if (now - started < 1100) requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  });
+  await page.locator('.scene-shell.is-current .tile').click();
+  await expect(page.locator('.studio-entrance')).toHaveCount(0);
+  expect(await page.evaluate(() => window.entranceEncodes || 0)).toBe(0);
+  await expect(page.locator('.studio-video-frame')).toHaveCSS('opacity', '1');
+  await expect.poll(() => page.locator('#clip').evaluate(v => !v.paused && v.currentTime > .5)).toBe(true);
+  // 별도 이미지 디코딩으로 확대 동안 몇백 ms씩 멎는 회귀를 잡는다. 현장 기기 보장은 아니다.
+  const times = await page.evaluate(() => window.entranceFrameTimes);
+  expect(times.length).toBeGreaterThan(10);
+  expect(Math.max(...times.slice(1).map((time, i) => time - times[i]))).toBeLessThan(200);
 });

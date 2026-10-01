@@ -1,5 +1,5 @@
 export interface SceneEntrance {
-  image: string;
+  frame: HTMLCanvasElement;
   rect: { x: number; y: number; width: number; height: number };
 }
 
@@ -11,18 +11,17 @@ export function captureSceneEntrance(source?: HTMLElement): SceneEntrance | null
   if (!rect.width || !rect.height) return null;
   const video = media.querySelector('video');
   const image = media instanceof HTMLImageElement ? media : media.querySelector('img');
-  let url = image?.currentSrc ?? '';
-  if (video && video.readyState >= 2) {
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const context = canvas.getContext('2d');
-    if (context) {
-      try {
-        context.drawImage(video, 0, 0);
-        url = canvas.toDataURL('image/jpeg', .92);
-      } catch { /* 이미지가 다른 출처라 캡처할 수 없으면 이미 표시된 포스터를 사용한다. */ }
-    }
-  }
-  return url ? { image: url, rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height } } : null;
+  const pixels = video && video.readyState >= 2 ? video : image;
+  if (!pixels) return null;
+  const width = pixels instanceof HTMLVideoElement ? pixels.videoWidth : pixels.naturalWidth;
+  const height = pixels instanceof HTMLVideoElement ? pixels.videoHeight : pixels.naturalHeight;
+  if (!width || !height) return null;
+  const frame = document.createElement('canvas');
+  frame.width = width;
+  frame.height = height;
+  const context = frame.getContext('2d');
+  if (!context) return null;
+  // 이미 디코드된 픽셀만 복사한다. 클릭 경로에서 JPEG 인코딩·재디코딩을 하지 않는다.
+  context.drawImage(pixels, 0, 0);
+  return { frame, rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height } };
 }
