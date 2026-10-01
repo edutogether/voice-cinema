@@ -17,13 +17,14 @@ for (const [width, height] of [[1440, 900], [1920, 1080], [1366, 768], [390, 844
       return {
         backgrounds: [header, dock].map(el => getComputedStyle(el).backgroundColor),
         noOverlap: header.getBoundingClientRect().bottom <= frame.getBoundingClientRect().top && frame.getBoundingClientRect().bottom <= dock.getBoundingClientRect().top,
-        containedVideo: getComputedStyle(document.querySelector('#clip')).objectFit,
+        videoFit: getComputedStyle(document.querySelector('#clip')).objectFit,
         overflow: document.documentElement.scrollWidth > window.innerWidth,
       };
     });
     expect(layout.backgrounds).toEqual(['rgb(255, 255, 255)', 'rgb(255, 255, 255)']);
     expect(layout.noOverlap).toBe(true);
-    expect(layout.containedVideo).toBe('contain');
+    // 가로 화면은 여백 없이 채우고 세로 휴대폰은 전체 구도를 유지한다(Bumm님 요청).
+    expect(layout.videoFit).toBe(width > height ? 'cover' : 'contain');
     expect(layout.overflow).toBe(false);
     await page.locator('#recBtn').scrollIntoViewIfNeeded();
     await expect(page.locator('#recBtn')).toBeInViewport();
