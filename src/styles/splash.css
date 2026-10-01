@@ -99,6 +99,12 @@ body:not(.app-ready) #splash {
   padding-inline: 24px;
   text-align: center;
 }
+#splash .splash-education {
+  display: block;
+  width: 176px;
+  height: auto;
+  margin-top: 8px;
+}
 #splash .sbar {
   display: block;
   width: 190px;
