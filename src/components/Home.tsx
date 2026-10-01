@@ -77,7 +77,7 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
 
       <div className="chart-layout">
         <aside className="chart-aside" aria-label="Voice Cinema 체험 안내">
-          <p className="chart-app"><strong>Voice <em>Cinema</em></strong><span>CGV 인천 · 인천광역시교육청</span></p>
+          <p className="chart-app"><strong>Voice <em>Cinema</em></strong><span>CGV 인천 · 인천광역시교육청 주최</span></p>
           <div className="chart-invitation">
             <img src="/icons/studio-microphone.png" alt="" width="160" height="160" />
             <p className="chart-label">나만의 더빙 극장</p>
@@ -126,7 +126,7 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
       </div>
 
       <footer className="cinema-footer">
-        <p>제4회 인천어린이청소년영화제<br />2026. 11. 14 · CGV 인천</p>
+        <p>제4회 인천어린이청소년영화제<br />2026. 11. 14. (토) · CGV 인천</p>
       </footer>
     </section>
   );
