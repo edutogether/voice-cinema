@@ -18,9 +18,10 @@ body:has(#studio.active) { background:#fff; }
 @media (orientation:landscape) { .stage video { object-fit:cover; } }
 .studio-caption-toggle { position:absolute; top:20px; right:28px; z-index:2; min-height:40px; padding:8px 14px; border:1px solid #ffffff70; border-radius:999px; color:#fff; background:#171717d9; font:inherit; font-size:.8125rem; cursor:pointer; }
 .studio-caption-toggle:focus-visible { outline:3px solid #df291f; outline-offset:3px; }
-.studio-captions { position:absolute; bottom:24px; left:50%; transform:translateX(-50%); width:max-content; max-width:calc(100% - 32px); padding:10px 20px; border-radius:8px; background:#111e; color:#fff; text-align:center; line-height:1.5; pointer-events:none; }
-.studio-captions span { display:block; font-size:clamp(.8125rem,1.2vw,1.125rem); }
-.studio-captions strong { display:block; font-size:clamp(1rem,1.6vw,1.5rem); font-weight:600; word-break:keep-all; }
+/* 배경 상자 없이 영상 위에 놓고, 밝은 장면에서도 글자 윤곽이 남도록 그림자를 겹친다. */
+.studio-captions { position:absolute; bottom:clamp(20px,4%,52px); left:50%; transform:translateX(-50%); width:max-content; max-width:calc(100% - 40px); color:#fff; text-align:center; line-height:1.35; pointer-events:none; text-shadow:-1px -1px 1px #000b,1px -1px 1px #000b,-1px 1px 1px #000b,1px 1px 1px #000b,0 2px 4px #000e; }
+.studio-captions span { display:block; margin-bottom:5px; font-size:clamp(.8125rem,1.15vw,1.25rem); font-weight:500; }
+.studio-captions strong { display:block; font-size:clamp(1.125rem,2.1vw,2.25rem); font-weight:600; letter-spacing:0; word-break:keep-all; }
 .overlay { position:absolute; inset:0; z-index:3; display:grid; place-items:center; background:#0008; }
 .count { color:#fff; font-size:clamp(6rem,14vw,12rem); font-weight:600; line-height:1; text-align:center; font-variant-numeric:tabular-nums; text-shadow:0 4px 32px #0008; animation:countIn .25s ease-out; }
 .count span { display:block; margin-top:24px; font-size:1rem; font-weight:500; line-height:1.5; }
