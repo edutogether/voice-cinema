@@ -42,7 +42,7 @@ test('PC: 선택한 카드만 경량 영상으로 재생하고 녹음실 진입 
   expect(clips.every(url => url.includes('/clips/previews/'))).toBe(true);
   expect(await tile.locator('video').evaluate(v => v.videoWidth)).toBe(640);
   await tile.click();
-  await expect(page.locator('#clip')).toHaveAttribute('src', '/clips/fantasy.mp4');
+  await expect(page.locator('#clip')).toHaveAttribute('src', '/clips/studio/fantasy.mp4');
   await expect(tile.locator('video')).not.toHaveAttribute('src');
 });
 

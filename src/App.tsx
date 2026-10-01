@@ -6,6 +6,7 @@ import { GENRES, type Genre } from './genres';
 import { loadEngine } from './lib/ffmpeg';
 import { installServiceWorker } from './lib/sw';
 import { initAppCheck } from './lib/upload';
+import { captureSceneEntrance, type SceneEntrance } from './lib/sceneEntrance';
 
 type View = 'home' | 'studio' | 'result';
 
@@ -43,6 +44,7 @@ export function App() {
   // 다시 골랐을 때 이전 녹음이 살아남는 걸 구조적으로 막는다(리셋을 손으로
   // 호출하는 대신 마운트 경계가 보장한다).
   const [studioKey, setStudioKey] = useState(0);
+  const [entrance, setEntrance] = useState<SceneEntrance | null>(null);
   const [job, setJob] = useState<SaveJob | null>(null);
   const [enginePercent, setEnginePercent] = useState(0);
   const [engineLoading, setEngineLoading] = useState(true);
@@ -58,6 +60,7 @@ export function App() {
 
   useEffect(() => {
     const onPopState = () => {
+      setEntrance(null);
       navigatingRef.current = false;
       const entry = readScreenHistory();
       const selectedGenre = GENRES.find(g => g.id === entry?.genreId);
@@ -109,8 +112,9 @@ export function App() {
     initAppCheck().catch((e) => console.error('[App Check 사전초기화 실패]', e));
   }, []);
 
-  const openStudio = (g: Genre) => {
+  const openStudio = (g: Genre, source?: HTMLElement) => {
     if (navigatingRef.current) return;
+    setEntrance(captureSceneEntrance(source));
     const key = ++studioSequenceRef.current;
     writeScreenHistory({ pageId: pageIdRef.current, view: 'studio', depth: 1, genreId: g.id, studioKey: key });
     lastGenreRef.current = g.id;
@@ -150,6 +154,7 @@ export function App() {
       {genre && (
         <Studio
           key={studioKey}
+          entrance={entrance}
           active={view === 'studio'}
           genre={genre}
           onHome={goHome}

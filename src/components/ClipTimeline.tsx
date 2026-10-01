@@ -15,6 +15,9 @@ export function ClipTimeline({ phase, videoRef }: { phase: Phase; videoRef: Reac
   const barRef = useRef<HTMLElement>(null);
   const pointerRef = useRef<number | null>(null);
   const seekFrameRef = useRef(0);
+  const pendingTimeRef = useRef<number | null>(null);
+  const resumeAfterSeekRef = useRef(false);
+  const seekPumpRef = useRef<(() => void) | null>(null);
   const [dragging, setDragging] = useState(false);
   const canSeek = phase === 'preview';
   const waiting = phase === 'idle' || phase === 'ready';
@@ -54,18 +57,52 @@ export function ClipTimeline({ phase, videoRef }: { phase: Phase; videoRef: Reac
   }, [phase, moving, initialText, videoRef]);
 
   useEffect(() => {
+    pendingTimeRef.current = null;
+    resumeAfterSeekRef.current = false;
     if (!canSeek) {
       pointerRef.current = null;
       setDragging(false);
     }
-    return () => cancelAnimationFrame(seekFrameRef.current);
-  }, [canSeek]);
+    const video = videoRef.current;
+    if (!canSeek || !video) return;
+    let decodeFrame = 0;
+    const pump = () => {
+      if (video.seeking) return;
+      const time = pendingTimeRef.current;
+      pendingTimeRef.current = null;
+      if (time !== null && Math.abs(video.currentTime - time) > .0001) {
+        video.currentTime = time;
+        return;
+      }
+      if (resumeAfterSeekRef.current) {
+        resumeAfterSeekRef.current = false;
+        void video.play().catch(() => {});
+      }
+    };
+    // 디코드 중인 탐색을 매 포인터 이동마다 취소하면 숫자만 움직이고 영상은 굳는다.
+    // 한 프레임이 준비된 뒤 최신 목표 하나만 반영해 중간 요청이 쌓이지 않게 한다.
+    const onSeeked = () => {
+      cancelAnimationFrame(decodeFrame);
+      decodeFrame = requestAnimationFrame(pump);
+    };
+    seekPumpRef.current = pump;
+    video.addEventListener('seeked', onSeeked);
+    return () => {
+      video.removeEventListener('seeked', onSeeked);
+      seekPumpRef.current = null;
+      pendingTimeRef.current = null;
+      resumeAfterSeekRef.current = false;
+      cancelAnimationFrame(decodeFrame);
+      cancelAnimationFrame(seekFrameRef.current);
+    };
+  }, [canSeek, videoRef]);
 
   const seek = (time: number) => {
     const video = videoRef.current;
     if (!canSeek || !video || !Number.isFinite(video.duration) || video.duration <= 0) return;
     // 끝을 잡아끄는 중 ended 처리로 처음으로 돌아가지 않도록 마지막 프레임 안에 둔다.
-    video.currentTime = Math.max(0, Math.min(video.duration - .001, time));
+    pendingTimeRef.current = Math.max(0, Math.min(video.duration - .001, time));
+    seekPumpRef.current?.();
   };
   const seekAt = (clientX: number) => {
     const track = trackRef.current;
@@ -75,7 +112,9 @@ export function ClipTimeline({ phase, videoRef }: { phase: Phase; videoRef: Reac
     seek((clientX - rect.left) / rect.width * video.duration);
   };
   const resume = () => {
-    if (canSeek) void videoRef.current?.play().catch(() => {});
+    if (!canSeek) return;
+    resumeAfterSeekRef.current = true;
+    seekPumpRef.current?.();
   };
   const finishDrag = () => {
     pointerRef.current = null;
@@ -96,6 +135,7 @@ export function ClipTimeline({ phase, videoRef }: { phase: Phase; videoRef: Reac
         event.currentTarget.setPointerCapture(event.pointerId);
         pointerRef.current = event.pointerId;
         setDragging(true);
+        resumeAfterSeekRef.current = false;
         videoRef.current?.pause();
         seekAt(event.clientX);
       }}

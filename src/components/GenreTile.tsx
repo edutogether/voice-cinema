@@ -25,7 +25,7 @@ interface Props {
    * 걸려 있어서, 매번 새 함수가 오면 부모가 다시 그려질 때마다 여섯 장이 멈췄다 다시 튼다.
    */
   onBlocked: (id: string) => void;
-  onSelect: (genre: Genre) => void;
+  onSelect: (genre: Genre, source?: HTMLElement) => void;
 }
 
 export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, delayMs, solo, onBlocked, onSelect }: Props) {
@@ -149,7 +149,7 @@ export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, de
           '--c-wash': withAlpha(genre.color, 0.12),
         } as React.CSSProperties
       }
-      onClick={() => onSelect(genre)}
+      onClick={event => onSelect(genre, event.currentTarget)}
     >
       <span className="tile-media" aria-hidden="true">
         <span className="tile-visual">

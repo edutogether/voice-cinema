@@ -8,7 +8,7 @@ const ignoreBlocked = () => {};
 const AUTO_ADVANCE_MS = 6000;
 
 /** 중앙 작품은 앞으로, 이웃 작품은 뒤로 놓는다. 여섯 장면의 바로가기는 항상 보인다. */
-export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect: (genre: Genre) => void }) {
+export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect: (genre: Genre, source?: HTMLElement) => void }) {
   const [selected, setSelected] = useState(0);
   const [ready, setReady] = useState(() => !document.getElementById('splash'));
   const [autoPaused, setAutoPaused] = useState(false);
@@ -154,7 +154,7 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
                     onPointerDown={copy ? event => event.preventDefault() : undefined}
                     onPointerEnter={event => { if (event.pointerType === 'mouse') choose(index); }}
                     onFocus={event => { if (event.currentTarget.matches(':focus-visible')) setKeyboardChoices(true); choose(index); }}
-                    onClick={() => onSelect(genre)}>
+                    onClick={event => onSelect(genre, event.currentTarget)}>
                     <img src={thumbUrl(genre.id)} alt="" width="320" height="180" />
                     <span><small>{String(index + 1).padStart(2, '0')}</small>{genre.name}</span>
                   </button>

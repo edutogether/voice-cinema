@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
-import { clipUrl, stillUrl, type Genre } from '../genres';
+import { studioClipUrl, stillUrl, type Genre } from '../genres';
 import { useDubbing } from '../hooks/useDubbing';
 
 import { ActionIcon } from './ActionIcon';
 import { ClipTimeline } from './ClipTimeline';
+import { StudioEntrance } from './StudioEntrance';
+import type { SceneEntrance } from '../lib/sceneEntrance';
 
 interface Props {
   active: boolean;
   genre: Genre;
   onHome: () => void;
   onSave: (blob: Blob, mime: string) => void;
+  entrance: SceneEntrance | null;
 }
 
-export function Studio({ active, genre, onHome, onSave }: Props) {
+export function Studio({ active, genre, onHome, onSave, entrance }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const replayButtonRef = useRef<HTMLButtonElement>(null);
@@ -22,6 +25,8 @@ export function Studio({ active, genre, onHome, onSave }: Props) {
   const [captionsEnabled, setCaptionsEnabled] = useState(true);
   const dub = useDubbing(genre.id, videoRef);
   const { phase } = dub;
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
   const recording = phase === 'requesting' || phase === 'countdown' || phase === 'recording';
   const done = phase === 'recorded' || phase === 'replaying';
   // 원본 음성에서 확인된 구간만 표시한다. 참가자가 녹음한 대사의 자막으로 오인하지 않게
@@ -43,11 +48,19 @@ export function Studio({ active, genre, onHome, onSave }: Props) {
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    v.src = clipUrl(genre.id);
+    // 확대가 끝나면 같은 순간의 720p 프레임을 보여준다. 작은 메인 캡처를 계속 늘려 두지 않는다.
+    const showEntryFrame = () => {
+      if (entrance?.time !== null && entrance?.time !== undefined && phaseRef.current === 'idle') {
+        v.currentTime = Math.max(.001, Math.min(entrance.time, v.duration - .001));
+      }
+    };
+    v.addEventListener('loadedmetadata', showEntryFrame, { once: true });
+    v.src = studioClipUrl(genre.id);
     v.muted = true;
     v.currentTime = 0;
     v.load();
-  }, [genre.id]);
+    return () => v.removeEventListener('loadedmetadata', showEntryFrame);
+  }, [genre.id, entrance]);
 
   return (
     <section id="studio" className={`view${active ? ' active' : ''}`}>
@@ -63,7 +76,7 @@ export function Studio({ active, genre, onHome, onSave }: Props) {
               <span className="studio-brand">Voice <em>Cinema</em></span>
             </div>
             <div className="studio-video-frame">
-            <video id="clip" ref={videoRef} poster={stillUrl(genre.id)} playsInline muted preload="auto" onTimeUpdate={event => setCaptionTime(event.currentTarget.currentTime)} onSeeking={event => setCaptionTime(event.currentTarget.currentTime)} />
+            <video id="clip" ref={videoRef} poster={entrance?.time != null ? entrance.image : stillUrl(genre.id)} playsInline muted preload="auto" onTimeUpdate={event => setCaptionTime(event.currentTarget.currentTime)} onSeeking={event => setCaptionTime(event.currentTarget.currentTime)} />
             {hasCaptions && !done && <button className="studio-caption-toggle" aria-pressed={captionsEnabled} aria-label="원본 자막" onClick={() => setCaptionsEnabled(value => !value)}>자막 {captionsEnabled ? '켜짐' : '꺼짐'}</button>}
             {captionVisible && <div className="studio-captions"><span lang="en">I wanted to tell you the truth.</span><strong>너에게 진실을 말하고 싶었어.</strong></div>}
             {phase === 'recording' && <div className="recpill show" id="recpill"><span className="d" /> 녹음 중</div>}
@@ -93,6 +106,7 @@ export function Studio({ active, genre, onHome, onSave }: Props) {
           </div>
         </div>
       </div>
+      {active && entrance && <StudioEntrance entry={entrance} />}
     </section>
   );
 }

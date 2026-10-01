@@ -83,6 +83,8 @@ export const GENRES: Genre[] = [
 ];
 
 export const clipUrl = (genreId: string) => `/clips/${genreId}.mp4`;
+// 0.2초마다 기준 프레임이 있는 탐색용 사본. 최종 합성은 위의 원본 경로를 유지한다.
+export const studioClipUrl = (genreId: string) => `/clips/studio/${genreId}.mp4`;
 // 선택 화면만 가벼운 사본을 쓴다. 상세 미리보기·녹음·최종 합성은 원본을 유지한다.
 export const previewUrl = (genreId: string) => `/clips/previews/${genreId}.mp4`;
 export const thumbUrl = (genreId: string) => `/clips/thumbs/${genreId}.jpg`;

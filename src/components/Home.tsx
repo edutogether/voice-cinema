@@ -10,7 +10,7 @@ interface Props {
   enginePercent: number;
   engineLoading: boolean;
   engineFailed: boolean;
-  onSelect: (genre: Genre) => void;
+  onSelect: (genre: Genre, source?: HTMLElement) => void;
 }
 
 // 여섯 장이 한꺼번에 내려받기를 시작하면 행사장 와이파이에서 첫 화면이 한참 멈춘다

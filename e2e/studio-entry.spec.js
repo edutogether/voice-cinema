@@ -8,7 +8,7 @@ for (const [genre, name] of [['fantasy', '판타지'], ['animation', '애니메�
     await page.setViewportSize({ width: 1920, height: 1080 });
     let releaseVideo;
     const videoGate = new Promise(resolve => { releaseVideo = resolve; });
-    await page.route(`**/clips/${genre}.mp4`, async route => {
+    await page.route(`**/clips/studio/${genre}.mp4`, async route => {
       await videoGate;
       await route.continue();
     });

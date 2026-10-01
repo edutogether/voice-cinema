@@ -16,7 +16,7 @@ test('진행바 클릭으로 앞뒤 이동하고 해당 지점부터 소리·자
   for (const fraction of [.7, .3]) {
     await track.click({ position: { x: rect.width * fraction, y: 12 } });
     await expect.poll(() => page.locator('#clip').evaluate((v, f) => Math.abs(v.currentTime - v.duration * f), fraction)).toBeLessThan(.35);
-    expect(await page.locator('#clip').evaluate(v => !v.paused && !v.muted)).toBe(true);
+    await expect.poll(() => page.locator('#clip').evaluate(v => !v.paused && !v.muted)).toBe(true);
   }
   await expect(page.locator('.studio-captions')).toContainText('너에게 진실을 말하고 싶었어.');
   await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(3.3);
@@ -25,7 +25,7 @@ test('진행바 클릭으로 앞뒤 이동하고 해당 지점부터 소리·자
 for (const [genre, name] of [['fantasy', '판타지'], ['animation', '애니메이션'], ['horror', '호러'], ['action', '액션'], ['drama', '드라마'], ['sitcom', '시트콤']]) {
 test(`${name}: 클릭·드래그로 앞뒤 탐색하고 선택 지점부터 재생한다`, async ({ page }) => {
   await openPreview(page, name);
-  expect(await page.locator('#clip').evaluate(v => v.currentSrc)).toContain(`/clips/${genre}.mp4`);
+  expect(await page.locator('#clip').evaluate(v => v.currentSrc)).toContain(`/clips/studio/${genre}.mp4`);
   const track = page.locator('#progress');
   const rect = await track.boundingBox();
   const y = rect.y + rect.height / 2;
@@ -46,6 +46,35 @@ test(`${name}: 클릭·드래그로 앞뒤 탐색하고 선택 지점부터 재�
   await page.mouse.move(rect.x + rect.width * .4, y);
   await page.mouse.up();
   await expect.poll(() => page.locator('#clip').evaluate(v => !v.paused && v.currentTime > 4 && v.currentTime < 5)).toBe(true);
+});
+
+test(`${name}: 연속 드래그 중에도 실제 디코드 영상이 계속 갱신된다`, async ({ page }) => {
+  await openPreview(page, name);
+  const rect = await page.locator('#progress').boundingBox();
+  await page.mouse.move(rect.x + rect.width * .1, rect.y + 12);
+  await page.mouse.down();
+  await page.evaluate(() => {
+    window.decodedFrames = [];
+    const video = document.querySelector('#clip');
+    const sample = (now, metadata) => {
+      window.decodedFrames.push({ now, time: metadata.mediaTime });
+      video.requestVideoFrameCallback(sample);
+    };
+    video.requestVideoFrameCallback(sample);
+  });
+  for (let i = 0; i < 80; i++) {
+    const fraction = .1 + .8 * (i < 40 ? i / 40 : (80 - i) / 40);
+    await page.mouse.move(rect.x + rect.width * fraction, rect.y + 12);
+    await page.waitForTimeout(16);
+  }
+  const frames = await page.evaluate(() => window.decodedFrames);
+  // currentTime 값만 바뀌는 가짜 통과를 막고 실제 표시 프레임을 센다.
+  expect(frames.length).toBeGreaterThan(20);
+  const gaps = frames.slice(1).map((frame, i) => frame.now - frames[i].now);
+  expect(Math.max(...gaps)).toBeLessThan(500);
+  expect(frames.some((frame, i) => i > 0 && frame.time < frames[i - 1].time)).toBe(true);
+  await page.mouse.up();
+  await expect.poll(() => page.locator('#clip').evaluate(v => !v.paused)).toBe(true);
 });
 }
 
