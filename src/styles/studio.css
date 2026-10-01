@@ -1,6 +1,9 @@
 /* 흰색 조작부와 빨간 주요 버튼으로 홈의 흐름을 이어간다. 가로 화면 영상은 비율을 유지하며 빈틈없이 채운다. */
 body:has(#studio.active) { background:#fff; }
 #studio { width:100vw; margin-inline:calc((100% - 100vw) / 2); color:#171717; background:#fff; }
+/* 영상 화면은 첫 프레임부터 최종 위치에 표시한다. 전체 화면을 이동·페이드하면
+   영상 합성 레이어가 뒤늦게 채워지는 것처럼 보이므로 공용 진입 효과를 사용하지 않는다. */
+#studio.active { animation:none; }
 .studio-workspace,.studio-screen { min-width:0; }
 .stage { display:grid; grid-template-rows:auto minmax(240px,1fr) auto; height:100svh; min-height:640px; background:#fff; }
 .studio-heading { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:24px; padding:16px 28px; border-bottom:1px solid #e8e8e8; background:#fff; }
