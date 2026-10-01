@@ -15,7 +15,6 @@ test('미리보기·녹음은 원본 소리를 출력하고 다시 듣기는 녹
     analyser.connect(output).connect(context.destination);
     window.previewAudioProbe = { context, analyser };
   });
-  await page.locator('#previewBtn').click();
   await page.evaluate(() => window.previewAudioProbe.context.resume());
   await expect.poll(() => page.locator('#clip').evaluate(video => {
     const { analyser } = window.previewAudioProbe;
@@ -28,7 +27,7 @@ test('미리보기·녹음은 원본 소리를 출력하고 다시 듣기는 녹
   await expect(page.locator('#clip')).toHaveJSProperty('muted', false);
   await page.locator('#previewBtn').click();
   await expect(page.locator('#clip')).toHaveJSProperty('paused', true);
-  await expect(page.locator('#clip')).toHaveJSProperty('muted', true);
+  await expect(page.locator('#clip')).toHaveJSProperty('muted', false);
   await page.locator('#recBtn').click();
   await expect(page.locator('#recpill')).toBeVisible();
   await expect.poll(() => page.locator('#clip').evaluate(video => {

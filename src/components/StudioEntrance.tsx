@@ -1,8 +1,9 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { SceneEntrance } from '../lib/sceneEntrance';
 
 export function StudioEntrance({ entry }: { entry: SceneEntrance }) {
+  const [finished, setFinished] = useState(false);
   const layerRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const layer = layerRef.current;
@@ -33,14 +34,16 @@ export function StudioEntrance({ entry }: { entry: SceneEntrance }) {
     const chrome = [...document.querySelectorAll<HTMLElement>('.studio-heading,.studio-player-dock')].map(el =>
       el.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 240, delay: 100, fill: 'backwards' }));
     const reveal = () => { frame.style.visibility = ''; layer.hidden = true; };
-    animation.finished.then(reveal).catch(() => {});
-    window.addEventListener('resize', reveal, { once: true });
+    const finish = () => { reveal(); setFinished(true); };
+    animation.finished.then(finish).catch(() => {});
+    window.addEventListener('resize', finish, { once: true });
     return () => {
       reveal();
       animation.cancel();
       chrome.forEach(a => a.cancel());
-      window.removeEventListener('resize', reveal);
+      window.removeEventListener('resize', finish);
     };
   }, [entry]);
+  if (finished) return null;
   return createPortal(<div className="studio-entrance" ref={layerRef} aria-hidden="true"><img src={entry.image} alt="" /></div>, document.body);
 }

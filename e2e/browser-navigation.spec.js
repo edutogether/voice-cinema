@@ -14,7 +14,6 @@ async function openStudio(page) {
 test('브라우저 뒤로가기는 재생을 멈추고 홈으로, 앞으로가기는 새 녹음실로 이동한다', async ({ page }) => {
   await openHome(page);
   await openStudio(page);
-  await page.locator('#previewBtn').click();
   await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(.1);
   await page.locator('#clip').evaluate(v => { window.previousClip = v; });
   await page.goBack();
@@ -26,7 +25,7 @@ test('브라우저 뒤로가기는 재생을 멈추고 홈으로, 앞으로가�
   await expect(page.locator('#studio')).toHaveClass(/active/);
   await expect(page.locator('#recBtn')).toBeVisible();
   await expect(page.locator('#afterRow')).toBeHidden();
-  expect(await page.locator('#clip').evaluate(v => v.paused)).toBe(true);
+  await expect.poll(() => page.locator('#clip').evaluate(v => !v.paused && v.currentTime > 0)).toBe(true);
 });
 
 test('앱의 장면 바꾸기도 같은 기록으로 돌아가며 홈에서는 이전 웹페이지로 나갈 수 있다', async ({ page }) => {

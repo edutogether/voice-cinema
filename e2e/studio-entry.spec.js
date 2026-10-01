@@ -51,7 +51,6 @@ for (const [genre, name] of [['fantasy', '판타지'], ['animation', '애니메�
       await expect.poll(() => page.locator('#clip').evaluate(video => video.readyState)).toBeGreaterThanOrEqual(2);
       const loaded = await page.locator('#clip').boundingBox();
       expect(loaded).toEqual({ x: first.x, y: first.y, width: first.width, height: first.height });
-      await page.locator('#previewBtn').click();
       await expect.poll(() => page.locator('#clip').evaluate(video => !video.paused && !video.muted)).toBe(true);
     } finally {
       releaseVideo();

@@ -5,7 +5,6 @@ async function openPreview(page, name = '드라마') {
   await page.locator('#splash').waitFor({ state: 'detached' });
   await page.getByRole('button', { name: '장면 흐름 일시정지', exact: true }).click();
   await page.locator('.scene-choice').filter({ hasText: name }).first().click();
-  await page.locator('#previewBtn').click();
   await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(0);
 }
 
@@ -42,7 +41,7 @@ test(`${name}: 클릭·드래그로 앞뒤 탐색하고 선택 지점부터 재�
   // 캡처한 포인터가 막대 밖으로 나가도 경계에 고정되고 처음으로 초기화되지 않는다.
   await page.mouse.move(rect.x + rect.width + 20, y + 30);
   await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(9.9);
-  await expect(page.locator('#previewBtn')).toContainText('미리보기 정지');
+  await expect(page.locator('#previewBtn')).toContainText('계속 재생');
   await page.mouse.move(rect.x + rect.width * .4, y);
   await page.mouse.up();
   await expect.poll(() => page.locator('#clip').evaluate(v => !v.paused && v.currentTime > 4 && v.currentTime < 5)).toBe(true);
@@ -101,7 +100,6 @@ test('영상 화면 클릭으로 시작·일시정지·같은 지점에서 재�
   await page.getByRole('button', { name: '장면 흐름 일시정지', exact: true }).click();
   await page.locator('.scene-choice').filter({ hasText: '드라마' }).first().click();
   const screen = page.locator('#screenPlaybackBtn');
-  await screen.click();
   await expect.poll(() => page.locator('#clip').evaluate(v => !v.paused && !v.muted && v.currentTime > .2)).toBe(true);
   await screen.click();
   await expect(screen).toHaveAttribute('aria-label', '미리보기 계속 재생');
@@ -143,7 +141,6 @@ test.describe('휴대폰 터치', () => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   await page.getByRole('button', { name: '드라마 더빙 시작', exact: true }).tap();
-  await page.locator('#previewBtn').tap();
   await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(0);
   const rect = await page.locator('#progress').boundingBox();
   const session = await context.newCDPSession(page);

@@ -29,8 +29,7 @@ const PROGRESS_PHASES: readonly Phase[] = ['preview', 'recording', 'recorded', '
 
 const MIME_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
 
-// reset()과 stopPreview() 둘 다 "영상을 처음 상태(정지·시작 지점·무음)로 되돌린다"를
-// 그대로 반복하고 있었다 — 한 곳으로 모은다.
+// 녹음 시작·초기화 때 영상을 처음 상태(정지·시작 지점·무음)로 되돌린다.
 function resetVideo(v: HTMLVideoElement | null): void {
   if (!v) return;
   v.pause();
@@ -62,6 +61,7 @@ export interface Dubbing {
   countdown: number;
   recordedBlob: Blob | null;
   recordedMime: string;
+  startPreview: () => void;
   togglePreview: () => void;
   startRecord: () => void;
   replay: () => void;
@@ -122,7 +122,9 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
       if (v.duration) setProgress(Math.min(100, (v.currentTime / v.duration) * 100));
     };
     const onEnded = () => {
-      if (phase === 'preview') stopPreviewRef.current();
+      if (phase === 'preview') {
+        setHint('다시 보려면 재생을 눌러 주세요.');
+      }
       else if (phase === 'recording') stopRecorder();
       else if (phase === 'replaying') {
         stopReplay();
@@ -138,30 +140,32 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     };
   }, [phase, stopRecorder, stopReplay, videoRef]);
 
-  const stopPreview = useCallback(() => {
-    resetVideo(videoRef.current);
-    setProgress(0);
-    setHint(HINT.ready);
-    setPhase('ready');
-  }, [videoRef]);
-  // onEnded가 최신 stopPreview를 보도록 ref로 들고 있는다(effect 의존성 순환 방지).
-  const stopPreviewRef = useRef(stopPreview);
-  stopPreviewRef.current = stopPreview;
-
-  const togglePreview = useCallback(() => {
-    if (phase === 'preview') {
-      stopPreview();
-      return;
-    }
-    if (phase !== 'idle' && phase !== 'ready') return;
+  const playPreview = useCallback(() => {
     const v = videoRef.current;
     if (!v) return;
     v.muted = false;
-    v.currentTime = 0;
     setHint(HINT.preview);
     setPhase('preview');
-    void v.play().catch(() => {});
-  }, [phase, stopPreview, videoRef]);
+    const myRun = runRef.current;
+    void v.play().catch((error: unknown) => {
+      if (myRun !== runRef.current || (error instanceof DOMException && error.name === 'AbortError')) return;
+      setHint('재생 버튼을 눌러 영상을 시작해 주세요.');
+    });
+  }, [videoRef]);
+
+  const startPreview = useCallback(() => {
+    if (videoRef.current) videoRef.current.currentTime = 0;
+    playPreview();
+  }, [videoRef, playPreview]);
+
+  const togglePreview = useCallback(() => {
+    if (phase !== 'idle' && phase !== 'ready' && phase !== 'preview') return;
+    const v = videoRef.current;
+    if (!v) return;
+    if (phase === 'preview' && !v.paused) v.pause();
+    else if (phase !== 'preview' || v.ended) startPreview();
+    else playPreview();
+  }, [phase, videoRef, startPreview, playPreview]);
 
   const startRecord = useCallback(() => {
     if (phase !== 'idle' && phase !== 'ready' && phase !== 'preview') return;
@@ -284,6 +288,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     countdown,
     recordedBlob: recorded?.blob ?? null,
     recordedMime: recorded?.mime ?? '',
+    startPreview,
     togglePreview,
     startRecord,
     replay,

@@ -11,7 +11,6 @@ for (const [label, viewport] of [
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
     await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
-    await page.locator('#previewBtn').click();
     await expect.poll(() => page.locator('#clip').evaluate(v => v.paused)).toBe(false);
     await page.locator('#recBtn').click();
 
@@ -26,7 +25,7 @@ for (const [label, viewport] of [
         return el === hit || el.contains(hit);
       });
       expect(visible).toBe(true);
-      await expect.poll(() => page.locator('#clip').evaluate(v => v.paused)).toBe(true);
+    await expect.poll(() => page.locator('#clip').evaluate(v => v.paused)).toBe(true);
     }
 
     await expect(page.locator('#recpill')).toBeVisible();

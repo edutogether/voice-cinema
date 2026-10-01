@@ -1,6 +1,5 @@
 export interface SceneEntrance {
   image: string;
-  time: number | null;
   rect: { x: number; y: number; width: number; height: number };
 }
 
@@ -25,5 +24,5 @@ export function captureSceneEntrance(source?: HTMLElement): SceneEntrance | null
       } catch { /* 이미지가 다른 출처라 캡처할 수 없으면 이미 표시된 포스터를 사용한다. */ }
     }
   }
-  return url ? { image: url, time: video && video.readyState >= 2 ? video.currentTime : null, rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height } } : null;
+  return url ? { image: url, rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height } } : null;
 }

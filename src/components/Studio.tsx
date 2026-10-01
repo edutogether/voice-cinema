@@ -19,6 +19,8 @@ export function Studio({ active, genre, onHome, onSave, entrance }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const scrubCanvasRef = useRef<HTMLCanvasElement>(null);
   const [previewPaused, setPreviewPaused] = useState(true);
+  const [previewEnded, setPreviewEnded] = useState(false);
+  const [buffering, setBuffering] = useState(false);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const replayButtonRef = useRef<HTMLButtonElement>(null);
   const recordButtonRef = useRef<HTMLButtonElement>(null);
@@ -27,18 +29,10 @@ export function Studio({ active, genre, onHome, onSave, entrance }: Props) {
   const [captionsEnabled, setCaptionsEnabled] = useState(true);
   const dub = useDubbing(genre.id, videoRef);
   const { phase } = dub;
-  const phaseRef = useRef(phase);
-  phaseRef.current = phase;
   const recording = phase === 'requesting' || phase === 'countdown' || phase === 'recording';
   const done = phase === 'recorded' || phase === 'replaying';
   const canTogglePlayback = phase === 'idle' || phase === 'ready' || phase === 'preview';
-  const toggleScreenPlayback = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    if (phase !== 'preview') { dub.togglePreview(); return; }
-    if (video.paused) void video.play().catch(() => {});
-    else video.pause();
-  };
+  const playbackLabel = phase !== 'preview' ? '미리보기 재생' : previewEnded ? '미리보기 다시 재생' : previewPaused ? '미리보기 계속 재생' : '미리보기 일시정지';
   // 원본 음성에서 확인된 구간만 표시한다. 참가자가 녹음한 대사의 자막으로 오인하지 않게
   // 다시 듣기·완성본에는 원본 자막을 표시하거나 합성하지 않는다.
   const hasCaptions = genre.id === 'drama';
@@ -58,19 +52,12 @@ export function Studio({ active, genre, onHome, onSave, entrance }: Props) {
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    // 확대가 끝나면 같은 순간의 720p 프레임을 보여준다. 작은 메인 캡처를 계속 늘려 두지 않는다.
-    const showEntryFrame = () => {
-      if (entrance?.time !== null && entrance?.time !== undefined && phaseRef.current === 'idle') {
-        v.currentTime = Math.max(.001, Math.min(entrance.time, v.duration - .001));
-      }
-    };
-    v.addEventListener('loadedmetadata', showEntryFrame, { once: true });
+    // 캡처는 확대 효과에서만 쓴다. 실제 플레이어는 항상 처음부터 재생한다.
     v.src = studioClipUrl(genre.id);
-    v.muted = true;
-    v.currentTime = 0;
     v.load();
-    return () => v.removeEventListener('loadedmetadata', showEntryFrame);
-  }, [genre.id, entrance]);
+    dub.startPreview();
+    // 진입마다 한 번만 시작한다. 일시정지·녹음 상태 변화로 자동 재시작하지 않는다.
+  }, [genre.id, dub.startPreview]);
 
   return (
     <section id="studio" className={`view${active ? ' active' : ''}`}>
@@ -86,13 +73,14 @@ export function Studio({ active, genre, onHome, onSave, entrance }: Props) {
               <span className="studio-brand">Voice <em>Cinema</em></span>
             </div>
             <div className="studio-video-frame">
-            <video id="clip" ref={videoRef} poster={entrance?.time != null ? entrance.image : stillUrl(genre.id)} playsInline muted preload="auto" onPlay={() => setPreviewPaused(false)} onPause={() => setPreviewPaused(true)} onTimeUpdate={event => setCaptionTime(event.currentTarget.currentTime)} onSeeking={event => setCaptionTime(event.currentTarget.currentTime)} />
+            <video id="clip" ref={videoRef} poster={stillUrl(genre.id)} playsInline muted preload="auto" onPlay={() => { setPreviewPaused(false); setPreviewEnded(false); }} onEnded={() => { setPreviewEnded(true); setPreviewPaused(true); }} onWaiting={() => setBuffering(true)} onPlaying={() => setBuffering(false)} onError={() => setBuffering(false)} onPause={() => setPreviewPaused(true)} onTimeUpdate={event => setCaptionTime(event.currentTarget.currentTime)} onSeeking={event => setCaptionTime(event.currentTarget.currentTime)} />
             <canvas className="studio-scrub-frame" ref={scrubCanvasRef} hidden aria-hidden="true" />
             {canTogglePlayback && <button type="button" className="studio-screen-playback" id="screenPlaybackBtn"
-              aria-label={phase !== 'preview' ? '미리보기 재생' : previewPaused ? '미리보기 계속 재생' : '미리보기 일시정지'}
-              onClick={toggleScreenPlayback}>
+              aria-label={playbackLabel}
+              onClick={dub.togglePreview}>
               {phase === 'preview' && previewPaused && <span aria-hidden="true"><ActionIcon name="play" /></span>}
             </button>}
+            {phase === 'preview' && !previewPaused && buffering && <div className="studio-buffering" role="status">영상을 불러오고 있어요</div>}
             {hasCaptions && !done && <button className="studio-caption-toggle" aria-pressed={captionsEnabled} aria-label="원본 자막" onClick={() => setCaptionsEnabled(value => !value)}>자막 {captionsEnabled ? '켜짐' : '꺼짐'}</button>}
             {captionVisible && <div className="studio-captions"><span lang="en">I wanted to tell you the truth.</span><strong>너에게 진실을 말하고 싶었어.</strong></div>}
             {phase === 'recording' && <div className="recpill show" id="recpill"><span className="d" /> 녹음 중</div>}
@@ -109,7 +97,7 @@ export function Studio({ active, genre, onHome, onSave, entrance }: Props) {
                   <div className="hint" id="hint" role="status">{dub.hint}</div>
                 </div>
                 {!done && <div className="record-actions">
-                  {!recording && <button className="btn btn-ghost" id="previewBtn" onClick={dub.togglePreview}><ActionIcon name={phase === 'preview' ? 'stop' : 'play'} />{phase === 'preview' ? '미리보기 정지' : '미리 보기'}</button>}
+                  {!recording && <button className="btn btn-ghost" id="previewBtn" onClick={dub.togglePreview}><ActionIcon name={phase === 'preview' && !previewPaused ? 'pause' : 'play'} />{phase !== 'preview' ? '미리 보기' : previewEnded ? '다시 재생' : previewPaused ? '계속 재생' : '일시정지'}</button>}
                   <button className="btn btn-rec" id="recBtn" ref={recordButtonRef} disabled={recording} onClick={dub.startRecord}><span className="record-dot" aria-hidden="true" /><span>{phase === 'requesting' ? '마이크 연결 중' : phase === 'countdown' ? '녹음 준비 중' : phase === 'recording' ? '녹음 중' : '녹음 시작'}</span></button>
                 </div>}
                 {done && <div className="row" id="afterRow">
