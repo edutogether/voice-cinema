@@ -19,8 +19,15 @@ body:has(#studio.active) { background:#fff; }
 .studio-brand em { color:#df291f; font-style:normal; }
 .studio-video-frame { position:relative; min-height:0; background:#f3f3f3; isolation:isolate; }
 .stage video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
+.studio-scrub-frame { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; pointer-events:none; }
+.studio-screen-playback { position:absolute; inset:0; width:100%; height:100%; display:grid; place-items:center; border:0; background:transparent; cursor:pointer; color:white; }
+.studio-screen-playback > span { display:grid; place-items:center; width:64px; height:64px; border-radius:50%; background:#171717a6; }
+.studio-screen-playback .action-icon { width:30px; height:30px; }
+.studio-screen-playback:focus-visible { outline:3px solid #df291f; outline-offset:-4px; }
+.studio-video-frame:has(.studio-scrub-frame:not([hidden])) .studio-screen-playback > span { visibility:hidden; }
 /* 세로 휴대폰에서는 인물 양옆이 크게 잘리지 않도록 전체 구도를 유지한다. */
 @media (orientation:landscape) { .stage video { object-fit:cover; } }
+@media (orientation:landscape) { .studio-scrub-frame { object-fit:cover; } }
 .studio-caption-toggle { position:absolute; top:20px; right:28px; z-index:2; min-height:40px; padding:8px 14px; border:1px solid #ffffff70; border-radius:999px; color:#fff; background:#171717d9; font:inherit; font-size:.8125rem; cursor:pointer; }
 .studio-caption-toggle:focus-visible { outline:3px solid #df291f; outline-offset:3px; }
 /* 배경 상자 없이 영상 위에 놓고, 밝은 장면에서도 글자 윤곽이 남도록 그림자를 겹친다. */

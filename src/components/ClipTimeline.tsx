@@ -9,7 +9,7 @@ function formatTime(seconds: number): string {
 
 const total = formatTime(CLIP_SECONDS);
 
-export function ClipTimeline({ phase, videoRef }: { phase: Phase; videoRef: React.RefObject<HTMLVideoElement | null> }) {
+export function ClipTimeline({ phase, videoRef, scrubCanvasRef }: { phase: Phase; videoRef: React.RefObject<HTMLVideoElement | null>; scrubCanvasRef: React.RefObject<HTMLCanvasElement | null> }) {
   const textRef = useRef<HTMLSpanElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLElement>(null);
@@ -66,8 +66,9 @@ export function ClipTimeline({ phase, videoRef }: { phase: Phase; videoRef: Reac
     const video = videoRef.current;
     if (!canSeek || !video) return;
     let decodeFrame = 0;
+    let presenting = false;
     const pump = () => {
-      if (video.seeking) return;
+      if (video.seeking || presenting) return;
       const time = pendingTimeRef.current;
       pendingTimeRef.current = null;
       if (time !== null && Math.abs(video.currentTime - time) > .0001) {
@@ -76,14 +77,22 @@ export function ClipTimeline({ phase, videoRef }: { phase: Phase; videoRef: Reac
       }
       if (resumeAfterSeekRef.current) {
         resumeAfterSeekRef.current = false;
+        if (scrubCanvasRef.current) scrubCanvasRef.current.hidden = true;
         void video.play().catch(() => {});
       }
     };
-    // 디코드 중인 탐색을 매 포인터 이동마다 취소하면 숫자만 움직이고 영상은 굳는다.
-    // 한 프레임이 준비된 뒤 최신 목표 하나만 반영해 중간 요청이 쌓이지 않게 한다.
+    // 멈춘 video의 합성 레이어 갱신에 기대지 않고 디코드된 장면을 직접 표시한다.
+    // 다음 탐색은 이 캔버스가 한 번 그려진 뒤에만 시작한다.
     const onSeeked = () => {
+      const canvas = scrubCanvasRef.current;
+      if (canvas && !canvas.hidden && video.readyState >= 2) {
+        canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height);
+      }
+      presenting = true;
       cancelAnimationFrame(decodeFrame);
-      decodeFrame = requestAnimationFrame(pump);
+      decodeFrame = requestAnimationFrame(() => {
+        decodeFrame = requestAnimationFrame(() => { presenting = false; pump(); });
+      });
     };
     seekPumpRef.current = pump;
     video.addEventListener('seeked', onSeeked);
@@ -92,10 +101,11 @@ export function ClipTimeline({ phase, videoRef }: { phase: Phase; videoRef: Reac
       seekPumpRef.current = null;
       pendingTimeRef.current = null;
       resumeAfterSeekRef.current = false;
+      if (scrubCanvasRef.current) scrubCanvasRef.current.hidden = true;
       cancelAnimationFrame(decodeFrame);
       cancelAnimationFrame(seekFrameRef.current);
     };
-  }, [canSeek, videoRef]);
+  }, [canSeek, videoRef, scrubCanvasRef]);
 
   const seek = (time: number) => {
     const video = videoRef.current;
@@ -136,7 +146,15 @@ export function ClipTimeline({ phase, videoRef }: { phase: Phase; videoRef: Reac
         pointerRef.current = event.pointerId;
         setDragging(true);
         resumeAfterSeekRef.current = false;
-        videoRef.current?.pause();
+        const video = videoRef.current;
+        const canvas = scrubCanvasRef.current;
+        video?.pause();
+        if (video && canvas && video.readyState >= 2) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          canvas.getContext('2d')?.drawImage(video, 0, 0);
+          canvas.hidden = false;
+        }
         seekAt(event.clientX);
       }}
       onPointerMove={event => {

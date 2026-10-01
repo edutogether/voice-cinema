@@ -53,14 +53,28 @@ test(`${name}: 연속 드래그 중에도 실제 디코드 영상이 계속 갱�
   const rect = await page.locator('#progress').boundingBox();
   await page.mouse.move(rect.x + rect.width * .1, rect.y + 12);
   await page.mouse.down();
+  await expect(page.locator('.studio-scrub-frame')).toBeVisible();
   await page.evaluate(() => {
     window.decodedFrames = [];
+    window.scrubPixels = [];
     const video = document.querySelector('#clip');
     const sample = (now, metadata) => {
       window.decodedFrames.push({ now, time: metadata.mediaTime });
       video.requestVideoFrameCallback(sample);
     };
     video.requestVideoFrameCallback(sample);
+    const visibleFrame = document.querySelector('.studio-scrub-frame');
+    const probe = document.createElement('canvas');
+    probe.width = 32; probe.height = 18;
+    const context = probe.getContext('2d', { willReadFrequently: true });
+    const pixels = () => {
+      if (visibleFrame.hidden || !visibleFrame.isConnected) return;
+      context.drawImage(visibleFrame, 0, 0, 32, 18);
+      const values = context.getImageData(0, 0, 32, 18).data;
+      window.scrubPixels.push(values.reduce((hash, value) => (Math.imul(hash, 31) + value) | 0, 0));
+      requestAnimationFrame(pixels);
+    };
+    pixels();
   });
   for (let i = 0; i < 80; i++) {
     const fraction = .1 + .8 * (i < 40 ? i / 40 : (80 - i) / 40);
@@ -73,10 +87,36 @@ test(`${name}: 연속 드래그 중에도 실제 디코드 영상이 계속 갱�
   const gaps = frames.slice(1).map((frame, i) => frame.now - frames[i].now);
   expect(Math.max(...gaps)).toBeLessThan(500);
   expect(frames.some((frame, i) => i > 0 && frame.time < frames[i - 1].time)).toBe(true);
+  // 손을 놓기 전, 화면 위에 표시한 캔버스의 실제 픽셀도 계속 달라야 한다.
+  expect(await page.evaluate(() => new Set(window.scrubPixels).size)).toBeGreaterThan(20);
   await page.mouse.up();
   await expect.poll(() => page.locator('#clip').evaluate(v => !v.paused)).toBe(true);
+  await expect(page.locator('.studio-scrub-frame')).toBeHidden();
 });
 }
+
+test('영상 화면 클릭으로 시작·일시정지·같은 지점에서 재개하고 자막 버튼은 재생에 간섭하지 않는다', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#splash').waitFor({ state: 'detached' });
+  await page.getByRole('button', { name: '장면 흐름 일시정지', exact: true }).click();
+  await page.locator('.scene-choice').filter({ hasText: '드라마' }).first().click();
+  const screen = page.locator('#screenPlaybackBtn');
+  await screen.click();
+  await expect.poll(() => page.locator('#clip').evaluate(v => !v.paused && !v.muted && v.currentTime > .2)).toBe(true);
+  await screen.click();
+  await expect(screen).toHaveAttribute('aria-label', '미리보기 계속 재생');
+  const paused = await page.locator('#clip').evaluate(v => v.currentTime);
+  await page.waitForTimeout(250);
+  expect(await page.locator('#clip').evaluate(v => v.currentTime)).toBe(paused);
+  await page.getByRole('button', { name: '원본 자막', exact: true }).click();
+  expect(await page.locator('#clip').evaluate(v => v.paused)).toBe(true);
+  await screen.press('Space');
+  await expect.poll(() => page.locator('#clip').evaluate(v => !v.paused && v.currentTime)).toBeGreaterThan(paused);
+  await page.locator('#recBtn').click();
+  await expect(screen).toHaveCount(0);
+  await expect(page.locator('#count')).toBeVisible();
+  await page.locator('#studioBackBtn').click();
+});
 
 test('키보드 탐색을 지원하고 녹음 시작 뒤에는 진행바로 녹음 위치를 바꾸지 않는다', async ({ page }) => {
   await openPreview(page);

@@ -17,6 +17,8 @@ interface Props {
 
 export function Studio({ active, genre, onHome, onSave, entrance }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const scrubCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [previewPaused, setPreviewPaused] = useState(true);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const replayButtonRef = useRef<HTMLButtonElement>(null);
   const recordButtonRef = useRef<HTMLButtonElement>(null);
@@ -29,6 +31,14 @@ export function Studio({ active, genre, onHome, onSave, entrance }: Props) {
   phaseRef.current = phase;
   const recording = phase === 'requesting' || phase === 'countdown' || phase === 'recording';
   const done = phase === 'recorded' || phase === 'replaying';
+  const canTogglePlayback = phase === 'idle' || phase === 'ready' || phase === 'preview';
+  const toggleScreenPlayback = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (phase !== 'preview') { dub.togglePreview(); return; }
+    if (video.paused) void video.play().catch(() => {});
+    else video.pause();
+  };
   // 원본 음성에서 확인된 구간만 표시한다. 참가자가 녹음한 대사의 자막으로 오인하지 않게
   // 다시 듣기·완성본에는 원본 자막을 표시하거나 합성하지 않는다.
   const hasCaptions = genre.id === 'drama';
@@ -76,7 +86,13 @@ export function Studio({ active, genre, onHome, onSave, entrance }: Props) {
               <span className="studio-brand">Voice <em>Cinema</em></span>
             </div>
             <div className="studio-video-frame">
-            <video id="clip" ref={videoRef} poster={entrance?.time != null ? entrance.image : stillUrl(genre.id)} playsInline muted preload="auto" onTimeUpdate={event => setCaptionTime(event.currentTarget.currentTime)} onSeeking={event => setCaptionTime(event.currentTarget.currentTime)} />
+            <video id="clip" ref={videoRef} poster={entrance?.time != null ? entrance.image : stillUrl(genre.id)} playsInline muted preload="auto" onPlay={() => setPreviewPaused(false)} onPause={() => setPreviewPaused(true)} onTimeUpdate={event => setCaptionTime(event.currentTarget.currentTime)} onSeeking={event => setCaptionTime(event.currentTarget.currentTime)} />
+            <canvas className="studio-scrub-frame" ref={scrubCanvasRef} hidden aria-hidden="true" />
+            {canTogglePlayback && <button type="button" className="studio-screen-playback" id="screenPlaybackBtn"
+              aria-label={phase !== 'preview' ? '미리보기 재생' : previewPaused ? '미리보기 계속 재생' : '미리보기 일시정지'}
+              onClick={toggleScreenPlayback}>
+              {phase === 'preview' && previewPaused && <span aria-hidden="true"><ActionIcon name="play" /></span>}
+            </button>}
             {hasCaptions && !done && <button className="studio-caption-toggle" aria-pressed={captionsEnabled} aria-label="원본 자막" onClick={() => setCaptionsEnabled(value => !value)}>자막 {captionsEnabled ? '켜짐' : '꺼짐'}</button>}
             {captionVisible && <div className="studio-captions"><span lang="en">I wanted to tell you the truth.</span><strong>너에게 진실을 말하고 싶었어.</strong></div>}
             {phase === 'recording' && <div className="recpill show" id="recpill"><span className="d" /> 녹음 중</div>}
@@ -85,7 +101,7 @@ export function Studio({ active, genre, onHome, onSave, entrance }: Props) {
             <div className="studio-player-dock">
               <div className="studio-timeline">
                 <span className="timeline-state">{phase === 'recorded' ? '녹음 완료' : phase === 'requesting' ? '마이크 연결 중' : phase === 'countdown' ? '녹음 준비' : phase === 'recording' ? '녹음 중' : phase === 'replaying' ? '내 목소리 다시 듣기' : '장면 미리보기'}</span>
-                <ClipTimeline phase={phase} videoRef={videoRef} />
+                <ClipTimeline phase={phase} videoRef={videoRef} scrubCanvasRef={scrubCanvasRef} />
               </div>
               <div className={`controls${recording ? ' is-recording' : ''}${done ? ' is-recorded' : ''}`}>
                 <div className="controls-copy">
