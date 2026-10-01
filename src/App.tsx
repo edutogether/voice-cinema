@@ -7,6 +7,7 @@ import { loadEngine } from './lib/ffmpeg';
 import { installServiceWorker } from './lib/sw';
 import { initAppCheck } from './lib/upload';
 import { captureSceneEntrance, type SceneEntrance } from './lib/sceneEntrance';
+import { isLocalRecordingSample } from './lib/sampleMode';
 
 type View = 'home' | 'studio' | 'result';
 
@@ -33,6 +34,7 @@ function writeScreenHistory(entry: ScreenHistory, replace = false): void {
 }
 
 export function App() {
+  const sampleMode = isLocalRecordingSample(window.location);
   const wrapRef = useRef<HTMLDivElement>(null);
   const lastGenreRef = useRef<string | null>(null);
   const pageIdRef = useRef(Array.from(crypto.getRandomValues(new Uint32Array(4))).join('-'));
@@ -103,6 +105,10 @@ export function App() {
 
   // 첫 더빙 전에 엔진(31MB)과 App Check를 미리 준비해 저장 시 대기시간을 줄인다.
   useEffect(() => {
+    if (sampleMode) {
+      setEngineLoading(false);
+      return;
+    }
     loadEngine((percent) => setEnginePercent(percent))
       .then(() => setEngineLoading(false))
       .catch((e) => {
@@ -110,7 +116,7 @@ export function App() {
         setEngineFailed(true);
       });
     initAppCheck().catch((e) => console.error('[App Check 사전초기화 실패]', e));
-  }, []);
+  }, [sampleMode]);
 
   const openStudio = (g: Genre, source?: HTMLElement) => {
     if (navigatingRef.current) return;
@@ -157,11 +163,12 @@ export function App() {
           entrance={entrance}
           active={view === 'studio'}
           genre={genre}
+          sampleMode={sampleMode}
           onHome={goHome}
-          onSave={(blob, mime) => {
+          onSave={(recording) => {
             const entry = readScreenHistory();
             writeScreenHistory({ pageId: pageIdRef.current, view: 'result', depth: (entry?.depth ?? 1) + 1, genreId: genre.id, studioKey });
-            setJob({ genre, blob, mime });
+            setJob({ genre, ...recording });
             setView('result');
           }}
         />

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { stillUrl, type Genre } from '../genres';
+import { clipUrl, stillUrl, type Genre } from '../genres';
 import { CinemaHeader } from './CinemaHeader';
 import { ActionIcon } from './ActionIcon';
 import { mergeClip } from '../lib/ffmpeg';
@@ -7,13 +7,11 @@ import { downloadBlob, uploadToCloud } from '../lib/upload';
 import { buildUploadFilename } from '../logic';
 import { makeQR } from '../lib/vendor';
 
-export interface SaveJob {
-  genre: Genre;
-  blob: Blob;
-  mime: string;
-}
+export type RecordingSource = { kind: 'sample' } | { kind: 'recording'; blob: Blob; mime: string };
+export type SaveJob = { genre: Genre } & RecordingSource;
 
 type Stage =
+  | { kind: 'sample' }
   | { kind: 'merging' }
   | { kind: 'uploading' }
   | { kind: 'cloud'; qr: string }
@@ -28,7 +26,7 @@ interface Props {
 }
 
 export function Result({ active, job, onHome, onBack }: Props) {
-  const [stage, setStage] = useState<Stage>({ kind: 'merging' });
+  const [stage, setStage] = useState<Stage>({ kind: job.kind === 'sample' ? 'sample' : 'merging' });
   const revokeRef = useRef<(() => void) | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -37,6 +35,10 @@ export function Result({ active, job, onHome, onBack }: Props) {
   }, [active, stage.kind]);
 
   useEffect(() => {
+    if (job.kind === 'sample') {
+      setStage({ kind: 'sample' });
+      return;
+    }
     let cancelled = false;
     void (async () => {
       let merged: Blob;
@@ -84,10 +86,25 @@ export function Result({ active, job, onHome, onBack }: Props) {
         <div className="result-poster">
           <img src={stillUrl(job.genre.id)} alt="" />
           <span className="poster-brand">Voice Cinema</span>
-          <div className="poster-credit"><p>내 목소리로 완성하는 영화</p><strong>{job.genre.name}<br />더빙</strong><span>목소리 출연 · 나</span></div>
+          <div className="poster-credit"><p>{job.kind === 'sample' ? '녹음 화면 샘플 체험' : '내 목소리로 완성하는 영화'}</p><strong>{job.genre.name}<br />더빙</strong><span>{job.kind === 'sample' ? '다운로드 · 원본 영상' : '목소리 출연 · 나'}</span></div>
         </div>
         <div className="result-details">
         <p className="ticket-label">{stage.kind === 'cloud' ? '나만의 영화 티켓' : loading ? '영화 완성 중' : '내 영화 보관하기'}</p>
+        {stage.kind === 'sample' && (
+          <div id="done">
+            <span className="result-symbol"><ActionIcon name="download" /></span>
+            <h2 tabIndex={-1}>원본 영상을 받아보세요</h2>
+            <p id="doneMsg">샘플 체험이 완료됐어요. 마이크 녹음 없이 진행했으며, 다운로드 파일은 선택한 장면의 원본 영상입니다.</p>
+            <div className="row" id="downloadRow">
+              <a className="btn btn-lg btn-save" id="downloadBtn" href={clipUrl(job.genre.id)} download={`Voice Cinema_${job.genre.name}_원본.mp4`}><ActionIcon name="download" /> 원본 영상 다운로드</a>
+            </div>
+            <p className="savemode">목소리 합성·클라우드 저장은 실행하지 않습니다.</p>
+            <div className="row result-actions">
+              <button className="btn btn-lg btn-ghost" id="sampleBackBtn" onClick={onBack}><ActionIcon name="back" /> 녹음 화면으로</button>
+              <button className="btn btn-lg btn-gold" id="doneHomeBtn" onClick={onHome}>다른 더빙 하기 <ActionIcon name="arrow" /></button>
+            </div>
+          </div>
+        )}
         {loading && (
           <div id="loading" role="status" aria-busy="true">
             <div className="spinner" aria-hidden="true" />

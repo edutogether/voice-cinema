@@ -86,7 +86,7 @@ export interface Dubbing {
   reset: () => void;
 }
 
-export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoElement | null>): Dubbing {
+export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoElement | null>, sampleMode = false): Dubbing {
   const [phase, setPhase] = useState<Phase>('idle');
   const [hint, setHint] = useState<string>(HINT.idle);
   const [progress, setProgress] = useState(0);
@@ -145,10 +145,17 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
       if (phase === 'preview') {
         setHint('다시 보려면 재생을 눌러 주세요.');
       }
-      else if (phase === 'recording') stopRecorder();
+      else if (phase === 'recording') {
+        if (sampleMode) {
+          setProgress(100);
+          setHint('체험을 마쳤어요. 다시 듣기는 원본 소리, 다운로드는 원본 영상으로 확인해 보세요.');
+          setPhase('recorded');
+          resetVideo(v);
+        } else stopRecorder();
+      }
       else if (phase === 'replaying') {
         stopReplay();
-        setHint(HINT.recorded);
+        setHint(sampleMode ? '원본 영상 다시 듣기를 마쳤어요.' : HINT.recorded);
         setPhase('recorded');
       }
     };
@@ -158,7 +165,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
       v.removeEventListener('timeupdate', onTime);
       v.removeEventListener('ended', onEnded);
     };
-  }, [phase, stopRecorder, stopReplay, videoRef]);
+  }, [phase, stopRecorder, stopReplay, videoRef, sampleMode]);
 
   const playPreview = useCallback(() => {
     const v = videoRef.current;
@@ -194,22 +201,25 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     resetVideo(videoRef.current);
     setProgress(0);
     setMicError(null);
-    setPhase('requesting');
-    setHint(HINT.requesting);
+    setPhase(sampleMode ? 'countdown' : 'requesting');
+    setHint(sampleMode ? '숫자가 사라지면 10초 녹음 화면 체험이 시작됩니다.' : HINT.requesting);
 
     void (async () => {
-      const result = await ensureMic();
-      if (stale()) return;
-      if (result.error) {
-        setMicError(result.error);
-        setHint(MIC_HINT[result.error]);
-        setPhase('idle');
-        return;
+      let stream: MediaStream | null = null;
+      if (!sampleMode) {
+        const result = await ensureMic();
+        if (stale()) return;
+        if (result.error) {
+          setMicError(result.error);
+          setHint(MIC_HINT[result.error]);
+          setPhase('idle');
+          return;
+        }
+        stream = result.stream;
       }
-      const stream = result.stream;
 
       setPhase('countdown');
-      setHint(HINT.countdown);
+      setHint(sampleMode ? '숫자가 사라지면 10초 녹음 화면 체험이 시작됩니다.' : HINT.countdown);
       for (let n = 3; n > 0; n--) {
         setCountdown(n);
         await new Promise((r) => setTimeout(r, 900));
@@ -222,6 +232,23 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
       // 녹음 중에도 원본 소리를 듣는다. 저장할 음성은 마이크 스트림만 사용한다.
       v.muted = false;
       v.currentTime = 0;
+
+      if (sampleMode) {
+        setPhase('recording');
+        setHint('샘플 영상과 진행바를 확인해 보세요. 목소리는 녹음하지 않습니다.');
+        try {
+          await v.play();
+          if (stale()) v.pause();
+        } catch {
+          if (!stale()) {
+            resetVideo(v);
+            setPhase('idle');
+            setHint('영상을 재생하지 못했어요. 녹음 시작을 다시 눌러 주세요.');
+          }
+        }
+        return;
+      }
+      if (!stream) return;
 
       let limitTimer: ReturnType<typeof setTimeout> | undefined;
       let recorder: MediaRecorder;
@@ -279,9 +306,25 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
         if (!stale()) stopRecorder();
       }, limitSec * 1000);
     })();
-  }, [phase, stopRecorder, videoRef]);
+  }, [phase, stopRecorder, videoRef, sampleMode]);
 
   const replay = useCallback(() => {
+    if (sampleMode) {
+      if (phase !== 'recorded' && phase !== 'replaying') return;
+      const v = videoRef.current;
+      if (!v) return;
+      v.currentTime = 0;
+      v.muted = false;
+      setHint('원본 영상의 소리를 다시 듣고 있어요.');
+      setPhase('replaying');
+      const myRun = runRef.current;
+      void v.play().catch(() => {
+        if (myRun !== runRef.current) return;
+        setPhase('recorded');
+        setHint('영상을 재생하지 못했어요. 다시 듣기를 다시 눌러 주세요.');
+      });
+      return;
+    }
     if (!recorded) return;
     stopReplay();
     const v = videoRef.current;
@@ -295,7 +338,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     setPhase('replaying');
     void v.play().catch(() => {});
     void audio.play().catch(() => {});
-  }, [recorded, stopReplay, videoRef]);
+  }, [recorded, stopReplay, videoRef, sampleMode, phase]);
 
   // 화면을 벗어날 때 남은 리소스(재생용 blob URL, 녹음기)를 확실히 반환한다.
   useEffect(() => () => {
@@ -305,7 +348,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
 
   return {
     phase,
-    hint,
+    hint: sampleMode ? `샘플 체험 · 마이크 녹음 없음. ${hint}` : hint,
     showProgress: PROGRESS_PHASES.includes(phase),
     progress,
     countdown,
