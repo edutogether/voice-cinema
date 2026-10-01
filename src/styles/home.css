@@ -213,12 +213,12 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
 .scene-choice-card[aria-pressed=true] { color:#d9271d; }
 .scene-choice-card[aria-pressed=true] img { outline:2px solid #df291f; outline-offset:3px; }
 .scene-choice-card:focus-visible { outline:3px solid #171717; outline-offset:4px; }
-/* 영화제 첫 줄을 장르 이름과 맞추고, 안내문과 겹치지 않도록 구분선 위쪽으로 공간을 확보한다. */
+/* 영화제 두 줄을 장르 이름보다 위에 두고, 안내문과 겹치지 않도록 공간을 확보한다. */
 @media (min-width:1251px) {
  #home { position:relative; padding-bottom:52px; }
- .chart-layout { --scene-strip-height:calc(var(--scene-thumbnail-height) + 86px); }
- .scene-choices { padding-top:50px; }
- #home .cinema-footer { position:absolute; left:28px; bottom:37px; min-height:0; padding:0; font-size:.875rem; line-height:21px; font-weight:700; letter-spacing:-.025em; color:#535353; }
+ .chart-layout { --scene-strip-height:calc(var(--scene-thumbnail-height) + 114px); }
+ .scene-choices { padding-top:78px; }
+ #home .cinema-footer { position:absolute; left:28px; bottom:65px; min-height:0; padding:0; font-size:.875rem; line-height:21px; font-weight:700; letter-spacing:-.025em; color:#535353; }
 }
 @media (max-width:1250px) { .scene-stage { --scene-width:min(68%,820px); } }
 @media (max-width:760px) {
@@ -243,6 +243,9 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
 @media (max-height:700px) { .chart-layout { --scene-thumbnail-height:40px; } .scene-choices img { height:40px; } .scene-stage { --scene-caption-height:76px; } }
 @media (max-height:700px) and (min-width:1251px) {
  .chart-invitation { padding-block:4px; }
+ .chart-invitation .chart-label { margin-bottom:8px; }
+ .chart-invitation > p:last-of-type { margin-top:8px; }
+ .chart-invitation img { margin-bottom:10px; }
  .chart-guide { padding-top:8px; }
 }
 @media (prefers-reduced-motion:reduce) { .scene-shell .tile-body,.scene-shell .tile-media .preview { transition:none; } }
