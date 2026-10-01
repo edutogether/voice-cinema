@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CLIP_SECONDS } from '../config';
 import type { Phase } from '../hooks/useDubbing';
 
@@ -13,6 +13,10 @@ export function ClipTimeline({ phase, videoRef }: { phase: Phase; videoRef: Reac
   const textRef = useRef<HTMLSpanElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLElement>(null);
+  const pointerRef = useRef<number | null>(null);
+  const seekFrameRef = useRef(0);
+  const [dragging, setDragging] = useState(false);
+  const canSeek = phase === 'preview';
   const waiting = phase === 'idle' || phase === 'ready';
   const moving = phase === 'preview' || phase === 'recording' || phase === 'replaying';
   const initialText = waiting ? total : `${phase === 'recorded' ? total : '00:00'} / ${total}`;
@@ -26,6 +30,7 @@ export function ClipTimeline({ phase, videoRef }: { phase: Phase; videoRef: Reac
     const setProgress = (fraction: number) => {
       const transform = `scaleX(${fraction})`;
       if (bar.style.transform !== transform) bar.style.transform = transform;
+      track.style.setProperty('--position', `${fraction * 100}%`);
       const percent = String(Math.round(fraction * 100));
       if (track.getAttribute('aria-valuenow') !== percent) track.setAttribute('aria-valuenow', percent);
     };
@@ -40,6 +45,7 @@ export function ClipTimeline({ phase, videoRef }: { phase: Phase; videoRef: Reac
       const duration = video && Number.isFinite(video.duration) && video.duration > 0 ? video.duration : CLIP_SECONDS;
       setProgress(Math.max(0, Math.min(1, currentTime / duration)));
       const value = `${formatTime(currentTime)} / ${total}`;
+      track.setAttribute('aria-valuetext', `${currentTime.toFixed(1)}초 / ${duration.toFixed(1)}초`);
       if (text.textContent !== value) text.textContent = value;
       frame = requestAnimationFrame(update);
     };
@@ -47,8 +53,75 @@ export function ClipTimeline({ phase, videoRef }: { phase: Phase; videoRef: Reac
     return () => cancelAnimationFrame(frame);
   }, [phase, moving, initialText, videoRef]);
 
+  useEffect(() => {
+    if (!canSeek) {
+      pointerRef.current = null;
+      setDragging(false);
+    }
+    return () => cancelAnimationFrame(seekFrameRef.current);
+  }, [canSeek]);
+
+  const seek = (time: number) => {
+    const video = videoRef.current;
+    if (!canSeek || !video || !Number.isFinite(video.duration) || video.duration <= 0) return;
+    // 끝을 잡아끄는 중 ended 처리로 처음으로 돌아가지 않도록 마지막 프레임 안에 둔다.
+    video.currentTime = Math.max(0, Math.min(video.duration - .001, time));
+  };
+  const seekAt = (clientX: number) => {
+    const track = trackRef.current;
+    const video = videoRef.current;
+    if (!track || !video) return;
+    const rect = track.getBoundingClientRect();
+    seek((clientX - rect.left) / rect.width * video.duration);
+  };
+  const resume = () => {
+    if (canSeek) void videoRef.current?.play().catch(() => {});
+  };
+  const finishDrag = () => {
+    pointerRef.current = null;
+    setDragging(false);
+    cancelAnimationFrame(seekFrameRef.current);
+    resume();
+  };
+
   return <>
-    <div className={`progress${moving || phase === 'recorded' ? ' show' : ''}`} id="progress" ref={trackRef} role="progressbar" aria-label="영상 진행" aria-valuemin={0} aria-valuemax={100} aria-valuenow={phase === 'recorded' ? 100 : 0}><i id="bar" ref={barRef} /></div>
+    <div className={`progress${canSeek ? ' is-seekable' : ''}${dragging ? ' is-dragging' : ''}${moving || phase === 'recorded' ? ' show' : ''}`} id="progress" ref={trackRef}
+      role={canSeek ? 'slider' : 'progressbar'} aria-label={canSeek ? '미리보기 위치' : '영상 진행'}
+      aria-valuemin={0} aria-valuemax={100} aria-valuenow={phase === 'recorded' ? 100 : 0}
+      tabIndex={canSeek ? 0 : undefined}
+      onPointerDown={event => {
+        if (!canSeek || event.button !== 0 || pointerRef.current !== null) return;
+        event.preventDefault();
+        event.currentTarget.focus({ preventScroll: true });
+        event.currentTarget.setPointerCapture(event.pointerId);
+        pointerRef.current = event.pointerId;
+        setDragging(true);
+        videoRef.current?.pause();
+        seekAt(event.clientX);
+      }}
+      onPointerMove={event => {
+        if (pointerRef.current !== event.pointerId) return;
+        cancelAnimationFrame(seekFrameRef.current);
+        const x = event.clientX;
+        seekFrameRef.current = requestAnimationFrame(() => seekAt(x));
+      }}
+      onPointerUp={event => {
+        if (pointerRef.current !== event.pointerId) return;
+        seekAt(event.clientX);
+        finishDrag();
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }}
+      onPointerCancel={event => { if (pointerRef.current === event.pointerId) finishDrag(); }}
+      onLostPointerCapture={event => { if (pointerRef.current === event.pointerId) finishDrag(); }}
+      onKeyDown={event => {
+        const video = videoRef.current;
+        if (!canSeek || !video) return;
+        const delta = { ArrowLeft: -.5, ArrowDown: -.5, ArrowRight: .5, ArrowUp: .5 }[event.key];
+        if (delta === undefined && event.key !== 'Home' && event.key !== 'End') return;
+        event.preventDefault();
+        seek(event.key === 'Home' ? 0 : event.key === 'End' ? video.duration : video.currentTime + (delta ?? 0));
+        resume();
+      }}><i id="bar" ref={barRef} /></div>
     <span className="clip-time" aria-hidden="true" ref={textRef}>{initialText}</span>
   </>;
 }
