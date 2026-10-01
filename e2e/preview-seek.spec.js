@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
 
-async function openPreview(page) {
+async function openPreview(page, name = '드라마') {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   await page.getByRole('button', { name: '장면 흐름 일시정지', exact: true }).click();
-  await page.locator('.scene-choice').filter({ hasText: '드라마' }).first().click();
+  await page.locator('.scene-choice').filter({ hasText: name }).first().click();
   await page.locator('#previewBtn').click();
   await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(0);
 }
@@ -22,11 +22,15 @@ test('진행바 클릭으로 앞뒤 이동하고 해당 지점부터 소리·자
   await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(3.3);
 });
 
-test('잡아끄는 동안 프레임·시간이 앞뒤로 따라오고 놓으면 그 위치에서 재생한다', async ({ page }) => {
-  await openPreview(page);
+for (const [genre, name] of [['fantasy', '판타지'], ['animation', '애니메이션'], ['horror', '호러'], ['action', '액션'], ['drama', '드라마'], ['sitcom', '시트콤']]) {
+test(`${name}: 클릭·드래그로 앞뒤 탐색하고 선택 지점부터 재생한다`, async ({ page }) => {
+  await openPreview(page, name);
+  expect(await page.locator('#clip').evaluate(v => v.currentSrc)).toContain(`/clips/${genre}.mp4`);
   const track = page.locator('#progress');
   const rect = await track.boundingBox();
   const y = rect.y + rect.height / 2;
+  await track.click({ position: { x: rect.width * .6, y: rect.height / 2 } });
+  await expect.poll(() => page.locator('#clip').evaluate(v => !v.paused && !v.muted && v.currentTime >= 6 && v.currentTime < 7)).toBe(true);
   await page.mouse.move(rect.x + rect.width * .3, y);
   await page.mouse.down();
   for (const fraction of [.8, .2, .5]) {
@@ -43,6 +47,7 @@ test('잡아끄는 동안 프레임·시간이 앞뒤로 따라오고 놓으면 
   await page.mouse.up();
   await expect.poll(() => page.locator('#clip').evaluate(v => !v.paused && v.currentTime > 4 && v.currentTime < 5)).toBe(true);
 });
+}
 
 test('키보드 탐색을 지원하고 녹음 시작 뒤에는 진행바로 녹음 위치를 바꾸지 않는다', async ({ page }) => {
   await openPreview(page);
