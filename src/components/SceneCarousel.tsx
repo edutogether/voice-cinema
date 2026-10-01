@@ -12,7 +12,8 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
   const [selected, setSelected] = useState(0);
   const [ready, setReady] = useState(() => !document.getElementById('splash'));
   const [autoPaused, setAutoPaused] = useState(false);
-  const [stageHovered, setStageHovered] = useState(false);
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  const currentCardHovered = hoveredCard === selected;
   const [keyboardPaused, setKeyboardPaused] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   useEffect(() => {
@@ -28,7 +29,7 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
   }, []);
   const shells = useSceneMotion(selected, GENRES.length, active);
   useEffect(() => {
-    if (!active) setStageHovered(false);
+    if (!active) setHoveredCard(null);
   }, [active]);
   const choose = (index: number) => {
     setSelected(index);
@@ -42,12 +43,12 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
     return () => document.removeEventListener('visibilitychange', update);
   }, []);
   useEffect(() => {
-    if (!active || !ready || !visible || autoPaused || stageHovered || keyboardPaused || reducedMotion) return;
+    if (!active || !ready || !visible || autoPaused || currentCardHovered || keyboardPaused || reducedMotion) return;
     const timer = window.setTimeout(() => {
       setSelected(index => (index + 1) % GENRES.length);
     }, AUTO_ADVANCE_MS);
     return () => window.clearTimeout(timer);
-  }, [active, ready, visible, autoPaused, stageHovered, keyboardPaused, reducedMotion, selected]);
+  }, [active, ready, visible, autoPaused, currentCardHovered, keyboardPaused, reducedMotion, selected]);
   const choiceViewport = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => { if (keyboardChoices && choiceViewport.current) choiceViewport.current.scrollLeft = 0; }, [keyboardChoices]);
   useLayoutEffect(() => {
@@ -88,8 +89,6 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
       move(event.key === 'ArrowRight' ? 1 : -1, true);
     }}>
       <div className="scene-stage" aria-label="장면 미리보기"
-        onPointerEnter={event => { if (event.pointerType === 'mouse') setStageHovered(true); }}
-        onPointerLeave={() => setStageHovered(false)}
         onDragStart={event => event.preventDefault()}
         onPointerDown={event => {
           if ((event.target as HTMLElement).closest('.scene-arrow')) return;
@@ -102,7 +101,7 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
           dragged.current = true;
           move(event.clientX < start ? 1 : -1);
         }}
-        onPointerCancel={() => { pointerStart.current = null; setStageHovered(false); }}
+        onPointerCancel={() => { pointerStart.current = null; setHoveredCard(null); }}
         onClickCapture={event => {
           if (!dragged.current) return;
           event.preventDefault(); event.stopPropagation(); dragged.current = false;
@@ -112,6 +111,9 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
           return (
             <div key={genre.id} className={`scene-shell${offset === 0 ? ' is-current' : ''}`}
               data-index={index} data-offset={offset} aria-hidden={offset !== 0 || undefined}
+              onPointerEnter={event => { if (event.pointerType === 'mouse' && offset === 0) setHoveredCard(index); }}
+              onPointerMove={event => { if (event.pointerType === 'mouse' && offset === 0) setHoveredCard(index); }}
+              onPointerLeave={() => setHoveredCard(previous => previous === index ? null : previous)}
               ref={node => { shells.current[index] = node; }}>
               <GenreTile genre={genre} sceneNumber={index + 1} playing={active && ready && visible && offset === 0} delayMs={0} solo={false}
                 previewOnly={offset !== 0} onBlocked={ignoreBlocked}

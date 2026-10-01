@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
 
-test('화살표 호버는 장면을 유지하며 클릭할 때만 한 장씩 순환한다', async ({ page }) => {
+test('자동 넘김 정지 중 화살표 호버는 이동하지 않고 클릭할 때만 한 장씩 순환한다', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
+  await page.getByRole('button', { name: '장면 자동 넘김 일시정지', exact: true }).click();
   await page.clock.install();
   await page.clock.pauseAt(new Date(Date.now() + 1000));
   const current = page.locator('.scene-shell.is-current');
@@ -23,7 +24,7 @@ test('화살표 호버는 장면을 유지하며 클릭할 때만 한 장씩 순
   await expect(current).toHaveAttribute('data-index', '5');
 });
 
-test('큰 장면에 머무르면 영상은 재생하고 자동 넘김만 멈추며 이탈 후 6초 뒤 재개한다', async ({ page }) => {
+test('중앙 카드의 영상·제목·더빙하기 위에서만 자동 넘김을 멈추고 이탈 후 재개한다', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   const current = page.locator('.scene-shell.is-current');
@@ -34,12 +35,43 @@ test('큰 장면에 머무르면 영상은 재생하고 자동 넘김만 멈추�
   await page.clock.runFor(18000);
   await expect(current).toHaveAttribute('data-index', '0');
   expect(await current.locator('video').evaluate(v => !v.paused && v.muted)).toBe(true);
+  for (const selector of ['.gname', '.tile-enter']) {
+    await current.locator(selector).hover();
+    await page.clock.runFor(12000);
+    await expect(current).toHaveAttribute('data-index', '0');
+  }
   await page.mouse.move(1, 1);
   await page.clock.runFor(5900);
   await expect(current).toHaveAttribute('data-index', '0');
   await page.clock.runFor(100);
   await expect(current).toHaveAttribute('data-index', '1');
 });
+
+for (const area of ['left', 'right', 'top', 'bottom']) {
+  test(`중앙 카드 밖 ${area} 영역에 마우스가 있어도 자동 순환한다`, async ({ page }) => {
+    await page.goto('/');
+    await page.locator('#splash').waitFor({ state: 'detached' });
+    await page.locator('.scene-shell.is-current .tile-media').hover();
+    await page.clock.install();
+    await page.clock.pauseAt(new Date(Date.now() + 1000));
+    const point = await page.locator('.scene-stage').evaluate((el, area) => {
+      const r = el.getBoundingClientRect();
+      return {
+        x: area === 'left' ? r.left + 4 : area === 'right' ? r.right - 4 : r.x + r.width / 2,
+        y: area === 'top' ? r.top + 2 : area === 'bottom' ? r.bottom - 2 : r.y + r.height / 3,
+      };
+    }, area);
+    await page.mouse.move(point.x, point.y);
+    expect(await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest('.scene-shell.is-current'), point)).toBe(false);
+    const current = page.locator('.scene-shell.is-current');
+    await page.clock.runFor(5900);
+    await expect(current).toHaveAttribute('data-index', '0');
+    await page.clock.runFor(100);
+    await expect(current).toHaveAttribute('data-index', '1');
+    await page.clock.runFor(6000);
+    await expect(current).toHaveAttribute('data-index', '2');
+  });
+}
 
 test('키보드와 움직임 줄이기에서도 화살표를 눌러 장면을 고를 수 있다', async ({ page }) => {
   await page.goto('/');
