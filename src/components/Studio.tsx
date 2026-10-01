@@ -32,6 +32,7 @@ export function Studio({ active, genre, onHome, onSave, entrance }: Props) {
   const recording = phase === 'requesting' || phase === 'countdown' || phase === 'recording';
   const done = phase === 'recorded' || phase === 'replaying';
   const canTogglePlayback = phase === 'idle' || phase === 'ready' || phase === 'preview';
+  const showPausedScreen = canTogglePlayback && previewPaused;
   const playbackLabel = phase !== 'preview' ? '미리보기 재생' : previewEnded ? '미리보기 다시 재생' : previewPaused ? '미리보기 계속 재생' : '미리보기 일시정지';
   // 원본 음성에서 확인된 구간만 표시한다. 참가자가 녹음한 대사의 자막으로 오인하지 않게
   // 다시 듣기·완성본에는 원본 자막을 표시하거나 합성하지 않는다.
@@ -73,9 +74,15 @@ export function Studio({ active, genre, onHome, onSave, entrance }: Props) {
               </div>
               <span className="studio-brand">Voice <em>Cinema</em></span>
             </div>
-            <div className="studio-video-frame">
+            <div className={`studio-video-frame${showPausedScreen ? ' is-paused' : ''}`}>
             <video id="clip" ref={videoRef} poster={stillUrl(genre.id)} playsInline muted preload="auto" onPlay={() => { setPreviewPaused(false); setPreviewEnded(false); }} onEnded={() => { setPreviewEnded(true); setPreviewPaused(true); }} onWaiting={() => setBuffering(true)} onPlaying={() => setBuffering(false)} onError={() => setBuffering(false)} onPause={() => setPreviewPaused(true)} onTimeUpdate={event => setCaptionTime(event.currentTarget.currentTime)} onSeeking={event => setCaptionTime(event.currentTarget.currentTime)} />
             <canvas className="studio-scrub-frame" ref={scrubCanvasRef} hidden aria-hidden="true" />
+            <div className="studio-pause-shade" aria-hidden="true" />
+            <div className="studio-pause-title" aria-hidden="true">
+              <small>{previewEnded ? '미리보기 완료' : phase === 'preview' ? '일시정지' : '장면 미리보기'}</small>
+              <strong>{genre.summary}</strong>
+              <p>{genre.name}<span>10초</span></p>
+            </div>
             {canTogglePlayback && <button type="button" className="studio-screen-playback" id="screenPlaybackBtn"
               aria-label={playbackLabel}
               onClick={dub.togglePreview}>
