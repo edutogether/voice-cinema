@@ -32,7 +32,7 @@ body:has(#studio.active) { background:#fff; }
 .timeline-state,.clip-time { flex-shrink:0; color:#626262; font-size:.8125rem; line-height:1.5; font-variant-numeric:tabular-nums; }
 .clip-time { min-width:13ch; text-align:right; }
 .progress { flex:1; height:3px; background:#e7e7e7; border-radius:3px; overflow:hidden; }
-.progress > i { display:block; height:100%; background:#df291f; }
+.progress > i { display:block; width:100%; height:100%; background:#df291f; transform:scaleX(0); transform-origin:left center; }
 .controls { display:flex; flex-wrap:wrap; gap:20px 32px; align-items:center; justify-content:space-between; }
 .controls-copy { flex:1 1 320px; min-width:0; }
 .controls h2 { font-size:1.375rem; font-weight:700; letter-spacing:-.025em; margin:0 0 6px; line-height:1.4; word-break:keep-all; }

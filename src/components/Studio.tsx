@@ -3,7 +3,7 @@ import { clipUrl, stillUrl, type Genre } from '../genres';
 import { useDubbing } from '../hooks/useDubbing';
 
 import { ActionIcon } from './ActionIcon';
-import { ClipClock } from './ClipClock';
+import { ClipTimeline } from './ClipTimeline';
 
 interface Props {
   active: boolean;
@@ -24,7 +24,6 @@ export function Studio({ active, genre, onHome, onSave }: Props) {
   const { phase } = dub;
   const recording = phase === 'requesting' || phase === 'countdown' || phase === 'recording';
   const done = phase === 'recorded' || phase === 'replaying';
-  const displayProgress = phase === 'recorded' ? 100 : dub.progress;
   // 원본 음성에서 확인된 구간만 표시한다. 참가자가 녹음한 대사의 자막으로 오인하지 않게
   // 다시 듣기·완성본에는 원본 자막을 표시하거나 합성하지 않는다.
   const hasCaptions = genre.id === 'drama';
@@ -73,8 +72,7 @@ export function Studio({ active, genre, onHome, onSave }: Props) {
             <div className="studio-player-dock">
               <div className="studio-timeline">
                 <span className="timeline-state">{phase === 'recorded' ? '녹음 완료' : phase === 'requesting' ? '마이크 연결 중' : phase === 'countdown' ? '녹음 준비' : phase === 'recording' ? '녹음 중' : phase === 'replaying' ? '내 목소리 다시 듣기' : '장면 미리보기'}</span>
-                <div className={`progress${dub.showProgress ? ' show' : ''}`} id="progress" role="progressbar" aria-label="영상 진행" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(displayProgress)}><i id="bar" style={{ width: `${displayProgress}%` }} /></div>
-                <ClipClock phase={phase} videoRef={videoRef} />
+                <ClipTimeline phase={phase} videoRef={videoRef} />
               </div>
               <div className={`controls${recording ? ' is-recording' : ''}${done ? ' is-recorded' : ''}`}>
                 <div className="controls-copy">

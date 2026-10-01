@@ -363,3 +363,13 @@ ffmpeg -i public/clips/<장르>.mp4 -frames:v 1 -q:v 3 -update 1 public/clips/st
 - 원본 음량 재확인: 판타지 -84.3 / 애니메이션 -87.3 / 호러 -90.3 / 액션 -90.3 /
   드라마 -35.4 / 시트콤 -87.3dB(평균). 무음에 가까운 다섯 장면의 대사는 생성하지 않았다.
 - 분석 환경·모델·추출 WAV는 `tmp/`의 무시되는 로컬 파일뿐. 제품 의존성 추가·음원 외부 업로드 없음.
+## 영상 진행 막대 — 2026-10-01 후속
+
+- 참고: [Apple 진행 표시 지침](https://developer.apple.com/design/human-interface-guidelines/progress-indicators).
+  진행 상태를 최대한 정확히 표시하고 진행 속도를 고르게 하는 원칙을 적용했다. 웹의 구체적인
+  requestAnimationFrame·scaleX 구현은 이 앱의 선택이며 Apple이 지정한 구현법은 아니다.
+- 이전 구조는 timeupdate마다 width를 바꿔 약 0.27초 단위로 커졌다. 시간 숫자와 막대를
+  동일한 영상 currentTime에서 화면 프레임마다 갱신한다. 비율은 currentTime/duration으로 계산한다.
+- 1440×900 헤드리스 Chromium, 1.8초, 동일 PC·로컬 영상: 전후 109프레임, 변화 6→108회,
+  최대 변화 간격 267→17ms, 영상 시간과 차이 276→4ms. 측정 스크립트 `tmp/bar-motion-probe.mjs`.
+  이 비교는 해당 환경에서의 갱신 개선 증거이며 실기기 전체의 부드러움을 보장하지 않는다.
