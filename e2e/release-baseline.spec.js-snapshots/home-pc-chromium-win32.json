@@ -1,0 +1,182 @@
+[
+  {
+    "text": "개인정보처리방침",
+    "label": "개인정보처리방침 (새 탭)",
+    "role": "A",
+    "box": [
+      1329,
+      82,
+      83,
+      24
+    ],
+    "font": "12px",
+    "weight": "400",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "내 목소리로완성하는10초의 영화.",
+    "label": null,
+    "role": "H2",
+    "box": [
+      28,
+      384,
+      191,
+      124
+    ],
+    "font": "31.68px",
+    "weight": "750",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "장면 고르기 6",
+    "label": null,
+    "role": "H1",
+    "box": [
+      272,
+      127,
+      164,
+      36
+    ],
+    "font": "30px",
+    "weight": "750",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "01 미리보기 재생 중판타지10초주문 한마디로 펼치는 마법더빙하기",
+    "label": "판타지 더빙 시작",
+    "role": "BUTTON",
+    "box": [
+      477,
+      193,
+      730,
+      418
+    ],
+    "font": "16px",
+    "weight": "400",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "",
+    "label": "이전 장면",
+    "role": "BUTTON",
+    "box": [
+      413,
+      315,
+      80,
+      80
+    ],
+    "font": "13.3333px",
+    "weight": "400",
+    "transition": "none",
+    "animation": "none"
+  },
+  {
+    "text": "",
+    "label": "다음 장면",
+    "role": "BUTTON",
+    "box": [
+      1191,
+      315,
+      80,
+      80
+    ],
+    "font": "13.3333px",
+    "weight": "400",
+    "transition": "none",
+    "animation": "none"
+  },
+  {
+    "text": "01판타지",
+    "label": "판타지 미리보기 선택",
+    "role": "BUTTON",
+    "box": [
+      276,
+      750,
+      175,
+      92
+    ],
+    "font": "16px",
+    "weight": "400",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "02애니메이션",
+    "label": "애니메이션 미리보기 선택",
+    "role": "BUTTON",
+    "box": [
+      465,
+      750,
+      175,
+      92
+    ],
+    "font": "16px",
+    "weight": "400",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "03호러",
+    "label": "호러 미리보기 선택",
+    "role": "BUTTON",
+    "box": [
+      653,
+      750,
+      175,
+      92
+    ],
+    "font": "16px",
+    "weight": "400",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "04액션",
+    "label": "액션 미리보기 선택",
+    "role": "BUTTON",
+    "box": [
+      842,
+      750,
+      175,
+      92
+    ],
+    "font": "16px",
+    "weight": "400",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "05드라마",
+    "label": "드라마 미리보기 선택",
+    "role": "BUTTON",
+    "box": [
+      1031,
+      750,
+      175,
+      92
+    ],
+    "font": "16px",
+    "weight": "400",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "06시트콤",
+    "label": "시트콤 미리보기 선택",
+    "role": "BUTTON",
+    "box": [
+      1219,
+      750,
+      175,
+      92
+    ],
+    "font": "16px",
+    "weight": "400",
+    "transition": "all",
+    "animation": "none"
+  }
+]

@@ -2,7 +2,8 @@ import { test, expect } from '@playwright/test';
 
 async function openHome(page) {
   await page.route('**/sw.js', route => route.abort());
-  await page.goto('/?preview=home-design');
+  // 실제 녹음·합성·업로드 이력을 검사하므로 로컬 체험 쿼리를 사용하지 않는다.
+  await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
 }
 
@@ -21,7 +22,7 @@ test('브라우저 뒤로가기는 재생을 멈추고 홈으로, 앞으로가�
   await expect(page.locator('#home')).toHaveClass(/active/);
   await expect(page.locator('#studio')).toHaveCount(0);
   expect(await page.evaluate(() => window.previousClip.paused)).toBe(true);
-  await expect(page).toHaveURL(/\?preview=home-design$/);
+  await expect(page).toHaveURL(/\/$/);
   await page.goForward();
   await expect(page.locator('#studio')).toHaveClass(/active/);
   await expect(page.locator('#recBtn')).toBeVisible();

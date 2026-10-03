@@ -1,0 +1,122 @@
+[
+  {
+    "text": "개인정보처리방침",
+    "label": "개인정보처리방침 (새 탭)",
+    "role": "A",
+    "box": [
+      283,
+      90,
+      76,
+      24
+    ],
+    "font": "11px",
+    "weight": "400",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "장면 고르기 6",
+    "label": null,
+    "role": "H1",
+    "box": [
+      16,
+      104,
+      343,
+      29
+    ],
+    "font": "24px",
+    "weight": "750",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "판타지10초주문 한마디로 펼치는 마법더빙하기",
+    "label": "판타지 더빙 시작",
+    "role": "BUTTON",
+    "box": [
+      16,
+      175,
+      166,
+      186
+    ],
+    "font": "16px",
+    "weight": "400",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "애니메이션10초상상 속 친구와 나누는 이야기더빙하기",
+    "label": "애니메이션 더빙 시작",
+    "role": "BUTTON",
+    "box": [
+      194,
+      175,
+      166,
+      186
+    ],
+    "font": "16px",
+    "weight": "400",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "호러10초어둠 속에서 마주친 낯선 소리더빙하기",
+    "label": "호러 더빙 시작",
+    "role": "BUTTON",
+    "box": [
+      16,
+      375,
+      166,
+      186
+    ],
+    "font": "16px",
+    "weight": "400",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "액션10초위기의 순간을 뒤집는 한마디더빙하기",
+    "label": "액션 더빙 시작",
+    "role": "BUTTON",
+    "box": [
+      194,
+      375,
+      166,
+      186
+    ],
+    "font": "16px",
+    "weight": "400",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "드라마10초마음 깊이 전하고 싶은 진심더빙하기",
+    "label": "드라마 더빙 시작",
+    "role": "BUTTON",
+    "box": [
+      16,
+      574,
+      166,
+      186
+    ],
+    "font": "16px",
+    "weight": "400",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "시트콤10초웃음이 터지는 우리들의 일상더빙하기",
+    "label": "시트콤 더빙 시작",
+    "role": "BUTTON",
+    "box": [
+      194,
+      574,
+      166,
+      186
+    ],
+    "font": "16px",
+    "weight": "400",
+    "transition": "all",
+    "animation": "none"
+  }
+]

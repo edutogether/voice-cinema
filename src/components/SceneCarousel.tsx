@@ -153,6 +153,7 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
                     ref={copy ? undefined : node => { choices.current[index] = node; }}
                     onPointerDown={copy ? event => event.preventDefault() : undefined}
                     onPointerEnter={event => { if (event.pointerType === 'mouse') choose(index); }}
+                    onPointerMove={event => { if (event.pointerType === 'mouse') choose(index); }}
                     onFocus={event => { if (event.currentTarget.matches(':focus-visible')) setKeyboardChoices(true); choose(index); }}
                     onClick={event => onSelect(genre, event.currentTarget)}>
                     <img src={thumbUrl(genre.id)} alt="" width="320" height="180" />

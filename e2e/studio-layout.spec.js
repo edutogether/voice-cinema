@@ -7,7 +7,7 @@ for (const [width, height] of [[1440, 900], [1920, 1080], [1366, 768], [390, 844
     await page.locator('#splash').waitFor({ state: 'detached' });
     await page.getByRole('button', { name: '액션 더빙 시작', exact: true }).click();
     // 화면 진입 애니메이션의 소수점 이동이 끝난 최종 배치를 비교한다.
-    await page.locator('#studio').evaluate(el => Promise.all(el.getAnimations().map(animation => animation.finished)));
+    await expect(page.locator('.studio-video-frame')).not.toHaveClass(/is-entering/);
     await expect(page.locator('.controls h2')).toHaveText('준비됐나요 ?');
     await expect(page.locator('#hint')).toHaveText("'녹음 시작'을 누르면 잠시 후 녹음이 시작돼요 !");
     const layout = await page.evaluate(() => {

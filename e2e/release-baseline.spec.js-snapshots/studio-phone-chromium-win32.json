@@ -1,0 +1,92 @@
+[
+  {
+    "text": "장면 바꾸기",
+    "label": null,
+    "role": "BUTTON",
+    "box": [
+      16,
+      14,
+      111,
+      44
+    ],
+    "font": "13px",
+    "weight": "600",
+    "transition": "none",
+    "animation": "none"
+  },
+  {
+    "text": "주문 한마디로 펼치는 마법",
+    "label": null,
+    "role": "H1",
+    "box": [
+      139,
+      34,
+      235,
+      21
+    ],
+    "font": "15px",
+    "weight": "700",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "",
+    "label": "미리보기 재생",
+    "role": "BUTTON",
+    "box": [
+      0,
+      73,
+      390,
+      565
+    ],
+    "font": "13.3333px",
+    "weight": "400",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "준비됐나요 ?",
+    "label": null,
+    "role": "H2",
+    "box": [
+      20,
+      691,
+      350,
+      28
+    ],
+    "font": "20px",
+    "weight": "700",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "미리 보기",
+    "label": null,
+    "role": "BUTTON",
+    "box": [
+      20,
+      768,
+      171,
+      52
+    ],
+    "font": "15px",
+    "weight": "600",
+    "transition": "background 0.18s, border-color 0.18s",
+    "animation": "none"
+  },
+  {
+    "text": "녹음 시작",
+    "label": null,
+    "role": "BUTTON",
+    "box": [
+      199,
+      768,
+      171,
+      52
+    ],
+    "font": "15px",
+    "weight": "600",
+    "transition": "background 0.18s, border-color 0.18s",
+    "animation": "none"
+  }
+]
