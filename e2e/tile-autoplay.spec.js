@@ -257,7 +257,7 @@ test.describe('마우스가 없는 기기', () => {
 test.describe('마우스가 있는 기기', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('호버 동작은 그대로다 — 올리면 재생, 벗어나면 정지', async ({ page }) => {
+  test('중앙 장면은 무음 자동재생하며 호버 이탈 뒤에도 한 장만 재생한다', async ({ page }) => {
     await page.goto('/');
     await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
 
@@ -268,8 +268,9 @@ test.describe('마우스가 있는 기기', () => {
     const 호버가능 = await page.evaluate(() => window.matchMedia('(hover: hover) and (pointer: fine)').matches);
     test.skip(!호버가능, '이 브라우저가 hover:hover / pointer:fine을 보고하지 않아 호버 경로가 켜지지 않는다');
 
-    // 마우스가 있는 기기에서는 자동재생 경로가 아예 켜지지 않는다.
-    expect((await tileStates(page)).every((s) => s.paused)).toBe(true);
+    // 10/1 승인: 입력 없이 중앙 장면을 재생하고 호버는 장면 자동 넘김만 멈춘다.
+    await expect.poll(async () => (await tileStates(page)).filter(s => !s.paused).length).toBe(1);
+    await expect(page.locator('.scene-shell.is-current video')).toHaveJSProperty('muted', true);
 
     await page.locator('.tile', { hasText: '판타지' }).hover();
     await expect
@@ -278,9 +279,9 @@ test.describe('마우스가 있는 기기', () => {
 
     // 카드 밖으로 마우스를 옮긴다. 좌표를 찍는 대신 실제 요소 위로 옮겨야
     // 어떤 화면 크기에서도 확실히 카드를 벗어난다.
-    await page.locator('.brand h1').hover();
+    await page.getByRole('heading', { level: 1 }).hover();
     await expect
       .poll(async () => (await tileStates(page)).filter((s) => !s.paused).length, { timeout: 20000 })
-      .toBe(0);
+      .toBe(1);
   });
 });

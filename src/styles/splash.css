@@ -3,7 +3,7 @@
    그라디언트 3장)이 같이 그려지고 있어 저사양 기기에서 버벅였다 —
    splash가 떠 있는 동안만 단색으로 바꾼다(사라지면 :has()가 풀려 자동 복귀). */
 body:has(#splash) {
-  background: var(--bg);
+  background: #fff;
 }
 
 /* 사라지는 타이밍을 CSS로 잡는다 — JS 타이머로 시작하면 번들이 로드된 뒤부터
@@ -42,7 +42,7 @@ body:not(.app-ready) #splash {
   align-items: center;
   justify-content: center;
   gap: 14px;
-  background: linear-gradient(180deg, var(--bg), var(--bg2));
+  background: #fff;
 }
 /* 유지 구간은 animation-delay가 맡는다 — 그동안은 이 요소의 평소 스타일(불투명,
    클릭 막음)이 그대로 적용되고, 여기서는 사라지는 동작만 정의한다. */
@@ -90,18 +90,27 @@ body:not(.app-ready) #splash {
   font-size: clamp(26px, 5vw, 38px);
   font-weight: 800;
   letter-spacing: -0.01em;
-  color: var(--cream);
+  color: #171717;
 }
+#splash .name .cinema { color: #ed3124; }
 #splash .stagline {
   font-size: clamp(13px, 2vw, 16px);
-  color: var(--muted);
+  color: #626262;
+  padding-inline: 24px;
+  text-align: center;
+}
+#splash .splash-education {
+  display: block;
+  width: 176px;
+  height: auto;
+  margin-top: 8px;
 }
 #splash .sbar {
   display: block;
   width: 190px;
   height: 3px;
   border-radius: 99px;
-  background: rgba(233, 196, 106, 0.2);
+  background: #f0e4e3;
   overflow: hidden;
   margin-top: 4px;
 }
@@ -112,7 +121,7 @@ body:not(.app-ready) #splash {
   width: 40%;
   height: 100%;
   border-radius: 99px;
-  background: linear-gradient(90deg, var(--gold), var(--gold-soft));
+  background: #ed3124;
   /* ease-in-out이 아니라 linear다. 끝에서 감속해 거의 서 있다가(실측 0.3px/프레임)
      다음 프레임에 -266px로 순간이동해서 1.15초마다 울컥거렸다. 등속이면 되돌아가는
      불연속 자체는 남지만 그 앞에서 서지 않아 훨씬 덜 튄다. */

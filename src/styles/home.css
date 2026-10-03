@@ -1,356 +1,262 @@
-/* 홈: 제목 + 장르 타일 6개 */
+/* 완성 화면에서 사용하는 공용 머리말. */
+.cinema-header { display:flex; align-items:center; justify-content:space-between; gap:28px; min-height:96px; border-bottom:1px solid #333633; }
+.cinema-wordmark { display:flex; align-items:center; gap:12px; font-size:1.5rem; font-weight:700; letter-spacing:-.035em; white-space:nowrap; }
+.cinema-wordmark img { width:36px; height:36px; }
+.cinema-wordmark strong { font-weight:700; }
+.cinema-wordmark small { display:block; margin-top:5px; font-size:.75rem; font-weight:500; letter-spacing:.07em; color:#b8b9b1; }
+.cinema-steps { display:flex; gap:26px; list-style:none; padding:0; margin:0; color:#a7aba6; font-size:.875rem; }
+.cinema-steps li { display:flex; align-items:center; gap:9px; padding:12px 0; border-bottom:2px solid transparent; white-space:nowrap; }
+.cinema-steps li > span { font-variant-numeric:tabular-nums; font-size:.75rem; color:inherit; }
+.cinema-steps [aria-current] { color:#f2cf6b; border-bottom-color:#f2cf6b; font-weight:600; }
+.cinema-festival { font-size:.875rem; color:#b8b9b1; }
 
-.brand {
-  text-align: center;
-  margin: 0 auto clamp(10px, 1.6vw, 18px);
-}
-.brand h1 {
-  font-size: clamp(32px, 5.6vw, 54px);
-  line-height: 1.05;
-  margin: 0;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-}
-.brand h1 .gold {
-  background: linear-gradient(135deg, var(--gold-soft) 0%, var(--gold) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-.tagline-top {
-  display: inline-block;
-  color: var(--muted);
-  font-size: clamp(13px, 1.7vw, 17px);
-  margin: 10px 0 0;
-  letter-spacing: 0.04em;
-  font-weight: 500;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012));
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 7px 20px;
-}
+/* CGV 무비차트의 이미지·제목 위계. 여섯 장면은 같은 화면에서 고른다. */
+body:has(#home.active) { background:#fff; }
+#home { width:100vw; margin-inline:calc((100% - 100vw) / 2); padding:0 28px; height:100svh; min-height:40rem; flex:none; background:#fff; color:#171717; }
+#home.active { animation:none; }
+.festival-header { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:24px; flex-shrink:0; min-height:80px; margin-inline:-16px; padding:14px 28px; background:white; border-bottom:1px solid #ddd; }
+.festival-partners { display:flex; align-items:center; gap:12px; }
+.festival-partners > span { color:#aaa; font-size:1.125rem; }
+.partner-cgv { width:76px; height:auto; }
+.partner-education { width:174px; height:auto; }
+.festival-steps { display:flex; align-items:center; gap:20px; list-style:none; padding:0; margin:0; font-size:.8125rem; color:#757575; }
+.festival-steps li { display:flex; align-items:center; gap:8px; white-space:nowrap; }
+.festival-steps li + li::before { content:''; width:20px; height:1px; margin-right:12px; background:#ddd; }
+.festival-steps li > span { display:grid; place-items:center; width:24px; height:24px; border:1px solid #ccc; border-radius:50%; font-weight:600; }
+.festival-steps b { font-weight:500; }
+.festival-steps [aria-current] { color:#171717; }
+.festival-steps [aria-current] > span { color:white; background:#171717; border-color:#171717; }
+.festival-steps [aria-current] b { font-weight:700; }
+.festival-signature { justify-self:end; display:flex; align-items:center; gap:8px; font-size:.9375rem; white-space:nowrap; }
+.festival-symbol { position:relative; display:block; overflow:hidden; width:44px; height:25px; flex-shrink:0; }
+.festival-symbol img { position:absolute; left:-36px; top:0; width:240px; height:auto; max-width:none; }
 
-/* 엔진(31MB) 준비 배너 */
-.enginebar {
-  max-width: 520px;
-  margin: 14px auto 0;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.03);
-  font-size: 13px;
-  color: var(--muted);
-  text-align: center;
-  display: none;
+.festival-header { position:relative; margin-inline:-28px; }
+.chart-layout { --scene-thumbnail-height:clamp(46px,7vh,80px); --scene-strip-height:calc(var(--scene-thumbnail-height) + 68px); display:flex; flex:1; min-height:0; gap:28px; padding-top:26px; }
+.chart-aside { display:flex; flex-direction:column; width:clamp(13rem,15vw,14.5rem); flex-shrink:0; padding-right:24px; border-right:1px solid #ededed; }
+.chart-app { margin:0; font-size:1.5rem; line-height:1.25; font-weight:750; letter-spacing:-.035em; }
+.chart-app strong { font-weight:750; }
+.chart-app em { color:#df291f; font-style:normal; }
+.chart-app > span { display:block; margin-top:9px; color:#727272; font-size:.75rem; line-height:1.5; font-weight:400; letter-spacing:0; word-break:keep-all; }
+.chart-invitation { margin-top:auto; padding-block:32px; }
+.chart-label { display:inline-block; margin:0 0 20px; padding:7px 11px; border-radius:30px; background:#191919; color:white; font-size:.875rem; font-weight:700; }
+.chart-invitation h2 { margin:0; font-size:clamp(1.75rem,2.2vw,2.25rem); line-height:1.3; letter-spacing:-.055em; font-weight:750; }
+.chart-invitation em { display:inline-block; white-space:nowrap; font-style:normal; color:#df291f; }
+.chart-invitation > p:last-of-type { color:#626262; font-size:.875rem; line-height:1.75; font-weight:700; margin:20px 0 0; }
+.chart-invitation img { display:block; width:60px; height:60px; margin:0 0 16px; }
+/* 오른쪽 목록과 같은 높이를 사용해 두 구분선을 맞춘다. */
+.chart-guide { display:flex; flex-direction:column; flex:0 0 var(--scene-strip-height); height:var(--scene-strip-height); margin-top:auto; padding-top:22px; border-top:1px solid #ececec; }
+.chart-guide strong { font-size:1rem; line-height:20px; font-weight:700; letter-spacing:-.035em; }
+.chart-guide p { margin:6px 0 0; color:#626262; font-size:.75rem; line-height:18px; letter-spacing:-.015em; }
+.chart-main { flex:1; display:flex; flex-direction:column; min-width:0; min-height:0; }
+.chart-heading { display:flex; align-items:center; justify-content:space-between; gap:24px; flex-shrink:0; padding:0 0 20px; }
+.chart-eyebrow { margin:0 0 6px; color:#737373; font-size:.8125rem; }
+.chart-heading h1 { display:flex; align-items:center; gap:10px; margin:0; font-size:1.875rem; line-height:1.2; letter-spacing:-.045em; font-weight:750; }
+.chart-heading h1 span { display:grid; place-items:center; width:26px; height:26px; background:#f3f3f3; border-radius:50%; font-size:.875rem; letter-spacing:0; font-weight:600; }
+.chart-heading > p { margin:0; max-width:290px; color:#626262; font-size:.875rem; line-height:1.6; word-break:keep-all; }
+.grid { display:grid; flex:1; min-height:0; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-rows:repeat(2,minmax(0,1fr)); gap:22px 24px; }
+.tile { position:relative; display:flex; flex-direction:column; width:100%; min-width:0; min-height:0; appearance:none; border:0; padding:0; text-align:left; background:white; color:#171717; font:inherit; cursor:pointer; border-radius:12px; --hl-shadow:0 0 0 2px var(--c),0 0 12px var(--c-glow),inset 0 0 0 100vmax var(--c-wash); }
+.tile-media { display:block; position:relative; flex:1; min-height:0; width:100%; overflow:hidden; background:#181818; }
+/* 모바일에서 확대되는 모든 자식도 자신의 모서리를 갖는다. */
+.tile-media,.tile-visual,.tile-media .thumb,.tile-media .preview { border-radius:inherit; }
+.tile-visual { display:block; position:absolute; inset:0; }
+.tile-media .thumb,.tile-media .preview { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform .3s; }
+.tile-media .preview { opacity:0; }
+.tile-media .preview.playing { opacity:1; }
+.tile-number { position:absolute; bottom:10px; left:18px; color:#fff; font-size:clamp(2.5rem,4vw,4.5rem); font-weight:800; font-style:italic; line-height:1; letter-spacing:-.06em; text-shadow:0 2px 12px #0008; }
+.tile-preview-label { display:none; position:absolute; right:12px; top:12px; align-items:center; gap:5px; background:#111d; color:white; padding:6px 9px; border-radius:20px; font-size:.6875rem; line-height:1.5; }
+.tile-preview-label svg { width:10px; height:10px; }
+.tile-body { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 2px 0; flex-shrink:0; min-width:0; }
+.tile-copy { min-width:0; }
+.gname { display:flex; align-items:center; flex-wrap:wrap; gap:8px; font-size:1.25rem; line-height:1.4; font-weight:700; letter-spacing:-.035em; word-break:keep-all; }
+.tile-length { padding:1px 5px; border-radius:4px; background:#f3f3f3; color:#686868; font-size:.6875rem; line-height:1.5; letter-spacing:0; font-weight:500; }
+.gsub { display:block; margin-top:4px; font-size:.8125rem; line-height:1.5; color:#6b6b6b; word-break:keep-all; }
+.tile-enter { display:flex; align-items:center; justify-content:center; gap:6px; flex-shrink:0; border:1px solid #dedede; border-radius:30px; padding:9px 13px; font-size:.8125rem; font-weight:600; white-space:nowrap; }
+.tile-enter svg { width:15px; height:15px; }
+.tile:focus-visible { outline:3px solid #171717; outline-offset:5px; }
+.tile:active,.tile.is-solo { box-shadow:var(--hl-shadow); }
+.tile:active .thumb,.tile:active .preview,.tile.is-solo .thumb,.tile.is-solo .preview { transform:scale(1.05); }
+.cinema-footer { display:flex; flex-shrink:0; align-items:center; justify-content:space-between; gap:20px; min-height:34px; font-size:.75rem; line-height:1.5; color:#737373; }
+.cinema-footer p { margin:0; }
+#home .cinema-footer { min-height:52px; padding-block:8px; }
+.cinema-footer p span { margin-left:16px; }
+.privacylink { position:absolute; top:calc(100% + 3px); right:28px; display:inline-flex; min-height:24px; align-items:center; color:#666; text-decoration:none; font-size:.75rem; }
+.privacylink:hover { color:#171717; text-decoration:underline; }
+/* 진행률이 사라져도 카드 높이가 바뀌지 않게 헤더 아래에 독립 표시한다. */
+.enginebar { display:none; position:absolute; right:160px; top:82px; color:#626262; font-size:.6875rem; line-height:1.5; }
+.enginebar.show { display:block; }
+.enginebar.err b { color:#a2202b; }
+@media (hover:hover) and (pointer:fine) {
+  /* 카드·영상 표면의 위치와 크기를 고정한다. 호버 시 재생과 버튼 색만 바뀐다. */
+  .tile-media .thumb,.tile-media .preview { transition:none; }
+  .tile:is(:hover,:focus-visible) .tile-enter { color:white; background:#df291f; border-color:#df291f; }
+  .tile:is(:hover,:focus-visible) .tile-media { box-shadow:0 0 0 2px #df291f; }
+  .tile-media:has(.playing) .tile-preview-label { display:flex; }
+  .tile:active .thumb,.tile:active .preview { transform:none; }
 }
-.enginebar.show {
-  display: block;
+@media (max-width:1250px) {
+  .chart-aside { display:none; }
+  .chart-layout { gap:0; }
 }
-.enginebar b {
-  color: var(--gold);
+@media (max-width:1150px) {
+  .cinema-festival,.festival-english { display:none; }
+  .festival-header { gap:14px; padding-inline:20px; }
+  .privacylink { right:20px; }
+  .festival-steps { gap:12px; }
 }
-.enginebar.err {
-  border-color: rgba(255, 84, 112, 0.4);
-  background: rgba(255, 84, 112, 0.08);
+@media (max-width:900px) {
+  .festival-header { grid-template-columns:1fr auto; gap:10px 16px; padding:10px 20px; }
+  .festival-steps { grid-column:1 / -1; grid-row:2; justify-content:center; }
+  .partner-cgv { width:58px; }
+  .partner-education { width:145px; }
+  .grid { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:repeat(3,minmax(0,1fr)); gap:16px; }
+  .tile-enter { display:none; }
+  .chart-heading > p { max-width:230px; }
+  .enginebar { top:98px; }
+  .cinema-steps { gap:20px; }
+  .cinema-header { flex-wrap:wrap; padding:20px 0 0; gap:16px; }
+  .cinema-steps { flex-basis:100%; justify-content:space-between; }
+  .cinema-steps li { flex:1; justify-content:center; }
+  .cinema-wordmark { font-size:1.25rem; }
+  .cinema-wordmark small { display:none; }
 }
-.enginebar.err b {
-  color: var(--danger);
+@media (max-width:760px) {
+  #home { padding:0 16px; }
+  .festival-header { margin-inline:-16px; padding:10px 16px; }
+  .festival-partners { gap:8px; }
+  .partner-cgv { width:48px; }
+  .partner-education { width:125px; }
+  .festival-symbol { display:none; }
+  .festival-steps { gap:10px; font-size:.75rem; }
+  .festival-steps li { gap:6px; }
+  .festival-steps li + li::before { width:14px; margin-right:4px; }
+  .chart-layout { padding-top:16px; }
+  .chart-heading { display:block; padding-bottom:14px; }
+  .chart-eyebrow { display:none; }
+  .chart-heading h1 { font-size:1.5rem; }
+  .chart-heading > p { margin-top:8px; max-width:none; font-size:.8125rem; }
+  .grid { gap:14px 12px; }
+  .tile { border-radius:10px; }
+  .tile-body { padding:7px 1px 0; }
+  .gname { font-size:1.0625rem; gap:5px; }
+  .gsub { display:none; }
+  .tile-length { font-size:.625rem; }
+  .cinema-footer { gap:8px; font-size:.625rem; min-height:44px; }
+  .cinema-footer p span { display:none; }
+  .privacylink { right:16px; font-size:.6875rem; }
+  .enginebar { right:136px; top:94px; font-size:.625rem; }
 }
+@media (max-height:780px) and (min-width:1251px) {
+  .chart-invitation { padding-block:12px; }
+  .chart-invitation img { width:48px; height:48px; margin:0 0 14px; }
+  .chart-invitation h2 { font-size:1.75rem; }
+}
+@media (prefers-reduced-motion:reduce) { .tile-media .thumb,.tile-media .preview { transition:none; } }
 
-/* 터치 기기에서 PC의 호버에 해당하는 것은 "손가락을 대고 있는 순간"이다.
-   그래서 강조 효과를 :active에 건다 — 값은 --hl-shadow 한 곳에만 적고 :hover와
-   :active가 그것을 가리키므로 둘이 갈라질 수 없다. 화면 가운데 카드 한 장만 강조하던 방식은 걷어냈다.
-   여섯 장이 다 재생되는 상태에서 한 장만 빛내면 "왜 저것만"이 되고, 스크롤이 없는
-   화면(375px)에서는 그 한 장이 영영 바뀌지 않아 나머지가 죽은 것처럼 보였다
-   (2026-09-09 대표 지적: "계속 호러만 재생됨"). */
+/* CGV 실사이트의 중앙 확대·양옆 후퇴 구조. 여섯 선택지는 아래에서 모두 보인다. */
+.scene-carousel { display:flex; flex-direction:column; flex:1; min-height:0; }
+.scene-stage { --scene-width:min(64%,820px); --scene-caption-height:94px; position:relative; flex:1; min-height:200px; overflow:hidden; touch-action:pan-y; }
+.scene-shell { position:absolute; left:50%; top:10px; bottom:12px; width:var(--scene-width); transform-origin:50% 42%; will-change:transform,opacity; }
+.scene-shell .tile { width:100%; height:100%; margin:0; padding:0; box-shadow:none; border-radius:16px; background:transparent; }
+.scene-shell .tile-media { border-radius:16px; box-shadow:0 8px 24px #17202c12; }
+.scene-shell .tile-body { min-height:var(--scene-caption-height); padding:18px 4px 4px; gap:20px; opacity:1; transition:opacity .18s ease; }
+.scene-shell .gname { font-size:1.875rem; gap:12px; }
+.scene-shell .gsub { font-size:.9375rem; margin-top:6px; }
+.scene-shell .tile-length { font-size:.75rem; }
+.scene-shell .tile-enter { background:#df291f; color:white; border:0; padding:13px 22px; font-size:.9375rem; }
+.scene-shell .tile-number { font-size:clamp(3.5rem,6vw,6rem); left:24px; bottom:18px; }
+.scene-shell:not(.is-current) .tile-body { opacity:0; pointer-events:none; }
+/* 크게 칠해지는 그림자는 선택 때마다 교체하지 않는다. */
+.scene-shell .tile:is(:hover,:focus-visible) .tile-media { box-shadow:0 8px 24px #17202c12; }
+.scene-shell .tile-media .preview { transition:opacity .14s ease; }
+.scene-navigation { display:flex; align-items:center; justify-content:center; gap:22px; height:48px; flex-shrink:0; }
+/* 꺾쇠 중심을 중앙 이미지 바깥으로 24px 띄운다. 넘기는 중에도 입력 영역은 고정한다. */
+.scene-arrow { position:absolute; z-index:20; top:calc(50% - (var(--scene-caption-height) + 2px) / 2); transform:translateY(-50%); width:80px; height:80px; display:grid; place-items:center; padding:0; background:transparent; color:#fff; border:0; border-radius:50%; clip-path:circle(50%); cursor:pointer; }
+.scene-arrow-prev { left:calc((100% - var(--scene-width)) / 2 - 64px); }
+.scene-arrow-next { right:calc((100% - var(--scene-width)) / 2 - 64px); }
+.scene-arrow svg { width:56px; height:56px; filter:drop-shadow(0 1px 3px #0009); transition:transform .2s ease-out; }
+.scene-arrow { transition:background .2s ease-out; }
+@media (hover:hover) and (pointer:fine) {
+ .scene-arrow:hover { background:#0003; }
+ .scene-arrow:hover svg { transform:scale(1.08); }
+ .scene-arrow:active svg { transform:scale(.96); }
+}
+.scene-arrow:focus-visible { outline:none; box-shadow:inset 0 0 0 2px #fff; }
+.scene-position { display:flex; align-items:center; gap:8px; font-size:.875rem; font-variant-numeric:tabular-nums; margin:0; }
+.scene-position > span { color:#777; }
+.scene-position .scene-current-name { display:none; }
+/* 여섯 장 + 한 칸의 여유로 순환 중에도 모든 장르의 온전한 선택지를 노출한다. */
+.scene-choice-row { position:relative; flex-shrink:0; padding-right:28px; border-top:1px solid #ececec; }
+.scene-choices { --choice-gap:14px; overflow:hidden; contain:paint; padding:32px 4px 6px; }
+.scene-choice-track { display:flex; width:calc(1800% / 7); animation:sceneChoicesFlow var(--flow-duration,48s) linear infinite; transform:translate3d(0,0,0); will-change:transform; }
+.scene-choice-set { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:var(--choice-gap); padding-right:var(--choice-gap); flex:0 0 33.333333%; min-width:0; }
+@keyframes sceneChoicesFlow {
+ from { transform:translate3d(0,0,0); }
+ to { transform:translate3d(var(--flow-distance,-33.333333%),0,0); }
+}
+/* 바깥 테두리는 고정해 지나가는 이미지와 글자가 부드럽게 드러나게 한다. */
+.scene-choice-row::before,.scene-choice-row::after { content:""; position:absolute; z-index:1; top:1px; bottom:0; width:20px; pointer-events:none; }
+.scene-choice-row::before { left:0; background:linear-gradient(90deg,#fff,#ffffff00); }
+.scene-choice-row::after { right:28px; background:linear-gradient(270deg,#fff,#ffffff00); }
+.scene-choice-row:has([data-keyboard=true])::before,.scene-choice-row:has([data-keyboard=true])::after { display:none; }
+.scene-choices[data-paused=true] .scene-choice-track,
+body:has(#splash) .scene-choice-track { animation-play-state:paused; }
+.scene-choices[data-keyboard=true] .scene-choice-track { animation:none; transform:none; width:300%; }
+.scene-flow-toggle { position:absolute; right:0; top:50%; transform:translateY(-50%); display:grid; place-items:center; width:24px; height:36px; padding:3px; border:0; border-radius:5px; background:none; color:#767676; cursor:pointer; }
+.scene-flow-toggle svg { width:16px; height:16px; fill:currentColor; }
+.scene-flow-toggle:hover { background:#f0f0f0; color:#171717; }
+.scene-flow-toggle:focus-visible { outline:2px solid #171717; }
+@media (prefers-reduced-motion:reduce) {
+ .scene-choice-track { animation:none; transform:none; width:300%; }
+ .scene-flow-toggle { display:none; }
+ .scene-choice-row { padding-right:0; }
+ .scene-choice-row::before,.scene-choice-row::after { display:none; }
+}
+.scene-choice-card { border:0; padding:0; min-width:0; background:none; color:#666; cursor:pointer; font:inherit; }
+.scene-choice-card img { width:100%; height:var(--scene-thumbnail-height); display:block; object-fit:cover; border-radius:7px; }
+.scene-choice-card > span { display:flex; justify-content:center; align-items:center; gap:6px; margin-top:8px; font-size:.875rem; font-weight:600; line-height:1.5; white-space:nowrap; }
+.scene-choice-card small { font-size:.6875rem; font-weight:400; color:#767676; }
+.scene-choice-card[aria-pressed=true] { color:#d9271d; }
+.scene-choice-card[aria-pressed=true] img { outline:2px solid #df291f; outline-offset:3px; }
+.scene-choice-card:focus-visible { outline:3px solid #171717; outline-offset:4px; }
+/* 영화제 두 줄을 장르 이름보다 위에 두고, 안내문과 겹치지 않도록 공간을 확보한다. */
+@media (min-width:1251px) {
+ #home { position:relative; padding-bottom:52px; }
+ .chart-layout { --scene-strip-height:calc(var(--scene-thumbnail-height) + 114px); }
+ .scene-choices { padding-top:78px; }
+ #home .cinema-footer { position:absolute; left:28px; bottom:65px; min-height:0; padding:0; font-size:.875rem; line-height:21px; font-weight:700; letter-spacing:-.025em; color:#535353; }
+}
+@media (max-width:1250px) { .scene-stage { --scene-width:min(68%,820px); } }
+@media (max-width:760px) {
+ .scene-stage { --scene-width:74%; --scene-caption-height:76px; min-height:190px; }
+ .scene-arrow { width:72px; height:72px; top:calc(50% - 36px); }
+ .scene-arrow-prev { left:calc((100% - var(--scene-width)) / 2 - 60px); }
+ .scene-arrow-next { right:calc((100% - var(--scene-width)) / 2 - 60px); }
+ .scene-arrow svg { width:48px; height:48px; }
+ .scene-shell { top:8px; bottom:4px; }
+ .scene-shell .tile-body { padding:12px 4px 4px; gap:8px; }
+ .scene-shell .gname { font-size:1.375rem; gap:7px; }
+ .scene-shell .gsub { display:block; font-size:.75rem; margin-top:4px; }
+ .scene-shell .tile-enter { display:flex; font-size:.8125rem; padding:10px 12px; }
+ .scene-shell .tile-enter svg { display:none; }
+ .scene-shell .tile-number { font-size:3rem; left:16px; bottom:12px; }
+ .scene-choices { --choice-gap:8px; padding-top:24px; }
+ .scene-choice-card > span { font-size:.6875rem; gap:0; }
+ .scene-choice-card small { display:none; }
+ .scene-choice-card img { height:44px; }
+ .scene-navigation { height:42px; }
+}
+@media (max-height:700px) { .chart-layout { --scene-thumbnail-height:40px; } .scene-choices img { height:40px; } .scene-stage { --scene-caption-height:76px; } }
+@media (max-height:700px) and (min-width:1251px) {
+ .chart-invitation { padding-block:4px; }
+ .chart-invitation .chart-label { margin-bottom:8px; }
+ .chart-invitation > p:last-of-type { margin-top:8px; }
+ .chart-invitation img { margin-bottom:10px; }
+ .chart-guide { padding-top:8px; }
+}
+@media (prefers-reduced-motion:reduce) { .scene-shell .tile-body,.scene-shell .tile-media .preview,.scene-arrow,.scene-arrow svg { transition:none; } }
 
-/* 좁은 화면에서 16:9를 강제하면 카드 블록이 낮아져 위아래로 빈 공간이 남는다 —
-   16:9는 가로 폭이 넉넉한 데스크탑에서만 적용하고, 모바일은 남는 세로를 채운다. */
-.grid {
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(3, 1fr);
-  gap: clamp(14px, 2.3vw, 24px);
-}
-@media (min-width: 760px) {
-  .grid {
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: none;
-    align-content: center;
-  }
-  #home {
-    /* 세로 여유. 아래 두 값이 모두 여기서 나오므로, 창이 짧아지면 제목도 설명줄도
-       같이 원위치로 돌아가 화면 밖으로 밀려나지 않는다.
-       세로가 짧을 때 반드시 0이 되어야 하는 이유: 데스크탑 타일은 16:9로 높이가
-       고정돼 있어 세로가 모자라도 줄어들지 못하고 화면 밖으로 밀린다(1440x700에서
-       93px 넘치는 것을 실측으로 확인했다). */
-    --room: max(0px, 100dvh - 780px);
-    --title-drop: min(119px, var(--room));
-    /* 설명줄은 제목보다 이만큼 더 내려간다 — 그만큼 둘 사이 간격이 벌어진다
-       (대표 지시 2026-09-09: 제목은 많이 내리고 설명줄은 제목에 더 붙인다). */
-    --tagline-extra: min(5px, var(--room));
-    /* 화면 전체(제목·부제·카드·방침 링크)를 한 덩어리로 내리는 양(대표 지시 2026-09-09).
-       위·아래 여백을 55:45로 두려고 잰 값이다 — 1440x900에서 제목 위 141px,
-       카드 아래 끝에서 화면 끝까지 152px이라 총 293px이고, 목표(위 161)까지 20px 모자랐다.
-       여기서도 여백이 아니라 transform을 쓴다 — 여백을 주면 문서가 길어져 아래가 잘린다. */
-    --screen-drop: min(20px, var(--room));
-  }
-  /* 여백이 아니라 transform으로 옮긴다. 여백을 주면 그만큼 문서가 길어져 카드가 따라
-     내려가고(그리드가 남는 세로를 나눠 갖기 때문) 세로가 빠듯한 창에서는 화면 밖으로
-     밀려난다 — 제목을 99px로 올렸을 때 1440x900에서 실제로 5px 넘쳤다. transform은
-     레이아웃에 영향이 없어 카드가 제자리에 그대로 있고 넘침도 생기지 않는다.
-     그래서 그리드 쪽 상쇄 패딩도 더는 필요 없어 걷어냈다.
-     .tagline-top은 .brand의 자식이라 두 이동이 겹친다 — 설명줄은 제목보다
-     --tagline-extra만큼 더 내려간다. */
-  #home.view {
-    transform: translateY(var(--screen-drop));
-  }
-  .brand {
-    transform: translateY(var(--title-drop));
-  }
-  /* 모바일은 카드가 남는 세로를 그대로 채우고 있어 건드리지 않는다 — 그래서 이
-     블록(가로 760px 이상) 안에만 둔다. */
-  .tagline-top {
-    transform: translateY(var(--tagline-extra));
-  }
-  .tile {
-    aspect-ratio: 16 / 9;
-  }
-}
-@media (min-width: 760px) and (max-height: 720px) {
-  .brand {
-    margin-bottom: 8px;
-  }
-}
-/* 개인정보처리방침을 20px 위로 올린다(대표 지시 2026-09-09). 아래 여백을 늘리는 방식은
-   문서가 그만큼 길어져 세로가 짧은 창에서 화면 밖으로 밀려나므로, 자리는 그대로 두고
-   그린 위치만 옮긴다.
-   조건이 붙은 이유: 카드가 남는 세로를 다 채우는 화면(모바일 전부, 세로가 짧은 데스크탑)
-   에서는 이 링크와 마지막 카드 사이가 10px밖에 없어서, 20px를 올리면 카드 위에 겹쳐
-   글자가 반쯤 가려진다(실측으로 확인). 제목을 내릴 여유가 있는 창에서만 함께 올린다. */
-@media (min-width: 760px) and (min-height: 780px) {
-  .privacylink {
-    top: -20px;
-  }
-}
-
-.tile {
-  position: relative;
-  border-radius: 24px;
-  /* 🔴 `-webkit-mask-image: -webkit-radial-gradient(white, black)`을 넣지 말 것.
-     iOS의 둥근 모서리 잘라내기 결함에 흔히 쓰는 우회인데, **마스크가 테두리 박스 밖을
-     전부 잘라내므로 `box-shadow`로 그리는 강조 테두리와 번짐이 통째로 사라진다.**
-     2026-09-11에 넣었다가 캡처로 확인하고 즉시 뺐다 — 누를 때 반응이 없어지는 쪽이
-     각진 모서리보다 훨씬 나쁘다. 잘라내기는 아래 자식 반경으로 해결한다. */
-  background: #05070f;
-  cursor: pointer;
-  overflow: hidden;
-  min-height: 0;
-  /* 🔴 여기 기본값은 **마우스가 없는 기기(모바일·태블릿)** 몫이다. 왼쪽 색 띠를 별도
-     요소가 아니라 inset 그림자로 그린다 — 얹는 요소가 없으면 iOS가 둥근 모서리
-     잘라내기를 놓쳐도 각질 것이 없다. inset 그림자는 border-radius를 그대로 따른다.
-     **PC는 아래 호버 미디어쿼리에서 예전 모습 그대로로 되돌린다** — 대표가 "PC는 지금
-     딱 좋은데 왜 건드리냐"고 했고, 결함이 없는 화면을 일관성 때문에 바꾸는 것은
-     멀쩡한 것을 위험에 빠뜨리는 일이다(2026-09-11). */
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4), inset 5px 0 0 0 var(--c);
-  transition: transform 0.15s ease, box-shadow 0.25s ease;
-  /* 강조 그림자는 여기 한 번만 적는다. 아래 :hover와 :active가 이 값을 가리키기만
-     하므로 둘이 갈라질 수 없다. 커스텀 속성은 쓰는 자리에서 치환돼 var(--c)가
-     타일마다 제 색으로 풀린다. */
-  /* 2026-09-09: 번짐이 과해 "큰 네모"로 보였다. box-shadow는 모서리를 정확히 따르지만
-     카드 반경이 24px인데 번짐이 48px + 퍼짐 6px이라, 둥근 구간이 빛에 파묻혀 카드보다
-     훨씬 큰 사각형 후광으로 읽혔다(모서리 확대로 확인). 모양이 아니라 크기 문제였다.
-     번짐을 16px로 줄이고 퍼짐을 없앴다 — 테두리 주변만 은은하게 감싼다. */
-  /* 2026-09-11: 색 덮기를 `.tile-tint`(mix-blend-mode를 쓰는 별도 레이어)에서 inset 그림자로
-     옮겼다. 대표가 아이폰에서 "떡네모"를 지적했고, 얹는 요소를 없애자는 방향을 직접 지목했다 —
-     blend가 걸린 레이어는 iOS가 부모의 둥근 모서리로 안 잘라내는 대표적인 대상이다.
-     inset은 요소가 아니라 카드 자신의 그림자라 모서리를 그대로 따른다. */
-  --hl-shadow:
-    0 14px 30px rgba(0, 0, 0, 0.5),
-    0 0 0 2px var(--c),
-    inset 5px 0 0 0 var(--c),
-    inset 0 0 0 100vmax var(--c-wash),
-    /* color-mix를 쓰지 않는다 — 모르는 브라우저에서는 이 box-shadow 선언 전체가
-     무시돼 테두리와 번짐이 같이 사라진다(인앱 브라우저에서 실제로 그렇게 보였다).
-     --c-glow는 같은 색을 미리 계산한 rgba다(src/genres.ts의 withAlpha). */
-    0 0 16px 0 var(--c-glow);
-}
-/* 터치 기기에서는 :hover가 한 번 닿으면 손을 떼도 그대로 붙어 있다 — 그래서 호버
-   규칙은 마우스가 있는 기기에만 건다. 터치에서는 :active(누르고 있는 동안)가
-   그 역할을 한다. 안 감싸면 탭한 카드가 홈으로 돌아온 뒤에도 계속 강조돼 있다. */
-@media (hover: hover) and (pointer: fine) {
-  /* 🔴 PC는 2026-09-11 이전 모습 그대로다. 얹는 요소를 없앤 것은 아이폰에서 각지는
-     문제를 푸는 변경인데, PC에는 그 문제가 없다. 실제로 픽셀 비교를 해보니 새 구조가
-     PC 화면의 87.65%를 바꿨다(mix-blend-mode: overlay 0.12와 단순 알파 0.12는 결과가
-     다르다) — 그래서 여기서 예전 값을 되살린다. **이 블록을 지우면 PC가 바뀐다.** */
-  .tile {
-    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4);
-    --hl-shadow:
-      0 14px 30px rgba(0, 0, 0, 0.5),
-      0 0 0 2px var(--c),
-      0 0 16px 0 var(--c-glow);
-  }
-  /* 왼쪽 색 띠 — PC에서는 예전처럼 얹는 요소로 그린다. */
-  .tile::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 5px;
-    background: var(--c);
-    z-index: 2;
-    border-radius: inherit;
-  }
-  /* 색 덮기도 예전처럼 blend를 쓰는 레이어로. 마우스가 없는 기기에서는 이 요소가
-     투명하고 blend도 안 걸려 합성 레이어를 만들지 않는다. */
-  .tile-tint {
-    position: absolute;
-    inset: 0;
-    background: var(--c);
-    opacity: 0;
-    mix-blend-mode: overlay;
-    z-index: 1;
-    pointer-events: none;
-    border-radius: inherit;
-    transition: opacity 0.25s ease;
-  }
-  .tile:hover .tile-tint {
-    opacity: 0.12;
-  }
-  .tile:hover {
-    box-shadow: var(--hl-shadow);
-  }
-  .tile:hover .tile-media .thumb,
-  .tile:hover .tile-media .preview {
-    transform: scale(1.05);
-  }
-  .tile:hover   .privacylink:hover {
-    color: var(--gold);
-    text-decoration: underline;
-  }
-}
-.tile:active,
-/* 한 장씩 돌려 재생하는 환경(인앱 브라우저 등)에서 "지금 이 카드"를 알린다 —
-   누를 때와 같은 값을 쓴다. */
-.tile.is-solo {
-  box-shadow: var(--hl-shadow);
-}
-/* 카드 자체는 살짝 눌리고(아래), 그 안의 영상·썸네일은 확대된다(위) — 서로 다른
-   요소라 겹쳐도 하나의 누름 효과로 읽힌다. */
-.tile:active {
-  transform: scale(0.97);
-}
-/* 카드를 채우는 것들은 **스스로도** 카드와 같은 반경을 갖는다.
-   지금까지는 전부 반경 0이고 부모의 `overflow: hidden`이 잘라주는 것에만 기댔는데,
-   iOS 사파리·WKWebView는 **자식에 transform이 걸리면 둥근 모서리 잘라내기를 놓친다.**
-   누를 때 카드는 `scale(0.97)`, 안쪽 영상·썸네일은 `scale(1.05)`가 걸리므로 바로 그
-   조건이 된다 — 그 순간 자식의 각진 모서리가 둥근 모서리를 덮어 **떡네모**로 보인다
-   (2026-09-11 대표가 아이폰 카카오톡 인앱에서 발견). 자식이 스스로 둥글면 잘라내기가
-   실패해도 모양이 유지된다. 데스크톱에서는 원래 잘 잘려서 보이는 변화가 없다. */
-.tile-media,
-.tile-media .thumb,
-.tile-media .preview,
-.tile-scrim {
-  border-radius: inherit;
-}
-
-.tile-media {
-  position: absolute;
-  inset: 0;
-}
-.tile-media .thumb,
-.tile-media .preview {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: opacity 0.25s ease, transform 0.3s ease;
-}
-.tile-media .preview {
-  opacity: 0;
-}
-/* 호버 재생이 실제로 시작된 순간에만 영상이 썸네일을 대체한다. */
-.tile-media .preview.playing {
-  opacity: 1;
-}
-.tile-media:has(.preview.playing) .thumb {
-  opacity: 0;
-}
-.tile:active .tile-media .thumb,
-.tile:active .tile-media .preview,
-.tile.is-solo .tile-media .thumb,
-.tile.is-solo .tile-media .preview {
-  transform: scale(1.05);
-}
-
-.tile-scrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(5, 7, 15, 0.05) 35%, rgba(5, 7, 15, 0.92) 100%);
-  z-index: 1;
-}
-.tile-body {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 2;
-  padding: clamp(14px, 2.4vw, 24px);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.tile-body .gname-row {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-.tile-body .ic {
-  color: #fff;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
-  display: flex;
-  flex: none;
-}
-.tile-body .ic svg {
-  width: clamp(20px, 2.8vw, 28px);
-  height: clamp(20px, 2.8vw, 28px);
-  display: block;
-}
-.tile-body .gname {
-  font-size: clamp(19px, 2.6vw, 28px);
-  font-weight: 800;
-}
-.tile-body .gsub {
-  font-size: clamp(12px, 1.6vw, 15px);
-  color: var(--muted);
-  line-height: 1.4;
-}
-
-/* 참고 사이트의 실제 computed style에 맞춘 값(2026-09-03, 팀장 확인). */
-.privacylink {
-  display: inline-block;
-  margin: 10px auto 0;
-  position: relative;
-  font-family: 'Pretendard', 'Pretendard Variable', 'SUIT', 'Noto Sans KR', system-ui, sans-serif;
-  font-size: 13px;
-  /* 700 — 한 단계 굵게(대표 지시 2026-09-09). 서브셋에 700이 있어야 합성으로
-     뭉개지지 않는다(이 저장소는 400·500·600·700·800을 만든다). */
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.82);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-/* PC에서만 한 단계 더 크게(대표 지시 2026-09-09). 모바일은 13px 그대로 둔다.
-   이 블록은 반드시 위 .privacylink 기본 선언보다 **뒤에** 있어야 한다 — 명시도가
-   같아서 순서로 이기기 때문이다. 앞에 뒀다가 13px에 덮여 라이브에서 그대로였다
-   (2026-09-09 실측으로 발견). */
-@media (min-width: 760px) {
-  .privacylink {
-    font-size: 14px;
-  }
-}
+.scene-auto-toggle { display:grid; place-items:center; width:28px; height:28px; padding:5px; border:0; border-radius:50%; color:#767676; background:transparent; cursor:pointer; }
+.scene-auto-toggle svg { width:16px; height:16px; fill:currentColor; }
+.scene-auto-toggle:hover { background:#f0f0f0; color:#171717; }
+.scene-auto-toggle:focus-visible { outline:2px solid #171717; outline-offset:2px; }

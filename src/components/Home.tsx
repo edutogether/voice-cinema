@@ -2,17 +2,19 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { GENRES, type Genre } from '../genres';
 import { SUPPORTS_HOVER } from '../lib/pointer';
 import { GenreTile } from './GenreTile';
+import { FestivalHeader } from './FestivalHeader';
+import { SceneCarousel } from './SceneCarousel';
 
 interface Props {
   active: boolean;
   enginePercent: number;
   engineLoading: boolean;
   engineFailed: boolean;
-  onSelect: (genre: Genre) => void;
+  onSelect: (genre: Genre, source?: HTMLElement) => void;
 }
 
 // 여섯 장이 한꺼번에 내려받기를 시작하면 행사장 와이파이에서 첫 화면이 한참 멈춘다
-// (클립 6개 합쳐 약 37MB). 카드마다 이만큼씩 늦춰 시작해 요청이 줄을 서게 한다.
+// (메인 전용 클립 6개 합쳐 약 2.9MB). 카드마다 시차를 둬 요청이 줄을 서게 한다.
 const STAGGER_MS = 250;
 
 // 한 장씩 돌려 재생할 때 다음 카드로 넘어가는 간격. 클립이 10초라 한 바퀴(6장)에
@@ -71,43 +73,61 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
 
   return (
     <section id="home" className={`view${active ? ' active' : ''}`}>
-      <div className="brand">
-        <h1>
-          InKY <span className="gold">Voice Cinema</span>
-        </h1>
-        <p className="tagline-top">상상을 현실로 — 내 목소리로 완성하는 영화</p>
+      <FestivalHeader />
+
+      <div className="chart-layout">
+        <aside className="chart-aside" aria-label="Voice Cinema 체험 안내">
+          <p className="chart-app"><strong>Voice <em>Cinema</em></strong><span>CGV 인천 · 인천광역시교육청 주최</span></p>
+          <div className="chart-invitation">
+            <img src="/icons/studio-microphone.png" alt="" width="160" height="160" />
+            <p className="chart-label">나만의 더빙 극장</p>
+            <h2>내 목소리로<br />완성하는<br /><em>10초의 영화.</em></h2>
+            <p>마법사도, 히어로도.<br />오늘은 내가 주인공이에요.</p>
+          </div>
+          <div className="chart-guide">
+            <strong>목소리만 준비하세요.</strong>
+            <p>마음에 드는 장면에 내 목소리를 입히고,<br />AI가 만든 나만의 영화 장면을 가져가세요.</p>
+          </div>
+        </aside>
+        <div className="chart-main">
+          <div className="chart-heading">
+            <div><p className="chart-eyebrow">오늘, 내가 출연할 영화</p><h1>장면 고르기 <span>6</span></h1></div>
+            {!SUPPORTS_HOVER && <p>마음에 드는 장면을 누르면 녹음실로 들어가요.</p>}
+          </div>
+
+          {/* 준비 상태가 장면 선택을 가로막지 않게 같은 배너에서 진행률만 갱신한다. */}
+          <div
+            id="enginebar"
+            role="status"
+            className={`enginebar${engineLoading || engineFailed ? ' show' : ''}${engineFailed ? ' err' : ''}`}
+          >
+            영상 저장 준비 중… <b id="engineProg">{engineFailed ? '저장할 때 다시 시도할게요' : `${enginePercent}%`}</b>
+          </div>
+
+          {SUPPORTS_HOVER ? <SceneCarousel active={active} onSelect={onSelect} /> : <div className="grid" id="grid" role="group" aria-label="더빙할 장면 선택">
+            {GENRES.map((genre, i) => (
+              <GenreTile
+                key={genre.id}
+                genre={genre}
+                sceneNumber={i + 1}
+                playing={자동재생 && (!solo || i === soloIndex)}
+                delayMs={solo ? 0 : i * STAGGER_MS}
+                solo={solo && i === soloIndex}
+                // 여기서 `() => onBlocked(genre.id)`처럼 감싸 넘기지 않는다 — 렌더마다 새 함수가
+                // 되어, 엔진 내려받기 진행률(0~100%)이 바뀔 때마다 여섯 장이 전부 멈췄다 다시
+                // 틀었다. 그 끊김이 "거부"로 세어져 멀쩡한 브라우저가 한 장씩 돌리는 모드로
+                // 떨어졌고(E2E가 가끔 1/6으로 실패), 경고가 수십 건씩 찍혔다(2026-09-27).
+                onBlocked={onBlocked}
+                onSelect={onSelect}
+              />
+            ))}
+          </div>}
+        </div>
       </div>
 
-      {/* 배너는 항상 DOM에 두고 `.show`로만 여닫는다(전환 전과 동일).
-          문구도 그대로 — 앞의 "엔진 준비 중…"은 고정이고 굵은 부분만 바뀐다. */}
-      <div
-        id="enginebar"
-        className={`enginebar${engineLoading || engineFailed ? ' show' : ''}${engineFailed ? ' err' : ''}`}
-      >
-        엔진 준비 중… <b id="engineProg">{engineFailed ? '실패 — 저장 시 다시 시도됩니다' : `${enginePercent}%`}</b>
-      </div>
-
-      <div className="grid" id="grid">
-        {GENRES.map((genre, i) => (
-          <GenreTile
-            key={genre.id}
-            genre={genre}
-            playing={자동재생 && (!solo || i === soloIndex)}
-            delayMs={solo ? 0 : i * STAGGER_MS}
-            solo={solo && i === soloIndex}
-            // 여기서 `() => onBlocked(genre.id)`처럼 감싸 넘기지 않는다 — 렌더마다 새 함수가
-            // 되어, 엔진 내려받기 진행률(0~100%)이 바뀔 때마다 여섯 장이 전부 멈췄다 다시
-            // 틀었다. 그 끊김이 "거부"로 세어져 멀쩡한 브라우저가 한 장씩 돌리는 모드로
-            // 떨어졌고(E2E가 가끔 1/6으로 실패), 경고가 수십 건씩 찍혔다(2026-09-27).
-            onBlocked={onBlocked}
-            onSelect={onSelect}
-          />
-        ))}
-      </div>
-
-      <a className="privacylink" href="./privacy.html" target="_blank" rel="noopener">
-        개인정보처리방침
-      </a>
+      <footer className="cinema-footer">
+        <p>제4회 인천어린이청소년영화제<br />2026. 11. 14. (토) · CGV 인천</p>
+      </footer>
     </section>
   );
 }

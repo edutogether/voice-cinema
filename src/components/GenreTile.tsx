@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { clipUrl, thumbUrl, withAlpha, type Genre } from '../genres';
+import { previewUrl, thumbUrl, stillUrl, withAlpha, type Genre } from '../genres';
 import { SUPPORTS_HOVER } from '../lib/pointer';
 
 // 재생이 멈췄는지 되돌아보는 간격. loop만으로는 실제 기기에서 계속 돈다는 보장이
@@ -10,7 +10,10 @@ const WATCH_MS = 2000;
 
 interface Props {
   genre: Genre;
-  /** 이 카드가 지금 재생돼야 하는지. 마우스가 있는 기기에서는 호버가 정하므로 쓰이지 않는다. */
+  sceneNumber: number;
+  /** PC 입체 목록의 주변 카드는 재생·탭 이동 없이 가운데로 고르는 역할이다. */
+  previewOnly?: boolean;
+  /** 이 카드가 지금 재생돼야 하는지. PC에서는 선택된 중앙 장면만 재생한다. */
   playing: boolean;
   /** 재생을 이만큼 늦춰 시작한다 — 여섯 장이 한꺼번에 내려받기를 시작하지 않게 하려는 것이다. */
   delayMs: number;
@@ -22,48 +25,49 @@ interface Props {
    * 걸려 있어서, 매번 새 함수가 오면 부모가 다시 그려질 때마다 여섯 장이 멈췄다 다시 튼다.
    */
   onBlocked: (id: string) => void;
-  onSelect: (genre: Genre) => void;
+  onSelect: (genre: Genre, source?: HTMLElement) => void;
 }
 
-export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }: Props) {
+export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, delayMs, solo, onBlocked, onSelect }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const hoveringRef = useRef(false);
-
-  // 유튜브 썸네일 방식: 평소엔 첫 프레임 이미지만 보여주다가, 마우스를 올리면
-  // 그때 그 클립만 내려받아 재생한다. 6개를 미리 받으면 37MB라 첫 화면이 느려진다.
-  const onEnter = () => {
+  const releaseTimer = useRef<number | undefined>(undefined);
+  // PC는 선택 순간 재생한다. 장면 변경·탭 숨김·녹음실 진입 시 이전 요청까지 무효화한다.
+  useEffect(() => {
+    if (!SUPPORTS_HOVER || !playing) return;
     const v = videoRef.current;
     if (!v) return;
-    hoveringRef.current = true;
-    if (!v.src) v.src = clipUrl(genre.id);
-    v.currentTime = 0;
-    v.muted = false;
+    let cancelled = false;
+    window.clearTimeout(releaseTimer.current);
+    // 짧게 왕복하면 마지막 프레임에서 이어 재생한다. 매번 첫 프레임으로 튀지 않는다.
+    if (!v.getAttribute('src')) v.src = previewUrl(genre.id);
+    // 홈에서는 조작 없이도 시작해야 하므로 음소거한다. 원본 소리는 녹음실 미리보기에서 듣는다.
+    v.muted = true;
+    v.loop = true;
     const reveal = () => {
-      if (hoveringRef.current) v.classList.add('playing');
+      if (!cancelled) v.classList.add('playing');
     };
-    v.play().then(reveal).catch(() => {
-      // 브라우저가 소리 있는 자동재생을 막으면 무음으로라도 재생을 시도한다.
-      // 단, 그 사이 마우스가 이미 벗어났으면 되살리지 않는다 — 첫 시도의 거부는
-      // onLeave의 pause()가 부른 것일 수도 있어서, 그대로 재시도하면 방금 멈춘
-      // 영상을 다시 튼다. 소스는 이미 지워진 뒤라 화면에는 아무것도 안 보이는데
-      // paused만 false로 남는 상태가 된다(2026-09-09 CI 실패로 드러남).
-      if (!hoveringRef.current) return;
-      v.muted = true;
-      v.play().then(reveal).catch(() => {});
-    });
-  };
-
-  const onLeave = () => {
+    v.play().then(reveal).catch(() => {});
+    return () => {
+      cancelled = true;
+      v.pause();
+      v.classList.remove('playing');
+      // 140ms 페이드 동안 정지한 마지막 프레임을 보존한 뒤 디코더를 해제한다.
+      releaseTimer.current = window.setTimeout(() => {
+        v.removeAttribute('src');
+        v.load();
+      }, 160);
+    };
+  }, [playing, genre.id]);
+  useEffect(() => {
+    if (!SUPPORTS_HOVER) return;
     const v = videoRef.current;
-    if (!v) return;
-    hoveringRef.current = false;
-    v.pause();
-    v.classList.remove('playing');
-    // pause()만 하고 src를 남기면 여러 카드를 잇달아 호버할수록 디코더 자원을 쥔
-    // <video>가 쌓여 브라우저의 동시 디코드 한도에 걸린다(2026-09-03 실사용에서 확인).
-    v.removeAttribute('src');
-    v.load();
-  };
+    return () => {
+      window.clearTimeout(releaseTimer.current);
+      v?.pause();
+      v?.removeAttribute('src');
+      v?.load();
+    };
+  }, []);
 
   // 마우스가 없는 기기: 여섯 장이 전부 재생된다. 한 장만 고르면 사용자는 "왜 저것만"이
   // 되고, 스크롤이 없는 화면에서는 그 한 장이 영영 바뀌지 않아 나머지가 죽은 것처럼
@@ -108,7 +112,7 @@ export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }
     // 처음 받을 때만 시차를 준다 — 여섯 장이 한꺼번에 내려받기를 시작하지 않게 하려는
     // 것이라, 이미 받아둔 뒤 반복될 때는 그냥 이어서 돌면 된다.
     timer = window.setTimeout(() => {
-      if (!v.src) v.src = clipUrl(genre.id);
+      if (!v.src) v.src = previewUrl(genre.id);
       v.muted = true; // 자동재생 정책을 통과하는 유일한 조건이다
       v.loop = true; // 10초짜리라 반복하지 않으면 곧 마지막 프레임에서 멈춘다
       v.play()
@@ -131,8 +135,12 @@ export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }
   }, [playing, delayMs, genre.id, onBlocked]);
 
   return (
-    <div
+    <button
+      type="button"
+      tabIndex={previewOnly ? -1 : 0}
+      data-genre={genre.id}
       className={`tile${solo ? ' is-solo' : ''}`}
+      aria-label={`${genre.name} 더빙 시작`}
       style={
         {
           '--c': genre.color,
@@ -141,26 +149,24 @@ export function GenreTile({ genre, playing, delayMs, solo, onBlocked, onSelect }
           '--c-wash': withAlpha(genre.color, 0.12),
         } as React.CSSProperties
       }
-      onClick={() => onSelect(genre)}
-      onMouseEnter={SUPPORTS_HOVER ? onEnter : undefined}
-      onMouseLeave={SUPPORTS_HOVER ? onLeave : undefined}
+      onClick={event => onSelect(genre, event.currentTarget)}
     >
-      <div className="tile-media">
-        <img className="thumb" src={thumbUrl(genre.id)} alt="" />
-        <video className="preview" ref={videoRef} muted playsInline preload="none" />
-      </div>
-      {/* PC에서만 쓰이는 색 덮기 레이어. 마우스가 없는 기기에서는 CSS가 blend도
-          투명도도 주지 않아 합성 레이어를 만들지 않는다 — 그래서 아이폰에서 각지지 않는다. */}
-      <div className="tile-tint" />
-      <div className="tile-scrim" />
-      <div className="tile-body">
-        <div className="gname-row">
-          <div className="ic" dangerouslySetInnerHTML={{ __html: iconSvg(genre) }} />
-          <div className="gname">{genre.name}</div>
-        </div>
-        <div className="gsub">{genre.sub}</div>
-      </div>
-    </div>
+      <span className="tile-media" aria-hidden="true">
+        <span className="tile-visual">
+          <img className="thumb" src={thumbUrl(genre.id)} srcSet={`${thumbUrl(genre.id)} 320w, ${stillUrl(genre.id)} 1280w`} sizes="(min-width: 1000px) 33vw, 50vw" alt="" />
+          <video className="preview" ref={videoRef} muted playsInline preload="none" />
+        </span>
+        {SUPPORTS_HOVER && <span className="tile-number">{String(sceneNumber).padStart(2, '0')}</span>}
+        {SUPPORTS_HOVER && <span className="tile-preview-label"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m8 5 11 7-11 7z" /></svg> 미리보기 재생 중</span>}
+      </span>
+      <span className="tile-body">
+        <span className="tile-copy">
+          <span className="gname">{genre.name}<span className="tile-length">10초</span></span>
+          <span className="gsub">{genre.summary}</span>
+        </span>
+        <span className="tile-enter" aria-hidden="true">더빙하기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></span>
+      </span>
+    </button>
   );
 }
 

@@ -1,0 +1,44 @@
+[
+  {
+    "genre": "fantasy",
+    "source": "public/clips/fantasy.mp4",
+    "backup": "_media\\originals\\2026-10-01\\fantasy.mp4",
+    "sha256": "331F8585090DCB26A9DCD794EA68A9748E7D063E8AB41238C776B6CC93567BF2",
+    "bytes": 6499297
+  },
+  {
+    "genre": "animation",
+    "source": "public/clips/animation.mp4",
+    "backup": "_media\\originals\\2026-10-01\\animation.mp4",
+    "sha256": "5441B40EB7EDA35AB449F8DC71E4840ECBBC3BEF147D2920F89C4DE6CB0F2A76",
+    "bytes": 6400226
+  },
+  {
+    "genre": "horror",
+    "source": "public/clips/horror.mp4",
+    "backup": "_media\\originals\\2026-10-01\\horror.mp4",
+    "sha256": "758FA0E115CC0A941292E5BF1C7B2D530AEBF094858036283CA2C164BF28F699",
+    "bytes": 6540022
+  },
+  {
+    "genre": "action",
+    "source": "public/clips/action.mp4",
+    "backup": "_media\\originals\\2026-10-01\\action.mp4",
+    "sha256": "CF5CE3079C864677A3C7E4C3C1A44B8008632E1C6CFC9EA6C6DDDA7F9DE49834",
+    "bytes": 6255645
+  },
+  {
+    "genre": "drama",
+    "source": "public/clips/drama.mp4",
+    "backup": "_media\\originals\\2026-10-01\\drama.mp4",
+    "sha256": "4E53AFD5C5E932A30776E73C2134CF5DDF14DC5A1AD83B327EDA94FA42F354EE",
+    "bytes": 6253741
+  },
+  {
+    "genre": "sitcom",
+    "source": "public/clips/sitcom.mp4",
+    "backup": "_media\\originals\\2026-10-01\\sitcom.mp4",
+    "sha256": "C2ABA26560BDBFD08E3312D99DAD50D527A9B976F78DB43032162C6A4411C828",
+    "bytes": 6082253
+  }
+]

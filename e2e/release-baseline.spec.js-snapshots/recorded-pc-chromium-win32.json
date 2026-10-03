@@ -1,0 +1,92 @@
+[
+  {
+    "text": "장면 바꾸기",
+    "label": null,
+    "role": "BUTTON",
+    "box": [
+      28,
+      16,
+      132,
+      44
+    ],
+    "font": "15px",
+    "weight": "600",
+    "transition": "none",
+    "animation": "none"
+  },
+  {
+    "text": "주문 한마디로 펼치는 마법",
+    "label": null,
+    "role": "H1",
+    "box": [
+      631,
+      34,
+      177,
+      25
+    ],
+    "font": "18px",
+    "weight": "700",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "내 목소리, 마음에 드나요 ?",
+    "label": null,
+    "role": "H2",
+    "box": [
+      28,
+      814,
+      917,
+      31
+    ],
+    "font": "22px",
+    "weight": "700",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "다시 듣기",
+    "label": null,
+    "role": "BUTTON",
+    "box": [
+      977,
+      819,
+      138,
+      52
+    ],
+    "font": "16px",
+    "weight": "600",
+    "transition": "background 0.18s, border-color 0.18s",
+    "animation": "none"
+  },
+  {
+    "text": "다시 녹음",
+    "label": null,
+    "role": "BUTTON",
+    "box": [
+      1128,
+      819,
+      138,
+      52
+    ],
+    "font": "16px",
+    "weight": "600",
+    "transition": "background 0.18s, border-color 0.18s",
+    "animation": "none"
+  },
+  {
+    "text": "저장하기",
+    "label": null,
+    "role": "BUTTON",
+    "box": [
+      1278,
+      819,
+      134,
+      52
+    ],
+    "font": "16px",
+    "weight": "600",
+    "transition": "background 0.18s, border-color 0.18s",
+    "animation": "none"
+  }
+]

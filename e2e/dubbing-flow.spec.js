@@ -32,19 +32,26 @@ test.describe('홈 화면', () => {
 });
 
 test.describe('스튜디오: 미리보기', () => {
-  test('미리 보기를 누르면 영상이 재생되고 안내 문구가 바뀐다', async ({ page }) => {
+  test('진입은 정지하고 미리보기 클릭으로 재생·일시정지·재개한다', async ({ page }) => {
     await page.goto('/');
     await page.locator('.tile', { hasText: '판타지' }).click();
     await expect(page.locator('#chipName')).toHaveText('판타지');
 
     const previewBtn = page.locator('#previewBtn');
+    await expect(page.locator('#clip')).toHaveJSProperty('paused', true);
     await previewBtn.click();
-    await expect(previewBtn).toHaveText('⏹ 미리보기 정지');
+    await expect(previewBtn).toHaveText('일시정지');
+    await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(.2);
     await expect(page.locator('#hint')).toContainText('생각해 보세요');
 
     // 정지도 정상 동작해야 한다.
     await previewBtn.click();
-    await expect(previewBtn).toHaveText('▶ 미리 보기');
+    await expect(previewBtn).toHaveText('계속 재생');
+    const time = await page.locator('#clip').evaluate(v => v.currentTime);
+    await page.waitForTimeout(250);
+    expect(await page.locator('#clip').evaluate(v => v.currentTime)).toBe(time);
+    await previewBtn.click();
+    await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(time);
   });
 
   test('처음으로 버튼을 누르면 홈으로 돌아간다', async ({ page }) => {
@@ -53,6 +60,7 @@ test.describe('스튜디오: 미리보기', () => {
     await expect(page.locator('#studio')).toHaveClass(/active/);
     await page.locator('.back').click();
     await expect(page.locator('#home')).toHaveClass(/active/);
+    await expect(page.getByRole('button', { name: '드라마 더빙 시작', exact: true })).toBeFocused();
   });
 });
 
@@ -69,6 +77,7 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     // 3·2·1 카운트다운 + 10초 녹음이 끝나 afterRow(다시 듣기/다시 녹음/저장하기)가 뜰 때까지 기다린다.
     await expect(page.locator('#afterRow')).toBeVisible({ timeout: 20000 });
     await expect(page.locator('#recBtn')).toBeHidden();
+    await expect(page.locator('#replayBtn')).toBeFocused();
 
     await page.locator('button', { hasText: '저장하기' }).click();
 
@@ -78,6 +87,7 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     await expect(page.locator('#qrImg')).toHaveAttribute('src', /^data:image\//);
     await expect(page.locator('#downloadRow')).toBeHidden();
     await expect(page.locator('#savemode')).toContainText('누구나 볼 수 있어요');
+    await expect(page.locator('#done h2')).toBeFocused();
   });
 
   test('실패 경로: 클라우드 업로드가 실패하면 기기 저장 버튼으로 폴백한다', async ({ page }) => {
@@ -96,6 +106,8 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     await expect(page.locator('#downloadRow')).toBeVisible();
     await expect(page.locator('#qrbox')).toBeHidden();
     await expect(page.locator('#doneMsg')).toContainText('인터넷 문제');
+    await expect(page.locator('#savemode')).toContainText('자동삭제 대상이 아닙니다');
+    await expect(page.locator('.retention-note')).toBeHidden();
 
     // #downloadBtn 자체엔 download 속성이 없다 — 클릭 시 JS가 그 순간 <a download>를
     // 만들어 클릭하고 지우는 구조라, 실제로 다운로드가 트리거되는지를 확인해야 한다.
@@ -173,6 +185,7 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     await page.locator('button', { hasText: '다시 녹음' }).click();
     await expect(page.locator('#recBtn')).toBeVisible();
     await expect(page.locator('#afterRow')).toBeHidden();
-    await expect(page.locator('#hint')).toContainText('미리 보기');
+    await expect(page.locator('#hint')).toContainText("'녹음 시작'을 누르면 잠시 후 녹음이 시작돼요 !");
+    await expect(page.locator('#recBtn')).toBeFocused();
   });
 });

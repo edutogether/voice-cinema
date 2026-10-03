@@ -1,0 +1,32 @@
+[
+  {
+    "text": "세상에 하나뿐인, 내 영화.",
+    "label": null,
+    "role": "H2",
+    "box": [
+      701,
+      285,
+      483,
+      39
+    ],
+    "font": "28px",
+    "weight": "600",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "다른 더빙 하기",
+    "label": null,
+    "role": "BUTTON",
+    "box": [
+      701,
+      731,
+      483,
+      52
+    ],
+    "font": "16px",
+    "weight": "600",
+    "transition": "background 0.18s, border-color 0.18s",
+    "animation": "none"
+  }
+]
