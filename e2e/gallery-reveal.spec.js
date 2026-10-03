@@ -27,7 +27,17 @@ test('PC: 여섯 바로가기로 고른 중앙 장면에서 각각 더빙을 시
   for (const name of ['판타지', '애니메이션', '호러', '액션', '드라마', '시트콤']) {
     await pointChoice(page, name);
     const tile = page.getByRole('button', { name: `${name} 더빙 시작`, exact: true });
-    await expect(tile.locator('.gname')).toBeInViewport({ ratio: 1 });
+    await expect(tile.locator('..')).toHaveClass(/is-current/);
+    await expect(page.locator('.scene-stage')).toHaveAttribute('data-moving', 'false');
+    // Linux 합성기의 intersectionRatio는 완전 노출도 0.99999994로 반올림된다.
+    // 비율 기준을 낮추지 않고 제목의 모든 경계가 실제 클리핑 영역 안인지 검사한다.
+    await expect.poll(() => tile.locator('.gname').evaluate(label => {
+      const rect = label.getBoundingClientRect();
+      const stage = label.closest('.scene-stage').getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0 &&
+        rect.left >= Math.max(0, stage.left) && rect.right <= Math.min(window.innerWidth, stage.right) &&
+        rect.top >= Math.max(0, stage.top) && rect.bottom <= Math.min(window.innerHeight, stage.bottom);
+    })).toBe(true);
     // 강제 클릭 없이 실제로 누를 수 있어야 한다. 이웃 카드의 겹침이 가리면 실패한다.
     await tile.locator('.tile-enter').click();
     await expect(page.locator('#chipName')).toHaveText(name);
