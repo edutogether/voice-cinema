@@ -5,6 +5,14 @@
 const PRECACHE_URLS = __PRECACHE_URLS__;
 const CACHE_NAME = 'voice-cinema-' + __CACHE_VERSION__;
 
+self.addEventListener('message', (event) => {
+  if (event.data?.type !== 'CHECK_APP_VERSION' || !Array.isArray(event.data.assets)) return;
+  event.ports[0]?.postMessage({
+    type: 'APP_VERSION_STATUS',
+    updateAvailable: event.data.assets.some(asset => !PRECACHE_URLS.includes(asset)),
+  });
+});
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches

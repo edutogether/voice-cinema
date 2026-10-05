@@ -1,16 +1,61 @@
 [
   {
+    "text": "×",
+    "label": "CGV와 인천광역시교육청 — 처음부터 시작",
+    "role": "BUTTON",
+    "box": [
+      28,
+      17,
+      285,
+      45
+    ],
+    "font": "13.3333px",
+    "weight": "400",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "InKY Film Festival",
+    "label": "InKY Film Festival — 처음부터 시작",
+    "role": "BUTTON",
+    "box": [
+      1238,
+      24,
+      174,
+      32
+    ],
+    "font": "16px",
+    "weight": "400",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
+    "text": "개인정보처리방침",
+    "label": "개인정보처리방침 (새 탭)",
+    "role": "A",
+    "box": [
+      1329,
+      82,
+      83,
+      24
+    ],
+    "font": "12px",
+    "weight": "400",
+    "transition": "all",
+    "animation": "none"
+  },
+  {
     "text": "세상에 하나뿐인, 내 영화.",
     "label": null,
     "role": "H2",
     "box": [
-      701,
-      285,
-      483,
-      39
+      778,
+      268,
+      582,
+      42
     ],
-    "font": "28px",
-    "weight": "600",
+    "font": "30.96px",
+    "weight": "750",
     "transition": "all",
     "animation": "none"
   },
@@ -19,9 +64,9 @@
     "label": null,
     "role": "BUTTON",
     "box": [
-      701,
-      731,
-      483,
+      778,
+      717,
+      582,
       52
     ],
     "font": "16px",

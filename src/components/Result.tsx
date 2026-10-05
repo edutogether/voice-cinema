@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { clipUrl, stillUrl, type Genre } from '../genres';
-import { CinemaHeader } from './CinemaHeader';
+import { FestivalHeader } from './FestivalHeader';
 import { ActionIcon } from './ActionIcon';
 import { mergeClip } from '../lib/ffmpeg';
 import { downloadBlob, uploadToCloud } from '../lib/upload';
@@ -81,15 +81,15 @@ export function Result({ active, job, onHome, onBack }: Props) {
 
   return (
     <section id="result" className={`view${active ? ' active' : ''}`}>
-      <CinemaHeader step={3} />
+      <FestivalHeader step={3} />
       <div className={`result-card result-${stage.kind}`} ref={cardRef}>
         <div className="result-poster">
           <img src={stillUrl(job.genre.id)} alt="" />
-          <span className="poster-brand">Voice Cinema</span>
-          <div className="poster-credit"><p>{job.kind === 'sample' ? '녹음 화면 샘플 체험' : '내 목소리로 완성하는 영화'}</p><strong>{job.genre.name}<br />더빙</strong><span>{job.kind === 'sample' ? '다운로드 · 원본 영상' : '목소리 출연 · 나'}</span></div>
+          <span className="poster-brand">Voice <span>Cinema</span></span>
+          <div className="poster-credit"><p>{job.kind === 'sample' ? '녹음 화면 샘플 체험' : '내 목소리로 완성하는 영화'}</p><strong>{job.genre.name}</strong><span>{job.kind === 'sample' ? '다운로드 · 원본 영상' : '목소리 출연 · 나'}</span></div>
         </div>
         <div className="result-details">
-        <p className="ticket-label">{stage.kind === 'cloud' ? '나만의 영화 티켓' : loading ? '영화 완성 중' : '내 영화 보관하기'}</p>
+        <p className="result-eyebrow">{stage.kind === 'sample' ? '샘플 체험 완료' : stage.kind === 'cloud' ? '내 영화가 완성됐어요' : loading ? '목소리가 영화가 되는 순간' : stage.kind === 'error' ? '녹음 보관 중' : '내 영화 보관하기'}</p>
         {stage.kind === 'sample' && (
           <div id="done">
             <span className="result-symbol"><ActionIcon name="download" /></span>
@@ -101,7 +101,7 @@ export function Result({ active, job, onHome, onBack }: Props) {
             <p className="savemode">목소리 합성·클라우드 저장은 실행하지 않습니다.</p>
             <div className="row result-actions">
               <button className="btn btn-lg btn-ghost" id="sampleBackBtn" onClick={onBack}><ActionIcon name="back" /> 녹음 화면으로</button>
-              <button className="btn btn-lg btn-gold" id="doneHomeBtn" onClick={onHome}>다른 더빙 하기 <ActionIcon name="arrow" /></button>
+              <button className="btn btn-lg btn-ghost" id="doneHomeBtn" onClick={onHome}>다른 더빙 하기 <ActionIcon name="arrow" /></button>
             </div>
           </div>
         )}
@@ -158,7 +158,7 @@ export function Result({ active, job, onHome, onBack }: Props) {
             {stage.kind === 'cloud' && <p className="savemode retention-note">다운로드는 2026년 11월 30일까지만 가능해요 — 그 이후엔 자동으로 삭제됩니다</p>}
 
             <div className="row result-actions">
-              <button className="btn btn-lg btn-gold" id="doneHomeBtn" onClick={onHome}>다른 더빙 하기 <ActionIcon name="arrow" /></button>
+              <button className={`btn btn-lg ${stage.kind === 'cloud' ? 'btn-primary' : 'btn-ghost'}`} id="doneHomeBtn" onClick={onHome}>다른 더빙 하기 <ActionIcon name="arrow" /></button>
             </div>
           </div>
         )}

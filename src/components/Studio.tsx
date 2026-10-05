@@ -70,12 +70,12 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
         <div className="studio-screen">
           <div className="stage">
             <div className="studio-heading">
-              <button className="back" id="studioBackBtn" onClick={onHome}><ActionIcon name="back" /> 장면 바꾸기</button>
+              <button className="back" id="studioBackBtn" onClick={onHome}><ActionIcon name="back" /> 다른 영화 고르기</button>
               <div className="studio-scene-title">
                 <span className="studio-scene-label"><span id="chipName">{genre.name}</span> · {sampleMode ? '녹음 샘플 체험' : '목소리 녹음'}</span>
                 <h1 ref={titleRef} tabIndex={-1}>{genre.summary}</h1>
               </div>
-              <span className="studio-brand">Voice <em>Cinema</em></span>
+              <span className="studio-brand"><img src="/icons/studio-microphone.png" width="34" height="34" alt="" /><span>Voice <em>Cinema</em></span></span>
             </div>
             <div className={`studio-video-frame${showPausedScreen ? ' is-paused' : ''}`}>
             <video id="clip" ref={videoRef} poster={stillUrl(genre.id)} playsInline muted preload="auto" onPlay={() => { setPreviewPaused(false); setPreviewEnded(false); }} onEnded={() => { setPreviewEnded(true); setPreviewPaused(true); }} onWaiting={() => setBuffering(true)} onPlaying={() => setBuffering(false)} onError={() => setBuffering(false)} onPause={() => setPreviewPaused(true)} onTimeUpdate={event => setCaptionTime(event.currentTarget.currentTime)} onSeeking={event => setCaptionTime(event.currentTarget.currentTime)} />
