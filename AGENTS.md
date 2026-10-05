@@ -19,7 +19,7 @@
 ## 구조·보호 대상
 
 - React·TypeScript·Vite의 `src/`를 `dist/`로 빌드한다. 학생 목소리는 브라우저 ffmpeg.wasm으로 합성하고 Functions가 검증·Storage 저장을 맡는다. `functions/`는 독립 npm 프로젝트다.
-- LOCKED: Functions `concurrency: 1`·`maxInstances: 10`, `trust proxy: 1`, 업로드 검사 순서(레이트리밋 → BOOTH_TOKEN → App Check → 본문). MP4 MIME·바이트 시그니처·디코딩된 크기 20MiB·파일명 120자 검증과 CORS 앵커·점 이스케이프를 유지한다.
+- LOCKED: Functions `concurrency: 1`·`maxInstances: 10`, `trust proxy: 1`, 업로드 검사 순서(인증 전 상한 → BOOTH_TOKEN → App Check → 업로드 한도 → 본문). 저장 이름은 서버가 정한다. MP4 MIME·바이트 시그니처·디코딩된 크기 20MiB·파일명 120자 검증과 CORS 앵커·점 이스케이프를 유지한다.
 - 업로드 110초와 `BOOTH_TOKEN`의 클라이언트·서버 일치는 `src/config.ts`·`functions/index.js` 및 `test/contract.test.js`로 유지한다. Functions의 `uuid` override를 유지하고 `npm audit fix --force`를 사용하지 않는다.
 - 클립은 H.264/AAC와 원본 오디오를 보존한다. 상세 재생용 `public/clips/studio/` 사본은 클립 교체 시 `node tools/create-studio-clips.mjs`로 갱신하며 최종 합성에는 원본을 사용한다. ffmpeg는 `public/vendor/` 절대 경로 동적 import를 유지한다.
 - `firebase.json`의 `Permissions-Policy: microphone=(self)`와 ffmpeg Worker·WASM·blob 재생을 허용하는 CSP를 유지한다. 보안 헤더 변경은 실제 녹음→합성 흐름으로 검증한다.
