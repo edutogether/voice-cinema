@@ -6,6 +6,29 @@
 
 ## 0. 지금 담당
 
+### 2026-10-05 Claude Code 인수 확인 — 지금 담당은 Claude Code
+
+| 항목 | 값 |
+|---|---|
+| **현재 작업 담당** | **Claude Code**(집 PC 로컬 세션). Codex는 새 구현을 멈췄고 진짜 급할 때만 쓴다 |
+| 마지막 인계 방향 | Codex → Claude (9/29 Claude → Codex 흐름을 되돌림, Bumm님 10/5 지시·팀장 전달) |
+| 인수한 가지·HEAD | `codex/handoff-to-claude-20261005` · `c1e33fd14e321728481b514217936e5b56020092`(로컬·원격 일치) |
+| 승인 작업 보존 커밋 | `12e12aa2adc230222f2a2769279df9ee23d26c83` — HEAD의 조상임을 확인 |
+| 운영 기준점 | 원격 `master` = `ae33637b3b12f864570c4b5333830944e7973583`, 마지막 배포 실행 10/3 success(headSha 일치), 라이브 200 |
+
+인수 때 한 것(10/5, 읽기 전용 확인 + 이 기록 커밋만):
+- cwd와 Git root가 `D:\Projects\inky-festivaloice-cinema`로 같고 worktree는 하나. 이미 인계 가지가 체크아웃돼 있어 가지 전환을 하지 않았다
+- 작업 트리: tracked 변경 0, untracked는 `.codex/`(개인 설정) 하나. stash 0. **stash·reset·clean·삭제·일괄 add를 하지 않았다**
+- 보존 확인: `_media/originals/2026-10-01/` 원본 MP4 6개(무시 대상)와 `manifest.json`(추적됨), `tmp/` 검토 캡처·검증 기록 223개,
+  `.codex/config.toml`, `.claude/settings.local.json`, `cert/`, `dist/` — 전부 그대로 두었다
+- `origin/master..HEAD` 3커밋(`2ea4f7b`·`12e12aa`·`c1e33fd`), 코드 변경 13개 파일을 팀장 전달 내용과 대조해 일치. 새 변경 없음
+- 원격의 다른 작업자 가지 `claude/cloud-session-setup`(`ebe4c7b…`)은 그대로, 건드리지 않았다
+- 이 문서 §0·§1, `AGENTS.md`, `.claude/rules/app.md`를 읽었다. 🟡 `AGENTS.md` 7~17행에 쓰기 범위 절이 두 벌 겹쳐 있다(내용은 같은 취지) — 정리는 지시가 있을 때 한다
+
+**승인 전에는 하지 않는다**: 새 구현·PR·`master` push·병합·배포·유료 API·운영 데이터 변경.
+**다음 작업**: 최신 화면(헤더·재시작·업데이트 안내·개인정보처리방침·스플래시 문구·저장 결과 화면·녹음실 마이크)을 Bumm님과 검토한다.
+결정 대기·미검증 항목은 아래 10/5 인계 기록 그대로다.
+
 ### 2026-10-05 Claude Code 인계 — 현재 상태
 
 - Bumm님이 Claude Code에서 개발을 이어가기로 결정했고 Project Engineering이 인계 준비를 지시했다. Codex는 인계 보존·문서 정리만 수행하고 새 구현을 멈춘다. Claude Code의 실제 인수 실행은 아직 확인하지 않았다.
