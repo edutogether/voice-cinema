@@ -13,7 +13,8 @@ body:has(#studio.active) { background:#fff; }
 .studio-scene-label #chipName { color:#df291f; }
 .studio-heading h1 { margin:0; font-size:1.125rem; font-weight:700; line-height:1.4; letter-spacing:-.025em; word-break:keep-all; }
 .studio-heading h1:focus,.result-card h2:focus { outline:none; }
-.studio-brand { justify-self:end; font-size:1.5rem; font-weight:750; letter-spacing:-.035em; white-space:nowrap; }
+.studio-brand { display:inline-flex; align-items:center; gap:8px; justify-self:end; font-size:1.5rem; font-weight:750; letter-spacing:-.035em; white-space:nowrap; }
+.studio-brand > img { display:block; width:34px; height:34px; flex-shrink:0; object-fit:contain; }
 .studio-brand em { color:#df291f; font-style:normal; }
 .studio-video-frame { position:relative; min-height:0; background:#f3f3f3; isolation:isolate; }
 .stage video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }

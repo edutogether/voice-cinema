@@ -11,6 +11,11 @@
 - 다른 앱의 수정이 필요하면 직접 고치지 않고 `CROSS-APP DEPENDENCY: <대상 앱/경로>에 별도 변경 필요`로 보고한다.
 - 상위 Root `AGENTS.md`와 공용 authoritative handoff는 별도 지시가 없는 한 read-only다.
 
+- 담당 역할은 Voice Cinema 앱 worker이며 기본 명령 cwd는 `D:\Projects\inky-festival\voice-cinema`다. 쓰기·Git 작업 전에 `Get-Location`과 `git rev-parse --show-toplevel`로 저장소를 확인한다. 경로가 다르면 작업을 멈추고 팀장에게 보고한다.
+- 작업은 이 저장소와 명시적으로 할당된 worktree 안에서만 수행한다. 자동 로드에 의존하지 않고 이 `AGENTS.md`와 `.claude/rules/app.md`를 직접 확인한다.
+- Full access는 실행 능력이며 다른 앱 수정의 승인이 아니다. 자기 역할을 팀장으로 선언하거나 ownership을 스스로 확대하지 않는다.
+- 다른 앱·사용자 전역 config·parent project·공용 기록은 대상 경로와 범위의 명시적 배정 없이는 수정하지 않는다. cross-app 의존은 Project Engineering에 보고한다. 기존 LOCKED·APPROVED와 push·병합·배포·파괴적 작업 승인 규칙을 유지한다.
+
 ## 구조·보호 대상
 
 - React·TypeScript·Vite의 `src/`를 `dist/`로 빌드한다. 학생 목소리는 브라우저 ffmpeg.wasm으로 합성하고 Functions가 검증·Storage 저장을 맡는다. `functions/`는 독립 npm 프로젝트다.

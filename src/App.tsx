@@ -100,7 +100,7 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    installServiceWorker(() => setUpdateReady(true));
+    return installServiceWorker(() => setUpdateReady(true));
   }, []);
 
   // 첫 더빙 전에 엔진(31MB)과 App Check를 미리 준비해 저장 시 대기시간을 줄인다.

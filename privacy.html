@@ -1,103 +1,144 @@
 <!doctype html>
 <html lang="ko">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>개인정보처리방침 · InKY Voice Cinema</title>
-<style>
-  /* 밝은 화면 하나로 고정한다(대표 지시 2026-09-09, Be a Googler와 동일 양식).
-     본 앱은 어두운 화면이지만 이 페이지만 예외이며, prefers-color-scheme 대응을
-     두지 않는다 — 읽는 문서라 밝은 바탕이 낫다는 판단이 이미 내려져 있다.
-     바탕은 순백이 아니라 아주 옅은 크림→하늘 그라데이션 위에 흰 카드다. */
-  body {
-    margin: 0;
-    padding: 40px 20px 80px;
-    background: linear-gradient(160deg, #fffdf6, #e9f4ff);
-    color: #202124;
-    /* Pretendard를 맨 앞에 둔다 — 이 저장소가 서브셋을 함께 배포하므로, 설치된
-       "Pretendard Variable"이 있는 기기(대표 PC)와 없는 기기가 서로 다른 글꼴로
-       보이지 않게 하려는 것이다. */
-    font-family: Pretendard, "Pretendard Variable", SUIT, "Noto Sans KR", system-ui, sans-serif;
-    line-height: 1.7;
-  }
-  main {
-    max-width: 720px;
-    margin: 0 auto;
-    background: rgba(255, 255, 255, 0.82);
-    border: 1px solid rgba(255, 255, 255, 0.9);
-    border-radius: 24px;
-    padding: 40px clamp(24px, 5vw, 56px);
-    box-shadow: 0 24px 56px rgba(42, 62, 68, 0.1);
-  }
-  h1 { font-size: clamp(24px, 4vw, 30px); font-weight: 800; margin: 0 0 8px; }
-  p.updated { color: #6b7166; font-size: 14px; margin: 0 0 32px; }
-  h2 { font-size: 18px; font-weight: 750; margin: 32px 0 10px; }
-  p, li { font-size: 15px; color: #3c3f3a; }
-  ul { padding-left: 20px; margin: 8px 0; }
-  a { color: #2f6fd6; }
-  .back { display: inline-block; margin-bottom: 24px; font-size: 14px; color: #2f6fd6; text-decoration: none; }
-</style>
-  <link rel="stylesheet" href="/fonts/pretendard.css">
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/pretendard-400.woff2">
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/pretendard-500.woff2">
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/pretendard-600.woff2">
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/pretendard-800.woff2">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>개인정보처리방침 — Voice Cinema</title>
+  <style>
+    @font-face{font-family:Privacy;src:url('/fonts/pretendard-400.woff2') format('woff2');font-weight:400;font-display:optional}
+    @font-face{font-family:Privacy;src:url('/fonts/pretendard-600.woff2') format('woff2');font-weight:600;font-display:optional}
+    @font-face{font-family:Privacy;src:url('/fonts/pretendard-700.woff2') format('woff2');font-weight:700;font-display:optional}
+    *{box-sizing:border-box}
+    html{color-scheme:light}
+    body{margin:0;padding:40px 24px 56px;background:#f5f6f8;color:#25282d;font-family:Privacy,"Malgun Gothic",sans-serif;font-size:16px;line-height:1.6;word-break:keep-all;overflow-wrap:break-word}
+    main{max-width:920px;margin:0 auto;padding:32px 56px 52px;background:#fff;border:1px solid #e5e7eb;border-radius:20px;box-shadow:0 8px 32px #18202c06}
+    .document-nav{display:flex;align-items:center;justify-content:space-between;margin:0 -10px 24px}
+    .back{display:grid;place-items:center;width:44px;height:44px;color:#353b45;border-radius:8px;text-decoration:none}
+    .back svg{width:23px;height:23px}
+    .back:hover{background:#f2f3f5;color:#111}
+    .back:focus-visible{outline:2px solid #d82d23;outline-offset:3px}
+    h1{margin:0;font-size:32px;font-weight:700;letter-spacing:-1px;line-height:1.35}
+    .updated{display:flex;gap:0 10px;margin:0 0 0 auto;color:#68707d;font-size:14px;line-height:1.6;white-space:nowrap}
+    .document-header{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:10px 20px;padding-bottom:22px;border-bottom:1px solid #e5e7eb}
+    .intro{margin:22px 0 0;color:#4b525d}
+    section{margin-top:26px}
+    h2{display:flex;gap:10px;margin:0 0 12px;font-size:20px;line-height:1.5;font-weight:700;letter-spacing:-.4px;color:#20242a}
+    .section-number{flex:0 0 22px;font-variant-numeric:tabular-nums}
+    .section-body{margin-left:32px}
+    p{margin:0}
+    .intro,.section-body p{text-align:justify;text-align-last:start;text-justify:inter-word}
+    .intro{text-indent:1em}
+    .section-body p{text-indent:0}
+    p+p{margin-top:10px}
+    ul{margin:0;padding-left:18px}
+    li{padding-left:6px;margin-top:12px;color:#4b525d}
+    li:first-child{margin-top:0}
+    li::marker{color:#858d99;font-size:12px}
+    li>strong{display:block;margin-bottom:4px;color:#303640;font-weight:600}
+    strong{font-weight:600;color:#303640}
+    .contact-link{color:#1559c5;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+    .contact-link:hover{color:#0d4096}
+    .contact-link:focus-visible{outline:2px solid #d82d23;outline-offset:3px;border-radius:2px}
+    .section-body>p{color:#4b525d}
+    .transfer{margin:0;display:grid;grid-template-columns:156px minmax(0,1fr);font-size:16px;border-top:1px solid #e8eaed}
+    .transfer dt,.transfer dd{margin:0;padding:11px 0;border-bottom:1px solid #e8eaed}
+    .transfer dt{font-weight:600;color:#303640;white-space:nowrap}
+    .transfer dd{padding-left:16px;color:#4b525d}
+    .transfer+p{margin-top:14px}
+    @media(max-width:600px){
+      body{padding:16px 12px 32px;font-size:15px;line-height:1.6}
+      main{padding:20px 24px 32px;border-radius:14px}
+      .document-nav{margin-bottom:20px}
+      h1{font-size:27px;letter-spacing:-.8px}
+      .document-header{padding-bottom:20px}
+      .intro{margin-top:20px}
+      section{margin-top:24px}
+      h2{font-size:18px;gap:7px;margin-bottom:10px}
+      .section-number{flex-basis:18px}
+      .section-body{margin-left:12px}
+      .transfer{grid-template-columns:minmax(0,1fr);font-size:15px}
+      .transfer dt{padding-bottom:4px;border-bottom:0}
+      .transfer dd{padding:0 0 11px}
+    }
+  </style>
 </head>
 <body>
-<main>
-  <a class="back" href="./index.html">← Voice Cinema로 돌아가기</a>
-  <h1>개인정보처리방침</h1>
-  <p class="updated">최종 수정일: 2026-09-09</p>
+  <main>
+    <nav class="document-nav" aria-label="문서 이동">
+      <a class="back" href="index.html" aria-label="Voice Cinema로 돌아가기" title="Voice Cinema로 돌아가기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg>
+      </a>
+      <a class="back close" href="index.html" aria-label="개인정보처리방침 닫고 Voice Cinema로 돌아가기" title="Voice Cinema로 돌아가기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </a>
+    </nav>
+    <header class="document-header">
+      <h1>개인정보처리방침</h1>
+      <p class="updated"><span>최종 수정일</span><time datetime="2026-10-03">2026년 10월 3일</time></p>
+    </header>
+    <p class="intro">Voice Cinema는 인천광역시교육청이 주최하는 제4회 인천어린이청소년영화제 체험부스에서 영화 속 한 장면에 자신의 목소리를 더빙하고, 완성된 영상을 QR과 링크로 가져가는 서비스입니다. 본 방침은 서비스 이용 과정에서 처리하는 정보의 항목, 이용 목적, 보관 기간 및 삭제 방법을 안내합니다.</p>
 
-  <p>
-    InKY Voice Cinema는 인천광역시교육청이 주최하는 인천어린이청소년영화제 부스에서
-    운영하는 프로그램입니다. 학생이 무성 영상에 자기 목소리로 더빙하면 그 자리에서 한 편의 짧은
-    영화가 완성됩니다. 참가 학교는 사전에 개인정보 수집·이용 동의서를 걷고 명단을 제출한 뒤에
-    참가하며, 동의 절차는 학교와 교육청의 행정 절차로 이미 진행되어 있습니다.
-  </p>
+    <section aria-labelledby="collection">
+      <h2 id="collection"><span class="section-number">1.</span><span>처리하는 정보</span></h2>
+      <div class="section-body">
+        <ul>
+          <li><strong>녹음한 목소리와 완성 영상</strong><p>마이크로 녹음한 목소리를 선택한 장면에 더빙하여 완성 영상 파일을 만듭니다. 영상에는 참여자가 직접 말한 내용이 포함됩니다.</p></li>
+          <li><strong>이름 · 학교 · 연락처</strong><p>이름 · 학교 · 연락처는 별도로 입력받거나 수집하지 않습니다.</p></li>
+          <li><strong>접속 및 기기 정보</strong><p>접속한 기기의 IP 주소는 짧은 시간에 들어오는 요청 수를 세어 남용을 막는 데만 사용하며, 서비스에서 별도로 저장하지 않습니다. 자동화 접근 방지를 위한 Google reCAPTCHA Enterprise 사용 과정에서 브라우저 · 기기에 관한 정보가 Google로 전송됩니다.</p></li>
+        </ul>
+      </div>
+    </section>
 
-  <h2>1. 수집하는 정보</h2>
-  <ul>
-    <li>학생이 마이크로 녹음한 <b>목소리</b>, 그리고 그 목소리를 영상에 얹어 만든 <b>완성 영상 파일</b></li>
-    <li>이름·학교·연락처 등 <b>누구인지 알 수 있는 정보는 수집하지 않습니다.</b> 완성 영상에는
-      학생이 직접 말한 내용만 담깁니다.</li>
-    <li>접속한 기기의 <b>IP 주소</b> — 짧은 시간에 들어오는 요청 수를 세어 남용을 막는 데만 쓰고,
-      따로 저장하지 않습니다.</li>
-    <li>사람이 아닌 자동화 프로그램의 접근을 막기 위해 Google reCAPTCHA Enterprise를 사용하며,
-      이 과정에서 브라우저·기기에 관한 정보가 Google로 전송됩니다.</li>
-  </ul>
-  <p>광고나 이용자 분석을 위한 추적 도구는 사용하지 않습니다.</p>
+    <section aria-labelledby="purpose">
+      <h2 id="purpose"><span class="section-number">2.</span><span>정보의 이용 목적</span></h2>
+      <div class="section-body">
+        <ul>
+          <li><strong>더빙 영상 제작</strong><p>녹음한 목소리를 선택한 장면과 합성하여 나만의 영화 장면을 만드는 데 사용합니다.</p></li>
+          <li><strong>완성 영상 전달</strong><p>완성된 영상을 QR과 다운로드 링크로 참여자에게 전달하는 데 사용합니다.</p></li>
+          <li><strong>서비스 남용 및 자동화 접근 방지</strong><p>접속 및 기기 정보는 과도한 요청과 자동화 접근을 막고 체험부스를 정상적으로 운영하기 위해 사용합니다. 광고나 이용자 분석을 위한 추적 도구는 사용하지 않으며, 위 목적 외의 용도로는 정보를 사용하지 않습니다.</p></li>
+        </ul>
+      </div>
+    </section>
 
-  <h2>2. 이용 목적</h2>
-  <ul>
-    <li>녹음한 목소리로 완성 영상을 만들고, QR과 링크로 학생에게 전달하기 위해</li>
-    <li>부스가 정상적으로 운영되도록 과도한 요청과 자동화 접근을 막기 위해</li>
-  </ul>
-  <p>위 목적 외의 용도로는 사용하지 않습니다.</p>
+    <section aria-labelledby="retention">
+      <h2 id="retention"><span class="section-number">3.</span><span>정보의 보관 및 삭제</span></h2>
+      <div class="section-body">
+        <ul>
+          <li><strong>브라우저에서 처리하는 녹음 정보</strong><p>녹음과 영상 합성은 브라우저에서 처리합니다. 저장 전의 녹음 정보와 진행 상태는 페이지를 새로고침하거나 닫으면 사라집니다. 이미 저장하거나 다운로드한 완성 영상은 아래 기준에 따라 처리합니다.</p></li>
+          <li><strong>완성 영상의 저장 및 공개 범위</strong><p>완성 영상은 Google Firebase Storage에 저장되며, <strong>링크를 아는 사람은 누구나 볼 수 있는 공개 주소</strong>로 전달됩니다. 완성 화면에서도 이 사실을 안내합니다.</p></li>
+          <li><strong>다운로드 가능 기간 및 자동 삭제</strong><p>완성 영상의 다운로드는 <strong>2026년 11월 30일까지</strong> 가능합니다. <strong>2026년 12월 1일 00:00</strong>(한국 시간)부터 매일 자동 삭제 작업을 실행하여 저장된 영상을 삭제합니다.</p></li>
+          <li><strong>부스 기기에 직접 저장된 파일</strong><p>행사장 인터넷이 끊겨 자동 전달이 실패하면 완성 영상이 부스 기기에 직접 저장됩니다. <strong>이 파일은 서버의 자동 삭제 대상이 아니므로,</strong> 참여자에게 전달한 뒤 운영자가 직접 삭제합니다. 참여자가 자신의 기기에 다운로드한 파일도 서버의 자동 삭제 대상에 포함되지 않습니다.</p></li>
+        </ul>
+      </div>
+    </section>
 
-  <h2>3. 보관 및 삭제</h2>
-  <ul>
-    <li>완성 영상은 Google Firebase Storage에 저장되며, <b>링크를 아는 사람은 누구나 볼 수 있는
-      공개 주소</b>로 전달됩니다. 완성 화면에도 이 사실을 그대로 안내합니다.</li>
-    <li>다운로드는 <b>2026년 11월 30일까지</b> 가능합니다. <b>2026년 12월 1일 00:00</b>에는 저장된
-      영상을 전부 자동으로 삭제합니다.</li>
-    <li>행사장 인터넷이 끊겨 자동 전달이 실패하면 완성 영상이 <b>그 부스 기기에 직접 저장</b>됩니다.
-      이 파일은 자동 삭제 대상이 아니므로, 학생에게 전달한 뒤 운영자가 직접 삭제합니다.</li>
-  </ul>
+    <section aria-labelledby="transfer">
+      <h2 id="transfer"><span class="section-number">4.</span><span>외부 서비스 이용 및 정보 처리</span></h2>
+      <div class="section-body">
+        <dl class="transfer">
+          <dt>서비스 제공자</dt><dd>Google</dd>
+          <dt>이용 서비스</dt><dd>Firebase Hosting · Cloud Functions · Storage, reCAPTCHA Enterprise</dd>
+          <dt>처리 항목</dt><dd>완성 영상 파일, 서비스 이용 요청, 접속 및 브라우저 · 기기 정보</dd>
+          <dt>이용 목적</dt><dd>서비스 제공, 완성 영상 저장 및 전달, 과도한 요청과 자동화 접근 방지</dd>
+          <dt>완성 영상 보관 기간</dt><dd>2026년 11월 30일까지 다운로드할 수 있으며, 2026년 12월 1일 00:00(한국 시간)부터 자동 삭제합니다.</dd>
+        </dl>
+        <p>수집한 정보를 제3자에게 제공하거나 판매하지 않습니다. 다만 서비스 운영을 위해 위 Google 서비스를 이용하며, 완성 영상과 요청은 해당 서비스에서 저장 · 처리됩니다.</p>
+      </div>
+    </section>
 
-  <h2>4. 제3자 제공</h2>
-  <p>
-    수집한 정보를 제3자에게 제공하거나 판매하지 않습니다. 다만 프로그램을 운영하기 위해
-    Google의 Firebase (Hosting · Cloud Functions · Storage)와 reCAPTCHA Enterprise를
-    사용하며, 완성 영상과 요청은 이 서비스들 위에서 저장 · 처리됩니다.
-  </p>
+    <section aria-labelledby="children">
+      <h2 id="children"><span class="section-number">5.</span><span>어린이 · 청소년의 참여</span></h2>
+      <div class="section-body">
+        <p>본 행사는 사전에 참여 신청을 받은 명단을 기준으로 운영합니다. 참가 학교는 사전에 개인정보 수집 · 이용 동의서를 걷고 명단을 제출한 뒤 참가하며, 동의 절차는 학교와 교육청의 행정 절차로 진행합니다.</p>
+      </div>
+    </section>
 
-  <h2>5. 문의</h2>
-  <p>
-    문의는 같이교육 인스타그램
-    <a href="https://www.instagram.com/edutogether_/" target="_blank" rel="noopener">@edutogether_</a>
-    으로 남겨 주세요.
-  </p>
-</main>
+    <section aria-labelledby="contact">
+      <h2 id="contact"><span class="section-number">6.</span><span>문의 안내</span></h2>
+      <div class="section-body">
+        <p>개인정보 처리에 관한 문의는 행사 현장 <strong>부스 운영 교사</strong>에게, 종료 후에는 <strong><a class="contact-link" href="https://www.instagram.com/edutogether_/" target="_blank" rel="noopener noreferrer" aria-label="같이교육 인스타그램 (새 탭)">같이교육 인스타그램</a></strong>으로 DM 부탁드립니다.</p>
+      </div>
+    </section>
+  </main>
 </body>
 </html>
