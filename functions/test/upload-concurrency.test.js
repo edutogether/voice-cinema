@@ -19,8 +19,9 @@ test('동시 업로드 2000건에서 인증과 분당 제한을 우회하지 못
       }
     }));
     expect(statuses).toHaveLength(2000);
-    expect(statuses.filter(code => code === 403)).toHaveLength(60);
-    expect(statuses.filter(code => code === 429)).toHaveLength(1940);
+    // 2026-10-05부터 인증 전 요청은 분당 600 상한(학생 업로드 한도 60은 인증 뒤에 따로 센다).
+    expect(statuses.filter(code => code === 403)).toHaveLength(600);
+    expect(statuses.filter(code => code === 429)).toHaveLength(1400);
     expect(statuses.some(code => code >= 500 || code === 200)).toBe(false);
   } finally { await new Promise(resolve => server.close(resolve)); }
 }, 30000);

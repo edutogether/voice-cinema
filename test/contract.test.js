@@ -59,3 +59,12 @@ test('자동삭제: 예약 시각과 개인정보처리방침에 적힌 시각�
   const 시각 = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
   expect(read('privacy.html')).toContain(`2026년 12월 1일 ${시각}`);
 });
+
+// 2026-10-05: 서버가 저장 이름을 정할 때 쓰는 장르 목록이 앱의 장르와 같아야 한다.
+// 어긋나도 업로드는 실패하지 않지만(이름이 dub으로 바뀔 뿐) 파일 이름에서 장르를 잃는다.
+test('장르 목록: functions/validate.js와 src/genres.ts가 같은 장르를 쓴다', () => {
+  const 앱 = [...read('src/genres.ts').matchAll(/^\s+id: '([a-z]+)'/gm)].map((m) => m[1]).sort();
+  const 서버 = [...read('functions/validate.js').match(/GENRE_IDS = new Set\(\[([^\]]+)\]/)[1].matchAll(/'([a-z]+)'/g)].map((m) => m[1]).sort();
+  expect(앱.length).toBeGreaterThan(0); // 아무것도 못 읽은 채 같다고 하지 않게(§21-1)
+  expect(서버).toEqual(앱);
+});
