@@ -17,7 +17,7 @@
 | 운영 기준점 | 원격 `master` = `ae33637b3b12f864570c4b5333830944e7973583`, 마지막 배포 실행 10/3 success(headSha 일치), 라이브 200 |
 
 인수 때 한 것(10/5, 읽기 전용 확인 + 이 기록 커밋만):
-- cwd와 Git root가 `D:\Projects\inky-festivaloice-cinema`로 같고 worktree는 하나. 이미 인계 가지가 체크아웃돼 있어 가지 전환을 하지 않았다
+- cwd와 Git root가 `D:\Projects\inky-festival\voice-cinema`로 같고 worktree는 하나. 이미 인계 가지가 체크아웃돼 있어 가지 전환을 하지 않았다
 - 작업 트리: tracked 변경 0, untracked는 `.codex/`(개인 설정) 하나. stash 0. **stash·reset·clean·삭제·일괄 add를 하지 않았다**
 - 보존 확인: `_media/originals/2026-10-01/` 원본 MP4 6개(무시 대상)와 `manifest.json`(추적됨), `tmp/` 검토 캡처·검증 기록 223개,
   `.codex/config.toml`, `.claude/settings.local.json`, `cert/`, `dist/` — 전부 그대로 두었다
