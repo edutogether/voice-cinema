@@ -3,11 +3,12 @@
   "baseUrl": "https://voice.edutogether.kr",
   "screens": [
     {
-      "name": "첫 화면 (장르 고르기)",
+      "name": "첫 화면 (더빙할 영화 고르기)",
       "path": "/",
       "expect": [
         "InKY Voice Cinema",
-        "상상을 현실로 — 내 목소리로 완성하는 영화"
+        "오늘, 내가 출연할 영화",
+        "더빙할 영화 고르기"
       ]
     }
   ],
