@@ -3,7 +3,7 @@
 // 가능했던" 결함이 배포까지 간 전례가 있어(2026-08-26), 회귀를 잡아줄
 // 테스트가 필요하다는 판단이었다.
 import { test, expect, describe } from 'vitest';
-import { sanitizeFilename, validateUploadRequest, createRateLimiter, chunk, hasMp4Signature, MAX_DECODED_BYTES, MAX_FILENAME_LEN, isAfterCutoff } from '../validate.js';
+import { sanitizeFilename, validateUploadRequest, createRateLimiter, chunk, hasMp4Signature, MAX_DECODED_BYTES, MAX_FILENAME_LEN, isAfterCutoff, buildServerFilename, deleteInBatches, GENRE_IDS } from '../validate.js';
 
 // 진짜 mp4 파일 시작부(박스 크기 4바이트 + 'ftyp')를 흉내낸 최소 픽스처.
 const FAKE_MP4_BYTES = Buffer.concat([Buffer.from([0, 0, 0, 32]), Buffer.from('ftypisom')]);
@@ -114,5 +114,45 @@ describe('isAfterCutoff — 자동삭제 경계', () => {
 
   test('행사 당일(11월 14일)에는 지우지 않는다', () => {
     expect(isAfterCutoff(new Date('2026-11-14T23:00:00+09:00'), cutoff)).toBe(false);
+  });
+});
+
+// 2026-10-05: 저장 이름은 서버가 정한다. 클라이언트 이름에서는 장르만 가져온다.
+describe('buildServerFilename — 서버가 정하는 저장 이름', () => {
+  test('장르는 살리고, 시각과 난수는 클라이언트 값이 아니라 서버 값이다', () => {
+    const name = buildServerFilename('dub_horror_1111_aaaaaaaaaaaa.mp4', 2222, 'bbbbbbbbbbbbbbbbbb');
+    expect(name).toBe('dub_horror_2222_bbbbbbbbbbbbbbbbbb.mp4');
+    expect(name).not.toContain('1111');
+    expect(name).not.toContain('aaaaaaaaaaaa');
+  });
+  test('같은 클라이언트 이름이어도 서버 난수가 다르면 다른 이름이 된다', () => {
+    const a = buildServerFilename('dub_drama_1_x.mp4', 5, 'r1');
+    const b = buildServerFilename('dub_drama_1_x.mp4', 5, 'r2');
+    expect(a).not.toBe(b);
+  });
+  test('목록에 없는 장르나 엉뚱한 이름은 막지 않고 dub으로 둔다', () => {
+    expect(buildServerFilename('../../etc/passwd', 7, 'r')).toBe('dub_dub_7_r.mp4');
+    expect(buildServerFilename('dub_unknown_1_x.mp4', 7, 'r')).toBe('dub_dub_7_r.mp4');
+    expect(buildServerFilename(undefined, 7, 'r')).toBe('dub_dub_7_r.mp4');
+  });
+  test('난수 없이 부르면 예외 — 추측 가능한 이름을 만들지 않는다', () => {
+    expect(() => buildServerFilename('dub_drama_1_x.mp4', 7, '')).toThrow();
+  });
+  test('장르 목록은 여섯 개다(src/genres.ts와의 대조는 루트 계약 테스트가 한다)', () => {
+    expect(GENRE_IDS.size).toBe(6);
+  });
+});
+
+// 2026-10-05: 삭제 실패를 "삭제 완료"에 섞어 세지 않는다.
+describe('deleteInBatches — 지운 것과 실패한 것을 따로 센다', () => {
+  const fake = (ok) => ({ name: ok ? 'ok' : 'bad', delete: () => (ok ? Promise.resolve() : Promise.reject(new Error('거부'))) });
+  test('일부가 실패하면 실패 개수가 따로 나온다', async () => {
+    const errors = [];
+    const r = await deleteInBatches([fake(true), fake(false), fake(true), fake(false), fake(true)], 2, (f) => errors.push(f.name));
+    expect(r).toEqual({ deleted: 3, failed: 2 });
+    expect(errors).toEqual(['bad', 'bad']);
+  });
+  test('전부 성공하면 실패 0', async () => {
+    expect(await deleteInBatches([fake(true), fake(true)], 100)).toEqual({ deleted: 2, failed: 0 });
   });
 });

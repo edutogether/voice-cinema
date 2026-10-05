@@ -5,7 +5,7 @@ import { initializeApp } from 'firebase-admin/app';
 import { getStorage } from 'firebase-admin/storage';
 import { getAppCheck } from 'firebase-admin/app-check';
 import express from 'express';
-import { validateUploadRequest, createRateLimiter, chunk, isAfterCutoff } from './validate.js';
+import { validateUploadRequest, createRateLimiter, deleteInBatches, buildServerFilename, isAfterCutoff } from './validate.js';
 
 initializeApp();
 
@@ -25,14 +25,6 @@ const UPLOAD_PREFIX = 'dubs/';
 // (정리용 임시 라우트, 실제 cleanupAfterCutoff)가 전부 같은 패턴이라 공용 함수로
 // 묶어 한 번에 100개씩만 처리한다.
 const DELETE_BATCH_SIZE = 100;
-async function deleteAllInBatches(files, logPrefix) {
-  let deleted = 0;
-  for (const batch of chunk(files, DELETE_BATCH_SIZE)) {
-    await Promise.all(batch.map((f) => f.delete().catch((e) => console.error(logPrefix, f.name, e?.message))));
-    deleted += batch.length;
-  }
-  return deleted;
-}
 
 // 정밀감사(2026-08-26) 발견 반영 — 이 엔드포인트는 원래 인증 없이 공개 배포된다
 // (익명 QR 전달 흐름 자체가 로그인을 요구할 수 없는 구조). 다만 감사에서
@@ -48,6 +40,12 @@ const BOOTH_TOKEN = 'ac3231330f737aaf7f90c825f7ddacc9e287b3ac87caf99d';
 // 개별 스크립트 남용을 막기엔 적당하지만, 부스 여러 대가 동시에 정상 사용할
 // 때 서로를 막아버리기엔 너무 낮다. 분당 60건(초당 1건 수준)까지 올려도
 // 남용 저지 목적은 유지되면서 정상적인 동시 사용은 걸리지 않는다.
+//
+// 2026-10-05: 한도를 둘로 나눴다(보안 지적 대응). 인증을 통과한 업로드만 분당 60에서 세고,
+// 인증 전 요청은 그와 별개로 넉넉한 상한(분당 600)만 둔다 — 인증 검사 비용을 묶어 두는
+// 용도다. 부스 전용 핫스팟에 운영 교사 휴대폰이 함께 붙으면 그 폰들도 같은 공인 IP를
+// 쓰므로, 인증 전 요청이 학생 업로드 몫을 쓰지 않게 하는 것이 목적이다.
+const isOverRequestCap = createRateLimiter({ max: 600 });
 const isRateLimited = createRateLimiter({ max: 60 });
 
 const app = express();
@@ -73,7 +71,7 @@ app.get('/', (req, res) => res.json({ ok: true, service: 'inky-voice-cinema' }))
 app.post('/upload', async (req, res, next) => {
   const requestId = crypto.randomBytes(4).toString('hex');
   req.requestId = requestId;
-  if (isRateLimited(req.ip)) {
+  if (isOverRequestCap(req.ip)) {
     console.warn(`[upload:${requestId}] 요청 제한 초과`);
     return res.status(429).json({ ok: false, error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' });
   }
@@ -95,6 +93,10 @@ app.post('/upload', async (req, res, next) => {
     console.warn(`[upload:${requestId}] App Check 토큰 검증 실패: ${e?.message}`);
     return res.status(401).json({ ok: false, error: '보안 검증에 실패했습니다.' });
   }
+  if (isRateLimited(req.ip)) {
+    console.warn(`[upload:${requestId}] 분당 업로드 한도 초과: ${req.ip}`);
+    return res.status(429).json({ ok: false, error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' });
+  }
   next();
 // MAX_DECODED_BYTES(20MB)를 base64로 인코딩하면 약 4/3배(~27MB)가 되므로,
 // body 파서 한도는 그보다 넉넉히 잡아야 한다(2026-09-01, 12MB/15mb였을 때
@@ -108,13 +110,16 @@ app.post('/upload', async (req, res, next) => {
       return res.status(check.status).json({ ok: false, error: check.error });
     }
     const bucket = getStorage().bucket();
-    const file = bucket.file(UPLOAD_PREFIX + check.safeName);
+    const name = buildServerFilename(req.body.filename, Date.now(), crypto.randomBytes(9).toString('hex'));
+    const file = bucket.file(UPLOAD_PREFIX + name);
     await file.save(check.buffer, {
       contentType: req.body.mimeType,
       resumable: false,
+      // 이미 있는 객체에는 쓰지 않는다 — 서버 난수 이름이라 정상 흐름에서는 걸릴 일이 없다.
+      preconditionOpts: { ifGenerationMatch: 0 },
     });
     await file.makePublic();
-    console.log(`[upload:${requestId}] 성공: ${check.safeName} (${check.buffer.length}바이트)`);
+    console.log(`[upload:${requestId}] 성공: ${name} (${check.buffer.length}바이트)`);
     res.json({ ok: true, url: file.publicUrl() });
   } catch (err) {
     console.error(`[upload:${requestId}] 오류`, err?.message || err);
@@ -196,12 +201,17 @@ export const cleanupAfterCutoff = onSchedule(
     try {
       const bucket = getStorage().bucket();
       const [files] = await bucket.getFiles({ prefix: UPLOAD_PREFIX });
-      const deleted = await deleteAllInBatches(files, '[cleanup]');
-      console.log(`[cleanup] ${deleted}개 파일 삭제 완료`);
+      const { deleted, failed } = await deleteInBatches(files, DELETE_BATCH_SIZE, (f, e) =>
+        console.error('[cleanup] 삭제 실패', f.name, e?.message)
+      );
+      console.log(`[cleanup] 삭제 ${deleted}개 · 실패 ${failed}개`);
+      // 하나라도 못 지웠으면 실행을 실패로 끝낸다 — 성공으로 보이면 아무도 모른다(2026-10-05).
+      // 매일 다시 돌므로 남은 파일은 다음 실행에서 다시 지운다.
+      if (failed > 0) throw new Error(`${failed}개 삭제 실패`);
     } catch (err) {
-      // 감사 발견 반영: bucket()/getFiles() 자체가 던지면 이 스케줄 실행이
-      // 처리되지 않은 예외로 끝난다 — 로그로 남겨 다음 날 재시도 전까지 원인을 알 수 있게 한다.
+      // bucket()/getFiles()가 던지거나 삭제가 일부 실패하면 로그를 남기고 실패로 끝낸다.
       console.error('[cleanup] 실행 실패', err?.message || err);
+      throw err;
     }
   }
 );

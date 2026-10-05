@@ -55,6 +55,19 @@ export function validateUploadRequest(body) {
   return { ok: true, safeName, buffer };
 }
 
+// 저장 이름은 서버가 정한다(2026-10-05, 보안 지적 대응). 클라이언트가 보낸 이름은 장르를
+// 알아내는 데만 쓰고, 시각과 난수는 서버 값이다 — 이미 있는 이름으로 다시 저장되는 일이 없다.
+// 장르 목록은 src/genres.ts와 같아야 하고 test/contract.test.js가 대조한다. 목록에 없으면
+// 업로드를 막지 않고 'dub'으로 둔다(이름이 덜 친절할 뿐 학생의 저장은 실패하지 않는다).
+export const GENRE_IDS = new Set(['fantasy', 'animation', 'horror', 'action', 'drama', 'sitcom']);
+
+export function buildServerFilename(clientFilename, now, random) {
+  if (!random) throw new Error('난수 없이 저장 이름을 만들 수 없다');
+  const m = /^dub_([a-z]+)_/.exec(String(clientFilename || ''));
+  const genre = m && GENRE_IDS.has(m[1]) ? m[1] : 'dub';
+  return `dub_${genre}_${now}_${random}.mp4`;
+}
+
 // 배열을 size개씩 묶는다 — 대량 삭제를 한 번에 Promise.all로 몰아넣으면
 // 메모리를 초과할 수 있어(2026-08-28, 2000개 실측 스트레스테스트 중 실제로
 // "Memory limit of 256 MiB exceeded" 발생 확인) 이걸로 나눠 처리한다.
@@ -62,6 +75,20 @@ export function chunk(array, size) {
   const out = [];
   for (let i = 0; i < array.length; i += size) out.push(array.slice(i, i + size));
   return out;
+}
+
+// 파일을 size개씩 나눠 지우고, 지운 것과 실패한 것을 **따로** 센다(2026-10-05).
+// 예전에는 실패도 "삭제 완료" 개수에 들어가, 자동삭제가 일부 실패해도 성공으로 보였다.
+export async function deleteInBatches(files, size, onError) {
+  let deleted = 0;
+  let failed = 0;
+  for (const batch of chunk(files, size)) {
+    const results = await Promise.all(
+      batch.map((f) => f.delete().then(() => true, (e) => { onError?.(f, e); return false; }))
+    );
+    for (const ok of results) ok ? deleted++ : failed++;
+  }
+  return { deleted, failed };
 }
 
 // 인스턴스 하나당 최소한의 요청 빈도 제한(재기동되면 초기화되는 메모리 기반이라
