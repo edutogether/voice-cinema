@@ -69,6 +69,11 @@ test('PC: 화살표 키로 마지막 장면을 고른 뒤 녹음실에서 돌아
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
+  // 헤더 양쪽 브랜드가 "처음부터 시작" 버튼이 되어(2026-10-05 승인) 그 둘을 먼저 지난다.
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'CGV와 인천광역시교육청 — 처음부터 시작' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'InKY Film Festival — 처음부터 시작' })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: '개인정보처리방침 (새 탭)' })).toBeFocused();
   await page.keyboard.press('Tab');
