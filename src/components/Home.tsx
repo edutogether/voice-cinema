@@ -91,7 +91,7 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
         </aside>
         <div className="chart-main">
           <div className="chart-heading">
-            <div><p className="chart-eyebrow">오늘, 내가 출연할 영화</p><h1>장면 고르기 <span>6</span></h1></div>
+            <div><p className="chart-eyebrow">오늘, 내가 출연할 영화</p><h1><b className="chart-title"><em>더빙</em>할 영화 고르기</b> <span>6</span></h1></div>
             {!SUPPORTS_HOVER && <p>마음에 드는 장면을 누르면 녹음실로 들어가요.</p>}
           </div>
 

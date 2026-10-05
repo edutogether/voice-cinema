@@ -70,7 +70,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
         <div className="studio-screen">
           <div className="stage">
             <div className="studio-heading">
-              <button className="back" id="studioBackBtn" onClick={onHome}><ActionIcon name="back" /> 장면 바꾸기</button>
+              <button className="back" id="studioBackBtn" onClick={onHome}><ActionIcon name="back" /> 다른 영화 고르기</button>
               <div className="studio-scene-title">
                 <span className="studio-scene-label"><span id="chipName">{genre.name}</span> · {sampleMode ? '녹음 샘플 체험' : '목소리 녹음'}</span>
                 <h1 ref={titleRef} tabIndex={-1}>{genre.summary}</h1>

@@ -60,13 +60,13 @@
     "animation": "none"
   },
   {
-    "text": "장면 고르기 6",
+    "text": "더빙할 영화 고르기 6",
     "label": null,
     "role": "H1",
     "box": [
       272,
       127,
-      164,
+      243,
       36
     ],
     "font": "30px",

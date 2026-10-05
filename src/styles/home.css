@@ -55,6 +55,10 @@ body:has(#home.active) { background:#fff; }
 .chart-heading { display:flex; align-items:center; justify-content:space-between; gap:24px; flex-shrink:0; padding:0 0 20px; }
 .chart-eyebrow { margin:0 0 6px; color:#737373; font-size:.8125rem; }
 .chart-heading h1 { display:flex; align-items:center; gap:10px; margin:0; font-size:1.875rem; line-height:1.2; letter-spacing:-.045em; font-weight:750; }
+/* h1이 flex라 강조 글자가 따로 떨어지지 않게 제목을 한 덩어리로 묶는다. 좁은 폭·확대에서는
+   단어 단위로만 줄을 바꾼다("더빙할"이 쪼개지지 않게). 빨강은 홈의 다른 강조와 같은 값. */
+.chart-title { font-weight:inherit; word-break:keep-all; }
+.chart-title em { color:#df291f; font-style:normal; }
 .chart-heading h1 span { display:grid; place-items:center; width:26px; height:26px; background:#f3f3f3; border-radius:50%; font-size:.875rem; letter-spacing:0; font-weight:600; }
 .chart-heading > p { margin:0; max-width:290px; color:#626262; font-size:.875rem; line-height:1.6; word-break:keep-all; }
 .grid { display:grid; flex:1; min-height:0; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-rows:repeat(2,minmax(0,1fr)); gap:22px 24px; }
