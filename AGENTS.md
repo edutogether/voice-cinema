@@ -47,7 +47,7 @@ npm run test:e2e
 - `npm run build`는 타입 검사와 빌드를, `npm test`는 프론트와 Functions 검사를 실행한다. E2E는 빌드된 `dist/`를 대상으로 Chromium 가짜 마이크를 사용한다. 재생·탐색·녹음·합성·업로드와 오프라인·문서 최신성·스플래시·카드 재생의 관련 회귀를 확인한다.
 - E2E의 4321 포트가 이 앱의 최신 산출물을 제공하는지 확인한다(`reuseExistingServer`). 프론트·Functions 테스트 범위를 섞거나 로컬 체험 모드로 실제 마이크·합성 검증을 대체하지 않는다.
 - 스플래시는 한 탭에서 한 번만 표시한다. 갱신·재진입 회귀는 `e2e/splash-once.spec.js`로 확인한다.
-- 스플래시·파비콘은 `_docs/ops/microphone-asset.md`의 공통 마이크 PNG를 유지한다. 로고의 `filter: drop-shadow`·`will-change`를 추가하지 않고, 로딩바 두 바퀴 하한 `--hold: calc(var(--bar-cycle) * 2)`를 유지한다.
+- 스플래시는 `_docs/ops/microphone-asset.md`의 마이크 PNG를 유지한다. 파비콘은 같이교육 로고(`public/icons/favicon-edutogether.png`, Calendar와 같은 파일) 하나이고 탭 상태에 따라 바꾸지 않는다(회색 전환 폐기, 2026-10-07). 로고의 `filter: drop-shadow`·`will-change`를 추가하지 않고, 로딩바 두 바퀴 하한 `--hold: calc(var(--bar-cycle) * 2)`를 유지한다.
 - 터치 기기의 카드 미리보기는 전부 음소거 재생한다. 동시 재생 제한은 UA가 아닌 반복 play 거부로 판정하고, 콜백을 안정적으로 유지해 엔진 다운로드 중 재생이 끊기지 않게 한다.
 - 프론트 변경은 엔진 캐시 재다운로드 영향을 확인한다. 인라인 script와 `color-mix()`를 추가하지 않는다.
 - 화면 묶음의 Windows 기준선은 `e2e/release-baseline.spec.js`를 `VOICE_VISUAL_BASELINE=1`로 실행한다. 승인된 변경을 대조한 뒤에만 갱신하고 갱신 옵션 없이 재검증한다. PNG와 레이아웃·조작 의미 JSON을 함께 보존한다.
