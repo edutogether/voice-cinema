@@ -58,38 +58,30 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
+      # 판단은 tools/deploy-gate.js가 한다(단위 검사 test/deploy-gate.test.js). 여기서는 값만 모은다.
+      # 2026-10-08: 이 실행의 커밋이 지금 master 끝이 아니면 배포하지 않는다 — GitHub 장애로 묶인 옛
+      # 실행이 나중에 풀려 새 배포를 덮어쓰는 것을 막는다. 끝을 못 구하면 실패로 끝난다.
+      # 비교 기준은 "마지막으로 성공한 워크플로"가 아니라 "deploy 잡이 실제로 성공한 실행"이다 —
+      # 건너뛴 실행도 워크플로는 성공으로 남아, 그것을 기준으로 삼으면 앞 커밋의 코드가 영영 안 나간다.
       - id: judge
         env:
           GH_TOKEN: ${{ github.token }}
           NOW: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -e
-          LAST=$(gh run list --workflow "Deploy Backend" --status success --branch master --limit 1 --json headSha -q '.[0].headSha' 2>/dev/null || true)
-          if [ -z "$LAST" ] || ! git cat-file -e "$LAST^{commit}" 2>/dev/null; then
-            echo "기준이 될 배포 이력이 없다 — 배포한다"
-            echo "deploy_needed=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          CHANGED=$(git diff --name-only "$LAST" "$NOW")
-          COUNT=$(echo "$CHANGED" | grep -c . || true)
-          echo "기준 $LAST -> $NOW · 바뀐 파일 ${COUNT}개"
-          echo "$CHANGED" | sed 's/^/  /'
-          # 🔴 0건은 "문서만 바뀌었다"가 아니라 "비교가 안 됐다"이다(§21-1).
-          # 아무것도 못 본 상태를 통과로 세면 진짜 코드 변경이 조용히 안 나간다.
-          if [ "$COUNT" -eq 0 ]; then
-            echo "비교 결과가 0건이라 판정을 신뢰할 수 없다 — 배포한다"
-            echo "deploy_needed=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          TARGETS=$(echo "$CHANGED" | grep -vE '(\.md$|^_docs/|^\.claude/)' || true)
-          if [ -z "$TARGETS" ]; then
-            echo "문서만 바뀌었다 — 배포하지 않는다"
-            echo "deploy_needed=false" >> "$GITHUB_OUTPUT"
+          TIP=$(git ls-remote origin refs/heads/master | cut -f1 || true)
+          LAST=""
+          for id in $(gh run list --workflow "Deploy Backend" --status success --branch master --limit 30 --json databaseId -q '.[].databaseId' 2>/dev/null || true); do
+            sha=$(gh run view "$id" --json headSha,jobs -q 'select(any(.jobs[]; .name == "deploy" and .conclusion == "success")) | .headSha' 2>/dev/null || true)
+            if [ -n "$sha" ]; then LAST=$sha; break; fi
+          done
+          CHANGED=""
+          if [ -n "$LAST" ] && git cat-file -e "$LAST^{commit}" 2>/dev/null; then
+            CHANGED=$(git diff --name-only "$LAST" "$NOW")
           else
-            echo "배포가 필요한 변경:"
-            echo "$TARGETS" | sed 's/^/  /'
-            echo "deploy_needed=true" >> "$GITHUB_OUTPUT"
+            LAST=""
           fi
+          TIP="$TIP" LAST="$LAST" CHANGED="$CHANGED" node tools/deploy-gate.js
 
   deploy:
     needs: changes
