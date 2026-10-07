@@ -9,7 +9,7 @@ import crypto from 'node:crypto';
 
 const ICON = '/icons/favicon-inky.png';
 // 공용 inky-camera-64.png(64×64 투명 PNG)의 SHA-256. Poster Studio·InKY Calculator도 같은 파일을 쓴다.
-const ORIGINAL_SHA = '659b59e63b2bd5d8927c9f4f162345c3b2f3425a64356cebc8227a6e6d73c6b5';
+const ORIGINAL_SHA = 'f74e7e0a1dc21be7f003d691ae308396ccdee10d2a681af85c7cff5cad6558d5';
 
 const icons = (page) =>
   page.evaluate(() => [...document.querySelectorAll('link[rel~="icon"]')].map((l) => l.getAttribute('href')));
