@@ -8,7 +8,10 @@
 //    끝 커밋의 배포가 앞 커밋들의 변경까지 함께 싣고 나가므로 건너뛰어도 빠지는 것이 없다.
 // 2. master 끝을 **확인하지 못하면 실패로 끝낸다** — 판정을 못 한 것을 "건너뜀"으로 세면 진짜
 //    배포가 조용히 안 나간다. 사람이 보게 멈춘다.
-// 3. 비교 기준(마지막으로 **deploy 잡이 실제로 성공한** 커밋)이 없으면 배포한다.
+// 3. 비교 기준(마지막으로 **deploy 잡이 실제로 성공한** 커밋)이 이 실행의 커밋과 **같으면** 이미 배포된
+//    것이니 다시 배포하지 않는다. 장애 뒤 같은 push에 CI가 두 번 돌아 배포 실행이 두 번 생겼다(2026-10-08).
+//    같은 커밋을 일부러 다시 배포해야 하면 빈 커밋을 하나 올린다.
+// 3-1. 비교 기준이 없으면 배포한다.
 // 4. 비교 결과가 0건이면 "비교가 안 됐다"로 보고 배포한다(§21-1).
 // 5. 문서(.md·_docs/·.claude/)만 바뀌었으면 배포하지 않는다(COMMON_STANDARDS §23).
 import { appendFileSync } from 'node:fs';
@@ -26,6 +29,9 @@ export function decideDeploy({ now, tip, last, changed = [] }) {
       deploy: false,
       reason: `이 실행의 커밋(${now.slice(0, 7)})은 지금 master 끝(${tip.slice(0, 7)})이 아니다 — 더 새 커밋의 배포가 맡으므로 배포하지 않는다`,
     };
+  }
+  if (last === now) {
+    return { deploy: false, reason: `이 커밋(${now.slice(0, 7)})은 이미 배포됐다 — 같은 커밋의 중복 실행이라 다시 배포하지 않는다` };
   }
   if (!last) return { deploy: true, reason: '기준이 될 배포 이력이 없다 — 배포한다' };
   const files = changed.filter(Boolean);

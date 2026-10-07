@@ -34,6 +34,11 @@ describe('decideDeploy', () => {
     const r = decideDeploy({ now: B, tip: B, last: L, changed: ['README.md', '_docs/x.md', '.claude/rules/app.md', ''] });
     expect(r.deploy).toBe(false);
   });
+  test('같은 커밋이 이미 배포됐으면(중복 실행) 다시 배포하지 않는다', () => {
+    const r = decideDeploy({ now: B, tip: B, last: B, changed: [] });
+    expect(r.deploy).toBe(false);
+    expect(r.reason).toContain('이미 배포');
+  });
   test('비교 기준이 없거나 비교 결과가 0건이면 배포한다(§21-1)', () => {
     expect(decideDeploy({ now: B, tip: B, last: '', changed: [] }).deploy).toBe(true);
     expect(decideDeploy({ now: B, tip: B, last: L, changed: [''] }).deploy).toBe(true);
