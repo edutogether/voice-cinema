@@ -16,7 +16,7 @@ const REQUIRED = [
   '/index.html',
   '/privacy.html',
   '/icons/studio-microphone.png',
-  '/icons/favicon-edutogether.png',
+  '/icons/favicon-inky.png',
   '/brands/cgv.svg',
   '/brands/education.png',
   '/brands/inky.png',

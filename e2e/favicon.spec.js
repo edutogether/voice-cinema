@@ -1,5 +1,5 @@
-// 탭·즐겨찾기 아이콘은 같이교육 로고 하나로 고정한다(COMMON_STANDARDS §33, 2026-10-07 Bumm님 지시).
-// 원본은 Calendar의 favicon-black.png 그대로다 — 새로 그리지 않는다.
+// 탭·즐겨찾기 아이콘은 InKY 로고의 노란 카메라 하나로 고정한다(COMMON_STANDARDS §33, 2026-10-07 Bumm님 지시).
+// 팀장이 InKY 로고 원본에서 원본 화소 그대로 잘라 둔 세 앱 공용 64px 파일이다 — 새로 그리지 않는다.
 //
 // 예전에는 탭이 가려지거나 창이 포커스를 잃으면 아이콘을 회색으로 바꿔 끼웠다. 그 동작은
 // 폐기됐다. 즐겨찾기에 넣을 때와 탭에 뜰 때 늘 같은 아이콘이어야 하므로, 탭을 숨겼다
@@ -7,9 +7,9 @@
 import { test, expect } from '@playwright/test';
 import crypto from 'node:crypto';
 
-const ICON = '/icons/favicon-edutogether.png';
-// Calendar dist/favicon-black.png(64×64 투명 PNG)의 SHA-256. 라이브 Calendar 파일과도 같다(2026-10-07 대조).
-const ORIGINAL_SHA = '31cb992ece2227d4884dc6947a603f07ce0d64b4b2e06025c8cdf78b08c5faf2';
+const ICON = '/icons/favicon-inky.png';
+// 공용 inky-camera-64.png(64×64 투명 PNG)의 SHA-256. Poster Studio·InKY Calculator도 같은 파일을 쓴다.
+const ORIGINAL_SHA = '659b59e63b2bd5d8927c9f4f162345c3b2f3425a64356cebc8227a6e6d73c6b5';
 
 const icons = (page) =>
   page.evaluate(() => [...document.querySelectorAll('link[rel~="icon"]')].map((l) => l.getAttribute('href')));
@@ -23,7 +23,7 @@ const setHidden = (page, hidden) =>
   }, hidden);
 
 for (const path of ['/', '/privacy.html']) {
-  test(`${path} — 탭 아이콘은 같이교육 로고이고, 탭을 숨겼다 되돌려도 그대로다`, async ({ page }) => {
+  test(`${path} — 탭 아이콘은 InKY 노란 카메라이고, 탭을 숨겼다 되돌려도 그대로다`, async ({ page }) => {
     await page.goto(path);
     if (path === '/') await page.locator('#splash').waitFor({ state: 'detached' });
     await page.waitForLoadState('load');
@@ -40,7 +40,7 @@ for (const path of ['/', '/privacy.html']) {
   });
 }
 
-test('아이콘 파일은 Calendar와 같은 원본이다', async ({ request }) => {
+test('아이콘 파일은 공용 원본과 같다', async ({ request }) => {
   const r = await request.get(ICON);
   expect(r.status()).toBe(200);
   expect(r.headers()['content-type']).toContain('image/png');
