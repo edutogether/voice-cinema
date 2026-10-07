@@ -7,7 +7,8 @@
 import { test, expect } from '@playwright/test';
 import crypto from 'node:crypto';
 
-const ICON = '/icons/favicon-inky.png';
+// 주소 끝의 ?v=는 아이콘 그림을 바꿀 때마다 올린다 — 주소가 그대로면 브라우저가 예전 아이콘을 한동안 쓴다.
+const ICON = '/icons/favicon-inky.png?v=20261008';
 // 공용 inky-camera-64.png(64×64 투명 PNG)의 SHA-256. Poster Studio·InKY Calculator도 같은 파일을 쓴다.
 const ORIGINAL_SHA = 'f74e7e0a1dc21be7f003d691ae308396ccdee10d2a681af85c7cff5cad6558d5';
 
