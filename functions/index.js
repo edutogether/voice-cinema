@@ -60,7 +60,10 @@ const app = express();
 // 신뢰해 클라이언트가 앞에 가짜 값을 붙여도 무시한다.
 app.set('trust proxy', 1);
 
-app.get('/', (req, res) => res.json({ ok: true, service: 'inky-voice-cinema' }));
+// commit: 지금 배포된 커밋(2026-10-08). 배포 잡이 functions/.env에 DEPLOY_COMMIT로 남기고, 매시 도는
+// 배포 대조(deploy.yml)가 이 값을 master 끝과 비교해 뒤처졌으면 다시 배포한다. 표시를 남기지 않은
+// 배포(로컬 배포 등)에서는 null이고, 대조는 그것을 "확인 안 됨 → 다시 배포"로 센다.
+app.get('/', (req, res) => res.json({ ok: true, service: 'inky-voice-cinema', commit: process.env.DEPLOY_COMMIT || null }));
 
 // 종합감사(2026-09-02) 발견 반영: 예전엔 express.json()이 라우트보다 먼저
 // 전역 등록돼 있어, 토큰/App Check/레이트리밋 검사보다 28MB 본문 파싱이

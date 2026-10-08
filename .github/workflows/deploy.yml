@@ -10,11 +10,29 @@ name: Deploy Backend
 #
 # CI(lint+test+e2e) 워크플로우가 통과한 뒤에만 이어서 실행되도록 workflow_run으로 연결한다
 # (push 트리거를 따로 두면 테스트 없이 배포될 수 있어 이렇게 묶었다).
+#
+# 2026-10-08: 매시 대조와 수동 실행을 같은 파일에 더했다. 라이브(Hosting·Functions에 배포 잡이 남긴 배포
+# 커밋)가 master 끝보다 뒤처졌거나 다르면 master 끝을 같은 배포 잡으로 다시 배포한다 — GitHub 장애로 묶여
+# 지울 수 없는 옛 실행이 나중에 풀려 옛 커밋을 덮어써도 한 시간 안에 되돌린다. 같은 파일·같은 동시성
+# 그룹이라 배포 경로가 하나다.
 on:
   workflow_run:
     workflows: ['CI']
     types: [completed]
     branches: [master]
+  # 정각이 아니라 17분 — GitHub은 정각에 몰리는 예약 실행을 늦추거나 빠뜨린다.
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '판정만 하고 배포하지 않는다'
+        type: boolean
+        default: true
+      pretend_live:
+        description: '검사용 — 라이브 커밋을 이 값으로 가정한다(비우면 실제 라이브를 읽는다)'
+        type: string
+        default: ''
 
 # 종합감사(2026-09-02) 발견 반영: concurrency 그룹이 없어서 연속 push로 CI가
 # 두 번 이상 겹쳐 끝나면 이 워크플로우도 겹쳐 실행돼 배포 순서가 역전(늦게
@@ -25,8 +43,9 @@ on:
 #
 # 그룹 이름을 2026-10-08에 바꿨다: 2026-10-07 GitHub 장애로 옛 그룹(deploy-voice-cinema)에
 # queued 실행이 잡 0개로 묶였고, 취소·강제 취소·재실행·삭제가 전부 거부돼 지울 수 없었다.
-# 그 뒤 이 워크플로의 새 실행이 그 그룹 뒤에 줄을 서서 움직이지 않았다. 옛 그룹에 남은 실행이
-# 나중에 풀려도 tools/deploy-gate.js가 "master 끝이 아니다"로 건너뛴다.
+# 그 뒤 이 워크플로의 새 실행이 그 그룹 뒤에 줄을 서서 움직이지 않았다. 옛 그룹에 남은 실행 셋 중
+# 75ef607의 둘은 풀려도 tools/deploy-gate.js가 "master 끝이 아니다"로 건너뛰지만, a357c51의 하나
+# (37642382427)는 그 판정이 생기기 전 워크플로로 만들어져 옛 커밋을 배포할 수 있다 — 매시 대조가 되돌린다.
 concurrency:
   group: deploy-voice-cinema-v2
 
@@ -43,50 +62,72 @@ jobs:
   # 테스트를 건너뛰면 바로 그 회귀를 못 잡는다. 그래서 배포 잡에만 건다.
   #
   # paths-ignore를 쓸 수 없다 — 이 워크플로우는 push가 아니라 workflow_run으로
-  # 걸려 있고 그 트리거는 경로 필터를 지원하지 않는다. 대신 **마지막으로 실제 배포에
-  # 성공한 커밋**과 비교한다. 부모 커밋(HEAD~1)과 비교하면 여러 커밋을 한 번에
-  # 푸시했을 때 앞 커밋의 코드 변경을 놓친다.
+  # 걸려 있고 그 트리거는 경로 필터를 지원하지 않는다. 대신 **지금 라이브에 배포된
+  # 커밋**과 비교한다(2026-10-08부터 — 그전에는 실행 기록의 마지막 배포). 부모 커밋(HEAD~1)과
+  # 비교하면 여러 커밋을 한 번에 푸시했을 때 앞 커밋의 코드 변경을 놓친다.
   changes:
     name: 배포가 필요한 변경인지 판정
     runs-on: ubuntu-latest
-    # 배포는 이 저장소의 master에 대한 push로 끝난 CI에서만 돈다(2026-10-05, 보안 지적 대응).
+    # CI 뒤의 배포는 이 저장소의 master에 대한 push로 끝난 CI에서만 돈다(2026-10-05, 보안 지적 대응).
+    # 매시 대조·수동 실행은 master에서만 돌고, master 끝의 CI 통과를 판정에서 따로 확인한다.
     # deploy 잡은 needs: changes라 이 조건을 그대로 따른다.
     if: >-
+      (github.event_name != 'workflow_run' && github.ref == 'refs/heads/master') ||
+      (github.event_name == 'workflow_run' &&
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_branch == 'master' &&
-      github.event.workflow_run.head_repository.full_name == github.repository
+      github.event.workflow_run.head_repository.full_name == github.repository)
     outputs:
       deploy_needed: ${{ steps.judge.outputs.deploy_needed }}
+      sha: ${{ steps.judge.outputs.sha }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           fetch-depth: 0
       # 판단은 tools/deploy-gate.js가 한다(단위 검사 test/deploy-gate.test.js). 여기서는 값만 모은다.
-      # 2026-10-08: 이 실행의 커밋이 지금 master 끝이 아니면 배포하지 않는다 — GitHub 장애로 묶인 옛
-      # 실행이 나중에 풀려 새 배포를 덮어쓰는 것을 막는다. 끝을 못 구하면 실패로 끝난다.
-      # 비교 기준은 "마지막으로 성공한 워크플로"가 아니라 "deploy 잡이 실제로 성공한 실행"이다 —
-      # 건너뛴 실행도 워크플로는 성공으로 남아, 그것을 기준으로 삼으면 앞 커밋의 코드가 영영 안 나간다.
+      # - 이 실행의 커밋(NOW): CI 뒤에는 그 CI의 커밋, 매시 대조·수동 실행에는 지금 master 끝.
+      #   CI 뒤의 실행도 지금 master 끝이 아니면 배포하지 않는다 — 묶인 옛 실행이 새 배포를 덮어쓰지 않게.
+      # - master 끝의 CI: 매시 대조·수동 실행은 master push로 돈 CI가 하나라도 통과했는지 본다.
+      # - 라이브 배포 커밋: 배포 잡이 남긴 표시(Hosting /version.json, Functions GET /의 commit).
+      #   못 읽으면(연결 실패·5xx) tools/live-commit.js가 실패로 끝낸다. 수동 실행의 pretend_live가 이 값을 대신한다.
+      # 끝이나 CI 결과를 못 구하면 판정이 실패로 끝난다 — "건너뜀"으로 세지 않는다.
       - id: judge
         env:
           GH_TOKEN: ${{ github.token }}
-          NOW: ${{ github.event.workflow_run.head_sha }}
+          EVENT: ${{ github.event_name }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          DRY_RUN: ${{ inputs.dry_run && 'true' || 'false' }}
+          PRETEND_LIVE: ${{ inputs.pretend_live }}
         run: |
           set -e
           TIP=$(git ls-remote origin refs/heads/master | cut -f1 || true)
-          LAST=""
-          for id in $(gh run list --workflow "Deploy Backend" --status success --branch master --limit 30 --json databaseId -q '.[].databaseId' 2>/dev/null || true); do
-            sha=$(gh run view "$id" --json headSha,jobs -q 'select(any(.jobs[]; .name == "deploy" and .conclusion == "success")) | .headSha' 2>/dev/null || true)
-            if [ -n "$sha" ]; then LAST=$sha; break; fi
-          done
-          CHANGED=""
-          if [ -n "$LAST" ] && git cat-file -e "$LAST^{commit}" 2>/dev/null; then
-            CHANGED=$(git diff --name-only "$LAST" "$NOW")
+          if [ "$EVENT" = "workflow_run" ]; then
+            NOW=$RUN_SHA
+            CI=success # 이 잡의 if가 CI 성공으로 끝난 실행만 들인다
           else
-            LAST=""
+            NOW=$TIP
+            CI=""
+            if [ -n "$TIP" ]; then
+              git fetch --quiet origin master
+              CI=$(gh run list --workflow CI --commit "$TIP" --limit 20 --json event,headBranch,status,conclusion -q '[.[] | select(.event == "push" and .headBranch == "master")] | if length == 0 then "none" elif any(.[]; .conclusion == "success") then "success" elif any(.[]; .status != "completed") then "in_progress" else .[0].conclusion end')
+            fi
           fi
-          TIP="$TIP" LAST="$LAST" CHANGED="$CHANGED" node tools/deploy-gate.js
+          if [ -n "$PRETEND_LIVE" ]; then
+            P=$(git rev-parse --verify "$PRETEND_LIVE^{commit}")
+            echo "검사용 입력: 라이브를 $P로 가정한다"
+            LIVE_HOSTING=$P
+            LIVE_FUNCTIONS=$P
+          else
+            LIVE_HOSTING=$(node tools/live-commit.js https://voice.edutogether.kr/version.json)
+            LIVE_FUNCTIONS=$(node tools/live-commit.js https://asia-northeast3-inky-voice-cinema.cloudfunctions.net/voiceCinema/)
+          fi
+          CHANGED=""
+          if [ -n "$NOW" ] && [ -n "$LIVE_HOSTING" ] && [ "$LIVE_HOSTING" = "$LIVE_FUNCTIONS" ] && git cat-file -e "$LIVE_HOSTING^{commit}" 2>/dev/null; then
+            CHANGED=$(git diff --name-only "$LIVE_HOSTING" "$NOW")
+          fi
+          NOW="$NOW" TIP="$TIP" CI="$CI" LIVE_HOSTING="$LIVE_HOSTING" LIVE_FUNCTIONS="$LIVE_FUNCTIONS" CHANGED="$CHANGED" node tools/deploy-gate.js
 
   deploy:
     needs: changes
@@ -99,7 +140,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ needs.changes.outputs.sha }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
@@ -110,6 +151,15 @@ jobs:
       # 이 단계가 없으면 hosting 배포가 빈 폴더를 올리거나 아예 실패한다.
       - run: npm ci
       - run: npm run build
+      # 배포 커밋 표시(2026-10-08) — 매시 대조가 이 두 값을 master 끝과 비교한다. 빌드 뒤에 쓴다:
+      # dist/version.json은 빌드 산출물이 아니라 프리캐시 목록·서비스워커 캐시 이름에 들지 않고, 그래서
+      # 커밋이 바뀌어도 부스 기기 캐시를 건드리지 않는다. functions/.env는 firebase deploy가 함수 환경변수로 넘긴다.
+      - name: 배포 커밋 표시 남기기
+        env:
+          SHA: ${{ needs.changes.outputs.sha }}
+        run: |
+          printf 'DEPLOY_COMMIT=%s\n' "$SHA" > functions/.env
+          printf '{"commit":"%s"}\n' "$SHA" > dist/version.json
       - uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
         with:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
@@ -124,6 +174,8 @@ jobs:
       # 이 파이프라인이 자동으로 잡을 방법이 없었다 — Hosting과 Functions가 실제로
       # 살아있는지 배포 직후 최소한으로 확인한다.
       - name: 배포 후 라이브 스모크 검증
+        env:
+          SHA: ${{ needs.changes.outputs.sha }}
         run: |
           set -e
           hosting_status=$(curl -s -o /dev/null -w '%{http_code}' https://voice.edutogether.kr/)
@@ -141,3 +193,12 @@ jobs:
           sw=$(curl -s https://voice.edutogether.kr/sw.js)
           echo "$sw" | grep -q '/vendor/ffmpeg-core/ffmpeg-core.wasm' || { echo "sw.js 프리캐시 목록에 엔진이 없음"; exit 1; }
           echo "$sw" | grep -q '/index.html' || { echo "sw.js 프리캐시 목록에 진입점이 없음"; exit 1; }
+          # 라이브 두 곳이 방금 배포한 커밋을 가리키는지 본다 — 매시 대조가 믿는 값이 실제로 바뀌었는지.
+          # 새 함수 버전이 요청을 넘겨받기까지 잠깐 걸릴 수 있어 몇 번 다시 본다.
+          for i in 1 2 3 4 5 6; do
+            h=$(node tools/live-commit.js https://voice.edutogether.kr/version.json || true)
+            f=$(node tools/live-commit.js https://asia-northeast3-inky-voice-cinema.cloudfunctions.net/voiceCinema/ || true)
+            if [ "$h" = "$SHA" ] && [ "$f" = "$SHA" ]; then echo "라이브 배포 커밋 표시 확인: $SHA"; break; fi
+            if [ "$i" = 6 ]; then echo "라이브 배포 커밋 표시가 $SHA가 아님 — Hosting ${h:-없음} · Functions ${f:-없음}"; exit 1; fi
+            sleep 10
+          done

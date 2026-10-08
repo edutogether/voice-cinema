@@ -60,8 +60,9 @@ export default [
       globals: {
         process: 'readonly', console: 'readonly',
         window: 'readonly', document: 'readonly', getComputedStyle: 'readonly',
-        setInterval: 'readonly', clearInterval: 'readonly',
+        setInterval: 'readonly', clearInterval: 'readonly', setTimeout: 'readonly',
         URL: 'readonly', location: 'readonly',
+        fetch: 'readonly', AbortSignal: 'readonly', // live-commit.js가 라이브 배포 커밋을 읽는다
       },
     },
   },

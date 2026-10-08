@@ -35,6 +35,9 @@ InKY Festival(제4회 인천어린이청소년영화제, **2026-11-14**, 인천 
 - **`master`에 push하면 끝이다.** `CI`(린트+유닛+E2E)가 성공한 뒤에만 `deploy.yml`이
   `storage,functions` → `hosting:voice-cinema` 순으로 배포한다. 로컬 `firebase deploy` 우회는
   필요 없다. **CI가 실패하면 아무것도 배포되지 않는다.**
+- 🟠 **같은 `deploy.yml`이 매시 17분에 라이브를 master 끝과 대조한다**(2026-10-08) — 라이브 배포 커밋이
+  뒤처졌거나 다르면 master 끝을 다시 배포한다. **master에 없는 코드를 로컬에서 배포하면 한 시간 안에
+  되돌려진다.** 구조와 이유는 `app.md`의 "배포 대조" 절.
 - **`deploy.yml`·`firebase.json`·`.firebaserc`의 `voice-cinema`는 주소가 아니라 배포 대상
   식별자다.** 주소를 바꾼다고 이것을 건드리면 배포가 깨진다.
 - **되돌리기**: `git revert` 후 push하면 CI를 거쳐 복구된다. 다만 프론트가 바뀌면 부스 기기가
@@ -99,10 +102,10 @@ git rev-list --count voice-cinema-freeze-20260910-audited-100..master
   재시도 판단)은 `src/logic.ts`. 이쪽 로직을 고칠 땐 여기부터 본다.
 - **계약 테스트** `test/contract.test.js` — 두 소스 파일을 직접 읽어 `BOOTH_TOKEN`, 업로드 타임아웃,
   자동삭제 시각과 고지문이 서로 맞는지 대조한다. **어긋나면 테스트를 고치지 말고 값을 맞춘다.**
-- 🟢 **유닛 58개**(루트 19 + `functions/` 39, vitest). `functions/`는 자체 `node_modules`를 가진
+- 🟢 **유닛 104개**(루트 50 + `functions/` 54, vitest, 2026-10-08 기준). `functions/`는 자체 `node_modules`를 가진
   **독립 패키지**라 루트와 따로 설치·실행한다. 루트 `vitest.config.js`의 `include`가 `functions/`를
   아예 안 건드리게 좁혀둔 것은 그 안 서드파티 테스트가 딸려 들어오는 걸 막기 위한 것이니 넓히지 말 것.
-- 🟢 **E2E 25개**(`e2e/` 7개 파일, Playwright) — 진짜 Chromium을 가짜 마이크로 띄워 **녹음→ffmpeg.wasm 실제
+- 🟢 **E2E 136개**(`e2e/` 28개 파일, Playwright, 2026-10-08 기준) — 진짜 Chromium을 가짜 마이크로 띄워 **녹음→ffmpeg.wasm 실제
   합성→업로드(가로채서 프로덕션에 안 쌓이게 함)→QR/폴백**까지 끝까지 돌린다. 여기에 오프라인 부팅,
   세션 초기화, 합성 실패 경로, 새 배포의 즉시 반영, 모바일 카드 재생·강조, PC 호버, 스플래시가 붙는다.
   **클립을 실제 영상으로 교체하면 다시 돌릴 것** — 코드가 `v.duration`을 그대로 읽어 길이 변화는
