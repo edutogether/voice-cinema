@@ -68,3 +68,18 @@ test('장르 목록: functions/validate.js와 src/genres.ts가 같은 장르를 
   expect(앱.length).toBeGreaterThan(0); // 아무것도 못 읽은 채 같다고 하지 않게(§21-1)
   expect(서버).toEqual(앱);
 });
+
+// 2026-10-09: 배포 도구는 package-lock으로 하위 의존성까지 잠근 로컬 바이너리만 쓴다. 배포 단계에서 npx로 받으면
+// 자격증명이 깔린 뒤에 잠기지 않은 하위 의존성을 내려받는다.
+test('배포 도구: firebase-tools를 정확한 버전으로 잠그고 배포는 로컬 바이너리로만 한다', () => {
+  const 버전 = JSON.parse(read('package.json')).devDependencies['firebase-tools'];
+  expect(버전, 'package.json에 범위(^·~)가 아닌 정확한 버전').toMatch(/^\d+\.\d+\.\d+$/);
+  const 잠금 = JSON.parse(read('package-lock.json')).packages['node_modules/firebase-tools'];
+  expect(잠금.version).toBe(버전);
+  expect(잠금.integrity).toMatch(/^sha512-/);
+  const 배포 = read('.github/workflows/deploy.yml');
+  const 명령 = [...배포.matchAll(/^\s+- run: (.*firebase.* deploy .*)$/gm)].map((m) => m[1]);
+  expect(명령.length, '배포 명령을 못 찾음').toBe(2); // storage,functions와 hosting
+  for (const c of 명령) expect(c).toMatch(/^node_modules\/\.bin\/firebase deploy /);
+  expect(배포).not.toMatch(/npx[^\n]*firebase-tools/);
+});
