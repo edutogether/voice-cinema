@@ -528,6 +528,10 @@ master의 배포 차이는 `functions/package-lock.json`). 조사해 보니 **`7
 - **구조**: 같은 `deploy.yml`에 `schedule`(매시 17분)과 `workflow_dispatch`를 더했다. 같은 파일·같은 동시성 그룹
   (`deploy-voice-cinema-v2`)·같은 deploy 잡이라 **배포 경로가 하나다.** 판정은 `tools/deploy-gate.js`, 라이브 읽기는
   `tools/live-commit.js`(단위 검사 `test/deploy-gate.test.js`·`test/live-commit.test.js`)
+- 🟠 **판정 잡은 워크플로 자신의 커밋(기본 브랜치)만 체크아웃한다** — CI가 돈 커밋(`workflow_run.head_sha`)을 받아
+  그 안의 도구를 실행하면 CodeQL이 "캐시 오염"(high)으로 지적한다. 예약·수동 실행이 붙으면서 기본 브랜치 맥락이
+  생겼기 때문이다(PR #11에서 실제로 걸림). 그 커밋은 비교 대상 값으로만 쓰고 `fetch-depth: 0` 이력에서 찾는다.
+  `ref:`를 다시 넣지 말 것
 - **배포 커밋 표시**: deploy 잡이 빌드 뒤에 `dist/version.json`(`{"commit":…}`)과 `functions/.env`(`DEPLOY_COMMIT`)를
   쓴다. 함수는 `GET /`에 `commit`으로 돌려준다(`functions/test/health-commit.test.js`). 배포 뒤 스모크가 두 값이 방금
   배포한 커밋인지 본다. 커밋은 공개 저장소의 해시뿐이라 개인정보·비밀값이 아니다
@@ -540,8 +544,8 @@ master의 배포 차이는 `functions/package-lock.json`). 조사해 보니 **`7
 - **비교 기준을 실행 기록에서 라이브로 바꾼 이유**: 매시 대조의 실행이 하루 24개씩 "성공"으로 기록을 채워 실행 기록에서
   마지막 배포를 찾을 수 없고, 기록 밖에서 라이브가 바뀐 것(묶여 있던 옛 실행·로컬 배포)도 못 본다
 - **수동 실행**: `dry_run`(기본 켬)은 판정만 남긴다. `pretend_live`에 커밋을 넣으면 라이브를 그 커밋으로 가정한다 —
-  라이브를 일부러 옛것으로 만들지 않고 "다르면 배포" 경로를 확인하는 용도다
-  (`gh workflow run deploy.yml --ref master -f dry_run=true -f pretend_live=75ef607`)
+  라이브를 일부러 옛것으로 만들지 않고 "다르면 배포" 경로를 확인하는 용도다. **40자리 커밋 해시만 받는다**(짧은 해시·
+  가지 이름은 실패). 예: `gh workflow run deploy.yml --ref master -f dry_run=true -f pretend_live=75ef6070c263cab1269ecdeb295669ae862958be`
 - 🟢 **동결(11-07~11-14) 중에도 무해하다** — master 끝이 곧 동결본이라 평소엔 "이미 이 커밋"으로 아무것도 안 하고,
   문서 커밋은 "문서만 바뀌었다"로 건너뛴다. 라이브가 옛것으로 덮였을 때만 동결본을 다시 올리는데, 빌드가 결정적이라
   산출물·서비스워커 캐시 이름이 동결 때와 같아 **덮이기 전 상태로 돌아갈 뿐 예열을 깨지 않는다**

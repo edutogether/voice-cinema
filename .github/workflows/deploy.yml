@@ -82,9 +82,11 @@ jobs:
       deploy_needed: ${{ steps.judge.outputs.deploy_needed }}
       sha: ${{ steps.judge.outputs.sha }}
     steps:
+      # 판정 잡은 이 워크플로 자신의 커밋(기본 브랜치)만 받아 그 안의 판정 도구를 실행한다 — CI가 돈 커밋의
+      # 코드를 여기서 실행하지 않는다(2026-10-08, CodeQL 캐시 오염 지적). 그 커밋은 비교 대상일 뿐이고,
+      # fetch-depth: 0이라 master 이력 안에서 찾을 수 있다.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           fetch-depth: 0
       # 판단은 tools/deploy-gate.js가 한다(단위 검사 test/deploy-gate.test.js). 여기서는 값만 모은다.
       # - 이 실행의 커밋(NOW): CI 뒤에는 그 CI의 커밋, 매시 대조·수동 실행에는 지금 master 끝.
@@ -115,16 +117,20 @@ jobs:
             fi
           fi
           if [ -n "$PRETEND_LIVE" ]; then
-            P=$(git rev-parse --verify "$PRETEND_LIVE^{commit}")
-            echo "검사용 입력: 라이브를 $P로 가정한다"
-            LIVE_HOSTING=$P
-            LIVE_FUNCTIONS=$P
+            if ! printf '%s' "$PRETEND_LIVE" | grep -Eqx '[0-9a-f]{40}'; then
+              echo "::error::pretend_live는 40자리 커밋 해시여야 한다"
+              exit 1
+            fi
+            echo "검사용 입력: 라이브를 $PRETEND_LIVE로 가정한다"
+            LIVE_HOSTING=$PRETEND_LIVE
+            LIVE_FUNCTIONS=$PRETEND_LIVE
           else
             LIVE_HOSTING=$(node tools/live-commit.js https://voice.edutogether.kr/version.json)
             LIVE_FUNCTIONS=$(node tools/live-commit.js https://asia-northeast3-inky-voice-cinema.cloudfunctions.net/voiceCinema/)
           fi
           CHANGED=""
-          if [ -n "$NOW" ] && [ -n "$LIVE_HOSTING" ] && [ "$LIVE_HOSTING" = "$LIVE_FUNCTIONS" ] && git cat-file -e "$LIVE_HOSTING^{commit}" 2>/dev/null; then
+          if [ -n "$NOW" ] && [ -n "$LIVE_HOSTING" ] && [ "$LIVE_HOSTING" = "$LIVE_FUNCTIONS" ] \
+            && git cat-file -e "$NOW^{commit}" 2>/dev/null && git cat-file -e "$LIVE_HOSTING^{commit}" 2>/dev/null; then
             CHANGED=$(git diff --name-only "$LIVE_HOSTING" "$NOW")
           fi
           NOW="$NOW" TIP="$TIP" CI="$CI" LIVE_HOSTING="$LIVE_HOSTING" LIVE_FUNCTIONS="$LIVE_FUNCTIONS" CHANGED="$CHANGED" node tools/deploy-gate.js
