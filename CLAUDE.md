@@ -36,8 +36,8 @@ InKY Festival(제4회 인천어린이청소년영화제, **2026-11-14**, 인천 
   `storage,functions` → `hosting:voice-cinema` 순으로 배포한다. 로컬 `firebase deploy` 우회는
   필요 없다. **CI가 실패하면 아무것도 배포되지 않는다.**
 - 🟠 **같은 `deploy.yml`이 매시 23분에 라이브를 master 끝과 대조한다**(2026-10-08) — 라이브 배포 커밋이
-  뒤처졌거나 다르면 master 끝을 다시 배포한다. **master에 없는 코드를 로컬에서 배포하면 한 시간 안에
-  되돌려진다.** 구조와 이유는 `app.md`의 "배포 대조" 절.
+  뒤처졌거나 다르면 master 끝을 다시 배포한다. **master에 없는 코드를 로컬에서 배포하면 다음 대조 때
+  되돌려진다**(예약 실행 지연은 실측 중). 구조와 이유는 `app.md`의 "배포 대조" 절.
 - **`deploy.yml`·`firebase.json`·`.firebaserc`의 `voice-cinema`는 주소가 아니라 배포 대상
   식별자다.** 주소를 바꾼다고 이것을 건드리면 배포가 깨진다.
 - **되돌리기**: `git revert` 후 push하면 CI를 거쳐 복구된다. 다만 프론트가 바뀌면 부스 기기가
