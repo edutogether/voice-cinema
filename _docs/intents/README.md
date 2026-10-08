@@ -28,6 +28,7 @@
 |---|---|---|---|---|
 | 2026-09-08 | [react-typescript-migration](2026-09-08-react-typescript-migration/intent.md) | 2 | done | 프론트를 바닐라 JS에서 Vite+React+TypeScript로 다시 짜고, 전후 화면을 기계 대조해 동일함을 증명 (**사후 작성**) |
 | 2026-09-09 | [domain-migration](2026-09-09-domain-migration/intent.md) | 2 | done | 정본 주소를 `voice-cinema.web.app`에서 `voice.edutogether.kr`로 이전 |
+| 2026-10-08 | [drama-scenes](2026-10-08-drama-scenes/intent.md) | 2 | accepted(기획) | 장면 더빙 2.0 — 상대가 먼저 말하고 3·2·1 뒤에 외치는 15초 장면, 장르별 콘티·제작·앱 계획. 제작은 대표님 확정 뒤 |
 
 ## 폴더 규칙
 
