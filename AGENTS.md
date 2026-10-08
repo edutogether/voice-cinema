@@ -32,7 +32,7 @@
 ## 배포·산출물
 
 - 정식 주소는 `voice.edutogether.kr`, Hosting 대상 사이트는 `voice-cinema`다. 프로젝트 기본 사이트 `inky-voice-cinema`와 혼동하지 않는다. 배포 대상은 빌드된 `dist/`이며 `public/`의 파일은 그대로 공개되므로 내부 자료를 넣지 않는다.
-- 이 저장소의 운영 배포 가지는 `master`다. CI 통과 후 `storage,functions` → `hosting:voice-cinema` 순으로 배포된다. 같은 `deploy.yml`이 매시 17분에 라이브 배포 커밋(`/version.json`, 함수 `GET /`의 `commit`)을 master 끝과 대조해 뒤처졌으면 다시 배포한다 — master에 없는 코드를 로컬에서 배포하면 한 시간 안에 master 끝으로 되돌려진다. 직접 push·병합·배포 승인은 상위 규칙을 따른다. 행사 전에는 기존 `voice-cinema.web.app` 주소를 끄지 않으며, 2026-11-07 마지막 배포 이후 11-14 행사 종료까지의 배포 동결을 유지한다.
+- 이 저장소의 운영 배포 가지는 `master`다. CI 통과 후 `storage,functions` → `hosting:voice-cinema` 순으로 배포된다. 같은 `deploy.yml`이 매시 23분에 라이브 배포 커밋(`/version.json`, 함수 `GET /`의 `commit`)을 master 끝과 대조해 뒤처졌으면 다시 배포한다 — master에 없는 코드를 로컬에서 배포하면 한 시간 안에 master 끝으로 되돌려진다. 직접 push·병합·배포 승인은 상위 규칙을 따른다. 행사 전에는 기존 `voice-cinema.web.app` 주소를 끄지 않으며, 2026-11-07 마지막 배포 이후 11-14 행사 종료까지의 배포 동결을 유지한다.
 - 폰트 원본·라이선스는 `fonts/`에 보존하고 배포에는 서브셋만 포함한다. `vite.config.ts`의 폰트 서브셋 생성 → 프리캐시 생성 순서를 유지한다.
 
 ## 검사·운영 회귀

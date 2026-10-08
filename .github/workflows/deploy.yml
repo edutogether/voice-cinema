@@ -20,9 +20,11 @@ on:
     workflows: ['CI']
     types: [completed]
     branches: [master]
-  # 정각이 아니라 17분 — GitHub은 정각에 몰리는 예약 실행을 늦추거나 빠뜨린다.
+  # 정각이 아니라 23분 — GitHub은 정각에 몰리는 예약 실행을 늦추거나 빠뜨린다.
+  # 처음 넣은 17분은 GitHub에 등록되지 않아 2026-10-08 10:17Z~13:17Z 네 번 모두 실행 0건이었다 —
+  # 분을 바꿔 다시 등록시켰다(app.md "배포 대조" 절).
   schedule:
-    - cron: '17 * * * *'
+    - cron: '23 * * * *'
   workflow_dispatch:
     inputs:
       dry_run:

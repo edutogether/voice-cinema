@@ -525,7 +525,7 @@ master의 배포 차이는 `functions/package-lock.json`). 조사해 보니 **`7
 그대로 배포해 함수 의존성과 파비콘 주소(`?v=` 이전)를 되돌린다. **지울 수 없는 실행이 언제 풀릴지 모르므로, 막는 대신
 결과를 되돌리기로 했다** — 카드 재생 감시와 같은 원리다.
 
-- **구조**: 같은 `deploy.yml`에 `schedule`(매시 17분)과 `workflow_dispatch`를 더했다. 같은 파일·같은 동시성 그룹
+- **구조**: 같은 `deploy.yml`에 `schedule`(매시 23분)과 `workflow_dispatch`를 더했다. 같은 파일·같은 동시성 그룹
   (`deploy-voice-cinema-v2`)·같은 deploy 잡이라 **배포 경로가 하나다.** 판정은 `tools/deploy-gate.js`, 라이브 읽기는
   `tools/live-commit.js`(단위 검사 `test/deploy-gate.test.js`·`test/live-commit.test.js`)
 - 🟠 **판정 잡은 워크플로 자신의 커밋(기본 브랜치)만 체크아웃한다** — CI가 돈 커밋(`workflow_run.head_sha`)을 받아
@@ -555,6 +555,11 @@ master의 배포 차이는 `functions/package-lock.json`). 조사해 보니 **`7
   "표시 없음 → 배포", 스모크가 라이브 두 곳의 표시를 `4897803`으로 확인(화면 번들 `main-Dy5jp6f1.js`·서비스워커 캐시
   이름 그대로). 수동 실행 37758639636(드라이런): "이미 이 커밋 → 건너뜀". 수동 실행 37758705063(드라이런,
   `pretend_live`=`75ef607` 40자리): "뒤로 배포가 필요한 변경 10개 → 배포했을 것", deploy 잡 skipped
+- 🟠 **예약 실행이 GitHub에 등록되지 않을 수 있다**(2026-10-08 실제로 겪음) — 처음 넣은 `17 * * * *`는 병합(09:29Z)
+  뒤 10:17Z~13:17Z 네 번 모두 실행 0건이었다. 같은 파일의 수동 실행·CI 뒤 실행은 정상이고 워크플로는 active, GitHub
+  상태도 정상이었다. 병합 뒤 문서 커밋을 push했는데도(GitHub이 안내하는 "기본 가지 push로 재동기화") 살아나지 않아,
+  **cron의 분을 23으로 바꿔 다시 등록시켰다**(GitHub 커뮤니티 #185355에 같은 증상과 처방이 있다).
+  예약 실행이 다시 끊기면 `gh run list --workflow "Deploy Backend" --event schedule`로 먼저 확인하고 같은 처방을 쓴다
 - **GitHub은 저장소 활동이 60일 없으면 공개 저장소의 예약 실행을 끈다.** 행사 뒤 오래 손대지 않으면 꺼지는 것이 정상이다
 - 이 대조는 **라이브가 옛것이 된 뒤 최대 약 한 시간**을 남긴다. 그 사이를 줄이려면 묶인 실행을 지우는 수밖에 없는데,
   지금은 GitHub이 거부한다
