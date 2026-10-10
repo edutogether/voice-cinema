@@ -30,7 +30,7 @@
 | 2026-09-09 | [domain-migration](2026-09-09-domain-migration/intent.md) | 2 | done | 정본 주소를 `voice-cinema.web.app`에서 `voice.edutogether.kr`로 이전 |
 | 2026-10-08 | [deploy-reconcile](2026-10-08-deploy-reconcile/intent.md) | 2 | done | 예약 실행으로 라이브 배포 커밋을 master 끝과 대조해 뒤처졌으면 다시 배포 — 묶인 옛 실행 대비 (**사후 작성**) |
 | 2026-10-08 | [drama-scenes](2026-10-08-drama-scenes/intent.md) | 2 | dropped | 장면 더빙 2.0 첫 기획(6장르) — 10/11 대표님 재구성으로 대체. 소리·크레딧 단가·관문 결정은 이어 쓴다 |
-| 2026-10-11 | [scene-homage](2026-10-11-scene-homage/intent.md) | 2 | in-progress | 장면 더빙 2.0 다시 짜기 — 8장르 명장면 오마주, 장르마다 10초 한 편(6.5초 멈춤·녹음 4.0초). 그림·크레딧 0 |
+| 2026-10-11 | [scene-homage](2026-10-11-scene-homage/intent.md) | 2 | in-progress | 장면 더빙 2.0 다시 짜기 — 8장르 명장면 오마주, 장르마다 10초 한 편(5.0초 멈춤·녹음 3.5초 = 목소리 칸, 완성본 정확히 10.0초). 그림·크레딧 0 |
 
 ## 폴더 규칙
 
