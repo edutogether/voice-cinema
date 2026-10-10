@@ -8,6 +8,9 @@
 
 ### 2026-10-08 파비콘·배포 판정 — 지금 운영 기준점
 
+- 🟢 **미배포 화면 작업 없음 — master와 라이브가 같다**(10/10 확인). 원격 가지는 `master`와 조직 공통 `claude/cloud-session-setup`만
+  남겼다(나머지 8개는 커밋이 전부 master에 있어 지웠다). 아래 10/5 절의 «미배포»·«최종 시각 승인 대기»와 §4 표의
+  «로컬 시안»·«로컬은»은 당시 기록이다 — 그 작업(`codex/home-cinema-design` 등)은 master에 병합돼 PR #5(10/5) 이후 배포로 라이브가 됐다
 - 🟢 파비콘: InKY 노란 카메라(`/icons/favicon-inky.png?v=20261008`), 회색 전환 폐기(10/7~8, COMMON_STANDARDS §33)
 - 🟢 배포 판정: 지금 master 끝 커밋만 배포(`tools/deploy-gate.js`, PR #8 → `8057855fda2c5131308287855a2ee9724f25ddb3` 배포 성공).
   GitHub 장애로 묶인 옛 실행 중 `75ef607`의 둘은 풀려도 건너뛰지만, 37642382427(`a357c51`)은 판정이 생기기 전 워크플로라
@@ -18,6 +21,8 @@
   수동 실행 37758639636(같음 → 건너뜀)·37758705063(`pretend_live` 75ef607 → 배포 판정, 드라이런) 확인.
   🟠 예약 실행은 GitHub 지연으로 몇 시간에 한 번꼴이다(23분 재등록 뒤 첫 실행 37836091981 19:59Z·다음 37864914102 00:27Z,
   둘 다 "이미 이 커밋 → 건너뜀") — 그래서 아래 두 번은 손으로 돌린다
+- 🟢 보안 알림(10/10): Dependabot의 uuid 1건을 루트 `overrides`(gaxios → uuid `^11.1.1`)로 정리. 루트 `npm audit`의 남은 9건은
+  firebase-tools 안쪽이고 고칠 판이 없다 — `app.md` 절대 하면 안 되는 것의 두 항목
 - 🟢 배포 도구(10/9, 보안 지적 대응): firebase-tools를 루트 `devDependencies` 정확한 버전(15.32.1)·`package-lock.json`으로 잠그고,
   deploy 잡은 auth 전 `npm ci`로 받은 `node_modules/.bin/firebase`만 실행한다(`app.md` 절대 하면 안 되는 것).
   PR #12 병합 `dc9266668b0bb066e82c1ee6fffdbf6530cff1d5` → 배포 37822132820 성공(npx 0건, 캐시 이름 `80042aad331d` 그대로)

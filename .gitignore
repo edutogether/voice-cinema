@@ -1,4 +1,6 @@
 node_modules/
+# Codex가 저장소 안에 만드는 로컬 설정 — 권한은 ~/.codex/config.toml(전역)이 정한다(CONVENTIONS §7).
+.codex/
 # .claude/ 로컬 전용 경로 — CONVENTIONS §7 표준 목록 그대로.
 # .git/info/exclude에만 두면 그 파일은 커밋되지 않아 다른 PC나 Codex에서 열 때
 # 무시 설정이 안 따라오고, mailbox/agent-registry 같은 세션 내부 데이터가
@@ -25,7 +27,11 @@ tmp/
 # 음향 편집 전 원본 사본은 로컬에 보관하고 해시 명세만 이력에 남긴다.
 _media/originals/**/*.mp4
 cert/
-.env
+# CONVENTIONS §7 표준 — 환경 변수·키 파일·백업은 어느 폴더에 있든 올리지 않는다.
+.env*
+*.pem
+serviceAccount*.json
+_backups/
 test-results/
 playwright-report/
 blob-report/

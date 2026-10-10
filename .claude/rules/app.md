@@ -142,6 +142,16 @@
   잠그고, deploy 잡은 auth **전**의 `npm ci`로 받아 둔 `node_modules/.bin/firebase`만 실행한다.
   `test/contract.test.js`가 버전 고정과 배포 명령 두 줄을 검사한다(npx로 되돌리면 빨간불을 확인했다).
   올릴 때는 `npm install -D --save-exact firebase-tools@<버전>`으로 package.json과 잠금 파일을 함께 바꾼다
+- 🟠 **루트 `package.json`의 `overrides: { "gaxios": { "uuid": "^11.1.1" } }`을 지우지 말 것**(2026-10-10) — firebase-tools가 끌어오는
+  gaxios 6.7.1이 취약한 uuid 9를 요구한다(Dependabot medium). gaxios 6의 최신판도, firebase-tools 최신판(15.33.0)도 같아서
+  잠금 파일이나 상위 패키지로는 못 고친다. **firebase-tools 자신의 package.json에 같은 덮어쓰기가 들어 있다** — 의존성으로
+  설치되면 그 설정이 적용되지 않을 뿐이다. `universal-analytics`는 이미 uuid 14라 범위를 gaxios로 좁혔다(낮추지 않게).
+  확인한 것: gaxios가 uuid 11.1.1을 보고 `v4()`가 동작, `firebase projects:list`(인증 경로) 정상
+- 🟡 **루트 `npm audit`에 남는 9건(moderate 2·high 7)은 전부 firebase-tools 안쪽이고 지금 고칠 판이 없다**(2026-10-10) —
+  `braces`는 최신 3.0.3이 곧 취약 범위, `basic-ftp`·`@opentelemetry/core`는 고친 판이 다음 주 버전에만 있는데 부모(get-uri
+  `^5`, pubsub `^1.30.1`)가 이전 주 버전을 요구한다. npm이 권하는 해결은 firebase-tools를 14.23.0으로 **내리는** 것이라
+  쓰지 않는다. GitHub Dependabot은 이 9건을 알림으로 올리지 않는다. 배포 잡에서만 도는 개발 도구이고, 셋 다 공격자가
+  넣은 입력(FTP 목록·글롭 패턴·추적 헤더)이 있어야 하는 서비스 거부 류다. **분기 감사 때 firebase-tools 새 판을 보고 다시 판단한다**
 - **동결 기간에는 배포하지 말 것** — 아래 "행사 직전 배포 동결" 절의 기준과 절차를 따른다
 
 ## 행사 직전 배포 동결 (2026-09-08 산정, 팀장 승인 — 날짜는 대표 확인 시 조정 가능)
