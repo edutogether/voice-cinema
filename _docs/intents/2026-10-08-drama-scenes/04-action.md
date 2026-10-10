@@ -84,7 +84,7 @@
 | 넣을 그림 | 첫 그림 `action-c1-S` · 끝 그림 `action-c1-E` · 이 컷의 그림 전부 `action-c1-S` `action-c1-M` `action-c1-E` · 참조한 장르 기준 `action-G6` `action-G5` |
 | 초별 연출 | 다운로드 영상 0.0–2.5초(쓰는 길이 2.5초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 내려다보다가 일어서며 앞을 봄 / 움직임: 옥상에 쪼그려 빨간 운동화 끈을 꽉 조이고 일어서자 도시 불빛과 옥상 가장자리가 보임 / 표정: — (손·발만) |
 | 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
-| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 약 18. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기 |
 
 ```text
 First-person on a city rooftop at night. A child's hands tighten the laces of red sneakers, then the view rises as the child stands up, revealing glowing city lights and the edge of the rooftop. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -97,7 +97,7 @@ First-person on a city rooftop at night. A child's hands tighten the laces of re
 | 넣을 그림 | 첫 그림 `action-c3a-S` · 끝 그림 `action-c3a-E` · 이 컷의 그림 전부 `action-c3a-S` `action-c3a-E` · 참조한 장르 기준 `action-G5` `action-G1` |
 | 초별 연출 | 다운로드 영상 2.5–3.5초(쓰는 길이 1초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 앞을 봄, 고정 / 움직임: 틈 건너 맞은편 옥상 물탱크 옆 어둠에서 검은 고양이가 물탱크 위로 뛰어올라 트로피를 들고 섬 / 표정: 원경이라 작게 |
 | 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
-| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 약 18. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기 |
 
 ```text
 First-person looking across a gap to the next rooftop. A slim masked thief with cat ears leaps onto a water tank and stands there holding a shiny golden trophy; distant police lights flicker. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -110,7 +110,7 @@ First-person looking across a gap to the next rooftop. A slim masked thief with 
 | 넣을 그림 | 첫 그림 `action-c3b-S` · 끝 그림 `action-c3b-E` · 이 컷의 그림 전부 `action-c3b-S` `action-c3b-M` `action-c3b-E` · 참조한 장르 기준 `action-G1` `action-G4` |
 | 초별 연출 | 다운로드 영상 3.5–6.0초(쓰는 길이 2.5초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 복면 얼굴 클로즈업(가슴 위), 고정 / 움직임: 트로피를 어깨에 걸치고 말함, 한쪽 눈 찡긋 / 표정: 씩 웃음 → 말하며 찡긋 → 혀를 살짝 내밀며 놀림 |
 | 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
-| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 약 18. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기 |
 
 ```text
 Close-up of the cat-eared masked thief, trophy resting on the shoulder, speaking playfully, winking, then sticking the tongue out a little. City lights glow behind. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -123,7 +123,7 @@ Close-up of the cat-eared masked thief, trophy resting on the shoulder, speaking
 | 넣을 그림 | 첫 그림 `action-c3c-S` · 끝 그림 `action-c3c-E` · 이 컷의 그림 전부 `action-c3c-S` `action-c3c-M` `action-c3c-E` · 참조한 장르 기준 `action-G3` `action-G5` |
 | 초별 연출 | 다운로드 영상 6.0–8.0초(쓰는 길이 2초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 도둑 어깨 너머(뒤쪽 위)에서 더 먼 옥상을 봄 / 움직임: 발밑에 장난감 같은 둥근 연막탄을 떨어뜨리자 회색 연기가 퍼지고, 도둑이 연기 속에서 더 먼 옥상으로 점프 / 표정: 뒷모습 |
 | 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
-| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 약 18. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기 |
 
 ```text
 Over-the-shoulder from behind the thief. A round toy-like smoke ball drops at its feet, soft gray smoke spreads, and the thief leaps through the smoke toward a farther rooftop. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -136,7 +136,7 @@ Over-the-shoulder from behind the thief. A round toy-like smoke ball drops at it
 | 넣을 그림 | 첫 그림 `action-c6a-S` · 끝 그림 `action-c6a-E` · 이 컷의 그림 전부 `action-c6a-S` `action-c6a-M1` `action-c6a-M2` `action-c6a-E` · 참조한 장르 기준 `action-G6` |
 | 초별 연출 | 다운로드 영상 8.0–11.5초(쓰는 길이 3.5초 — 만든 4초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 시작은 멈춤 그림과 같은 구도, 달리며 흔들리고 점프에서 떠오름 / 움직임: 연기를 뚫고 달려 옥상 가장자리에서 점프, 공중에서 도둑의 망토 끝이 손앞으로 다가옴 / 표정: — (손만) |
 | 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 4초 · 소리 `off` · 예상 크레딧 약 8(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
-| 다시 만들기 | 같은 설정 3회까지(최대 약 24). 바꾸면 다시 허락 |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 약 24. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기 |
 
 ```text
 First-person running through soft gray smoke, arms pumping in red sleeves; the smoke parts, the child jumps from the rooftop edge across a gap, reaching forward toward the thief's short cape in mid-air. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -149,7 +149,7 @@ First-person running through soft gray smoke, arms pumping in red sleeves; the s
 | 넣을 그림 | 첫 그림 `action-c6b-S` · 끝 그림 `action-c6b-E` · 이 컷의 그림 전부 `action-c6b-S` `action-c6b-M` `action-c6b-E` · 참조한 장르 기준 `action-G6` `action-G1` `action-G4` |
 | 초별 연출 | 다운로드 영상 11.5–13.0초(쓰는 길이 1.5초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 공중, 아주 가까이 / 움직임: 내 손과 도둑 손이 트로피 손잡이를 하나씩 잡고 당기다 트로피가 내 쪽으로 빠져나옴 / 표정: 도둑 놀란 눈 |
 | 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
-| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 약 18. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기 |
 
 ```text
 First-person mid-air close-up. Both the child's hand and the thief's gloved hand grip the golden trophy's handles and tug; the trophy slips free into the child's hands as the thief looks surprised. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -162,7 +162,7 @@ First-person mid-air close-up. Both the child's hand and the thief's gloved hand
 | 넣을 그림 | 첫 그림 `action-c6c-S` · 끝 그림 `action-c6c-E` · 이 컷의 그림 전부 `action-c6c-S` `action-c6c-E` · 참조한 장르 기준 `action-G6` `action-G5` `action-G1` |
 | 초별 연출 | 다운로드 영상 13.0–14.0초(쓰는 길이 1초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 착지 후 고정 / 움직임: 건너편 옥상에 착지해 트로피를 높이 들어 올림. 뒤에서 도둑이 노란 안전 그물에 걸려 버둥 / 표정: 도둑 머쓱 |
 | 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
-| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 약 18. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기 |
 
 ```text
 First-person after landing safely on a rooftop; both hands lift the golden trophy high. Behind it, the thief is tangled in a yellow safety net at the roof edge, wriggling, unhurt and embarrassed. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -175,7 +175,7 @@ First-person after landing safely on a rooftop; both hands lift the golden troph
 | 넣을 그림 | 첫 그림 `action-c6d-S` · 끝 그림 `action-c6d-E` · 이 컷의 그림 전부 `action-c6d-S` `action-c6d-E` · 참조한 장르 기준 `action-G5` |
 | 초별 연출 | 다운로드 영상 14.0–15.0초(쓰는 길이 1초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 난간 너머 아래 거리를 내려다봄 / 움직임: 거리 사람들이 위를 올려다보며 환호하고 손을 흔듦, 친근한 경찰관이 엄지척 / 표정: 모두 웃음 |
 | 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
-| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 약 18. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기 |
 
 ```text
 First-person looking down over the rooftop railing at a lively street; people look up, cheer and wave, and a friendly police officer gives a thumbs-up. The golden trophy glints at the bottom of the frame. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
