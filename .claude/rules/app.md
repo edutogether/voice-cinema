@@ -147,7 +147,8 @@
   잠금 파일이나 상위 패키지로는 못 고친다. **firebase-tools 자신의 package.json에 같은 덮어쓰기가 들어 있다** — 의존성으로
   설치되면 그 설정이 적용되지 않을 뿐이다. `universal-analytics`는 이미 uuid 14라 범위를 gaxios로 좁혔다(낮추지 않게).
   확인한 것: gaxios가 uuid 11.1.1을 보고 `v4()`가 동작, `firebase projects:list`(인증 경로) 정상
-- 🟡 **루트 `npm audit`에 남는 9건(moderate 2·high 7)은 전부 firebase-tools 안쪽이고 지금 고칠 판이 없다**(2026-10-10) —
+- 🟡 **루트 `npm audit`에 남는 9건(moderate 2·high 7)은 전부 firebase-tools 안쪽이고 지금 고칠 판이 없다**(2026-10-10,
+  **팀장 결정: 그대로 두고 12월 말 분기 감사나 firebase-tools 새 판 때 다시 본다**) —
   `braces`는 최신 3.0.3이 곧 취약 범위, `basic-ftp`·`@opentelemetry/core`는 고친 판이 다음 주 버전에만 있는데 부모(get-uri
   `^5`, pubsub `^1.30.1`)가 이전 주 버전을 요구한다. npm이 권하는 해결은 firebase-tools를 14.23.0으로 **내리는** 것이라
   쓰지 않는다. GitHub Dependabot은 이 9건을 알림으로 올리지 않는다. 배포 잡에서만 도는 개발 도구이고, 셋 다 공격자가
