@@ -1,7 +1,7 @@
 # 장면 더빙 2.0 — 호러 «한밤의 도서관» (`horror`)
 
 > 대표님 원칙(2026-10-10)이 맨 앞이다 — [공통 문서](00-common.md) 첫 절. 그림은 전부 ChatGPT, 장르 안·사이 결 통일,
-> **Higgsfield 실행(영상·음성 합성)은 대표님 철저 검토와 «해» 뒤에만, 그 전 크레딧 0.**
+> **Higgsfield 실행(영상·음성 합성)은 컷마다 «영상 만들기 전 확인»(넣을 그림·글 전부)으로 대표님 허락을 받은 뒤에만, 그 전 크레딧 0.**
 > 상태(2026-10-10): 문서·프롬프트 완성, 그림 0장, 크레딧 0. 그림 29장.
 
 ## 1. 시나리오
@@ -71,11 +71,19 @@
 - 멈춤 화면 보기: «난 하나도 안 무서워 !» / «불아, 켜져라 !»
 - 나머지 흐름·바꾸지 않는 것은 [공통 문서 §9](00-common.md)
 
-## 6. 영상 준비(Higgsfield) — 관문 C의 «해» 뒤에만, 그 전 크레딧 0
+## 6. 영상 준비(Higgsfield) — «영상 만들기 전 확인»의 원본, 대표님 허락 뒤에만, 그 전 크레딧 0
+
+컷마다 생성 **전에** 아래 칸을 실제로 뽑은 그림과 함께 검토 페이지 «영상 만들기 전 확인»에 세팅해 팀장에게 보내고,
+대표님 허락이 온 컷만 만든다([공통 문서 §6 관문 C](00-common.md)). 장르 8컷 1회씩이면 예상 약 50크레딧(추정).
 
 ### ① 미리보기 — `c1`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 2.5초) · 첫 그림 `horror-c1-S` · 끝 그림 `horror-c1-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `horror-c1-S` · 끝 그림 `horror-c1-E` · 이 컷의 그림 전부 `horror-c1-S` `horror-c1-M` `horror-c1-E` · 참조한 장르 기준 `horror-G6` `horror-G5` |
+| 초별 연출 | 다운로드 영상 0.0–2.5초(쓰는 길이 2.5초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 고정에 가깝게 아주 살짝 앞으로 / 움직임: 깜깜한 통로에서 손전등을 켜자 원뿔 빛이 바닥과 앞 책장을 비추고, 책 몇 권이 살짝 흔들림 / 표정: — (손만) |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 First-person in a dark school library aisle. A child's hand clicks on a small yellow flashlight; a cone of warm light sweeps the wooden floor and the bookshelf ahead, where a few books gently wobble. Dust sparkles in blue moonlight. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -83,7 +91,12 @@ First-person in a dark school library aisle. A child's hand clicks on a small ye
 
 ### ③-1 시점 전환 — `c3a`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 1초) · 첫 그림 `horror-c3a-S` · 끝 그림 `horror-c3a-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `horror-c3a-S` · 끝 그림 `horror-c3a-E` · 이 컷의 그림 전부 `horror-c3a-S` `horror-c3a-E` · 참조한 장르 기준 `horror-G6` `horror-G5` `horror-G1` |
+| 초별 연출 | 다운로드 영상 2.5–3.5초(쓰는 길이 1초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 손전등 빛이 통로 끝으로 옮겨 감 / 움직임: 통로 끝 어둠 속 희미한 민트빛이 공중에 떠 있는 유령 모습이 됨 / 표정: 원경이라 작게, 눈이 반짝 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 First-person; the flashlight beam moves to the end of the aisle, where a faint mint glow becomes a translucent ghost floating in the air, its long striped scarf drifting. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -91,7 +104,12 @@ First-person; the flashlight beam moves to the end of the aisle, where a faint m
 
 ### ③-2 상대 대사 — `c3b`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 2.5초) · 첫 그림 `horror-c3b-S` · 끝 그림 `horror-c3b-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `horror-c3b-S` · 끝 그림 `horror-c3b-E` · 이 컷의 그림 전부 `horror-c3b-S` `horror-c3b-M` `horror-c3b-E` · 참조한 장르 기준 `horror-G1` `horror-G4` |
+| 초별 연출 | 다운로드 영상 3.5–6.0초(쓰는 길이 2.5초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 스르륵 얼굴 클로즈업, 고정 / 움직임: 반투명 손가락을 입에 대고 «쉿…» 하다가 «나가 !»에서 입을 크게 벌림 / 표정: 눈만 반짝 → 쉿 → 눈썹을 찌푸린 장난스러운 화남 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 Close-up of a cute translucent mint ghost with big round eyes. It whispers with a finger to its lips, then frowns playfully and opens its mouth wide; its striped scarf flutters. Not scary. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -99,7 +117,12 @@ Close-up of a cute translucent mint ghost with big round eyes. It whispers with 
 
 ### ③-3 상대 행동 — `c3c`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 2초) · 첫 그림 `horror-c3c-S` · 끝 그림 `horror-c3c-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `horror-c3c-S` · 끝 그림 `horror-c3c-E` · 이 컷의 그림 전부 `horror-c3c-S` `horror-c3c-M` `horror-c3c-E` · 참조한 장르 기준 `horror-G3` `horror-G5` |
+| 초별 연출 | 다운로드 영상 6.0–8.0초(쓰는 길이 2초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 스르륵 어깨 너머(뒤쪽 위)에서 통로 저편을 봄 / 움직임: 두 팔을 벌리자 책장의 책들이 날아올라 회오리가 되어 통로 저편 손전등 빛 쪽으로 몰려감 / 표정: 뒷모습 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 Over-the-shoulder from behind the floating ghost. It spreads its arms and books fly off the shelves, swirling into a whirlwind that rushes down the aisle toward a small flashlight glow. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -107,7 +130,12 @@ Over-the-shoulder from behind the floating ghost. It spreads its arms and books 
 
 ### ⑥-1 반격(아이 목소리 자리) — `c6a`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 4초(쓰는 길이 3.5초) · 첫 그림 `horror-c6a-S` · 끝 그림 `horror-c6a-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `horror-c6a-S` · 끝 그림 `horror-c6a-E` · 이 컷의 그림 전부 `horror-c6a-S` `horror-c6a-M1` `horror-c6a-M2` `horror-c6a-E` · 참조한 장르 기준 `horror-G6` |
+| 초별 연출 | 다운로드 영상 8.0–11.5초(쓰는 길이 3.5초 — 만든 4초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 시작은 멈춤 그림과 같은 구도, 손전등을 내밀 때 살짝 흔들림 / 움직임: 손전등 빛이 커지고 진해져 굵은 빛줄기가 책 회오리를 뚫고 통로를 가득 채움 / 표정: — (손만) |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 4초 · 소리 `off` · 예상 크레딧 약 8(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 24). 바꾸면 다시 허락 |
 
 ```text
 First-person. The hand thrusts the flashlight forward; its beam grows larger and warmer into a thick golden light that pierces the swirl of flying books and fills the aisle. Slight camera shake. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -115,7 +143,12 @@ First-person. The hand thrusts the flashlight forward; its beam grows larger and
 
 ### ⑥-2 겨루기 — `c6b`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 1.5초) · 첫 그림 `horror-c6b-S` · 끝 그림 `horror-c6b-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `horror-c6b-S` · 끝 그림 `horror-c6b-E` · 이 컷의 그림 전부 `horror-c6b-S` `horror-c6b-M` `horror-c6b-E` · 참조한 장르 기준 `horror-G5` |
+| 초별 연출 | 다운로드 영상 11.5–13.0초(쓰는 길이 1.5초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 고정 / 움직임: 빛줄기와 책 회오리가 맞서다 회오리가 잦아들고 책들이 줄지어 날아가 책장 제자리에 착착 꽂힘 / 표정: — |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 First-person. The whirlwind of books weakens inside the warm light; the books stop in mid-air, then fly back in neat lines and slot into their places on the shelves. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -123,7 +156,12 @@ First-person. The whirlwind of books weakens inside the warm light; the books st
 
 ### ⑥-3 승리 — `c6c`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 1초) · 첫 그림 `horror-c6c-S` · 끝 그림 `horror-c6c-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `horror-c6c-S` · 끝 그림 `horror-c6c-E` · 이 컷의 그림 전부 `horror-c6c-S` `horror-c6c-E` · 참조한 장르 기준 `horror-G1` `horror-G4` |
+| 초별 연출 | 다운로드 영상 13.0–14.0초(쓰는 길이 1초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 고정 / 움직임: 스르륵이 빛을 받아 반짝이며 손바닥만 한 꼬마 유령으로 줄어 머쓱하게 웃고, 천장 불이 켜짐 / 표정: 머쓱한 웃음, 분홍 볼 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 The ghost sparkles in the light and shrinks into a tiny palm-sized ghost with pink cheeks and an embarrassed smile; the ceiling lights switch on and the library turns warm and bright. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -131,7 +169,12 @@ The ghost sparkles in the light and shrinks into a tiny palm-sized ghost with pi
 
 ### ⑥-4 환호 — `c6d`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 1초) · 첫 그림 `horror-c6d-S` · 끝 그림 `horror-c6d-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `horror-c6d-S` · 끝 그림 `horror-c6d-E` · 이 컷의 그림 전부 `horror-c6d-S` `horror-c6d-E` · 참조한 장르 기준 `horror-G5` |
+| 초별 연출 | 다운로드 영상 14.0–15.0초(쓰는 길이 1초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 아주 천천히 밀어 들어감 / 움직임: 책장 뒤·책상 밑에서 친구들이 나와 박수, 꼬마 유령도 목도리를 흔들며 같이 웃음 / 표정: 모두 활짝 웃음 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 First-person in the now brightly lit library. Three kids pop out from behind bookshelves and under a desk, laughing and clapping; the tiny ghost waves its striped scarf happily. Slow push-in. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.

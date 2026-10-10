@@ -1,7 +1,7 @@
 # 장면 더빙 2.0 — 드라마 «마지막 주자» (`drama`)
 
 > 대표님 원칙(2026-10-10)이 맨 앞이다 — [공통 문서](00-common.md) 첫 절. 그림은 전부 ChatGPT, 장르 안·사이 결 통일,
-> **Higgsfield 실행(영상·음성 합성)은 대표님 철저 검토와 «해» 뒤에만, 그 전 크레딧 0.**
+> **Higgsfield 실행(영상·음성 합성)은 컷마다 «영상 만들기 전 확인»(넣을 그림·글 전부)으로 대표님 허락을 받은 뒤에만, 그 전 크레딧 0.**
 > 상태(2026-10-10): 문서·프롬프트 완성, 그림 0장, 크레딧 0. 그림 29장.
 
 ## 1. 시나리오
@@ -70,11 +70,19 @@
 - 멈춤 화면 보기: «끝까지 간다, 우리 반 파이팅 !» / «포기는 없어 !»
 - 나머지 흐름·바꾸지 않는 것은 [공통 문서 §9](00-common.md)
 
-## 6. 영상 준비(Higgsfield) — 관문 C의 «해» 뒤에만, 그 전 크레딧 0
+## 6. 영상 준비(Higgsfield) — «영상 만들기 전 확인»의 원본, 대표님 허락 뒤에만, 그 전 크레딧 0
+
+컷마다 생성 **전에** 아래 칸을 실제로 뽑은 그림과 함께 검토 페이지 «영상 만들기 전 확인»에 세팅해 팀장에게 보내고,
+대표님 허락이 온 컷만 만든다([공통 문서 §6 관문 C](00-common.md)). 장르 8컷 1회씩이면 예상 약 50크레딧(추정).
 
 ### ① 미리보기 — `c1`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 2.5초) · 첫 그림 `drama-c1-S` · 끝 그림 `drama-c1-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `drama-c1-S` · 끝 그림 `drama-c1-E` · 이 컷의 그림 전부 `drama-c1-S` `drama-c1-M` `drama-c1-E` · 참조한 장르 기준 `drama-G6` `drama-G5` |
+| 초별 연출 | 다운로드 영상 0.0–2.5초(쓰는 길이 2.5초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 내려다보다가 뒤를 돌아본 뒤 앞을 봄 / 움직임: 출발선에서 운동화 끈을 고쳐 매고, 일어나 뒤에서 달려오는 우리 반 친구를 본 뒤 손을 뒤로 내밀어 바통 받을 준비 / 표정: — (손만) |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 First-person at a school relay starting line. A child's hands retie a white sneaker, then the child stands, glances back at a teammate running in with a yellow baton far away, and reaches a hand back, palm open. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -82,7 +90,12 @@ First-person at a school relay starting line. A child's hands retie a white snea
 
 ### ③-1 시점 전환 — `c3a`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 1초) · 첫 그림 `drama-c3a-S` · 끝 그림 `drama-c3a-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `drama-c3a-S` · 끝 그림 `drama-c3a-E` · 이 컷의 그림 전부 `drama-c3a-S` `drama-c3a-E` · 참조한 장르 기준 `drama-G5` `drama-G1` |
+| 초별 연출 | 다운로드 영상 2.5–3.5초(쓰는 길이 1초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 옆 레인을 봄, 고정 / 움직임: 옆 레인에서 몸을 풀던 태오가 몸을 일으켜 이쪽을 봄. 멀리 선생님이 호루라기를 붊 / 표정: 자신만만한 눈빛(중경) |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 First-person looking at the next lane. A boy with a blue headband finishes stretching, straightens up and looks this way; strings of flags flutter overhead and a teacher blows a whistle far away. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -90,7 +103,12 @@ First-person looking at the next lane. A boy with a blue headband finishes stret
 
 ### ③-2 상대 대사 — `c3b`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 2.5초) · 첫 그림 `drama-c3b-S` · 끝 그림 `drama-c3b-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `drama-c3b-S` · 끝 그림 `drama-c3b-E` · 이 컷의 그림 전부 `drama-c3b-S` `drama-c3b-M` `drama-c3b-E` · 참조한 장르 기준 `drama-G1` `drama-G4` |
+| 초별 연출 | 다운로드 영상 3.5–6.0초(쓰는 길이 2.5초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 태오 클로즈업(어깨 위), 아주 천천히 밀어 들어감 / 움직임: 머리띠를 고쳐 매고 엄지로 자기를 가리키며 말함 / 표정: 미소 → 말하며 엄지 → 자신만만한 웃음, 눈 반짝 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 Close-up of a confident boy with a blue headband. He adjusts the headband, points his thumb at himself while speaking, and breaks into a big confident smile. Warm afternoon sunlight. Very slow push-in. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -98,7 +116,12 @@ Close-up of a confident boy with a blue headband. He adjusts the headband, point
 
 ### ③-3 상대 행동 — `c3c`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 2초) · 첫 그림 `drama-c3c-S` · 끝 그림 `drama-c3c-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `drama-c3c-S` · 끝 그림 `drama-c3c-E` · 이 컷의 그림 전부 `drama-c3c-S` `drama-c3c-M` `drama-c3c-E` · 참조한 장르 기준 `drama-G3` `drama-G5` |
+| 초별 연출 | 다운로드 영상 6.0–8.0초(쓰는 길이 2초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 태오 어깨 너머(뒤)에서 앞 트랙을 봄 / 움직임: 뒤로 손을 뻗어 파란 바통을 받아 쥐고 치고 나가 앞으로 멀어짐. 관중이 함성 / 표정: 뒷모습 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 Over-the-shoulder from behind the boy. He reaches back, grabs a blue baton from a teammate's hand, and sprints away down the red track as the crowd cheers. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -106,7 +129,12 @@ Over-the-shoulder from behind the boy. He reaches back, grabs a blue baton from 
 
 ### ⑥-1 반격(아이 목소리 자리) — `c6a`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 4초(쓰는 길이 3.5초) · 첫 그림 `drama-c6a-S` · 끝 그림 `drama-c6a-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `drama-c6a-S` · 끝 그림 `drama-c6a-E` · 이 컷의 그림 전부 `drama-c6a-S` `drama-c6a-M1` `drama-c6a-M2` `drama-c6a-E` · 참조한 장르 기준 `drama-G6` |
+| 초별 연출 | 다운로드 영상 8.0–11.5초(쓰는 길이 3.5초 — 만든 4초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 시작은 멈춤 그림과 같은 구도, 달리며 흔들림, 속도감 / 움직임: 바통을 꽉 잡고 몸을 돌려 달리기 시작, 속도가 붙어 앞의 태오 등이 가까워지고 거의 나란해짐 / 표정: — (손만) |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 4초 · 소리 `off` · 예상 크레딧 약 8(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 24). 바꾸면 다시 허락 |
 
 ```text
 First-person. A hand grabs the yellow baton, the child turns and sprints down the red track, arms pumping; the track lines rush by and the back of the boy in the blue headband gets closer until they are almost side by side. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -114,7 +142,12 @@ First-person. A hand grabs the yellow baton, the child turns and sprints down th
 
 ### ⑥-2 겨루기 — `c6b`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 1.5초) · 첫 그림 `drama-c6b-S` · 끝 그림 `drama-c6b-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `drama-c6b-S` · 끝 그림 `drama-c6b-E` · 이 컷의 그림 전부 `drama-c6b-S` `drama-c6b-M` `drama-c6b-E` · 참조한 장르 기준 `drama-G4` |
+| 초별 연출 | 다운로드 영상 11.5–13.0초(쓰는 길이 1.5초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 나란히 달림, 오른쪽에 태오 / 움직임: 엎치락뒤치락 — 태오가 반걸음 앞섰다가 내가 반걸음 앞서며 결승 테이프가 보임 / 표정: 태오 이를 악문 웃음 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 First-person running side by side; the boy with the blue headband is on the right, gritting his teeth with a grin. He edges ahead, then the child pulls half a step ahead and the white finish tape appears ahead. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -122,7 +155,12 @@ First-person running side by side; the boy with the blue headband is on the righ
 
 ### ⑥-3 승리 — `c6c`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 1초) · 첫 그림 `drama-c6c-S` · 끝 그림 `drama-c6c-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `drama-c6c-S` · 끝 그림 `drama-c6c-E` · 이 컷의 그림 전부 `drama-c6c-S` `drama-c6c-E` · 참조한 장르 기준 `drama-G6` `drama-G5` |
+| 초별 연출 | 다운로드 영상 13.0–14.0초(쓰는 길이 1초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 결승선, 고정에 가깝게 / 움직임: 흰 결승 테이프가 가슴 앞에서 끊어져 양옆으로 날림 / 표정: — |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 First-person crossing the finish line; the white finish tape snaps across the chest and flutters away to both sides in bright sunlight. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -130,7 +168,12 @@ First-person crossing the finish line; the white finish tape snaps across the ch
 
 ### ⑥-4 환호 — `c6d`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 1초) · 첫 그림 `drama-c6d-S` · 끝 그림 `drama-c6d-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `drama-c6d-S` · 끝 그림 `drama-c6d-E` · 이 컷의 그림 전부 `drama-c6d-S` `drama-c6d-E` · 참조한 장르 기준 `drama-G5` `drama-G4` |
+| 초별 연출 | 다운로드 영상 14.0–15.0초(쓰는 길이 1초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 고정 / 움직임: 우리 반 친구들이 노란 머리띠를 흔들며 달려오고, 태오가 웃으며 손을 들어 하이파이브 / 표정: 모두 활짝 웃음 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 First-person. Classmates waving yellow headbands rush in cheering, and the boy with the blue headband smiles and raises his hand for a high five with the child's hand. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.

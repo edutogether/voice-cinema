@@ -1,7 +1,7 @@
 # 장면 더빙 2.0 — 판타지 «빛의 탑 결투» (`fantasy`)
 
 > 대표님 원칙(2026-10-10)이 맨 앞이다 — [공통 문서](00-common.md) 첫 절. 그림은 전부 ChatGPT, 장르 안·사이 결 통일,
-> **Higgsfield 실행(영상·음성 합성)은 대표님 철저 검토와 «해» 뒤에만, 그 전 크레딧 0.**
+> **Higgsfield 실행(영상·음성 합성)은 컷마다 «영상 만들기 전 확인»(넣을 그림·글 전부)으로 대표님 허락을 받은 뒤에만, 그 전 크레딧 0.**
 > 상태(2026-10-10): 문서·프롬프트 완성, 그림 0장, 크레딧 0. 그림 29장.
 
 ## 1. 시나리오
@@ -73,11 +73,19 @@
 - 멈춤 화면 보기: «빛이여, 나를 지켜라 !» / «어둠은 물러가라 !»
 - 나머지 흐름·바꾸지 않는 것은 [공통 문서 §9](00-common.md)
 
-## 6. 영상 준비(Higgsfield) — 관문 C의 «해» 뒤에만, 그 전 크레딧 0
+## 6. 영상 준비(Higgsfield) — «영상 만들기 전 확인»의 원본, 대표님 허락 뒤에만, 그 전 크레딧 0
+
+컷마다 생성 **전에** 아래 칸을 실제로 뽑은 그림과 함께 검토 페이지 «영상 만들기 전 확인»에 세팅해 팀장에게 보내고,
+대표님 허락이 온 컷만 만든다([공통 문서 §6 관문 C](00-common.md)). 장르 8컷 1회씩이면 예상 약 50크레딧(추정).
 
 ### ① 미리보기 — `c1`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 2.5초) · 첫 그림 `fantasy-c1-S` · 끝 그림 `fantasy-c1-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `fantasy-c1-S` · 끝 그림 `fantasy-c1-E` · 이 컷의 그림 전부 `fantasy-c1-S` `fantasy-c1-M` `fantasy-c1-E` · 참조한 장르 기준 `fantasy-G6` `fantasy-G5` |
+| 초별 연출 | 다운로드 영상 0.0–2.5초(쓰는 길이 2.5초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 아래에서 위로 천천히 기울며 살짝 밀어 들어감 / 움직임: 지팡이를 쥔 두 손이 올라오고 수정에 금빛이 모임. 끝에 큰 보름달이 드러남 / 표정: — (손만) |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 First-person view. A child's hands raise a wooden staff; golden light gathers in the clear crystal at its tip. The camera slowly tilts up and pushes in slightly, revealing a huge full moon behind. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -85,7 +93,12 @@ First-person view. A child's hands raise a wooden staff; golden light gathers in
 
 ### ③-1 시점 전환 — `c3a`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 1초) · 첫 그림 `fantasy-c3a-S` · 끝 그림 `fantasy-c3a-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `fantasy-c3a-S` · 끝 그림 `fantasy-c3a-E` · 이 컷의 그림 전부 `fantasy-c3a-S` `fantasy-c3a-E` · 참조한 장르 기준 `fantasy-G5` `fantasy-G1` |
+| 초별 연출 | 다운로드 영상 2.5–3.5초(쓰는 길이 1초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 오른쪽으로 고개를 돌리듯 빠르게 돌다가 멈춤 / 움직임: 돌계단 끝 아치의 그늘에서 어둠달이 한 걸음 나와 달빛 속에 섬 / 표정: 원경이라 작게, 보랏빛 눈이 먼저 보임 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 First-person quick head turn to the right, then settles. A tall masked wizard steps out of a dark stone archway into the moonlight; his long cape flutters in the wind. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -93,7 +106,12 @@ First-person quick head turn to the right, then settles. A tall masked wizard st
 
 ### ③-2 상대 대사 — `c3b`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 2.5초) · 첫 그림 `fantasy-c3b-S` · 끝 그림 `fantasy-c3b-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `fantasy-c3b-S` · 끝 그림 `fantasy-c3b-E` · 이 컷의 그림 전부 `fantasy-c3b-S` `fantasy-c3b-M` `fantasy-c3b-E` · 참조한 장르 기준 `fantasy-G1` `fantasy-G4` |
+| 초별 연출 | 다운로드 영상 3.5–6.0초(쓰는 길이 2.5초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 어둠달 가슴 위 클로즈업. 살짝 올려다보는 각도, 아주 천천히 밀어 들어감 / 움직임: 보라 구슬을 가슴 앞으로 들어 올리며 말함 / 표정: 가늘게 뜬 눈 → 말하며 입꼬리가 올라감 → 자신만만한 미소 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 Close-up of the masked wizard speaking calmly, lips moving naturally, raising a glowing purple orb in front of his chest. Very slow push-in. His cape moves slightly in the wind. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -101,7 +119,12 @@ Close-up of the masked wizard speaking calmly, lips moving naturally, raising a 
 
 ### ③-3 상대 행동 — `c3c`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 2초) · 첫 그림 `fantasy-c3c-S` · 끝 그림 `fantasy-c3c-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `fantasy-c3c-S` · 끝 그림 `fantasy-c3c-E` · 이 컷의 그림 전부 `fantasy-c3c-S` `fantasy-c3c-M` `fantasy-c3c-E` · 참조한 장르 기준 `fantasy-G3` `fantasy-G5` |
+| 초별 연출 | 다운로드 영상 6.0–8.0초(쓰는 길이 2초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 어둠달 오른쪽 어깨 너머(뒤쪽 약간 위)에서 앞을 봄. 깊이감 / 움직임: 팔을 뒤로 당겼다가 보라 구체를 앞으로 던짐. 구체가 멀리 테라스 반대편의 작은 금빛 점(나의 지팡이 빛)으로 날아감 / 표정: 뒤통수·옆얼굴만 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 Over-the-shoulder shot from behind the wizard. He pulls his arm back and throws a glowing purple orb, which flies away toward a small golden light at the far side of the terrace. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -109,7 +132,12 @@ Over-the-shoulder shot from behind the wizard. He pulls his arm back and throws 
 
 ### ⑥-1 반격(아이 목소리 자리) — `c6a`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 4초(쓰는 길이 3.5초) · 첫 그림 `fantasy-c6a-S` · 끝 그림 `fantasy-c6a-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `fantasy-c6a-S` · 끝 그림 `fantasy-c6a-E` · 이 컷의 그림 전부 `fantasy-c6a-S` `fantasy-c6a-M1` `fantasy-c6a-M2` `fantasy-c6a-E` · 참조한 장르 기준 `fantasy-G6` |
+| 초별 연출 | 다운로드 영상 8.0–11.5초(쓰는 길이 3.5초 — 만든 4초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 시작은 멈춤 그림과 같은 구도, 지팡이를 내밀 때 반동으로 살짝 흔들림 / 움직임: 수정에서 금빛이 폭발하듯 퍼지고 굵은 금빛 광선이 앞으로 뻗어 보라 구체를 맞받아 밀어냄 / 표정: — (손만) |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 4초 · 소리 `off` · 예상 크레딧 약 8(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 24). 바꾸면 다시 허락 |
 
 ```text
 First-person. The hands thrust the staff forward; golden light bursts from the crystal and a thick golden beam shoots forward, hitting the purple orb and pushing it back. Slight camera shake from the recoil. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -117,7 +145,12 @@ First-person. The hands thrust the staff forward; golden light bursts from the c
 
 ### ⑥-2 겨루기 — `c6b`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 1.5초) · 첫 그림 `fantasy-c6b-S` · 끝 그림 `fantasy-c6b-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `fantasy-c6b-S` · 끝 그림 `fantasy-c6b-E` · 이 컷의 그림 전부 `fantasy-c6b-S` `fantasy-c6b-M` `fantasy-c6b-E` · 참조한 장르 기준 `fantasy-G6` `fantasy-G1` |
+| 초별 연출 | 다운로드 영상 11.5–13.0초(쓰는 길이 1.5초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 화면 가운데에서 두 빛이 맞부딪힘, 카메라 약간 흔들림 / 움직임: 금빛과 보랏빛 광선이 밀고 당기다 금빛이 보랏빛을 밀어냄. 멀리 어둠달이 한 발 물러섬 / 표정: 어둠달이 멀리서 놀람 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 First-person. A golden beam and a purple beam clash in the center with bright sparks, pushing back and forth, then the gold overpowers and drives the purple back toward the distant wizard, who steps back. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -125,7 +158,12 @@ First-person. A golden beam and a purple beam clash in the center with bright sp
 
 ### ⑥-3 승리 — `c6c`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 1초) · 첫 그림 `fantasy-c6c-S` · 끝 그림 `fantasy-c6c-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `fantasy-c6c-S` · 끝 그림 `fantasy-c6c-E` · 이 컷의 그림 전부 `fantasy-c6c-S` `fantasy-c6c-E` · 참조한 장르 기준 `fantasy-G1` `fantasy-G4` `fantasy-G5` |
+| 초별 연출 | 다운로드 영상 13.0–14.0초(쓰는 길이 1초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭 원경. 고정 / 움직임: 어둠달이 금빛에 휩싸여 망토 끝부터 별가루로 흩어짐(아파하지 않음) / 표정: 놀란 표정 → 사라짐 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 The masked wizard is wrapped in golden light and gently dissolves into purple smoke and sparkling stardust, starting from the cape; he is not hurt, he simply vanishes. The moonlit sky clears. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -133,7 +171,12 @@ The masked wizard is wrapped in golden light and gently dissolves into purple sm
 
 ### ⑥-4 환호 — `c6d`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 1초) · 첫 그림 `fantasy-c6d-S` · 끝 그림 `fantasy-c6d-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `fantasy-c6d-S` · 끝 그림 `fantasy-c6d-E` · 이 컷의 그림 전부 `fantasy-c6d-S` `fantasy-c6d-E` · 참조한 장르 기준 `fantasy-G5` `fantasy-G6` |
+| 초별 연출 | 다운로드 영상 14.0–15.0초(쓰는 길이 1초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 난간 너머 아래 마을을 내려다봄, 아주 천천히 밀어 들어감 / 움직임: 마을 불빛이 하나둘 켜지고 빛 요정들이 날아오름. 광장의 사람들이 손을 흔듦 / 표정: 마을 사람들 웃는 얼굴(작게) |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 First-person looking down over the tower railing. The village lights switch on one by one, tiny glowing light fairies rise toward the camera, and villagers in the square wave happily. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.

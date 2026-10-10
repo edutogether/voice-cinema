@@ -1,7 +1,7 @@
 # 장면 더빙 2.0 — 시트콤 «마지막 치킨 한 조각» (`sitcom`)
 
 > 대표님 원칙(2026-10-10)이 맨 앞이다 — [공통 문서](00-common.md) 첫 절. 그림은 전부 ChatGPT, 장르 안·사이 결 통일,
-> **Higgsfield 실행(영상·음성 합성)은 대표님 철저 검토와 «해» 뒤에만, 그 전 크레딧 0.**
+> **Higgsfield 실행(영상·음성 합성)은 컷마다 «영상 만들기 전 확인»(넣을 그림·글 전부)으로 대표님 허락을 받은 뒤에만, 그 전 크레딧 0.**
 > 상태(2026-10-10): 문서·프롬프트 완성, 그림 0장, 크레딧 0. 그림 29장.
 
 ## 1. 시나리오
@@ -72,11 +72,19 @@
 - 멈춤 화면 보기: «가위바위보로 정하자 !» / «오늘 설거지는 내가 할게 !»
 - 나머지 흐름·바꾸지 않는 것은 [공통 문서 §9](00-common.md)
 
-## 6. 영상 준비(Higgsfield) — 관문 C의 «해» 뒤에만, 그 전 크레딧 0
+## 6. 영상 준비(Higgsfield) — «영상 만들기 전 확인»의 원본, 대표님 허락 뒤에만, 그 전 크레딧 0
+
+컷마다 생성 **전에** 아래 칸을 실제로 뽑은 그림과 함께 검토 페이지 «영상 만들기 전 확인»에 세팅해 팀장에게 보내고,
+대표님 허락이 온 컷만 만든다([공통 문서 §6 관문 C](00-common.md)). 장르 8컷 1회씩이면 예상 약 50크레딧(추정).
 
 ### ① 미리보기 — `c1`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 2.5초) · 첫 그림 `sitcom-c1-S` · 끝 그림 `sitcom-c1-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `sitcom-c1-S` · 끝 그림 `sitcom-c1-E` · 이 컷의 그림 전부 `sitcom-c1-S` `sitcom-c1-M` `sitcom-c1-E` · 참조한 장르 기준 `sitcom-G6` `sitcom-G5` |
+| 초별 연출 | 다운로드 영상 0.0–2.5초(쓰는 길이 2.5초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 식탁을 내려다보며 치킨으로 천천히 밀어 들어감 / 움직임: 하늘색 젓가락이 마지막 치킨 다리로 천천히 다가가고, 끝에 치킨이 스포트라이트처럼 반짝 / 표정: — (손만) |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 First-person at a family dinner table. A child's hand holding light-blue chopsticks slowly approaches the last fried chicken drumstick in an open box; the drumstick sparkles like it is under a spotlight. Slow push-in. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -84,7 +92,12 @@ First-person at a family dinner table. A child's hand holding light-blue chopsti
 
 ### ③-1 시점 전환 — `c3a`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 1초) · 첫 그림 `sitcom-c3a-S` · 끝 그림 `sitcom-c3a-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `sitcom-c3a-S` · 끝 그림 `sitcom-c3a-E` · 이 컷의 그림 전부 `sitcom-c3a-S` `sitcom-c3a-E` · 참조한 장르 기준 `sitcom-G5` `sitcom-G1` `sitcom-G4` |
+| 초별 연출 | 다운로드 영상 2.5–3.5초(쓰는 길이 1초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 맞은편을 봄, 시트콤식으로 빠르게 살짝 밀어 들어감 / 움직임: 고개를 숙이고 있던 똘이가 고개를 들어 같은 조각을 노려봄 / 표정: 가늘게 뜬 눈 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 First-person looking across the table. A little kid in dinosaur pajamas lifts their head and narrows their eyes at the same drumstick; a quick comedic zoom-in. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -92,7 +105,12 @@ First-person looking across the table. A little kid in dinosaur pajamas lifts th
 
 ### ③-2 상대 대사 — `c3b`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 2.5초) · 첫 그림 `sitcom-c3b-S` · 끝 그림 `sitcom-c3b-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `sitcom-c3b-S` · 끝 그림 `sitcom-c3b-E` · 이 컷의 그림 전부 `sitcom-c3b-S` `sitcom-c3b-M` `sitcom-c3b-E` · 참조한 장르 기준 `sitcom-G1` `sitcom-G4` |
+| 초별 연출 | 다운로드 영상 3.5–6.0초(쓰는 길이 2.5초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 똘이 얼굴 클로즈업, 고정 / 움직임: «잠깐 !»에서 손을 번쩍 들고 말함 / 표정: 가늘게 뜬 눈 → 손 번쩍 → 볼 빵빵한 결의 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 Close-up of a cute little kid with sauce on their cheek. They throw a hand up while talking, then puff out their cheeks with determination. Warm pendant light. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -100,7 +118,12 @@ Close-up of a cute little kid with sauce on their cheek. They throw a hand up wh
 
 ### ③-3 상대 행동 — `c3c`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 2초) · 첫 그림 `sitcom-c3c-S` · 끝 그림 `sitcom-c3c-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `sitcom-c3c-S` · 끝 그림 `sitcom-c3c-E` · 이 컷의 그림 전부 `sitcom-c3c-S` `sitcom-c3c-M` `sitcom-c3c-E` · 참조한 장르 기준 `sitcom-G3` `sitcom-G5` |
+| 초별 연출 | 다운로드 영상 6.0–8.0초(쓰는 길이 2초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 똘이 어깨 너머(뒤쪽 위)에서 식탁을 봄 / 움직임: 똘이의 분홍 젓가락이 슬로모션으로 날아가듯 치킨으로 다가가 맞은편 하늘색 젓가락과 거의 닿음 / 표정: 뒷모습 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 Over-the-shoulder from behind the little kid. Their pink chopsticks move toward the drumstick in dramatic slow motion while light-blue chopsticks come from the opposite side; the two pairs almost touch. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -108,7 +131,12 @@ Over-the-shoulder from behind the little kid. Their pink chopsticks move toward 
 
 ### ⑥-1 반격(아이 목소리 자리) — `c6a`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 4초(쓰는 길이 3.5초) · 첫 그림 `sitcom-c6a-S` · 끝 그림 `sitcom-c6a-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `sitcom-c6a-S` · 끝 그림 `sitcom-c6a-E` · 이 컷의 그림 전부 `sitcom-c6a-S` `sitcom-c6a-M1` `sitcom-c6a-M2` `sitcom-c6a-E` · 참조한 장르 기준 `sitcom-G6` |
+| 초별 연출 | 다운로드 영상 8.0–11.5초(쓰는 길이 3.5초 — 만든 4초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 시작은 멈춤 그림과 같은 구도 / 움직임: 내 젓가락이 먼저 치킨을 집어 들어 올리고, 똘이 젓가락이 반대쪽을 집어 양쪽에서 팽팽 / 표정: 똘이 놀람(흐릿) |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 4초 · 소리 `off` · 예상 크레딧 약 8(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 24). 바꾸면 다시 허락 |
 
 ```text
 First-person. The light-blue chopsticks grab the drumstick first and lift it; the pink chopsticks clamp the other end, and both pull tight. Playful comedic timing. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -116,7 +144,12 @@ First-person. The light-blue chopsticks grab the drumstick first and lift it; th
 
 ### ⑥-2 겨루기 — `c6b`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 1.5초) · 첫 그림 `sitcom-c6b-S` · 끝 그림 `sitcom-c6b-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `sitcom-c6b-S` · 끝 그림 `sitcom-c6b-E` · 이 컷의 그림 전부 `sitcom-c6b-S` `sitcom-c6b-M` `sitcom-c6b-E` · 참조한 장르 기준 `sitcom-G6` `sitcom-G4` |
+| 초별 연출 | 다운로드 영상 11.5–13.0초(쓰는 길이 1.5초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 아주 가까이 / 움직임: 젓가락 줄다리기 — 똘이 쪽으로 살짝 끌려갔다가 내 쪽으로 쏙 빠져나옴, 똘이 젓가락이 허공을 집음 / 표정: 똘이 볼 빵빵 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 First-person close-up of a chopstick tug-of-war over the drumstick; it slides slightly toward the kid, then pops free toward the camera, and the pink chopsticks snap on empty air. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -124,7 +157,12 @@ First-person close-up of a chopstick tug-of-war over the drumstick; it slides sl
 
 ### ⑥-3 승리 — `c6c`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 1초) · 첫 그림 `sitcom-c6c-S` · 끝 그림 `sitcom-c6c-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `sitcom-c6c-S` · 끝 그림 `sitcom-c6c-E` · 이 컷의 그림 전부 `sitcom-c6c-S` `sitcom-c6c-E` · 참조한 장르 기준 `sitcom-G6` `sitcom-G4` |
+| 초별 연출 | 다운로드 영상 13.0–14.0초(쓰는 길이 1초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 고정 / 움직임: 치킨을 내 접시에 놓고, 똘이는 입을 삐죽하다가 머쓱하게 웃으며 자기 접시의 채소를 집음 / 표정: 삐죽 → 머쓱한 웃음 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 First-person. The drumstick lands on the child's plate with a pop; across the table the little kid pouts, then grins sheepishly and picks up a vegetable from their own plate. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
@@ -132,7 +170,12 @@ First-person. The drumstick lands on the child's plate with a pop; across the ta
 
 ### ⑥-4 환호 — `c6d`
 
-- 모델 `kling3_0` · 모드 `std` · 소리 `off` · 길이 3초(쓰는 길이 1초) · 첫 그림 `sitcom-c6d-S` · 끝 그림 `sitcom-c6d-E`
+| 항목 | 내용 |
+|---|---|
+| 넣을 그림 | 첫 그림 `sitcom-c6d-S` · 끝 그림 `sitcom-c6d-E` · 이 컷의 그림 전부 `sitcom-c6d-S` `sitcom-c6d-E` · 참조한 장르 기준 `sitcom-G5` `sitcom-G1` |
+| 초별 연출 | 다운로드 영상 14.0–15.0초(쓰는 길이 1초 — 만든 3초에서 가장 좋은 구간을 고르거나 속도를 맞춰 넣는다, 조립 때 결정) — 카메라: 1인칭. 고정, 반짝이는 조명 효과 / 움직임: 식탁 옆 엄마·아빠가 웃으며 박수, 똘이도 웃음 — 시트콤 엔딩 / 표정: 모두 웃음 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3초 · 소리 `off` · 예상 크레딧 약 6(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 같은 설정 3회까지(최대 약 18). 바꾸면 다시 허락 |
 
 ```text
 First-person. Mom and dad beside the dinner table laugh and clap, the little kid laughs too; warm light with a little sitcom-ending sparkle. Keep the exact art style, colors, lighting and character design of the start and end frames. 2D hand-drawn animated film look. No text, no subtitles, no logos.
