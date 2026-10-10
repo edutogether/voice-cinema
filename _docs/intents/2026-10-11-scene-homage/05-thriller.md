@@ -51,7 +51,7 @@
 ## 3. 영상 만들기(Higgsfield) — «영상 만들기 전 확인»의 원본, 대표님 허락 뒤에만
 
 토막마다 생성 **전에** 아래 칸을 실제로 뽑은 그림과 함께 검토 페이지 «영상 만들기 전 확인»에 세팅해 팀장에게 보내고,
-대표님 허락이 온 토막만 만든다([제작 공통 §4 관문 C](00-production.md)). 두 토막 1회씩이면 1080p 17.5 / 4K 60크레딧(10/11 조회값, 화질은 [제작 공통 §5](00-production.md) 비교로 대표님 결정 대기).
+대표님 허락이 온 토막만 만든다([제작 공통 §4 관문 C](00-production.md)). 두 토막 1회씩이면 1080p 17.5크레딧(10/11 조회값, 대표님 확정 화질).
 계속 흐트러지면 [제작 공통 §5](00-production.md)의 «나눠 만들기»로 `K025`·`K085`에서 한 번 더 나눈다.
 
 ### A 토막 0.0–5.0초
@@ -60,8 +60,8 @@
 |---|---|
 | 넣을 그림 | 첫 그림 `thriller-K000` · 끝 그림 `thriller-K050` · 사이 키프레임 `thriller-K010` `thriller-K015` `thriller-K025` `thriller-K035` `thriller-K043` · 참조한 기준(검토용) `thriller-R1` `thriller-R2` `thriller-R3` `thriller-R4` `thriller-R5` |
 | 초별 연출 | 0.0–1.5 분위기·낌새: 화면 1인칭(아이 눈높이), 어두운 큰 주방 — 조리대 뒤로 몸을 낮춤. 조리대 끝 바닥에 그림자와 함께 공룡 발이 들어옴 / 동작 손으로 조리대 모서리를 짚음, 옆에 동생이 웅크림. 긴 발톱이 바닥을 톡 / 대사 — / 소리 냉장고 웅웅, 톡… 톡…<br>1.5–3.5 상대 대사: 화면 1인칭, 옆의 동생 얼굴(가슴 위) — 겁먹은 눈 / 동작 입술에 손가락을 대고 속삭임 / 대사 동생: **«쉿… 움직이지 마 !»** / 소리 속삭임, 발톱 소리가 가까워짐<br>3.5–5.0 위기: 화면 1인칭, 천천히 위를 올려다봄 — 조리대 위로 랩터 머리가 쑥, 바로 위에서 킁킁. **5.0초: 바로 위 랩터 머리(반대쪽을 보는 순간), 옆의 동생, 멀리 열린 냉동실 문** / 동작 랩터가 고개를 반대로 돌림 / 대사 — / 소리 킁킁, 낮은 그르렁 최고조 |
-| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) 또는 `4k`(4K) — 대표님 결정 대기(720p는 쓰지 않음) · 길이 5초 · 소리 `off` · 첫 그림 `thriller-K000` · 끝 그림 `thriller-K050` · 예상 크레딧 1080p 8.75 / 4K 30(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
-| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25 / 4K 90. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
+| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) — 대표님 10/11 확정(720p·4K 채택 안 함) · 길이 5초 · 소리 `off` · 첫 그림 `thriller-K000` · 끝 그림 `thriller-K050` · 예상 크레딧 1080p 8.75(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
 
 ```text
 First-person view of a child hiding low behind stainless-steel counters in a large dark industrial kitchen with cold flickering fluorescent lights and red emergency lights. 0-1.5s: the child's hand grips the counter edge while a younger sibling in a yellow hoodie crouches beside; at the end of the counter a dinosaur's clawed foot steps in with a shadow and taps the tile. 1.5-3.5s: the view turns to the scared sibling, who puts a finger to their lips and whispers a short line, lips moving. 3.5-5s: the view slowly looks up as a raptor-like dinosaur head with its mouth closed rises over the counter right above, sniffing, then turns its head the other way; far away an open walk-in freezer breathes white mist. Photorealistic modern dinosaur-film live-action look, cold flickering fluorescent kitchen light with red emergency lights, tense but not gory. One continuous camera move with no cuts. Keep exactly the art style, colors, lighting and character designs of the start and end frames. The main character is first-person: only their hands and arms are visible, never their face. No text, no subtitles, no logos.
@@ -73,8 +73,8 @@ First-person view of a child hiding low behind stainless-steel counters in a lar
 |---|---|
 | 넣을 그림 | 첫 그림 `thriller-K050` · 끝 그림 `thriller-K100` · 사이 키프레임 `thriller-K060` `thriller-K070` `thriller-K080` `thriller-K085` `thriller-K092` · 참조한 기준(검토용) `thriller-R1` `thriller-R2` `thriller-R3` `thriller-R4` `thriller-R5` |
 | 초별 연출 | 5.0–8.5 내 목소리: 화면 1인칭, 동생 손을 잡고 냉동실로 달려 문 옆으로 비켜섬 — 랩터가 돌아보고 뒤쫓아 옴 / 동작 — / 대사 **아이 목소리** / 소리 발소리, 짧은 울음(작게)<br>8.5–10.0 해소: 화면 1인칭, 랩터가 미끄러져 냉동실로 들어가고 두 손이 철문을 쾅 닫아 빗장을 내림 — 동생이 안도의 웃음 / 동작 — / 대사 — / 소리 «빠밤» 쾅 ! 철컥, 안도의 화음 |
-| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) 또는 `4k`(4K) — 대표님 결정 대기(720p는 쓰지 않음) · 길이 5초 · 소리 `off` · 첫 그림 `thriller-K050` · 끝 그림 `thriller-K100` · 예상 크레딧 1080p 8.75 / 4K 30(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
-| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25 / 4K 90. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
+| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) — 대표님 10/11 확정(720p·4K 채택 안 함) · 길이 5초 · 소리 `off` · 첫 그림 `thriller-K050` · 끝 그림 `thriller-K100` · 예상 크레딧 1080p 8.75(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
 
 ```text
 Continuing first-person. 5-8.5s: the hand grabs the sibling's hand and they sprint to the freezer and duck aside as the dinosaur turns and chases them. 8.5-10s: the dinosaur slides on the tiles into the freezer, the hands slam the heavy steel door shut and drop the latch, and the sibling smiles with relief. Photorealistic modern dinosaur-film live-action look, cold flickering fluorescent kitchen light with red emergency lights, tense but not gory. One continuous camera move with no cuts. Keep exactly the art style, colors, lighting and character designs of the start and end frames. The main character is first-person: only their hands and arms are visible, never their face. No text, no subtitles, no logos.
@@ -85,7 +85,7 @@ Continuing first-person. 5-8.5s: the hand grabs the sibling's hand and they spri
 | 항목 | 내용 |
 |---|---|
 | 넣을 문장 | 동생: **«쉿… 움직이지 마 !»** — 1.6초에 시작해 3.4초 전에 끝(1.8초) |
-| 자막 | «쉿… 움직이지 마 !»(화면 아래 가운데, 1.5–3.5초 — 굽는 방식은 [app-plan.md §5](app-plan.md) 결정 대기) |
+| 자막 | «쉿… 움직이지 마 !» — 앱이 영상 위에 띄우는 넷플릭스식 자막(1.6초에 나타나 3.4초에 사라짐, [app-plan.md §2-3](app-plan.md)). 원판·완성본에는 굽지 않는다 — 완성본에는 상대 목소리만 |
 | 목소리 지시 | 7~8살 아이의 떨리는 속삭임. 1.8초 안에 끝낸다. 아이 목소리 합성이 어색하거나 서비스가 막으면 같이교육 선생님 녹음(녹음 동의서) |
 | 1.8초를 넘으면 | «움직이지 마 !» |
 | 엔진 | Higgsfield 안 음성 합성 ElevenLabs v4(한국어). 어색하면 같이교육 선생님 녹음(녹음 동의서) |

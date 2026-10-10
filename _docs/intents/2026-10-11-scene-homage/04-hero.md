@@ -54,7 +54,7 @@
 ## 3. 영상 만들기(Higgsfield) — «영상 만들기 전 확인»의 원본, 대표님 허락 뒤에만
 
 토막마다 생성 **전에** 아래 칸을 실제로 뽑은 그림과 함께 검토 페이지 «영상 만들기 전 확인»에 세팅해 팀장에게 보내고,
-대표님 허락이 온 토막만 만든다([제작 공통 §4 관문 C](00-production.md)). 두 토막 1회씩이면 1080p 17.5 / 4K 60크레딧(10/11 조회값, 화질은 [제작 공통 §5](00-production.md) 비교로 대표님 결정 대기).
+대표님 허락이 온 토막만 만든다([제작 공통 §4 관문 C](00-production.md)). 두 토막 1회씩이면 1080p 17.5크레딧(10/11 조회값, 대표님 확정 화질).
 계속 흐트러지면 [제작 공통 §5](00-production.md)의 «나눠 만들기»로 `K025`·`K085`에서 한 번 더 나눈다.
 
 ### A 토막 0.0–5.0초
@@ -63,8 +63,8 @@
 |---|---|
 | 넣을 그림 | 첫 그림 `hero-K000` · 끝 그림 `hero-K050` · 사이 키프레임 `hero-K010` `hero-K015` `hero-K025` `hero-K035` `hero-K043` · 참조한 기준(검토용) `hero-R1` `hero-R2` `hero-R3` `hero-R4` `hero-R5` `hero-R7` |
 | 초별 연출 | 0.0–1.5 분위기·낌새: 화면 1인칭, 폐허가 된 들판에 홀로 — 연기 너머 끝없는 그림자 로봇 군단. 손목 장치가 깜박이고 왼쪽에서 푸른빛이 번짐 / 동작 장갑 낀 손이 금 간 손목 장치를 쥠 / 대사 — / 소리 바람, 낮은 북, 지지직 무전<br>1.5–3.5 상대 대사: 화면 1인칭, 왼쪽으로 고개를 돌림 — 빛의 원에서 동료가 걸어 나와 가까이(가슴 위) / 동작 씩 웃으며 고개를 끄덕임 / 대사 동료: **«왼쪽을 봐. 우리가 왔어 !»** / 소리 무전과 실제 목소리가 겹침, 포털 소리<br>3.5–5.0 위기: 화면 1인칭, 오른쪽으로 둘러봄 — 빛의 원이 연달아 열리고 지원군이 줄지어 섬, 군단이 몰려오기 시작. **5.0초: 사방에 열린 빛의 원, 양옆의 동료들, 몰려오는 그림자 군단** / 동작 — / 대사 — / 소리 포털 소리 연달아, 금관 최고조 |
-| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) 또는 `4k`(4K) — 대표님 결정 대기(720p는 쓰지 않음) · 길이 5초 · 소리 `off` · 첫 그림 `hero-K000` · 끝 그림 `hero-K050` · 예상 크레딧 1080p 8.75 / 4K 30(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
-| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25 / 4K 90. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
+| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) — 대표님 10/11 확정(720p·4K 채택 안 함) · 길이 5초 · 소리 `off` · 첫 그림 `hero-K000` · 끝 그림 `hero-K050` · 예상 크레딧 1080p 8.75(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
 
 ```text
 First-person view of a young hero with dark navy gloves standing alone on a ruined battlefield at dusty sunset, a vast army of faceless black robots with glowing purple eyes far away. 0-1.5s: the gloved hand grips a cracked glowing wrist device, which blinks as blue light flares on the left. 1.5-3.5s: the view turns left to a swirling blue circular portal; an adult hero in a silver-navy armored suit walks out toward the camera, smiles and says a short line, lips moving. 3.5-5s: the view pans right as more blue portals open one after another, many heroes in different suits step out and line up, and the shadow army starts to surge forward. Photorealistic blockbuster live-action look, dusty sunset backlight, swirling blue circular portals. One continuous camera move with no cuts. Keep exactly the art style, colors, lighting and character designs of the start and end frames. The main character is first-person: only their hands and arms are visible, never their face. No text, no subtitles, no logos.
@@ -76,8 +76,8 @@ First-person view of a young hero with dark navy gloves standing alone on a ruin
 |---|---|
 | 넣을 그림 | 첫 그림 `hero-K050` · 끝 그림 `hero-K100` · 사이 키프레임 `hero-K060` `hero-K070` `hero-K080` `hero-K085` `hero-K092` · 참조한 기준(검토용) `hero-R1` `hero-R2` `hero-R3` `hero-R4` `hero-R5` `hero-R7` |
 | 초별 연출 | 5.0–8.5 내 목소리: 화면 1인칭, 손을 높이 들자 손목 장치가 환해지고, 동료들이 일제히 빛나는 손을 들어 답한 뒤 함께 앞으로 달려 나감 / 동작 — / 대사 **아이 목소리** / 소리 함성(작게)<br>8.5–10.0 해소: 화면 1인칭, 하늘색 빛의 물결이 퍼져 그림자 군단이 빛 알갱이로 흩어지고 들판에 햇빛이 터짐 — 옆의 동료가 엄지를 듦 / 동작 — / 대사 — / 소리 «빠밤» 웅 — 빛의 물결, 승리 화음 |
-| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) 또는 `4k`(4K) — 대표님 결정 대기(720p는 쓰지 않음) · 길이 5초 · 소리 `off` · 첫 그림 `hero-K050` · 끝 그림 `hero-K100` · 예상 크레딧 1080p 8.75 / 4K 30(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
-| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25 / 4K 90. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
+| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) — 대표님 10/11 확정(720p·4K 채택 안 함) · 길이 5초 · 소리 `off` · 첫 그림 `hero-K050` · 끝 그림 `hero-K100` · 예상 크레딧 1080p 8.75(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
 
 ```text
 Continuing first-person. 5-8.5s: the gloved hand rises high and the wrist device blazes; all the heroes raise their glowing hands in answer and charge forward together. 8.5-10s: a wave of sky-blue light sweeps across the field, the shadow robots dissolve into light particles with no fighting, and sunlight bursts over the plain while the hero beside gives a thumbs-up. Photorealistic blockbuster live-action look, dusty sunset backlight, swirling blue circular portals. One continuous camera move with no cuts. Keep exactly the art style, colors, lighting and character designs of the start and end frames. The main character is first-person: only their hands and arms are visible, never their face. No text, no subtitles, no logos.
@@ -88,7 +88,7 @@ Continuing first-person. 5-8.5s: the gloved hand rises high and the wrist device
 | 항목 | 내용 |
 |---|---|
 | 넣을 문장 | 동료: **«왼쪽을 봐. 우리가 왔어 !»** — 1.6초에 시작해 3.4초 전에 끝(1.8초) |
-| 자막 | «왼쪽을 봐. 우리가 왔어 !»(화면 아래 가운데, 1.5–3.5초 — 굽는 방식은 [app-plan.md §5](app-plan.md) 결정 대기) |
+| 자막 | «왼쪽을 봐. 우리가 왔어 !» — 앱이 영상 위에 띄우는 넷플릭스식 자막(1.6초에 나타나 3.4초에 사라짐, [app-plan.md §2-3](app-plan.md)). 원판·완성본에는 굽지 않는다 — 완성본에는 상대 목소리만 |
 | 목소리 지시 | 어른 남성. 듬직하고 밝게, 씩 웃는 느낌. 무전 잡음과 실제 목소리가 살짝 겹친다. |
 | 1.8초를 넘으면 | «왼쪽을 봐 !» |
 | 엔진 | Higgsfield 안 음성 합성 ElevenLabs v4(한국어). 어색하면 같이교육 선생님 녹음(녹음 동의서) |

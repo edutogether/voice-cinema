@@ -51,7 +51,7 @@
 ## 3. 영상 만들기(Higgsfield) — «영상 만들기 전 확인»의 원본, 대표님 허락 뒤에만
 
 토막마다 생성 **전에** 아래 칸을 실제로 뽑은 그림과 함께 검토 페이지 «영상 만들기 전 확인»에 세팅해 팀장에게 보내고,
-대표님 허락이 온 토막만 만든다([제작 공통 §4 관문 C](00-production.md)). 두 토막 1회씩이면 1080p 17.5 / 4K 60크레딧(10/11 조회값, 화질은 [제작 공통 §5](00-production.md) 비교로 대표님 결정 대기).
+대표님 허락이 온 토막만 만든다([제작 공통 §4 관문 C](00-production.md)). 두 토막 1회씩이면 1080p 17.5크레딧(10/11 조회값, 대표님 확정 화질).
 계속 흐트러지면 [제작 공통 §5](00-production.md)의 «나눠 만들기»로 `K025`·`K085`에서 한 번 더 나눈다.
 
 ### A 토막 0.0–5.0초
@@ -60,8 +60,8 @@
 |---|---|
 | 넣을 그림 | 첫 그림 `sports-K000` · 끝 그림 `sports-K050` · 사이 키프레임 `sports-K010` `sports-K015` `sports-K025` `sports-K035` `sports-K043` · 참조한 기준(검토용) `sports-R1` `sports-R2` `sports-R3` `sports-R4` `sports-R5` |
 | 초별 연출 | 0.0–1.5 분위기·낌새: 화면 1인칭, 관중이 꽉 찬 체육관 코트를 달림(전광판은 빛만) — 왼쪽에서 동료가 공을 몰다 수비 둘에게 막힘 / 동작 숨 가쁘게 달림 / 대사 — / 소리 함성, 운동화 끽끽, 드리블 쿵쿵<br>1.5–3.5 상대 대사: 화면 동료 얼굴(가슴 위) — 땀, 굳은 눈빛으로 나를 봄 / 동작 — / 대사 동료: **«너한테 맡긴다 !»** / 소리 함성이 줄어듦<br>3.5–5.0 위기: 화면 1인칭, 공이 날아와 두 손에 안기고 골대를 올려다봄. **5.0초: 공을 쥔 두 손, 위로 골대, 숨죽인 체육관** / 동작 — / 대사 — / 소리 공 받는 소리 → 함성이 뚝 끊기고 정적 |
-| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) 또는 `4k`(4K) — 대표님 결정 대기(720p는 쓰지 않음) · 길이 5초 · 소리 `off` · 첫 그림 `sports-K000` · 끝 그림 `sports-K050` · 예상 크레딧 1080p 8.75 / 4K 30(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
-| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25 / 4K 90. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
+| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) — 대표님 10/11 확정(720p·4K 채택 안 함) · 길이 5초 · 소리 `off` · 첫 그림 `sports-K000` · 끝 그림 `sports-K050` · 예상 크레딧 1080p 8.75(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
 
 ```text
 First-person view of a young basketball player in a blue uniform running on a wooden court in a packed indoor gym in the final seconds of a game. 0-1.5s: the view runs up the court past blurred players while on the left a teammate dribbling is blocked by two defenders in white. 1.5-3.5s: the tall teammate looks straight at the camera, sweating, and shouts a short line, lips moving. 3.5-5s: he passes, the ball flies into the hero's hands and the view looks up at the hoop as the crowd falls completely silent. Photorealistic sports-film live-action look, bright gym lights, sweat, motion blur, slow-motion silence at the shot. One continuous camera move with no cuts. Keep exactly the art style, colors, lighting and character designs of the start and end frames. The main character is first-person: only their hands and arms are visible, never their face. No text, no subtitles, no logos.
@@ -73,8 +73,8 @@ First-person view of a young basketball player in a blue uniform running on a wo
 |---|---|
 | 넣을 그림 | 첫 그림 `sports-K050` · 끝 그림 `sports-K100` · 사이 키프레임 `sports-K060` `sports-K070` `sports-K080` `sports-K085` `sports-K092` · 참조한 기준(검토용) `sports-R1` `sports-R2` `sports-R3` `sports-R4` `sports-R5` |
 | 초별 연출 | 5.0–8.5 내 목소리: 화면 1인칭, 무릎을 굽혔다 뛰어올라 슛 — 공이 손끝을 떠나 높이 포물선, 멀리 숨죽인 관중 / 동작 — / 대사 **아이 목소리** / 소리 정적, 심장 박동만<br>8.5–10.0 해소: 화면 1인칭, 공이 골망을 촥 가르고 체육관이 터질 듯 환호 — 동료의 손이 하이파이브하러 들어옴 / 동작 — / 대사 — / 소리 «빠밤» 촥 ! + 버저, 함성 |
-| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) 또는 `4k`(4K) — 대표님 결정 대기(720p는 쓰지 않음) · 길이 5초 · 소리 `off` · 첫 그림 `sports-K050` · 끝 그림 `sports-K100` · 예상 크레딧 1080p 8.75 / 4K 30(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
-| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25 / 4K 90. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
+| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) — 대표님 10/11 확정(720p·4K 채택 안 함) · 길이 5초 · 소리 `off` · 첫 그림 `sports-K050` · 끝 그림 `sports-K100` · 예상 크레딧 1080p 8.75(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
 
 ```text
 Continuing first-person. 5-8.5s: the view crouches, jumps and shoots; the ball leaves the fingertips in a high slow-motion arc over the silent crowd. 8.5-10s: the ball swishes through the net, the buzzer sounds and the gym erupts while the teammate's hand comes in for a high-five. Photorealistic sports-film live-action look, bright gym lights, sweat, motion blur, slow-motion silence at the shot. One continuous camera move with no cuts. Keep exactly the art style, colors, lighting and character designs of the start and end frames. The main character is first-person: only their hands and arms are visible, never their face. No text, no subtitles, no logos.
@@ -85,7 +85,7 @@ Continuing first-person. 5-8.5s: the view crouches, jumps and shoots; the ball l
 | 항목 | 내용 |
 |---|---|
 | 넣을 문장 | 동료: **«너한테 맡긴다 !»** — 1.6초에 시작해 3.4초 전에 끝(1.8초) |
-| 자막 | «너한테 맡긴다 !»(화면 아래 가운데, 1.5–3.5초 — 굽는 방식은 [app-plan.md §5](app-plan.md) 결정 대기) |
+| 자막 | «너한테 맡긴다 !» — 앱이 영상 위에 띄우는 넷플릭스식 자막(1.6초에 나타나 3.4초에 사라짐, [app-plan.md §2-3](app-plan.md)). 원판·완성본에는 굽지 않는다 — 완성본에는 상대 목소리만 |
 | 목소리 지시 | 10대 남자 선수. 숨이 차지만 결연하게 외친다. 1.8초 안에 끝낸다. |
 | 1.8초를 넘으면 | «맡긴다 !» |
 | 엔진 | Higgsfield 안 음성 합성 ElevenLabs v4(한국어). 어색하면 같이교육 선생님 녹음(녹음 동의서) |

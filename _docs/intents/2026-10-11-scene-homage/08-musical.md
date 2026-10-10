@@ -52,7 +52,7 @@
 ## 3. 영상 만들기(Higgsfield) — «영상 만들기 전 확인»의 원본, 대표님 허락 뒤에만
 
 토막마다 생성 **전에** 아래 칸을 실제로 뽑은 그림과 함께 검토 페이지 «영상 만들기 전 확인»에 세팅해 팀장에게 보내고,
-대표님 허락이 온 토막만 만든다([제작 공통 §4 관문 C](00-production.md)). 두 토막 1회씩이면 1080p 17.5 / 4K 60크레딧(10/11 조회값, 화질은 [제작 공통 §5](00-production.md) 비교로 대표님 결정 대기).
+대표님 허락이 온 토막만 만든다([제작 공통 §4 관문 C](00-production.md)). 두 토막 1회씩이면 1080p 17.5크레딧(10/11 조회값, 대표님 확정 화질).
 계속 흐트러지면 [제작 공통 §5](00-production.md)의 «나눠 만들기»로 `K025`·`K085`에서 한 번 더 나눈다.
 
 ### A 토막 0.0–5.0초
@@ -61,8 +61,8 @@
 |---|---|
 | 넣을 그림 | 첫 그림 `musical-K000` · 끝 그림 `musical-K050` · 사이 키프레임 `musical-K010` `musical-K015` `musical-K025` `musical-K035` `musical-K043` · 참조한 기준(검토용) `musical-R1` `musical-R2` `musical-R3` `musical-R4` `musical-R5` `musical-R6` |
 | 초별 연출 | 0.0–1.5 분위기·낌새: 화면 1인칭, 전용기 안 — 창밖 노을, 탁자 위 김 나는 컵라면. 기내 불빛이 깜박이고 통로 끝에 보랏빛 연기 / 동작 젓가락으로 면을 들어 올림, 맞은편 멤버 둘이 후루룩 / 대사 — / 소리 후루룩, 가벼운 비트(우리 곡) → 쿵<br>1.5–3.5 상대 대사: 화면 통로 끝 악령 우두머리에게 밀어 들어감(가슴 위) — 보랏빛 연기 몸, 빛나는 눈, 장난스럽고 무섭지 않게 / 동작 손가락을 까딱하며 씩 웃음 / 대사 악령: **«이제 내 무대야 !»** / 소리 일그러진 낮은 목소리, 메아리<br>3.5–5.0 위기: 화면 1인칭, 악령 무리가 통로로 몰려오고 라면 컵이 기울어짐 → 젓가락을 내려놓고 일어섬. **5.0초: 몰려오는 악령 무리, 기울어진 라면 컵, 일어서는 손** / 동작 — / 대사 — / 소리 웅웅 고조, 북 롤 최고조 |
-| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) 또는 `4k`(4K) — 대표님 결정 대기(720p는 쓰지 않음) · 길이 5초 · 소리 `off` · 첫 그림 `musical-K000` · 끝 그림 `musical-K050` · 예상 크레딧 1080p 8.75 / 4K 30(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
-| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25 / 4K 90. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
+| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) — 대표님 10/11 확정(720p·4K 채택 안 함) · 길이 5초 · 소리 `off` · 첫 그림 `musical-K000` · 끝 그림 `musical-K050` · 예상 크레딧 1080p 8.75(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
 
 ```text
 First-person view of a teenage idol hunter on a private jet at sunset, stylized animation. 0-1.5s: chopsticks lift steaming noodles from a cup of ramen while two bandmates slurp noodles across the table; the cabin lights flicker and purple smoke gathers at the end of the aisle. 1.5-3.5s: the camera pushes toward a playful purple smoke demon boss with glowing yellow eyes and crown-like horns; he wags a finger and says a short line with a grin, mouth moving, no teeth. 3.5-5s: a swarm of small purple demons rushes down the aisle, the ramen cup tips, and the hand puts down the chopsticks and pushes up from the table. Stylized animated feature-film look, clean outlines, neon sky-blue and purple glow, sparkles, rhythmic dance motion. One continuous camera move with no cuts. Keep exactly the art style, colors, lighting and character designs of the start and end frames. The main character is first-person: only their hands and arms are visible, never their face. No text, no subtitles, no logos.
@@ -74,8 +74,8 @@ First-person view of a teenage idol hunter on a private jet at sunset, stylized 
 |---|---|
 | 넣을 그림 | 첫 그림 `musical-K050` · 끝 그림 `musical-K100` · 사이 키프레임 `musical-K060` `musical-K070` `musical-K080` `musical-K085` `musical-K092` · 참조한 기준(검토용) `musical-R1` `musical-R2` `musical-R3` `musical-R4` `musical-R5` `musical-R6` |
 | 초별 연출 | 5.0–8.5 내 목소리: 화면 1인칭, 손을 들자 하늘색 빛이 감싸며 무대 의상으로 변신(손에 빛나는 마이크), 양옆 멤버들과 첫 동작 — 빛의 음파가 뻗음 / 동작 — / 대사 **아이 목소리** / 소리 변신 소리(작게), 우리 곡 비트<br>8.5–10.0 해소: 화면 1인칭, 음파에 악령들이 반짝이로 펑 흩어지고, 마무리 자세 너머 탁자 위 라면 컵이 무사히 서 있음 / 동작 — / 대사 — / 소리 «빠밤» 펑 펑, 마지막 비트 |
-| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) 또는 `4k`(4K) — 대표님 결정 대기(720p는 쓰지 않음) · 길이 5초 · 소리 `off` · 첫 그림 `musical-K050` · 끝 그림 `musical-K100` · 예상 크레딧 1080p 8.75 / 4K 30(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
-| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25 / 4K 90. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
+| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) — 대표님 10/11 확정(720p·4K 채택 안 함) · 길이 5초 · 소리 `off` · 첫 그림 `musical-K050` · 끝 그림 `musical-K100` · 예상 크레딧 1080p 8.75(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
 
 ```text
 Continuing first-person. 5-8.5s: sky-blue light wraps the raised hand, transforming the sleeve into a sparkling silver stage costume with a glowing microphone, and the two bandmates in stage costumes strike the first dance move beside as sky-blue sound waves burst forward. 8.5-10s: the demons pop into sparkles and vanish out of the windows, the three hold a final pose and the ramen cup stands safe on the table. Stylized animated feature-film look, clean outlines, neon sky-blue and purple glow, sparkles, rhythmic dance motion. One continuous camera move with no cuts. Keep exactly the art style, colors, lighting and character designs of the start and end frames. The main character is first-person: only their hands and arms are visible, never their face. No text, no subtitles, no logos.
@@ -86,7 +86,7 @@ Continuing first-person. 5-8.5s: sky-blue light wraps the raised hand, transform
 | 항목 | 내용 |
 |---|---|
 | 넣을 문장 | 악령: **«이제 내 무대야 !»** — 1.6초에 시작해 3.4초 전에 끝(1.8초) |
-| 자막 | «이제 내 무대야 !»(화면 아래 가운데, 1.5–3.5초 — 굽는 방식은 [app-plan.md §5](app-plan.md) 결정 대기) |
+| 자막 | «이제 내 무대야 !» — 앱이 영상 위에 띄우는 넷플릭스식 자막(1.6초에 나타나 3.4초에 사라짐, [app-plan.md §2-3](app-plan.md)). 원판·완성본에는 굽지 않는다 — 완성본에는 상대 목소리만 |
 | 목소리 지시 | 일그러진 낮은 목소리, 장난스럽게 으스대며. 기내에 울리는 메아리를 살짝. 무섭지 않게. |
 | 1.8초를 넘으면 | «내 무대야 !» |
 | 엔진 | Higgsfield 안 음성 합성 ElevenLabs v4(한국어). 어색하면 같이교육 선생님 녹음(녹음 동의서) |

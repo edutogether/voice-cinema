@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>장르 색 시안 — 장면 더빙 2.0</title>
+<style>
+/* 홈 카드(src/styles/home.css)의 누를 때 강조를 그대로 옮겼다 — 테두리 2px · 번짐 12px(색 0.45) · 색 덮기(색 0.12).
+   PC 호버는 장르 색이 아니라 빨강(#df291f) 테두리라, 장르 색이 보이는 것은 터치 기기에서 누를 때와 한 장씩 돌 때다. */
+:root { --page: #fafafa; --ink: #171717; --sub: #6b6b6b; --line: #e5e5e5; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 16px/1.5 Pretendard, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; }
+main { max-width: 1680px; margin: 0 auto; padding: 32px 40px 48px; }
+h1 { font-size: 1.75rem; margin: 0 0 6px; letter-spacing: -.03em; }
+.lead { color: var(--sub); margin: 0 0 28px; font-size: .9375rem; }
+section { margin: 0 0 36px; padding: 16px; }
+h2 { font-size: 1.375rem; margin: 0 0 4px; letter-spacing: -.03em; }
+h2 small { font-size: .9375rem; color: var(--sub); font-weight: 500; margin-left: 8px; }
+.grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px 24px; margin-top: 18px; }
+.tile { display: flex; flex-direction: column; background: white; border-radius: 12px;
+  box-shadow: 0 0 0 2px var(--c), 0 0 12px var(--c-glow), inset 0 0 0 100vmax var(--c-wash); }
+.tile-media { position: relative; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden;
+  background: radial-gradient(120% 90% at 30% 25%, #3a3f4a 0%, #1b1d22 55%, #111214 100%); }
+.tile-number { position: absolute; bottom: 10px; left: 18px; color: #fff; font-size: 3.25rem; font-weight: 800; font-style: italic; line-height: 1; letter-spacing: -.06em; text-shadow: 0 2px 12px #0008; }
+.tile-body { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 14px 14px; }
+.gname { display: flex; align-items: center; gap: 8px; font-size: 1.25rem; font-weight: 700; letter-spacing: -.035em; }
+.tile-length { padding: 1px 5px; border-radius: 4px; background: #f3f3f3; color: #686868; font-size: .6875rem; font-weight: 500; }
+.gsub { display: block; margin-top: 2px; font-size: .8125rem; color: var(--sub); }
+.swatches { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+.sw { background: white; border: 1px solid var(--line); border-radius: 10px; padding: 10px; font-size: .8125rem; }
+.sw i { display: block; height: 28px; border-radius: 6px; background: var(--c); margin-bottom: 8px; }
+.sw b { display: block; font-size: .875rem; }
+.sw code { font-family: Consolas, monospace; font-size: .8125rem; }
+.sw .tag { display: inline-block; margin-top: 4px; padding: 0 6px; border-radius: 999px; font-size: .75rem; }
+.tag.keep { background: #ecfdf5; color: #047857; }
+.tag.inherit { background: #eef2ff; color: #4f46e5; }
+.tag.new { background: #fffbeb; color: #b45309; }
+.note { color: var(--sub); font-size: .875rem; margin: 10px 0 0; }
+@media (max-width: 760px) {
+  main { padding: 20px 16px 32px; }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .tile-number { font-size: 2.25rem; left: 12px; }
+  .tile-body { padding: 10px; }
+  .gname { font-size: 1rem; }
+  .swatches { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+</style>
+</head>
+<body>
+<main>
+<h1>장면 더빙 2.0 — 장르 색 시안</h1>
+<p class="lead">홈 카드를 손가락으로 누를 때(터치 기기)의 빛 색입니다. 판타지·애니메이션·드라마는 지금 색 그대로, 히어로·스릴러·스포츠는 빠지는 장르(액션·호러·시트콤)의 색을 물려받고,
+SF·뮤지컬만 새 색입니다. 두 안은 SF·뮤지컬 색만 다릅니다. 카드 그림은 아직 없어 어두운 판으로 두었습니다.</p>
+<div id="variants"></div>
+</main>
+<script>
+// 이어지는 셋은 지금 색 그대로, 셋은 빠지는 장르 색을 물려받는다(src/genres.ts 기준). SF·뮤지컬만 두 안이 다르다.
+const BASE = [
+  { id: 'sf', name: 'SF', scene: '물의 행성' },
+  { id: 'fantasy', name: '판타지', scene: '빛의 결투', color: '#8a63d2', tag: ['keep', '그대로'] },
+  { id: 'animation', name: '애니메이션', scene: '멋지게 떨어지기', color: '#d97b3f', tag: ['keep', '그대로'] },
+  { id: 'hero', name: '히어로', scene: '왼쪽을 봐', color: '#c94f5c', tag: ['inherit', '액션에서'] },
+  { id: 'thriller', name: '스릴러', scene: '주방의 발톱', color: '#2f9e6e', tag: ['inherit', '호러에서'] },
+  { id: 'drama', name: '드라마', scene: '기억의 한마디', color: '#c9a24b', tag: ['keep', '그대로'] },
+  { id: 'sports', name: '스포츠', scene: '마지막 슛', color: '#3f7fb8', tag: ['inherit', '시트콤에서'] },
+  { id: 'musical', name: '뮤지컬', scene: '라면 습격' },
+];
+const VARIANTS = [
+  { id: 'v1', title: '1안 — 색상환의 빈자리 채우기', note: 'SF 청록 · 뮤지컬 자홍 — 다른 여섯 색과 색상이 가장 멀리 떨어져 한눈에 갈린다.',
+    sf: '#3fa7c9', musical: '#c4559e' },
+  { id: 'v2', title: '2안 — 장르 느낌 살리기', note: 'SF 코발트(깊은 우주) · 뮤지컬 네온 핑크(무대 조명) — 장르 느낌은 강하지만 SF는 스포츠 파랑과, 뮤지컬은 히어로 빨강과 가까워 보일 수 있다.',
+    sf: '#4d64d6', musical: '#e0509a' },
+];
+const alpha = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${a})`; };
+const root = document.getElementById('variants');
+for (const v of VARIANTS) {
+  const genres = BASE.map((g) => (g.color ? g : { ...g, color: v[g.id], tag: ['new', '새 색'] }));
+  const sec = document.createElement('section');
+  sec.id = v.id;
+  sec.innerHTML = `<h2>${v.title}<small>누를 때 모습</small></h2><p class="note">${v.note}</p>
+    <div class="grid">${genres.map((g, i) => `<div class="tile" style="--c:${g.color};--c-glow:${alpha(g.color, 0.45)};--c-wash:${alpha(g.color, 0.12)}">
+      <div class="tile-media"><span class="tile-number">${String(i + 1).padStart(2, '0')}</span></div>
+      <div class="tile-body"><div><span class="gname">${g.name}<span class="tile-length">10초</span></span><span class="gsub">${g.scene}</span></div></div></div>`).join('')}</div>
+    <div class="swatches">${genres.map((g) => `<div class="sw" style="--c:${g.color}"><i></i><b>${g.name}</b><code>${g.color}</code><br><span class="tag ${g.tag[0]}">${g.tag[1]}</span></div>`).join('')}</div>`;
+  root.append(sec);
+}
+</script>
+</body>
+</html>

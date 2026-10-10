@@ -58,7 +58,7 @@
 ## 3. 영상 만들기(Higgsfield) — «영상 만들기 전 확인»의 원본, 대표님 허락 뒤에만
 
 토막마다 생성 **전에** 아래 칸을 실제로 뽑은 그림과 함께 검토 페이지 «영상 만들기 전 확인»에 세팅해 팀장에게 보내고,
-대표님 허락이 온 토막만 만든다([제작 공통 §4 관문 C](00-production.md)). 두 토막 1회씩이면 1080p 17.5 / 4K 60크레딧(10/11 조회값, 화질은 [제작 공통 §5](00-production.md) 비교로 대표님 결정 대기).
+대표님 허락이 온 토막만 만든다([제작 공통 §4 관문 C](00-production.md)). 두 토막 1회씩이면 1080p 17.5크레딧(10/11 조회값, 대표님 확정 화질).
 계속 흐트러지면 [제작 공통 §5](00-production.md)의 «나눠 만들기»로 `K025`·`K085`에서 한 번 더 나눈다.
 
 ### A 토막 0.0–5.0초
@@ -67,8 +67,8 @@
 |---|---|
 | 넣을 그림 | 첫 그림 `drama-K000` · 끝 그림 `drama-K050` · 사이 키프레임 `drama-K010` `drama-K015` `drama-K025` `drama-K035` `drama-K043` · 참조한 기준(검토용) `drama-R1` `drama-R2` `drama-R3` `drama-R4` `drama-R5` `drama-R7` |
 | 초별 연출 | 0.0–1.5 분위기·낌새: 화면 1인칭(아이 눈높이), 햇살 드는 오래된 방 — 창가 흔들의자의 아주 나이 든 할머니에게 다가가 곁에 무릎을 꿇음 / 동작 할머니는 멍한 눈. 아이 손에 낡은 흑백 사진 / 대사 — / 소리 시계 똑딱, 피아노 한 음씩<br>1.5–3.5 상대 대사: 화면 1인칭, 문가로 고개를 돌림 — 엄마 얼굴(가슴 위), 슬픈 미소 / 동작 고개를 저음 / 대사 엄마: **«이제… 아무도 몰라보셔.»** / 소리 조용한 목소리, 피아노<br>3.5–5.0 위기: 화면 1인칭, 다시 할머니 쪽 — 사진을 할머니 눈앞에 들고 다른 손으로 할머니 손을 잡음. **5.0초: 무표정한 할머니 얼굴, 내민 사진, 맞잡은 손** / 동작 — / 대사 — / 소리 피아노가 멈추고 정적 |
-| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) 또는 `4k`(4K) — 대표님 결정 대기(720p는 쓰지 않음) · 길이 5초 · 소리 `off` · 첫 그림 `drama-K000` · 끝 그림 `drama-K050` · 예상 크레딧 1080p 8.75 / 4K 30(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
-| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25 / 4K 90. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
+| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) — 대표님 10/11 확정(720p·4K 채택 안 함) · 길이 5초 · 소리 `off` · 첫 그림 `drama-K000` · 끝 그림 `drama-K050` · 예상 크레딧 1080p 8.75(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
 
 ```text
 First-person view of a child holding an old black-and-white photograph in a warm old wooden room with soft afternoon window light. 0-1.5s: a very old Korean grandmother with white hair in a bun and a lavender cardigan sits in a rocking chair by the window with an absent gaze; the view approaches and kneels beside her. 1.5-3.5s: the view turns to the mother at the door; she smiles sadly, shakes her head and says a short line softly, lips moving. 3.5-5s: the view turns back; the child holds the photo in front of the grandmother's eyes and takes her hand; her face is still blank. Photorealistic warm family-drama live-action look, soft afternoon window light, shallow depth of field, subtle facial acting. One continuous camera move with no cuts. Keep exactly the art style, colors, lighting and character designs of the start and end frames. The main character is first-person: only their hands and arms are visible, never their face. No text, no subtitles, no logos.
@@ -80,8 +80,8 @@ First-person view of a child holding an old black-and-white photograph in a warm
 |---|---|
 | 넣을 그림 | 첫 그림 `drama-K050` · 끝 그림 `drama-K100` · 사이 키프레임 `drama-K055` `drama-K060` `drama-K065` `drama-K070` `drama-K075` `drama-K080` `drama-K085` `drama-K090` `drama-K095` · 참조한 기준(검토용) `drama-R1` `drama-R2` `drama-R3` `drama-R4` `drama-R5` `drama-R7` |
 | 초별 연출 | 5.0–8.5 내 목소리: 화면 할머니 얼굴 가까이(1인칭) / 동작 멍함 → 눈을 깜빡 → 시선이 사진에 모이고 눈빛이 돌아옴 → 눈가가 젖고 입술이 떨림 / 대사 **아이 목소리(진심 한마디)** / 소리 BGM 아주 작게<br>8.5–10.0 해소: 화면 할머니 얼굴과 손 / 동작 떨리던 입꼬리가 올라가며 눈물 맺힌 미소, 주름진 손이 사진 속 아빠 얼굴을 쓰다듬음 / 대사 — / 소리 «빠밤» 대신 첼로가 따뜻하게 들어옴 |
-| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) 또는 `4k`(4K) — 대표님 결정 대기(720p는 쓰지 않음) · 길이 5초 · 소리 `off` · 첫 그림 `drama-K050` · 끝 그림 `drama-K100` · 예상 크레딧 1080p 8.75 / 4K 30(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
-| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25 / 4K 90. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
+| 설정값 | 모델 `kling3_0` · 화질 `pro`(1080p) — 대표님 10/11 확정(720p·4K 채택 안 함) · 길이 5초 · 소리 `off` · 첫 그림 `drama-K050` · 끝 그림 `drama-K100` · 예상 크레딧 1080p 8.75(1회, 10/11 조회값 — 첫·끝 그림을 넣은 값은 생성 버튼에 먼저 뜨는 값으로 다시 확인) |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 1080p 26.25. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
 
 ```text
 Continuing first-person, close on the grandmother's face with subtle realistic acting. 5-8.5s: she blinks slowly, her gaze drifts down to the photo, her eyes regain focus, fill with tears, and her lips tremble. 8.5-10s: her trembling lips turn into a tearful smile and her wrinkled hand rises to gently stroke the father's face in the photo. Photorealistic warm family-drama live-action look, soft afternoon window light, shallow depth of field, subtle facial acting. One continuous camera move with no cuts. Keep exactly the art style, colors, lighting and character designs of the start and end frames. The main character is first-person: only their hands and arms are visible, never their face. No text, no subtitles, no logos.
@@ -92,7 +92,7 @@ Continuing first-person, close on the grandmother's face with subtle realistic a
 | 항목 | 내용 |
 |---|---|
 | 넣을 문장 | 엄마: **«이제… 아무도 몰라보셔.»** — 1.6초에 시작해 3.4초 전에 끝(1.8초) |
-| 자막 | «이제… 아무도 몰라보셔.»(화면 아래 가운데, 1.5–3.5초 — 굽는 방식은 [app-plan.md §5](app-plan.md) 결정 대기) |
+| 자막 | «이제… 아무도 몰라보셔.» — 앱이 영상 위에 띄우는 넷플릭스식 자막(1.6초에 나타나 3.4초에 사라짐, [app-plan.md §2-3](app-plan.md)). 원판·완성본에는 굽지 않는다 — 완성본에는 상대 목소리만 |
 | 목소리 지시 | 40대 여성. 조용하고 슬픈 목소리, 말끝이 흐려진다. 1.8초 안에 끝낸다. |
 | 1.8초를 넘으면 | «아무도 몰라보셔.» |
 | 엔진 | Higgsfield 안 음성 합성 ElevenLabs v4(한국어). 어색하면 같이교육 선생님 녹음(녹음 동의서) |
