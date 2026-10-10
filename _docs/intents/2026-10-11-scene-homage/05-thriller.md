@@ -2,7 +2,7 @@
 
 > 대표님 원칙과 오마주 선이 맨 앞이다 — [제작 공통](00-production.md) 첫 절. 장면은 [스토리보드](storyboards.md) 5절.
 > **Higgsfield(영상·음성 합성)는 토막마다 «영상 만들기 전 확인»으로 대표님 허락을 받은 뒤에만, 그 전 크레딧 0.**
-> 상태(2026-10-11): 문서·프롬프트 준비, 그림 0장, 크레딧 0. 그림 18장(기준 6 · 키프레임 12).
+> 상태(2026-10-11): 문서·프롬프트 준비, 그림 0장, 크레딧 0. 그림 17장(기준 6 · 키프레임 11).
 
 ## 1. 그림 결
 
@@ -22,9 +22,9 @@
 - 영상 프롬프트의 결 문장: «Photorealistic modern dinosaur-film live-action look, cold flickering fluorescent kitchen light with red emergency lights, tense but not gory.»
 - 아이 외침 보기: ① «지금이야, 냉동실로 뛰어 !» ② «이쪽이야, 날 따라와 !»
 
-## 2. 그림 목록(18장)
+## 2. 그림 목록(17장)
 
-`R`은 기준 그림(장소·인물 시트·손과 소품), `K` 뒤 숫자는 영상 시각(0.1초 단위 — `K080` = 8.0초). 그리는 순서는 표의 순서다.
+`R`은 기준 그림(장소·인물 시트·손과 소품), `K` 뒤 숫자는 영상 시각(0.1초 단위 — `K065` = 6.5초). 그리는 순서는 표의 순서다.
 
 | id | 종류 | 시각 | 박자 | 내용 | 첨부 | 파일 |
 |---|---|---|---|---|---|---|
@@ -34,59 +34,58 @@
 | `thriller-R4` | 기준 | — | — | 동생 — 정면 상반신 시트 | `R1` | `vc2_thriller_R4.png` |
 | `thriller-R5` | 기준 | — | — | 동생 — 표정 시트(4개) | `R4` | `vc2_thriller_R5.png` |
 | `thriller-R6` | 기준 | — | — | 1인칭 손 — 조리대 모서리 | `R1` | `vc2_thriller_R6.png` |
-| `thriller-K000` | A 첫 그림 | 0.0초 | 열기 | 열기 — 조리대 뒤에 숨음 | `R1` `R6` `R4` | `vc2_thriller_K000.png` |
-| `thriller-K025` | 키프레임 | 2.5초 | 열기 → 낌새 | 낌새 — 바닥의 발톱 | `R1` `R2` `K000` | `vc2_thriller_K025.png` |
-| `thriller-K035` | 키프레임 | 3.5초 | 낌새 → 상대 대사 | 상대 대사 시작 — 동생의 눈 | `R4` `R5` `K025` | `vc2_thriller_K035.png` |
-| `thriller-K047` | 키프레임 | 4.7초 | 상대 대사 | 상대 대사 — «쉿… 움직이지 마 !» | `R4` `R5` `K035` | `vc2_thriller_K047.png` |
-| `thriller-K060` | 키프레임 | 6.0초 | 상대 대사 → 위기 | 위기 — 조리대 위로 솟은 머리 | `R3` `R1` `K047` | `vc2_thriller_K060.png` |
-| `thriller-K070` | 키프레임 | 7.0초 | 위기 | 위기 — 바로 위에서 킁킁 | `R3` `K060` | `vc2_thriller_K070.png` |
-| `thriller-K080` | 멈춤 화면(A 끝 그림·B 첫 그림) | 8.0초 | ⏸ 8.0초 | ⏸ 멈춤 화면 — 반대쪽을 보는 랩터 | `R3` `R4` `R1` `K070` | `vc2_thriller_K080.png` |
-| `thriller-K095` | 키프레임 | 9.5초 | 내 목소리 | 내 목소리 — 냉동실로 달림 | `R1` `R4` `R6` `K080` | `vc2_thriller_K095.png` |
-| `thriller-K115` | 키프레임 | 11.5초 | 내 목소리 → 고비 | 고비 — 미끄러져 들어가는 랩터 | `R2` `R3` `R1` `K095` | `vc2_thriller_K115.png` |
-| `thriller-K130` | 키프레임 | 13.0초 | 고비 → 해결 | 해결 — 철문을 밀어 닫음 | `R1` `R6` `K115` | `vc2_thriller_K130.png` |
-| `thriller-K140` | 키프레임 | 14.0초 | 해결 → 마무리 | 해결 — 빗장을 내림 | `R1` `R6` `K130` | `vc2_thriller_K140.png` |
-| `thriller-K150` | B 끝 그림 | 15.0초 | 마무리 끝 | 마무리 — 하이파이브 | `R4` `R5` `K140` | `vc2_thriller_K150.png` |
+| `thriller-K000` | A 첫 그림 | 0.0초 | 분위기 | 분위기 — 조리대 뒤에 숨음 | `R1` `R6` `R4` | `vc2_thriller_K000.png` |
+| `thriller-K015` | 키프레임 | 1.5초 | 분위기 → 낌새 | 낌새 — 바닥의 발톱 | `R1` `R2` `K000` | `vc2_thriller_K015.png` |
+| `thriller-K025` | 키프레임 | 2.5초 | 낌새 → 상대 대사 | 상대 대사 시작 — 동생의 눈 | `R4` `R5` `K015` | `vc2_thriller_K025.png` |
+| `thriller-K035` | 키프레임 | 3.5초 | 상대 대사 | 상대 대사 — «쉿… 움직이지 마 !» | `R4` `R5` `K025` | `vc2_thriller_K035.png` |
+| `thriller-K045` | 키프레임 | 4.5초 | 상대 대사 → 위기 | 위기 — 조리대 위로 솟은 머리 | `R3` `R1` `K035` | `vc2_thriller_K045.png` |
+| `thriller-K055` | 키프레임 | 5.5초 | 위기 | 위기 — 바로 위에서 킁킁 | `R3` `K045` | `vc2_thriller_K055.png` |
+| `thriller-K065` | 멈춤 화면(A 끝 그림·B 첫 그림) | 6.5초 | ⏸ 6.5초 | ⏸ 멈춤 화면 — 반대쪽을 보는 랩터 | `R3` `R4` `R1` `K055` | `vc2_thriller_K065.png` |
+| `thriller-K075` | 키프레임 | 7.5초 | 내 외침 | 내 외침 — 냉동실로 달림 | `R1` `R4` `R6` `K065` | `vc2_thriller_K075.png` |
+| `thriller-K085` | 키프레임 | 8.5초 | 내 외침 → 해소 | 내 외침 → 해소 — 비켜선 순간 | `R2` `R3` `K075` | `vc2_thriller_K085.png` |
+| `thriller-K092` | 키프레임 | 9.2초 | 해소 | 해소 — 냉동실로 미끄러져 들어감 | `R1` `R6` `K085` | `vc2_thriller_K092.png` |
+| `thriller-K100` | B 끝 그림 | 10.0초 | 해소 끝 | 해소 끝 — 쾅, 빗장 | `R1` `R5` `K092` | `vc2_thriller_K100.png` |
 
 ## 3. 영상 만들기(Higgsfield) — «영상 만들기 전 확인»의 원본, 대표님 허락 뒤에만
 
 토막마다 생성 **전에** 아래 칸을 실제로 뽑은 그림과 함께 검토 페이지 «영상 만들기 전 확인»에 세팅해 팀장에게 보내고,
-대표님 허락이 온 토막만 만든다([제작 공통 §4 관문 C](00-production.md)). 두 토막 1회씩이면 예상 약 30크레딧(720p, 추정).
-계속 흐트러지면 [제작 공통 §5](00-production.md)의 «나눠 만들기»로 `K035`·`K115`에서 한 번 더 나눈다.
+대표님 허락이 온 토막만 만든다([제작 공통 §4 관문 C](00-production.md)). 두 토막 1회씩이면 예상 약 20크레딧(720p, 추정).
+계속 흐트러지면 [제작 공통 §5](00-production.md)의 «나눠 만들기»로 `K025`·`K085`에서 한 번 더 나눈다.
 
-### A 토막 0.0–8.0초
+### A 토막 0.0–6.5초
 
 | 항목 | 내용 |
 |---|---|
-| 넣을 그림 | 첫 그림 `thriller-K000` · 끝 그림 `thriller-K080` · 사이 키프레임 `thriller-K025` `thriller-K035` `thriller-K047` `thriller-K060` `thriller-K070` · 참조한 기준(검토용) `thriller-R1` `thriller-R2` `thriller-R3` `thriller-R4` `thriller-R5` |
-| 초별 연출 | 0.0–2.5 열기: 화면 1인칭(아이 눈높이), 어두운 큰 주방 — 스테인리스 조리대 사이로 몸을 낮춤 / 동작 손으로 조리대 모서리를 짚음, 옆에 동생이 웅크림 / 대사 — / 소리 냉장고 웅웅, 숨소리<br>2.5–3.5 낌새: 화면 1인칭, 조리대 끝 바닥 — 그림자와 함께 공룡 발이 들어옴 / 동작 긴 발톱이 바닥을 톡 / 대사 — / 소리 톡… 톡…<br>3.5–6.0 상대 대사: 화면 1인칭, 옆의 동생 얼굴(가슴 위) — 겁먹은 눈 / 동작 입술에 손가락을 대고 속삭임 / 대사 동생: **«쉿… 바로 옆이야. 움직이지 마 !»** / 소리 속삭임, 발톱 소리가 가까워짐<br>6.0–8.0 위기: 화면 1인칭, 천천히 위를 올려다봄 — 조리대 위로 랩터 머리가 쑥, 콧김에 금속이 뿌옇게. **8.0초: 바로 위 랩터 머리(반대쪽을 보는 중), 옆의 동생, 멀리 열린 냉동실 문** / 동작 랩터가 고개를 반대로 돌림 / 대사 — / 소리 킁킁, 낮은 그르렁 |
-| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 8초 · 소리 `off` · 첫 그림 `thriller-K000` · 끝 그림 `thriller-K080` · 예상 크레딧 약 16(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
-| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 약 48. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
+| 넣을 그림 | 첫 그림 `thriller-K000` · 끝 그림 `thriller-K065` · 사이 키프레임 `thriller-K015` `thriller-K025` `thriller-K035` `thriller-K045` `thriller-K055` · 참조한 기준(검토용) `thriller-R1` `thriller-R2` `thriller-R3` `thriller-R4` `thriller-R5` |
+| 초별 연출 | 0.0–1.5 분위기: 화면 1인칭(아이 눈높이), 어두운 큰 주방 — 스테인리스 조리대 뒤로 몸을 낮춤 / 동작 손으로 조리대 모서리를 짚음, 옆에 동생이 웅크림 / 대사 — / 소리 냉장고 웅웅, 숨소리<br>1.5–2.5 낌새: 화면 1인칭, 조리대 끝 바닥 — 그림자와 함께 공룡 발이 들어옴 / 동작 긴 발톱이 바닥을 톡 / 대사 — / 소리 톡… 톡…<br>2.5–4.5 상대 대사: 화면 1인칭, 옆의 동생 얼굴(가슴 위) — 겁먹은 눈 / 동작 입술에 손가락을 대고 속삭임 / 대사 동생: **«쉿… 움직이지 마 !»** / 소리 속삭임, 발톱 소리가 가까워짐<br>4.5–6.5 위기: 화면 1인칭, 천천히 위를 올려다봄 — 조리대 위로 랩터 머리가 쑥, 바로 위에서 킁킁. **6.5초: 바로 위 랩터 머리(반대쪽을 보는 순간), 옆의 동생, 멀리 열린 냉동실 문** / 동작 랩터가 고개를 반대로 돌림 / 대사 — / 소리 킁킁, 낮은 그르렁 최고조 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 6.5초(안 되면 7초로 만들어 맞춤) · 소리 `off` · 첫 그림 `thriller-K000` · 끝 그림 `thriller-K065` · 예상 크레딧 약 13(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 약 39. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
 
 ```text
-First-person view of a child hiding low between stainless-steel counters in a large dark industrial kitchen with cold flickering fluorescent lights and red emergency lights. 0-2.5s: the child's hand grips the counter edge while a younger sibling in a yellow hoodie crouches beside. 2.5-3.5s: at the end of the counter a dinosaur's clawed foot steps in with a shadow and taps the tile. 3.5-6s: the view turns to the scared sibling, who puts a finger to their lips and whispers, lips moving. 6-8s: the view slowly looks up as a raptor-like dinosaur head with its mouth closed rises over the counter right above, sniffing, then turns its head the other way; far away an open walk-in freezer breathes white cold mist. Photorealistic modern dinosaur-film live-action look, cold flickering fluorescent kitchen light with red emergency lights, tense but not gory. One continuous camera move with no cuts. Keep exactly the art style, colors, lighting and character designs of the start and end frames. The main character is first-person: only their hands and arms are visible, never their face. No text, no subtitles, no logos.
+First-person view of a child hiding low behind stainless-steel counters in a large dark industrial kitchen with cold flickering fluorescent lights and red emergency lights. 0-1.5s: the child's hand grips the counter edge while a younger sibling in a yellow hoodie crouches beside. 1.5-2.5s: at the end of the counter a dinosaur's clawed foot steps in with a shadow and taps the tile. 2.5-4.5s: the view turns to the scared sibling, who puts a finger to their lips and whispers a short line, lips moving. 4.5-6.5s: the view slowly looks up as a raptor-like dinosaur head with its mouth closed rises over the counter right above, sniffing, then turns its head the other way; far away an open walk-in freezer breathes white mist. Photorealistic modern dinosaur-film live-action look, cold flickering fluorescent kitchen light with red emergency lights, tense but not gory. One continuous camera move with no cuts. Keep exactly the art style, colors, lighting and character designs of the start and end frames. The main character is first-person: only their hands and arms are visible, never their face. No text, no subtitles, no logos.
 ```
 
-### B 토막 8.0–15.0초
+### B 토막 6.5–10.0초
 
 | 항목 | 내용 |
 |---|---|
-| 넣을 그림 | 첫 그림 `thriller-K080` · 끝 그림 `thriller-K150` · 사이 키프레임 `thriller-K095` `thriller-K115` `thriller-K130` `thriller-K140` · 참조한 기준(검토용) `thriller-R1` `thriller-R2` `thriller-R3` `thriller-R4` `thriller-R5` |
-| 초별 연출 | 8.0–11.5 내 목소리: 화면 1인칭, 동생 손을 잡고 냉동실 쪽으로 달림 / 동작 랩터가 돌아봄 / 대사 **아이 목소리** / 소리 발소리, 짧은 울음(작게)<br>11.5–13.0 고비: 화면 1인칭, 냉동실 문 옆으로 비켜서자 뒤따르던 랩터가 미끄러지며 냉동실 안으로 / 동작 — / 대사 — / 소리 끼익 미끄러짐, 쿵<br>13.0–14.0 해결: 화면 1인칭, 두 손으로 철문을 밀어 닫고 빗장을 내림 / 동작 — / 대사 — / 소리 쾅 ! 철컥<br>14.0–15.0 마무리: 화면 1인칭, 동생과 하이파이브(손), 문 너머 쿵 — 둘이 웃음 / 동작 — / 대사 — / 소리 쿵, 안도의 화음 |
-| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 7초 · 소리 `off` · 첫 그림 `thriller-K080` · 끝 그림 `thriller-K150` · 예상 크레딧 약 14(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
-| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 약 42. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
+| 넣을 그림 | 첫 그림 `thriller-K065` · 끝 그림 `thriller-K100` · 사이 키프레임 `thriller-K075` `thriller-K085` `thriller-K092` · 참조한 기준(검토용) `thriller-R1` `thriller-R2` `thriller-R3` `thriller-R4` `thriller-R5` |
+| 초별 연출 | 6.5–8.5 내 외침: 화면 1인칭, 동생 손을 잡고 냉동실로 달려 문 옆으로 비켜섬 — 랩터가 뒤쫓아 옴 / 동작 랩터가 돌아봄 / 대사 **아이 목소리** / 소리 발소리, 짧은 울음(작게)<br>8.5–10.0 해소: 화면 1인칭, 랩터가 미끄러져 냉동실로 들어가고 두 손이 철문을 쾅 닫아 빗장을 내림 / 동작 — / 대사 — / 소리 «빠밤» 쾅 ! 철컥, 안도의 화음 |
+| 설정값 | 모델 `kling3_0` · 화질 `std`(720p) · 길이 3.5초(안 되면 4초로 만들어 맞춤) · 소리 `off` · 첫 그림 `thriller-K065` · 끝 그림 `thriller-K100` · 예상 크레딧 약 7(1회, 720p 초당 2.0 — 추정, 생성 버튼에 먼저 뜨는 값으로 확인) |
+| 다시 만들기 | 한 번마다 허락(지금 기준) — 3회까지 잡으면 최대 약 21. «같은 설정 3회까지 다시 허락 없이»는 대표님 확인 대기. 계속 흐트러지면 사이 키프레임으로 토막을 더 나눈다(제작 공통 §5 «나눠 만들기») |
 
 ```text
-Continuing first-person. 8-11.5s: the child's hand grabs the sibling's hand and they run toward the freezer while the dinosaur turns. 11.5-13s: at the freezer door the children step aside and the chasing dinosaur slides on the tiles into the freezer. 13-14s: the hands push the heavy steel door shut and drop the latch. 14-15s: the two children high-five and smile with relief in front of the closed freezer. Photorealistic modern dinosaur-film live-action look, cold flickering fluorescent kitchen light with red emergency lights, tense but not gory. One continuous camera move with no cuts. Keep exactly the art style, colors, lighting and character designs of the start and end frames. The main character is first-person: only their hands and arms are visible, never their face. No text, no subtitles, no logos.
+Continuing first-person. 6.5-8.5s: the hand grabs the sibling's hand and they sprint to the freezer and duck aside as the dinosaur chases them. 8.5-10s: the dinosaur slides on the tiles into the freezer, the hands slam the heavy steel door shut and drop the latch, and the sibling smiles with relief. Photorealistic modern dinosaur-film live-action look, cold flickering fluorescent kitchen light with red emergency lights, tense but not gory. One continuous camera move with no cuts. Keep exactly the art style, colors, lighting and character designs of the start and end frames. The main character is first-person: only their hands and arms are visible, never their face. No text, no subtitles, no logos.
 ```
 
 ## 4. 상대 목소리 — 음성 합성도 관문 C의 허락 뒤에만
 
 | 항목 | 내용 |
 |---|---|
-| 넣을 문장 | 동생: **«쉿… 바로 옆이야. 움직이지 마 !»** — 3.6초에 시작해 5.8초 전에 끝(2.2초) |
-| 자막 | «쉿… 바로 옆이야. 움직이지 마 !»(화면 아래 가운데, 3.5–6.0초) |
-| 목소리 지시 | 7~8살 아이의 떨리는 속삭임. 2.2초 안에 끝낸다. 아이 목소리 합성이 어색하거나 서비스가 막으면 같이교육 선생님 녹음(녹음 동의서) |
-| 2.2초를 넘으면 | «쉿… 움직이지 마 !» |
+| 넣을 문장 | 동생: **«쉿… 움직이지 마 !»** — 2.6초에 시작해 4.4초 전에 끝(1.8초) |
+| 자막 | «쉿… 움직이지 마 !»(화면 아래 가운데, 2.5–4.5초) |
+| 목소리 지시 | 7~8살 아이의 떨리는 속삭임. 1.8초 안에 끝낸다. 아이 목소리 합성이 어색하거나 서비스가 막으면 같이교육 선생님 녹음(녹음 동의서) |
+| 1.8초를 넘으면 | «움직이지 마 !» |
 | 엔진 | Higgsfield 안 음성 합성 ElevenLabs v4(한국어). 어색하면 같이교육 선생님 녹음(녹음 동의서) |
 | 예상 크레딧 | `[확인]` 생성 화면에 먼저 뜨는 값을 «영상 만들기 전 확인» 칸에 적어 함께 보낸다 |
 
@@ -94,16 +93,14 @@ Continuing first-person. 8-11.5s: the child's hand grabs the sibling's hand and 
 
 | 구간 | 소리 |
 |---|---|
-| 0.0–2.5 열기 | 냉장고 웅웅, 숨소리 |
-| 2.5–3.5 낌새 | 톡… 톡… |
-| 3.5–6.0 상대 대사 | 속삭임, 발톱 소리가 가까워짐 |
-| 6.0–8.0 위기 | 킁킁, 낮은 그르렁 |
-| 8.0–11.5 내 목소리 | 발소리, 짧은 울음(작게) |
-| 11.5–13.0 고비 | 끼익 미끄러짐, 쿵 |
-| 13.0–14.0 해결 | 쾅 ! 철컥 |
-| 14.0–15.0 마무리 | 쿵, 안도의 화음 |
+| 0.0–1.5 분위기 | 냉장고 웅웅, 숨소리 |
+| 1.5–2.5 낌새 | 톡… 톡… |
+| 2.5–4.5 상대 대사 | 속삭임, 발톱 소리가 가까워짐 |
+| 4.5–6.5 위기 | 킁킁, 낮은 그르렁 최고조 |
+| 6.5–8.5 내 외침 | 발소리, 짧은 울음(작게) |
+| 8.5–10.0 해소 | «빠밤» 쾅 ! 철컥, 안도의 화음 |
 
-- 공통 규칙(음량·BGM 낮추기 3.5–6.0 −4dB, 8.0–12.0 −8dB·아이 목소리 처리·출처 기록)은 [제작 공통 §6](00-production.md)
+- 공통 규칙(음량·BGM 낮추기 2.5–4.5 −4dB, 6.5초부터 −8dB·아이 목소리 처리·출처 기록)은 [제작 공통 §6](00-production.md)
 
 ## 6. 프롬프트 전문
 
@@ -301,7 +298,7 @@ ChatGPT에 아래 블록을 통째로 붙이고 «첨부»의 그림을 함께 �
 위 참조와 그림 결·인물·장소를 똑같이 맞추고, 가로 3:2(1536×1024) 그림 한 장만 그린다. 글자는 넣지 않는다.
 ```
 
-### thriller-K000 — 열기 — 조리대 뒤에 숨음
+### thriller-K000 — 분위기 — 조리대 뒤에 숨음
 
 - 파일: `vc2_thriller_K000.png`
 - 첨부: `thriller-R1`, `thriller-R6`, `thriller-R4`
@@ -324,8 +321,8 @@ ChatGPT에 아래 블록을 통째로 붙이고 «첨부»의 그림을 함께 �
 - 상대 «동생»: 7~8살 아이, 노란 후드티, 짧은 머리, 겁먹었지만 영리한 눈.
 - 랩터: 사람 키만 한 날렵한 육식 공룡 — 회갈색 비늘, 등에 짙은 줄무늬, 노란 눈, 발에 큰 갈고리 발톱. 늘 입을 다물고 있다(이빨을 드러내지 않는다). 침·피 없음.
 
-[이 그림: thriller-K000 — 열기 — 조리대 뒤에 숨음(영상 0.0초 화면)]
-1인칭, 조리대 사이로 몸을 낮춘 시선. 화면 아래 손이 조리대 모서리를 짚었고 옆에 동생이 웅크렸다(옆모습).
+[이 그림: thriller-K000 — 분위기 — 조리대 뒤에 숨음(영상 0.0초 화면)]
+1인칭, 조리대 뒤로 몸을 낮춘 시선. 화면 아래 손이 조리대 모서리를 짚었고 옆에 동생이 웅크렸다(옆모습). 천장 형광등이 깜박인다.
 
 [첨부한 참조 그림]
 1. thriller-R1 — 장소 — 주방(사람·공룡 없음)
@@ -335,9 +332,9 @@ ChatGPT에 아래 블록을 통째로 붙이고 «첨부»의 그림을 함께 �
 위 참조와 그림 결·인물·장소를 똑같이 맞추고, 가로 3:2(1536×1024) 그림 한 장만 그린다. 글자는 넣지 않는다.
 ```
 
-### thriller-K025 — 낌새 — 바닥의 발톱
+### thriller-K015 — 낌새 — 바닥의 발톱
 
-- 파일: `vc2_thriller_K025.png`
+- 파일: `vc2_thriller_K015.png`
 - 첨부: `thriller-R1`, `thriller-R2`, `thriller-K000`
 
 ```text
@@ -358,18 +355,52 @@ ChatGPT에 아래 블록을 통째로 붙이고 «첨부»의 그림을 함께 �
 - 상대 «동생»: 7~8살 아이, 노란 후드티, 짧은 머리, 겁먹었지만 영리한 눈.
 - 랩터: 사람 키만 한 날렵한 육식 공룡 — 회갈색 비늘, 등에 짙은 줄무늬, 노란 눈, 발에 큰 갈고리 발톱. 늘 입을 다물고 있다(이빨을 드러내지 않는다). 침·피 없음.
 
-[이 그림: thriller-K025 — 낌새 — 바닥의 발톱(영상 2.5초 화면)]
+[이 그림: thriller-K015 — 낌새 — 바닥의 발톱(영상 1.5초 화면)]
 1인칭, 조리대 끝 바닥 쪽. 그림자와 함께 랩터의 발이 들어와 갈고리 발톱이 타일을 톡 친다.
 
 [첨부한 참조 그림]
 1. thriller-R1 — 장소 — 주방(사람·공룡 없음)
 2. thriller-R2 — 랩터 — 옆모습 전신 시트
-3. thriller-K000 — 열기 — 조리대 뒤에 숨음
+3. thriller-K000 — 분위기 — 조리대 뒤에 숨음
 
 위 참조와 그림 결·인물·장소를 똑같이 맞추고, 가로 3:2(1536×1024) 그림 한 장만 그린다. 글자는 넣지 않는다.
 ```
 
-### thriller-K035 — 상대 대사 시작 — 동생의 눈
+### thriller-K025 — 상대 대사 시작 — 동생의 눈
+
+- 파일: `vc2_thriller_K025.png`
+- 첨부: `thriller-R4`, `thriller-R5`, `thriller-K015`
+
+```text
+[공통 규칙 — 장면 더빙 2.0의 모든 그림]
+1. 가로 3:2(1536×1024) 그림 한 장. 영상은 16:9로 잘리므로 위아래 각 8%에는 중요한 것을 두지 않는다 — 얼굴·손·중요한 물체는 가운데 84% 안에.
+2. 글자·숫자·자막·말풍선·로고·워터마크를 넣지 않는다. 전광판·간판·계기판은 빛과 색만.
+3. 실존 인물, 유명 영화·애니메이션의 캐릭터·의상·로고·우주선·소품을 닮게 그리지 않는다.
+4. «나»(주인공)는 1인칭 시점이다 — 얼굴·머리·몸통이 보이지 않고, 화면 아래 가장자리에서 들어오는 손과 팔만 보인다. 손가락은 다섯 개, 모양이 정확하다(장갑·장난감 손도 마찬가지).
+5. 아이가 보는 영상이다 — 피·상처·이빨을 드러낸 위협·무기로 해치는 장면·끔찍한 얼굴이 없다. 긴장감은 있어도 무섭지 않게.
+6. 첨부한 참조 그림과 그림 결(매체·빛·색·질감)을 똑같이 맞춘다. 참조 속 인물·소품·장소는 얼굴·옷·모양·색을 하나도 바꾸지 않는다.
+
+[장르 결 — 스릴러 «주방의 발톱»]
+- 매체: 요즘 공룡 영화 같은 사실적인 실사 영화 스틸 — 선명한 해상감, 사실적인 공룡 피부 질감, 얕은 심도, 은은한 필름 그레인.
+- 색: 차가운 청록 형광등빛과 스테인리스 은색이 주조색. 강조색은 붉은 비상등 하나.
+- 빛: 천장 형광등 몇 개는 꺼지거나 깜박인다. 조리대 아래는 어둡고, 비상등의 붉은빛이 벽에 번진다. 김이 조금 서려 있다.
+- 장소: 넓은 업장용 주방 — 사람 허리 높이의 스테인리스 조리대 여러 줄(아래는 선반), 매달린 국자·냄비, 회색 타일 바닥, 안쪽 벽에 두꺼운 은색 철문 냉동실(문이 열려 하얀 냉기가 나오고 바깥에 빗장이 달림). 간판·글자 없음.
+- 나(1인칭): 어린이 손(중간 피부톤), 남색 바람막이 소매.
+- 상대 «동생»: 7~8살 아이, 노란 후드티, 짧은 머리, 겁먹었지만 영리한 눈.
+- 랩터: 사람 키만 한 날렵한 육식 공룡 — 회갈색 비늘, 등에 짙은 줄무늬, 노란 눈, 발에 큰 갈고리 발톱. 늘 입을 다물고 있다(이빨을 드러내지 않는다). 침·피 없음.
+
+[이 그림: thriller-K025 — 상대 대사 시작 — 동생의 눈(영상 2.5초 화면)]
+1인칭, 동생 쪽으로 고개를 돌렸다. 동생 얼굴(가슴 위), 겁먹은 눈.
+
+[첨부한 참조 그림]
+1. thriller-R4 — 동생 — 정면 상반신 시트
+2. thriller-R5 — 동생 — 표정 시트(4개)
+3. thriller-K015 — 낌새 — 바닥의 발톱
+
+위 참조와 그림 결·인물·장소를 똑같이 맞추고, 가로 3:2(1536×1024) 그림 한 장만 그린다. 글자는 넣지 않는다.
+```
+
+### thriller-K035 — 상대 대사 — «쉿… 움직이지 마 !»
 
 - 파일: `vc2_thriller_K035.png`
 - 첨부: `thriller-R4`, `thriller-R5`, `thriller-K025`
@@ -392,55 +423,21 @@ ChatGPT에 아래 블록을 통째로 붙이고 «첨부»의 그림을 함께 �
 - 상대 «동생»: 7~8살 아이, 노란 후드티, 짧은 머리, 겁먹었지만 영리한 눈.
 - 랩터: 사람 키만 한 날렵한 육식 공룡 — 회갈색 비늘, 등에 짙은 줄무늬, 노란 눈, 발에 큰 갈고리 발톱. 늘 입을 다물고 있다(이빨을 드러내지 않는다). 침·피 없음.
 
-[이 그림: thriller-K035 — 상대 대사 시작 — 동생의 눈(영상 3.5초 화면)]
-1인칭, 동생 쪽으로 고개를 돌렸다. 동생 얼굴(가슴 위), 겁먹은 눈.
-
-[첨부한 참조 그림]
-1. thriller-R4 — 동생 — 정면 상반신 시트
-2. thriller-R5 — 동생 — 표정 시트(4개)
-3. thriller-K025 — 낌새 — 바닥의 발톱
-
-위 참조와 그림 결·인물·장소를 똑같이 맞추고, 가로 3:2(1536×1024) 그림 한 장만 그린다. 글자는 넣지 않는다.
-```
-
-### thriller-K047 — 상대 대사 — «쉿… 움직이지 마 !»
-
-- 파일: `vc2_thriller_K047.png`
-- 첨부: `thriller-R4`, `thriller-R5`, `thriller-K035`
-
-```text
-[공통 규칙 — 장면 더빙 2.0의 모든 그림]
-1. 가로 3:2(1536×1024) 그림 한 장. 영상은 16:9로 잘리므로 위아래 각 8%에는 중요한 것을 두지 않는다 — 얼굴·손·중요한 물체는 가운데 84% 안에.
-2. 글자·숫자·자막·말풍선·로고·워터마크를 넣지 않는다. 전광판·간판·계기판은 빛과 색만.
-3. 실존 인물, 유명 영화·애니메이션의 캐릭터·의상·로고·우주선·소품을 닮게 그리지 않는다.
-4. «나»(주인공)는 1인칭 시점이다 — 얼굴·머리·몸통이 보이지 않고, 화면 아래 가장자리에서 들어오는 손과 팔만 보인다. 손가락은 다섯 개, 모양이 정확하다(장갑·장난감 손도 마찬가지).
-5. 아이가 보는 영상이다 — 피·상처·이빨을 드러낸 위협·무기로 해치는 장면·끔찍한 얼굴이 없다. 긴장감은 있어도 무섭지 않게.
-6. 첨부한 참조 그림과 그림 결(매체·빛·색·질감)을 똑같이 맞춘다. 참조 속 인물·소품·장소는 얼굴·옷·모양·색을 하나도 바꾸지 않는다.
-
-[장르 결 — 스릴러 «주방의 발톱»]
-- 매체: 요즘 공룡 영화 같은 사실적인 실사 영화 스틸 — 선명한 해상감, 사실적인 공룡 피부 질감, 얕은 심도, 은은한 필름 그레인.
-- 색: 차가운 청록 형광등빛과 스테인리스 은색이 주조색. 강조색은 붉은 비상등 하나.
-- 빛: 천장 형광등 몇 개는 꺼지거나 깜박인다. 조리대 아래는 어둡고, 비상등의 붉은빛이 벽에 번진다. 김이 조금 서려 있다.
-- 장소: 넓은 업장용 주방 — 사람 허리 높이의 스테인리스 조리대 여러 줄(아래는 선반), 매달린 국자·냄비, 회색 타일 바닥, 안쪽 벽에 두꺼운 은색 철문 냉동실(문이 열려 하얀 냉기가 나오고 바깥에 빗장이 달림). 간판·글자 없음.
-- 나(1인칭): 어린이 손(중간 피부톤), 남색 바람막이 소매.
-- 상대 «동생»: 7~8살 아이, 노란 후드티, 짧은 머리, 겁먹었지만 영리한 눈.
-- 랩터: 사람 키만 한 날렵한 육식 공룡 — 회갈색 비늘, 등에 짙은 줄무늬, 노란 눈, 발에 큰 갈고리 발톱. 늘 입을 다물고 있다(이빨을 드러내지 않는다). 침·피 없음.
-
-[이 그림: thriller-K047 — 상대 대사 — «쉿… 움직이지 마 !»(영상 4.7초 화면)]
+[이 그림: thriller-K035 — 상대 대사 — «쉿… 움직이지 마 !»(영상 3.5초 화면)]
 앞 그림과 같은 구도에서 조금 더 가까이. 동생이 입술에 손가락을 대고 속삭이는 중. 화면 아래 1/4은 비워 둔다(자막 자리).
 
 [첨부한 참조 그림]
 1. thriller-R4 — 동생 — 정면 상반신 시트
 2. thriller-R5 — 동생 — 표정 시트(4개)
-3. thriller-K035 — 상대 대사 시작 — 동생의 눈
+3. thriller-K025 — 상대 대사 시작 — 동생의 눈
 
 위 참조와 그림 결·인물·장소를 똑같이 맞추고, 가로 3:2(1536×1024) 그림 한 장만 그린다. 글자는 넣지 않는다.
 ```
 
-### thriller-K060 — 위기 — 조리대 위로 솟은 머리
+### thriller-K045 — 위기 — 조리대 위로 솟은 머리
 
-- 파일: `vc2_thriller_K060.png`
-- 첨부: `thriller-R3`, `thriller-R1`, `thriller-K047`
+- 파일: `vc2_thriller_K045.png`
+- 첨부: `thriller-R3`, `thriller-R1`, `thriller-K035`
 
 ```text
 [공통 규칙 — 장면 더빙 2.0의 모든 그림]
@@ -460,21 +457,21 @@ ChatGPT에 아래 블록을 통째로 붙이고 «첨부»의 그림을 함께 �
 - 상대 «동생»: 7~8살 아이, 노란 후드티, 짧은 머리, 겁먹었지만 영리한 눈.
 - 랩터: 사람 키만 한 날렵한 육식 공룡 — 회갈색 비늘, 등에 짙은 줄무늬, 노란 눈, 발에 큰 갈고리 발톱. 늘 입을 다물고 있다(이빨을 드러내지 않는다). 침·피 없음.
 
-[이 그림: thriller-K060 — 위기 — 조리대 위로 솟은 머리(영상 6.0초 화면)]
+[이 그림: thriller-K045 — 위기 — 조리대 위로 솟은 머리(영상 4.5초 화면)]
 1인칭, 위를 올려다보기 시작. 조리대 위로 랩터 머리가 쑥 나왔다(옆모습, 입 다묾). 콧김에 스테인리스가 뿌옇다.
 
 [첨부한 참조 그림]
 1. thriller-R3 — 랩터 — 머리 시트(4개)
 2. thriller-R1 — 장소 — 주방(사람·공룡 없음)
-3. thriller-K047 — 상대 대사 — «쉿… 움직이지 마 !»
+3. thriller-K035 — 상대 대사 — «쉿… 움직이지 마 !»
 
 위 참조와 그림 결·인물·장소를 똑같이 맞추고, 가로 3:2(1536×1024) 그림 한 장만 그린다. 글자는 넣지 않는다.
 ```
 
-### thriller-K070 — 위기 — 바로 위에서 킁킁
+### thriller-K055 — 위기 — 바로 위에서 킁킁
 
-- 파일: `vc2_thriller_K070.png`
-- 첨부: `thriller-R3`, `thriller-K060`
+- 파일: `vc2_thriller_K055.png`
+- 첨부: `thriller-R3`, `thriller-K045`
 
 ```text
 [공통 규칙 — 장면 더빙 2.0의 모든 그림]
@@ -494,20 +491,20 @@ ChatGPT에 아래 블록을 통째로 붙이고 «첨부»의 그림을 함께 �
 - 상대 «동생»: 7~8살 아이, 노란 후드티, 짧은 머리, 겁먹었지만 영리한 눈.
 - 랩터: 사람 키만 한 날렵한 육식 공룡 — 회갈색 비늘, 등에 짙은 줄무늬, 노란 눈, 발에 큰 갈고리 발톱. 늘 입을 다물고 있다(이빨을 드러내지 않는다). 침·피 없음.
 
-[이 그림: thriller-K070 — 위기 — 바로 위에서 킁킁(영상 7.0초 화면)]
-1인칭. 랩터 머리가 바로 위에서 킁킁거리다가 고개를 반대로 돌리기 시작한다.
+[이 그림: thriller-K055 — 위기 — 바로 위에서 킁킁(영상 5.5초 화면)]
+1인칭. 랩터 머리가 바로 위에서 킁킁거린다. 숨이 멎을 듯 가깝다.
 
 [첨부한 참조 그림]
 1. thriller-R3 — 랩터 — 머리 시트(4개)
-2. thriller-K060 — 위기 — 조리대 위로 솟은 머리
+2. thriller-K045 — 위기 — 조리대 위로 솟은 머리
 
 위 참조와 그림 결·인물·장소를 똑같이 맞추고, 가로 3:2(1536×1024) 그림 한 장만 그린다. 글자는 넣지 않는다.
 ```
 
-### thriller-K080 — ⏸ 멈춤 화면 — 반대쪽을 보는 랩터
+### thriller-K065 — ⏸ 멈춤 화면 — 반대쪽을 보는 랩터
 
-- 파일: `vc2_thriller_K080.png`
-- 첨부: `thriller-R3`, `thriller-R4`, `thriller-R1`, `thriller-K070`
+- 파일: `vc2_thriller_K065.png`
+- 첨부: `thriller-R3`, `thriller-R4`, `thriller-R1`, `thriller-K055`
 
 ```text
 [공통 규칙 — 장면 더빙 2.0의 모든 그림]
@@ -527,22 +524,22 @@ ChatGPT에 아래 블록을 통째로 붙이고 «첨부»의 그림을 함께 �
 - 상대 «동생»: 7~8살 아이, 노란 후드티, 짧은 머리, 겁먹었지만 영리한 눈.
 - 랩터: 사람 키만 한 날렵한 육식 공룡 — 회갈색 비늘, 등에 짙은 줄무늬, 노란 눈, 발에 큰 갈고리 발톱. 늘 입을 다물고 있다(이빨을 드러내지 않는다). 침·피 없음.
 
-[이 그림: thriller-K080 — ⏸ 멈춤 화면 — 반대쪽을 보는 랩터(영상 8.0초 화면)]
-1인칭. 바로 위의 랩터 머리는 반대쪽을 보고, 옆에는 동생, 멀리 오른쪽에 문이 열린 냉동실(하얀 냉기). 화면 위 1/4은 어둡고 단순하게 둔다(앱 문구 자리). 이 그림이 영상이 멈추는 화면이자 두 토막의 이음매다.
+[이 그림: thriller-K065 — ⏸ 멈춤 화면 — 반대쪽을 보는 랩터(영상 6.5초 화면)]
+1인칭. 바로 위의 랩터 머리가 반대쪽으로 고개를 돌린 순간, 옆에는 동생, 멀리 오른쪽에 문이 열린 냉동실(하얀 냉기). 화면 위 1/4은 어둡고 단순하게 둔다(앱 문구 자리). 이 그림이 가장 긴박한 순간이자 영상이 멈추는 화면, 두 토막의 이음매다.
 
 [첨부한 참조 그림]
 1. thriller-R3 — 랩터 — 머리 시트(4개)
 2. thriller-R4 — 동생 — 정면 상반신 시트
 3. thriller-R1 — 장소 — 주방(사람·공룡 없음)
-4. thriller-K070 — 위기 — 바로 위에서 킁킁
+4. thriller-K055 — 위기 — 바로 위에서 킁킁
 
 위 참조와 그림 결·인물·장소를 똑같이 맞추고, 가로 3:2(1536×1024) 그림 한 장만 그린다. 글자는 넣지 않는다.
 ```
 
-### thriller-K095 — 내 목소리 — 냉동실로 달림
+### thriller-K075 — 내 외침 — 냉동실로 달림
 
-- 파일: `vc2_thriller_K095.png`
-- 첨부: `thriller-R1`, `thriller-R4`, `thriller-R6`, `thriller-K080`
+- 파일: `vc2_thriller_K075.png`
+- 첨부: `thriller-R1`, `thriller-R4`, `thriller-R6`, `thriller-K065`
 
 ```text
 [공통 규칙 — 장면 더빙 2.0의 모든 그림]
@@ -562,22 +559,22 @@ ChatGPT에 아래 블록을 통째로 붙이고 «첨부»의 그림을 함께 �
 - 상대 «동생»: 7~8살 아이, 노란 후드티, 짧은 머리, 겁먹었지만 영리한 눈.
 - 랩터: 사람 키만 한 날렵한 육식 공룡 — 회갈색 비늘, 등에 짙은 줄무늬, 노란 눈, 발에 큰 갈고리 발톱. 늘 입을 다물고 있다(이빨을 드러내지 않는다). 침·피 없음.
 
-[이 그림: thriller-K095 — 내 목소리 — 냉동실로 달림(영상 9.5초 화면)]
+[이 그림: thriller-K075 — 내 외침 — 냉동실로 달림(영상 7.5초 화면)]
 1인칭, 동생 손을 잡고 냉동실 쪽으로 달린다(손을 잡은 내 손이 화면 아래). 앞쪽에 냉동실 문, 뒤에서 랩터가 돌아보는 그림자.
 
 [첨부한 참조 그림]
 1. thriller-R1 — 장소 — 주방(사람·공룡 없음)
 2. thriller-R4 — 동생 — 정면 상반신 시트
 3. thriller-R6 — 1인칭 손 — 조리대 모서리
-4. thriller-K080 — ⏸ 멈춤 화면 — 반대쪽을 보는 랩터
+4. thriller-K065 — ⏸ 멈춤 화면 — 반대쪽을 보는 랩터
 
 위 참조와 그림 결·인물·장소를 똑같이 맞추고, 가로 3:2(1536×1024) 그림 한 장만 그린다. 글자는 넣지 않는다.
 ```
 
-### thriller-K115 — 고비 — 미끄러져 들어가는 랩터
+### thriller-K085 — 내 외침 → 해소 — 비켜선 순간
 
-- 파일: `vc2_thriller_K115.png`
-- 첨부: `thriller-R2`, `thriller-R3`, `thriller-R1`, `thriller-K095`
+- 파일: `vc2_thriller_K085.png`
+- 첨부: `thriller-R2`, `thriller-R3`, `thriller-K075`
 
 ```text
 [공통 규칙 — 장면 더빙 2.0의 모든 그림]
@@ -597,22 +594,21 @@ ChatGPT에 아래 블록을 통째로 붙이고 «첨부»의 그림을 함께 �
 - 상대 «동생»: 7~8살 아이, 노란 후드티, 짧은 머리, 겁먹었지만 영리한 눈.
 - 랩터: 사람 키만 한 날렵한 육식 공룡 — 회갈색 비늘, 등에 짙은 줄무늬, 노란 눈, 발에 큰 갈고리 발톱. 늘 입을 다물고 있다(이빨을 드러내지 않는다). 침·피 없음.
 
-[이 그림: thriller-K115 — 고비 — 미끄러져 들어가는 랩터(영상 11.5초 화면)]
-1인칭, 냉동실 문 옆으로 비켜선 순간. 뒤따르던 랩터가 타일에 미끄러지며 냉동실 안으로 들어간다(옆모습).
+[이 그림: thriller-K085 — 내 외침 → 해소 — 비켜선 순간(영상 8.5초 화면)]
+1인칭, 냉동실 문 옆으로 비켜선 순간. 뒤쫓던 랩터가 타일에 미끄러지며 문 앞으로 들이닥친다(옆모습, 입 다묾).
 
 [첨부한 참조 그림]
 1. thriller-R2 — 랩터 — 옆모습 전신 시트
 2. thriller-R3 — 랩터 — 머리 시트(4개)
-3. thriller-R1 — 장소 — 주방(사람·공룡 없음)
-4. thriller-K095 — 내 목소리 — 냉동실로 달림
+3. thriller-K075 — 내 외침 — 냉동실로 달림
 
 위 참조와 그림 결·인물·장소를 똑같이 맞추고, 가로 3:2(1536×1024) 그림 한 장만 그린다. 글자는 넣지 않는다.
 ```
 
-### thriller-K130 — 해결 — 철문을 밀어 닫음
+### thriller-K092 — 해소 — 냉동실로 미끄러져 들어감
 
-- 파일: `vc2_thriller_K130.png`
-- 첨부: `thriller-R1`, `thriller-R6`, `thriller-K115`
+- 파일: `vc2_thriller_K092.png`
+- 첨부: `thriller-R1`, `thriller-R6`, `thriller-K085`
 
 ```text
 [공통 규칙 — 장면 더빙 2.0의 모든 그림]
@@ -632,21 +628,21 @@ ChatGPT에 아래 블록을 통째로 붙이고 «첨부»의 그림을 함께 �
 - 상대 «동생»: 7~8살 아이, 노란 후드티, 짧은 머리, 겁먹었지만 영리한 눈.
 - 랩터: 사람 키만 한 날렵한 육식 공룡 — 회갈색 비늘, 등에 짙은 줄무늬, 노란 눈, 발에 큰 갈고리 발톱. 늘 입을 다물고 있다(이빨을 드러내지 않는다). 침·피 없음.
 
-[이 그림: thriller-K130 — 해결 — 철문을 밀어 닫음(영상 13.0초 화면)]
-1인칭, 두 손으로 두꺼운 철문을 밀어 닫는 중. 문틈 사이로 랩터 꼬리 끝과 하얀 냉기.
+[이 그림: thriller-K092 — 해소 — 냉동실로 미끄러져 들어감(영상 9.2초 화면)]
+1인칭. 랩터가 냉동실 안으로 미끄러져 들어갔고, 두 손이 두꺼운 철문을 밀어 닫는 중. 문틈으로 꼬리 끝과 하얀 냉기.
 
 [첨부한 참조 그림]
 1. thriller-R1 — 장소 — 주방(사람·공룡 없음)
 2. thriller-R6 — 1인칭 손 — 조리대 모서리
-3. thriller-K115 — 고비 — 미끄러져 들어가는 랩터
+3. thriller-K085 — 내 외침 → 해소 — 비켜선 순간
 
 위 참조와 그림 결·인물·장소를 똑같이 맞추고, 가로 3:2(1536×1024) 그림 한 장만 그린다. 글자는 넣지 않는다.
 ```
 
-### thriller-K140 — 해결 — 빗장을 내림
+### thriller-K100 — 해소 끝 — 쾅, 빗장
 
-- 파일: `vc2_thriller_K140.png`
-- 첨부: `thriller-R1`, `thriller-R6`, `thriller-K130`
+- 파일: `vc2_thriller_K100.png`
+- 첨부: `thriller-R1`, `thriller-R5`, `thriller-K092`
 
 ```text
 [공통 규칙 — 장면 더빙 2.0의 모든 그림]
@@ -666,47 +662,13 @@ ChatGPT에 아래 블록을 통째로 붙이고 «첨부»의 그림을 함께 �
 - 상대 «동생»: 7~8살 아이, 노란 후드티, 짧은 머리, 겁먹었지만 영리한 눈.
 - 랩터: 사람 키만 한 날렵한 육식 공룡 — 회갈색 비늘, 등에 짙은 줄무늬, 노란 눈, 발에 큰 갈고리 발톱. 늘 입을 다물고 있다(이빨을 드러내지 않는다). 침·피 없음.
 
-[이 그림: thriller-K140 — 해결 — 빗장을 내림(영상 14.0초 화면)]
-1인칭, 문이 닫혔고 손이 빗장을 내린다.
+[이 그림: thriller-K100 — 해소 끝 — 쾅, 빗장(영상 10.0초 화면)]
+1인칭. 철문이 닫히고 손이 빗장을 내렸다. 옆의 동생이 안도의 웃음을 짓는다.
 
 [첨부한 참조 그림]
 1. thriller-R1 — 장소 — 주방(사람·공룡 없음)
-2. thriller-R6 — 1인칭 손 — 조리대 모서리
-3. thriller-K130 — 해결 — 철문을 밀어 닫음
-
-위 참조와 그림 결·인물·장소를 똑같이 맞추고, 가로 3:2(1536×1024) 그림 한 장만 그린다. 글자는 넣지 않는다.
-```
-
-### thriller-K150 — 마무리 — 하이파이브
-
-- 파일: `vc2_thriller_K150.png`
-- 첨부: `thriller-R4`, `thriller-R5`, `thriller-K140`
-
-```text
-[공통 규칙 — 장면 더빙 2.0의 모든 그림]
-1. 가로 3:2(1536×1024) 그림 한 장. 영상은 16:9로 잘리므로 위아래 각 8%에는 중요한 것을 두지 않는다 — 얼굴·손·중요한 물체는 가운데 84% 안에.
-2. 글자·숫자·자막·말풍선·로고·워터마크를 넣지 않는다. 전광판·간판·계기판은 빛과 색만.
-3. 실존 인물, 유명 영화·애니메이션의 캐릭터·의상·로고·우주선·소품을 닮게 그리지 않는다.
-4. «나»(주인공)는 1인칭 시점이다 — 얼굴·머리·몸통이 보이지 않고, 화면 아래 가장자리에서 들어오는 손과 팔만 보인다. 손가락은 다섯 개, 모양이 정확하다(장갑·장난감 손도 마찬가지).
-5. 아이가 보는 영상이다 — 피·상처·이빨을 드러낸 위협·무기로 해치는 장면·끔찍한 얼굴이 없다. 긴장감은 있어도 무섭지 않게.
-6. 첨부한 참조 그림과 그림 결(매체·빛·색·질감)을 똑같이 맞춘다. 참조 속 인물·소품·장소는 얼굴·옷·모양·색을 하나도 바꾸지 않는다.
-
-[장르 결 — 스릴러 «주방의 발톱»]
-- 매체: 요즘 공룡 영화 같은 사실적인 실사 영화 스틸 — 선명한 해상감, 사실적인 공룡 피부 질감, 얕은 심도, 은은한 필름 그레인.
-- 색: 차가운 청록 형광등빛과 스테인리스 은색이 주조색. 강조색은 붉은 비상등 하나.
-- 빛: 천장 형광등 몇 개는 꺼지거나 깜박인다. 조리대 아래는 어둡고, 비상등의 붉은빛이 벽에 번진다. 김이 조금 서려 있다.
-- 장소: 넓은 업장용 주방 — 사람 허리 높이의 스테인리스 조리대 여러 줄(아래는 선반), 매달린 국자·냄비, 회색 타일 바닥, 안쪽 벽에 두꺼운 은색 철문 냉동실(문이 열려 하얀 냉기가 나오고 바깥에 빗장이 달림). 간판·글자 없음.
-- 나(1인칭): 어린이 손(중간 피부톤), 남색 바람막이 소매.
-- 상대 «동생»: 7~8살 아이, 노란 후드티, 짧은 머리, 겁먹었지만 영리한 눈.
-- 랩터: 사람 키만 한 날렵한 육식 공룡 — 회갈색 비늘, 등에 짙은 줄무늬, 노란 눈, 발에 큰 갈고리 발톱. 늘 입을 다물고 있다(이빨을 드러내지 않는다). 침·피 없음.
-
-[이 그림: thriller-K150 — 마무리 — 하이파이브(영상 15.0초 화면)]
-1인칭, 동생과 하이파이브(두 손이 화면 가운데). 동생이 안도의 웃음을 짓고, 뒤로 닫힌 냉동실 문.
-
-[첨부한 참조 그림]
-1. thriller-R4 — 동생 — 정면 상반신 시트
 2. thriller-R5 — 동생 — 표정 시트(4개)
-3. thriller-K140 — 해결 — 빗장을 내림
+3. thriller-K092 — 해소 — 냉동실로 미끄러져 들어감
 
 위 참조와 그림 결·인물·장소를 똑같이 맞추고, 가로 3:2(1536×1024) 그림 한 장만 그린다. 글자는 넣지 않는다.
 ```
