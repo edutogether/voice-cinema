@@ -26,6 +26,8 @@ build/
 tmp/
 # 음향 편집 전 원본 사본은 로컬에 보관하고 해시 명세만 이력에 남긴다.
 _media/originals/**/*.mp4
+# 장면 더빙 2.0 그림(ChatGPT)과 장르 검토 페이지는 로컬에만 둔다 — 목록·프롬프트는 _docs/intents/2026-10-08-drama-scenes/에 있다.
+_media/scenes/
 cert/
 # CONVENTIONS §7 표준 — 환경 변수·키 파일·백업은 어느 폴더에 있든 올리지 않는다.
 .env*
