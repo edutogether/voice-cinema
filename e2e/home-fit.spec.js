@@ -1,18 +1,30 @@
 import { test, expect } from '@playwright/test';
 
-for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [655, 760, false], [1024, 768, true], [375, 812, true], [360, 640, true]]) {
-  test(`${width}×${height}: 여덟 장면 선택지와 이름이 첫 화면에 모두 보인다`, async ({ browser }) => {
+for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [1024, 768, true], [655, 760, false], [375, 812, true], [360, 640, true], [360, 740, true], [390, 844, true], [430, 932, true]]) {
+  const phone = width <= 760;
+  test(`${width}×${height}: ${phone ? '안내·가운데 장면·더빙하기·바로가기 줄이 스크롤 없이 한 화면에 들어온다' : '여덟 장면 선택지와 이름이 첫 화면에 모두 보인다'}`, async ({ browser }) => {
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: touch, isMobile: touch });
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
-    // PC 입체 미리보기 아래의 여덟 바로가기가 모두 보여야 한다. 터치는 카드 자체를 고른다.
-    const tiles = page.locator(touch ? '.tile' : '.scene-choice');
-    await expect(tiles).toHaveCount(8);
-    if (touch) {
-      for (const tile of await tiles.all()) {
-        await expect(tile).toBeInViewport({ ratio: 1 });
-        await expect(tile.locator('.gname')).toBeInViewport({ ratio: 1 });
+    // 10/17부터 터치 기기도 PC와 같은 캐러셀이다 — 옛 격자는 없다.
+    await expect(page.locator('#grid')).toHaveCount(0);
+    await expect(page.locator('.scene-choice')).toHaveCount(8);
+    if (phone) {
+      // 휴대폰 폭(10/17 대표님): PC 왼쪽 안내가 제목 위로 올라오고, 가운데 장면은 영화 비율(16:9)을 지킨 채
+      // 남는 높이에 맞춰 줄어든다. 바로가기 줄은 흐르므로 여덟 칸이 한꺼번에 보이지 않는다(그 대신 이름이 겹치지 않는다).
+      for (const selector of ['.chart-aside h2', '.chart-guide', '.chart-heading h1', '.scene-shell.is-current .tile-media',
+        '.scene-shell.is-current .gname', '.scene-shell.is-current .tile-enter', '.scene-navigation', '.scene-choices']) {
+        await expect(page.locator(selector), selector).toBeInViewport({ ratio: 1 });
       }
+      const media = await page.locator('.scene-shell.is-current .tile-media').boundingBox();
+      expect(Math.abs(media.width * 9 / 16 - media.height), '가운데 장면이 영화 비율이 아니다').toBeLessThan(2);
+      const thumb = await page.locator('.scene-choice img').first().boundingBox();
+      expect(Math.abs(thumb.width * 9 / 16 - thumb.height), '바로가기 그림이 영화 비율이 아니다').toBeLessThan(1.5);
+      expect(await page.locator('.scene-choice').evaluateAll(cards => cards
+        .filter(card => card.querySelector('span').scrollWidth > card.clientWidth + 1).map(card => card.dataset.genre)), '바로가기 이름이 칸을 넘는다').toEqual([]);
+      // 더빙하기 버튼은 가운데 장면 폭을 꽉 채운다.
+      const button = await page.locator('.scene-shell.is-current .tile-enter').boundingBox();
+      expect(button.width).toBeGreaterThan(media.width - 8);
     } else {
       // 흐르는 줄은 순환용 사본까지 포함해 각 장르의 온전한 선택지가 하나 이상 보여야 한다.
       expect(await page.locator('.scene-choices').evaluate(view => {

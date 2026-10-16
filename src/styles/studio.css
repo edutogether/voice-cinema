@@ -92,7 +92,8 @@ body:has(#studio.active) { background:#fff; }
  .studio-scene-title { text-align:right; }
  .studio-brand { display:none; }
 }
-@media (max-width:900px) and (orientation:portrait) {
+/* 세로 태블릿은 영상 위아래에 빈 띠가 남으므로 제목을 그 띠에 어두운 글씨로 둔다. 휴대폰은 아래 규칙대로 영상이 틀을 꽉 채운다. */
+@media (min-width:601px) and (max-width:900px) and (orientation:portrait) {
  .studio-pause-shade { top:50%; bottom:auto; height:min(100%,56.25vw); transform:translateY(-50%); }
  .studio-pause-title { color:#171717; text-shadow:none; }
  .studio-pause-title small,.studio-pause-title p { color:#626262; }
@@ -110,14 +111,21 @@ body:has(#studio.active) { background:#fff; }
  .controls { gap:20px; }
  .controls h2 { font-size:1.25rem; }
  .hint { font-size:.875rem; }
- .record-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; }
+ .record-actions { display:grid; grid-template-columns:1fr; gap:8px; width:100%; }
  #studio .btn { padding:12px 10px; min-width:0; font-size:.9375rem; }
  #studio .btn-rec { min-width:0; }
- .is-recording .record-actions { grid-template-columns:1fr; }
  #afterRow { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; }
  #saveBtn { grid-column:1 / -1; }
  .recpill { top:16px; left:16px; }
  .workflow-footer { padding:24px 4px; font-size:.8125rem; }
+}
+/* 세로 휴대폰(10/17): 영상은 위에 16:9 그대로 두고(회색 빈 띠 없음), 설명은 그 아래, 버튼은 엄지가 닿는 맨 아래에 가로를 꽉 채운다. */
+@media (max-width:600px) and (orientation:portrait) {
+ .stage { grid-template-rows:auto auto 1fr; }
+ .studio-video-frame { aspect-ratio:16 / 9; }
+ .studio-player-dock { display:flex; flex-direction:column; }
+ .controls { flex:1; flex-direction:column; flex-wrap:nowrap; align-items:stretch; justify-content:space-between; }
+ .controls-copy { flex:none; }
 }
 @media (max-height:500px) and (orientation:landscape) {
  .stage { min-height:440px; grid-template-rows:auto minmax(200px,1fr) auto; }

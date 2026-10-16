@@ -59,8 +59,9 @@ body:has(#result.active) { background:#fff; }
  .poster-brand,.poster-credit { left:24px; right:24px; }
 }
 @media (max-width:600px) {
- .result-card { display:flex; flex-direction:column; width:calc(100% - 40px); margin-top:40px; gap:26px; }
- .result-poster { min-height:220px; border-radius:12px; }
+ .result-card { display:flex; flex-direction:column; width:calc(100% - 40px); margin-top:20px; gap:18px; }
+ /* 포스터를 영화 비율로 줄여 QR이 첫 화면(360×740)에 다 들어오게 한다(10/17). */
+ .result-poster { min-height:0; aspect-ratio:16 / 9; border-radius:12px; }
  .result-poster > img { object-position:center 35%; }
  .poster-brand { top:18px; left:20px; font-size:1.125rem; }
  .poster-credit { bottom:20px; left:20px; }
@@ -68,7 +69,8 @@ body:has(#result.active) { background:#fff; }
  .poster-credit strong { font-size:2rem; }
  .poster-credit > span { margin-top:8px; font-size:.8125rem; }
  .result-details { width:100%; padding:0; }
- .result-details .result-eyebrow { margin-bottom:16px; }
+ .result-details .result-eyebrow { margin-bottom:10px; }
+ .qrbox img { width:160px; height:160px; }
  .result-details h2 { font-size:1.625rem; }
  .result-symbol { display:none; }
  #result .btn { width:100%; white-space:normal; }

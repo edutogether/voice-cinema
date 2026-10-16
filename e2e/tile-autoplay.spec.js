@@ -1,11 +1,10 @@
-// 마우스가 없는 기기에서도 장르 카드가 살아 움직이는지 확인한다.
+// 휴대폰·태블릿(마우스 없는 기기)에서도 장면이 살아 움직이고 손가락으로 고를 수 있는지 확인한다.
 //
-// 왜 있는가: 2026-09-09까지 카드 미리보기와 강조 효과가 마우스 호버로만 켜졌다
-// (`(hover: hover) and (pointer: fine)`). 그래서 폰·태블릿에서는 여섯 장이 전부
-// 정지 이미지로 남았다. 그다음에는 "화면 가운데 한 장만 재생"으로 고쳤는데, 375px는
-// 스크롤이 없어 그 한 장이 영영 바뀌지 않아 대표가 "계속 호러만 재생된다"고 지적했다.
-// 지금은 여섯 장이 전부 재생되고, 강조는 손가락을 대고 있는 동안(:active)에 걸린다 —
-// 터치에서 PC의 호버에 해당하는 것이 그 순간이다.
+// 왜 있는가: 2026-10-17까지 터치 기기는 2.0 캐러셀이 아니라 옛 격자(여덟 장 동시 재생)를 봤다.
+// 대표님이 휴대폰 폭으로 보시고 «보는 중에 왜 옛날식으로 허접하게 화면이 바뀌냐»고 지적해, 터치 기기도
+// PC와 같은 캐러셀을 쓰게 했다(밀어서 넘기고, 가운데 장면을 누르면 녹음실). 그래서 이제 터치에서도
+// **가운데 장면 한 장만** 재생된다 — 예전 «한 장만 재생으로 되돌리지 말 것»은 여섯 장이 한 화면에 다 보이는
+// 격자 이야기였고, 캐러셀은 큰 장면이 하나뿐이라 그 문제가 없다(장면이 6초마다 저절로 넘어간다).
 //
 // 스크린샷으로는 정지 화면과 구분되지 않는다 — currentTime이 실제로 흐르는지 본다.
 import { test, expect } from '@playwright/test';
@@ -17,7 +16,8 @@ async function tileStates(page) {
     [...document.querySelectorAll('.tile')].map((tile) => {
       const v = tile.querySelector('video');
       return {
-        장르: tile.querySelector('.gname').textContent,
+        장르: tile.dataset.genre,
+        가운데: !!tile.closest('.scene-shell.is-current'),
         paused: v.paused,
         muted: v.muted,
         time: v.currentTime,
@@ -26,84 +26,72 @@ async function tileStates(page) {
   );
 }
 
+const 첫화면 = async (page) => {
+  await page.goto('/');
+  await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
+};
+
+// 장면 자동 넘김을 멈춘다 — 6초마다 가운데가 바뀌면 «같은 장면»을 지켜보는 검사가 흔들린다.
+const 자동넘김멈춤 = async (page) => {
+  await page.getByRole('button', { name: '장면 자동 넘김 일시정지' }).click();
+  await expect(page.getByRole('button', { name: '장면 자동 넘김 재생' })).toBeVisible();
+};
+
 test.describe('마우스가 없는 기기', () => {
   test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
 
-  test('여덟 장이 모두 음소거로 재생된다', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
+  test('PC와 같은 캐러셀이 나오고, 가운데 장면 한 장만 음소거로 재생된다', async ({ page }) => {
+    await 첫화면(page);
 
-    // 이 조건이 참이면 호버 경로가 쓰이므로 이 테스트의 전제가 무너진다.
+    // 이 조건이 참이면 마우스 기기 검사가 되어 이 테스트의 전제가 무너진다.
     expect(await page.evaluate(() => window.matchMedia('(hover: hover) and (pointer: fine)').matches)).toBe(false);
+    await expect(page.locator('.scene-carousel')).toBeVisible();
+    await expect(page.locator('#grid')).toHaveCount(0);
+    await 자동넘김멈춤(page);
 
-    // 카드마다 250ms씩 늦춰 시작한다(행사장 와이파이에서 37MB를 한꺼번에 받지 않으려고).
     await expect
-      .poll(async () => (await tileStates(page)).filter((s) => !s.paused).length, {
-        timeout: 60000,
-        intervals: [500, 1000],
-      })
-      .toBe(8);
+      .poll(async () => (await tileStates(page)).filter((s) => !s.paused).map((s) => s.가운데), { timeout: 60000, intervals: [500, 1000] })
+      .toEqual([true]);
 
-    const before = await tileStates(page);
-    // 소리가 있으면 브라우저가 자동재생을 막아 정지 화면 그대로가 되고,
-    // 부스에서 여섯 개가 동시에 소리를 내는 사고도 난다.
-    expect(before.every((s) => s.muted)).toBe(true);
-
+    const before = (await tileStates(page)).find((s) => s.가운데);
+    // 소리가 있으면 브라우저가 자동재생을 막아 정지 화면 그대로가 된다.
+    expect(before.muted).toBe(true);
     await page.waitForTimeout(1200);
-    const after = await tileStates(page);
-    const 멈춘것 = after.filter((s, i) => s.time <= before[i].time).map((s) => s.장르);
-    expect(멈춘것, '시간이 흐르지 않는 카드가 있다').toEqual([]);
+    const after = (await tileStates(page)).find((s) => s.가운데);
+    expect(after.time, '가운데 장면의 시간이 흐르지 않는다').toBeGreaterThan(before.time);
   });
 
   // loop만으로는 실제 기기에서 계속 돈다는 보장이 없다 — 절전 모드나 동시 디코드
   // 한도로 브라우저가 임의로 멈추면 카드가 마지막 프레임에 굳는다(대표가 실제 폰에서
   // 발견). 원인을 하나씩 막는 대신 "멈춰 있으면 다시 튼다"로 처리했고, 여기서는
   // 그 복구가 실제로 도는지 확인한다 — 브라우저가 멈춘 상황을 직접 만들어 본다.
-  test('브라우저가 영상을 멈춰도 다시 재생된다', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
-    await expect
-      .poll(async () => (await tileStates(page)).filter((s) => !s.paused).length, {
-        timeout: 60000,
-        intervals: [500, 1000],
-      })
-      .toBe(8);
+  test('브라우저가 가운데 장면을 멈춰도 다시 재생된다', async ({ page }) => {
+    await 첫화면(page);
+    await 자동넘김멈춤(page);
+    const current = page.locator('.scene-shell.is-current video');
+    await expect.poll(() => current.evaluate((v) => !v.paused), { timeout: 60000, intervals: [500, 1000] }).toBe(true);
 
     // 정지와 그 상태의 확인을 같은 브라우저 작업에서 한다. 두 번의 evaluate 사이에
     // 정상 복구 타이머가 돌면 이미 다시 재생된 카드를 정지 실패로 오판한다(CI 9/29).
-    const 정지직후 = await page.evaluate(() => {
-      const videos = [...document.querySelectorAll('.tile video')];
-      videos.forEach((v) => v.pause());
-      return videos.map((v) => v.paused);
-    });
-    expect(정지직후).toEqual([true, true, true, true, true, true, true, true]);
-
-    await expect
-      .poll(async () => (await tileStates(page)).filter((s) => !s.paused).length, {
-        timeout: 15000,
-        intervals: [500],
-      })
-      .toBe(8);
+    expect(await current.evaluate((v) => { v.pause(); return v.paused; })).toBe(true);
+    await expect.poll(() => current.evaluate((v) => !v.paused), { timeout: 15000, intervals: [500] }).toBe(true);
   });
 
-  // 홈이 다시 그려져도 카드는 멈췄다 다시 틀지 않아야 한다.
+  // 홈이 다시 그려져도 가운데 장면은 멈췄다 다시 틀지 않아야 한다.
   //
   // 2026-09-27까지 홈이 카드에 넘기는 콜백을 렌더마다 새로 만들고 있었고, 카드의 재생
   // 효과가 그 콜백에 걸려 있었다. 그래서 엔진 내려받기 진행률(0~100%)이 바뀔 때마다
-  // 여섯 장이 전부 멈췄다(src까지 비우고) 다시 틀었다. 끊긴 play()는 "거부"로 세어져
-  // 기기가 조금만 느려도 멀쩡한 브라우저가 한 장씩 돌리는 모드로 떨어졌다 — 위
-  // "멈춰도 다시 재생된다"가 전체 실행에서 가끔 1/6으로 떨어진 원인이 이것이다.
-  // 모바일 콘솔에는 "[카드 자동재생 실패] … interrupted by a call to pause()"가 수십 건 찍혔다.
+  // 카드가 전부 멈췄다(src까지 비우고) 다시 틀었다.
   //
-  // 그래서 진행률이 **실제로 여러 번 바뀌는 동안**을 지켜보며, 그 사이 카드 영상이 한
-  // 번도 다시 불러와지지 않고 실패 경고가 0건인지 본다. 진행률 변화를 못 봤으면 이
-  // 검사는 아무것도 안 본 것이므로 통과가 아니라 실패다(§21-1).
-  test('엔진을 내려받는 동안에도 카드가 멈췄다 다시 틀지 않는다', async ({ page, context }) => {
+  // 그래서 진행률이 **실제로 여러 번 바뀌는 동안**을 지켜보며, 그 사이 **가운데에 있는** 장면 영상이
+  // 한 번도 다시 불러와지지 않는지 본다(장면이 넘어가며 떠난 카드를 놓아주는 것은 정상이다 — 그때는
+  // 이미 가운데가 아니다). 진행률 변화를 못 봤으면 이 검사는 아무것도 안 본 것이므로 통과가 아니라 실패다(§21-1).
+  test('엔진을 내려받는 동안에도 가운데 장면이 멈췄다 다시 틀지 않는다', async ({ page, context }) => {
     await context.addInitScript(() => {
       window.__관찰 = { 진행: new Set(), 다시불러옴: 0 };
       const load = window.HTMLMediaElement.prototype.load;
       window.HTMLMediaElement.prototype.load = function () {
-        if (this.closest('.tile')) window.__관찰.다시불러옴++;
+        if (this.closest('.scene-shell.is-current')) window.__관찰.다시불러옴++;
         return load.call(this);
       };
       new MutationObserver(() => {
@@ -111,66 +99,43 @@ test.describe('마우스가 없는 기기', () => {
         if (b) window.__관찰.진행.add(b.textContent);
       }).observe(document, { subtree: true, childList: true, characterData: true });
     });
-    const 경고 = [];
-    page.on('console', (m) => {
-      if (m.text().includes('카드 자동재생 실패')) 경고.push(m.text());
-    });
 
-    await page.goto('/');
-    await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
+    await 첫화면(page);
     // 엔진을 다 받을 때까지(배너가 닫힐 때까지) 본다.
     await page.waitForFunction(() => !document.querySelector('#enginebar.show'), null, { timeout: 60000 });
     await page.waitForTimeout(1000);
 
     const 관찰 = await page.evaluate(() => ({ 진행: window.__관찰.진행.size, 다시불러옴: window.__관찰.다시불러옴 }));
     expect(관찰.진행, '엔진 진행률이 바뀌는 것을 못 봤다 — 이 검사가 빈 검사가 됐다').toBeGreaterThanOrEqual(5);
-    expect(관찰.다시불러옴, '홈이 다시 그려질 때 카드 영상이 멈췄다 다시 불러와졌다').toBe(0);
-    expect(경고).toEqual([]);
-    expect(await page.locator('.tile.is-solo').count(), '멀쩡한 브라우저가 한 장씩 돌리는 모드로 떨어졌다').toBe(0);
+    expect(관찰.다시불러옴, '홈이 다시 그려질 때 가운데 장면 영상이 멈췄다 다시 불러와졌다').toBe(0);
   });
 
-  test('카드를 누르고 있는 동안 PC 호버와 같은 강조가 걸린다', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
-
-    // 2026-09-11: 색 덮기가 별도 요소(.tile-tint)에서 카드 자신의 inset 그림자로 옮겨졌다.
-    // 얹는 요소를 없애 iOS에서 각진 모서리가 덮이던 것을 구조적으로 막은 것이라,
-    // 검사도 "얹힌 것의 투명도"가 아니라 "카드 그림자에 색 덮기가 있는가"를 본다.
-    const 강조 = () =>
-      page.evaluate(() => {
-        const tile = document.querySelector('.tile');
-        const cs = window.getComputedStyle(tile);
-        return {
-          그림자: cs.boxShadow,
-          확대: window.getComputedStyle(tile.querySelector('.thumb')).transform,
-        };
-      });
-
-    // 안 누른 상태에는 색 덮기가 없다 — 있으면 항상 덮여 있는 것이다.
-    expect((await 강조()).그림자).not.toContain('inset 0px 0px 0px 100vmax');
-
-    // 손가락을 대고 있는 상태를 만든다(떼지 않는다).
-    const box = await page.locator('.tile').first().boundingBox();
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await page.mouse.down();
-    // 틴트 0.25s·확대 0.3s의 전환이 끝난 뒤에 재야 한다 — 누르자마자 재면 아직 0이다.
-    await page.waitForTimeout(500);
-    const 누른중 = await 강조();
-    await page.mouse.up();
-
-    // PC의 :hover가 주는 것과 같은 값이어야 한다(같은 CSS 선언을 나눠 쓴다).
-    // 색 덮기·테두리·왼쪽 띠가 전부 카드 자신의 그림자로 그려진다 — 얹는 요소가 0개다.
-    expect(누른중.그림자, '누르는데 테두리가 없다').toContain('0px 0px 0px 2px');
-    expect(누른중.그림자, '누르는데 색 덮기가 없다').toContain('inset');
-    expect(누른중.확대).toBe('matrix(1.05, 0, 0, 1.05, 0, 0)');
+  // 손가락으로 옆으로 밀면 다음 장면이 가운데로 온다 — 진짜 터치 이벤트(CDP)로 민다.
+  test('옆으로 밀면 다음 장면이 가운데로 오고, 반대로 밀면 돌아온다', async ({ page }) => {
+    await 첫화면(page);
+    await 자동넘김멈춤(page);
+    const 번호 = page.locator('.scene-position strong');
+    await expect(번호).toHaveText('01');
+    const box = await page.locator('.scene-shell.is-current .tile-media').boundingBox();
+    const y = box.y + box.height / 2;
+    const cdp = await page.context().newCDPSession(page);
+    const 밀기 = async (from, to) => {
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: from, y }] });
+      for (let i = 1; i <= 6; i++) {
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: from + ((to - from) * i) / 6, y }] });
+      }
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    };
+    await 밀기(box.x + box.width * 0.8, box.x + box.width * 0.2);
+    await expect(번호).toHaveText('02');
+    await expect(page.locator('#studio.active')).toHaveCount(0);
+    await 밀기(box.x + box.width * 0.2, box.x + box.width * 0.8);
+    await expect(번호).toHaveText('01');
   });
 
-  // 카카오톡 같은 인앱 브라우저는 동시 디코딩을 하나로 제한하는 경우가 있다 —
-  // 여섯 장에 play()를 걸어도 하나만 살아남고 나머지는 조용히 거부된다. 그러면
-  // "왜 호러만 재생되지"로 보인다(2026-09-09 대표가 카카오톡에서 발견).
-  // 브라우저 이름이 아니라 실제로 재생되는 장수를 세어 판단하므로, 여기서는 그
-  // 제약이 있는 환경을 직접 만들어 대체 동작(한 장씩 돌려 재생 + 강조)을 확인한다.
-  test('한 장만 재생되는 환경에서는 한 장씩 돌아가며 재생된다', async ({ page, context }) => {
+  // 카카오톡 같은 인앱 브라우저는 동시 디코딩을 하나로 제한하는 경우가 있다(2026-09-09 대표 발견).
+  // 캐러셀은 가운데 한 장만 재생하므로 그 환경에서도 그대로 돌아야 한다 — 그 제약을 직접 만들어 본다.
+  test('한 번에 하나만 재생되는 환경에서도 가운데 장면이 재생된다', async ({ page, context }) => {
     await context.addInitScript(() => {
       const real = window.HTMLMediaElement.prototype.play;
       window.HTMLMediaElement.prototype.play = function () {
@@ -179,78 +144,54 @@ test.describe('마우스가 없는 기기', () => {
         return real.call(this);
       };
     });
-    await page.goto('/');
-    await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
-
-    const 상태 = () =>
-      page.evaluate(() =>
-        [...document.querySelectorAll('.tile')].map((t) => ({
-          장르: t.querySelector('.gname').textContent,
-          재생: !t.querySelector('video').paused,
-          강조: t.classList.contains('is-solo'),
-        }))
-      );
-
-    // 여섯 장을 시도해 본 뒤 "한 장밖에 안 된다"를 스스로 알아채고 전환한다.
+    await 첫화면(page);
+    await 자동넘김멈춤(page);
     await expect
-      .poll(async () => (await 상태()).filter((s) => s.강조).length, { timeout: 30000, intervals: [500] })
-      .toBe(1);
-
-    const 처음 = await 상태();
-    // 재생 중인 카드와 강조된 카드가 같아야 한다 — 엉뚱한 카드가 빛나면 더 이상하다.
-    expect(처음.filter((s) => s.재생).map((s) => s.장르)).toEqual(처음.filter((s) => s.강조).map((s) => s.장르));
-
-    // 그리고 다음 카드로 넘어가야 한다. 한 장에 머물면 대표가 본 그 화면과 같다.
+      .poll(async () => (await tileStates(page)).filter((s) => !s.paused).map((s) => s.가운데), { timeout: 30000, intervals: [500] })
+      .toEqual([true]);
+    // 다음 장면으로 넘어가도 새 가운데 장면이 재생된다.
+    await page.getByRole('button', { name: '다음 장면' }).click();
+    await expect(page.locator('.scene-position strong')).toHaveText('02');
     await expect
-      .poll(async () => (await 상태()).find((s) => s.강조)?.장르, { timeout: 20000, intervals: [500] })
-      .not.toBe(처음.find((s) => s.강조).장르);
+      .poll(async () => (await tileStates(page)).filter((s) => !s.paused).map((s) => s.장르), { timeout: 30000, intervals: [500] })
+      .toEqual(['fantasy']);
   });
 
   // 카드를 채우는 것들이 **스스로도** 카드와 같은 반경을 갖는지 본다.
   // 전부 반경 0이고 부모의 overflow: hidden에만 기대고 있었는데, iOS 사파리·WKWebView는
-  // 자식에 transform이 걸리면 둥근 모서리 잘라내기를 놓친다 — 누를 때 카드는 scale(0.97),
-  // 안쪽 영상은 scale(1.05)가 걸리므로 바로 그 조건이라, 그 순간 각진 모서리가 둥근
-  // 모서리를 덮어 "떡네모"로 보였다(2026-09-11 대표가 아이폰 카카오톡 인앱에서 발견).
-  //
-  // 🔴 그리고 강조 테두리가 살아 있는지도 같이 본다. 이 결함을 고치려고 흔히 쓰는
-  // `-webkit-mask-image` 우회를 넣었다가, **마스크가 테두리 박스 밖을 잘라내 box-shadow로
-  // 그리는 강조가 통째로 사라지는 것**을 캡처로 보고 뺐다. 모서리만 검사하면 그 회귀를
-  // 못 잡는다 — 둘을 한 테스트에서 같이 본다.
-  test('카드를 채우는 것들이 카드와 같은 모서리를 갖고, 강조 테두리도 살아 있다', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
-
+  // 자식에 transform이 걸리면 둥근 모서리 잘라내기를 놓친다 — 캐러셀 카드는 넘어갈 때마다
+  // 크기(scale)가 바뀌므로 바로 그 조건이라, 각진 모서리가 둥근 모서리를 덮어 "떡네모"로 보인다
+  // (2026-09-11 대표가 아이폰 카카오톡 인앱에서 발견). `-webkit-mask-image` 우회는 쓰지 않는다(app.md).
+  test('가운데 장면을 채우는 것들이 카드와 같은 모서리를 갖는다', async ({ page }) => {
+    await 첫화면(page);
     const 반경 = await page.evaluate(() => {
-      const t = document.querySelector('.tile');
+      const media = document.querySelector('.scene-shell.is-current .tile-media');
       const 값 = (el) => parseFloat(getComputedStyle(el).borderTopLeftRadius);
-      const 자식 = ['.tile-media', '.tile-media .thumb', '.tile-media .preview', '.tile-scrim']
-        .map((sel) => [sel, t.querySelector(sel)])
+      const 자식 = ['.tile-visual', '.thumb', '.preview']
+        .map((sel) => [sel, media.querySelector(sel)])
         .filter(([, el]) => el)
         .map(([sel, el]) => [sel, 값(el)]);
-      return { 카드: 값(t), 자식 };
+      return { 카드: 값(media), 자식 };
     });
-
     // 검사 대상이 0건이면 통과가 아니라 실패다(§21-1).
-    expect(반경.자식.length, '검사할 자식을 하나도 못 찾았다').toBeGreaterThan(2);
+    expect(반경.자식.length, '검사할 자식을 하나도 못 찾았다').toBe(3);
     expect(반경.카드, '카드에 모서리 반경이 없다').toBeGreaterThan(0);
     const 각진것 = 반경.자식.filter(([, r]) => r !== 반경.카드).map(([sel, r]) => `${sel}=${r}px`);
     expect(각진것, `카드는 ${반경.카드}px인데 다른 것이 있다`).toEqual([]);
-
-    // 누르고 있는 동안 강조 테두리가 실제로 그려지는지 — 마스크류 회귀를 잡는다.
-    const box = await page.locator('.tile').first().boundingBox();
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-    await page.mouse.down();
-    await page.waitForTimeout(500);
-    const 그림자 = await page.evaluate(() => getComputedStyle(document.querySelector('.tile')).boxShadow);
-    await page.mouse.up();
-    expect(그림자, '누르는데 강조 테두리가 없다').toContain('0px 0px 0px 2px');
   });
 
-  test('카드를 한 번 탭하면 그 장르로 들어간다', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
-    await page.locator('.tile', { hasText: '판타지' }).click();
+  test('가운데 장면을 탭하면 녹음실로, 옆 장면을 탭하면 그 장면이 가운데로 온다', async ({ page }) => {
+    await 첫화면(page);
+    await 자동넘김멈춤(page);
+    // 옆(다음) 장면 — 오른쪽 가장자리에 보이는 조각을 탭하면 들어가지 않고 가운데로 온다.
+    const box = await page.locator('.scene-shell.is-current .tile-media').boundingBox();
+    const stage = await page.locator('.scene-stage').boundingBox();
+    await page.touchscreen.tap(stage.x + stage.width - 6, box.y + box.height / 2);
+    await expect(page.locator('.scene-position strong')).toHaveText('02');
+    await expect(page.locator('#studio.active')).toHaveCount(0);
+    await page.locator('.scene-shell.is-current .tile').tap();
     await expect(page.locator('#studio')).toHaveClass(/active/);
+    await expect(page.locator('#chipName')).toHaveText('판타지');
   });
 });
 

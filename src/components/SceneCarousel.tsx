@@ -3,7 +3,6 @@ import { GENRES, thumbUrl, type Genre } from '../genres';
 import { GenreTile } from './GenreTile';
 import { useSceneMotion } from '../hooks/useSceneMotion';
 
-const ignoreBlocked = () => {};
 // 대기 화면은 한 장면을 충분히 본 뒤 다음 장면을 소개한다. 직접 조작하는 간격과 구분한다.
 const AUTO_ADVANCE_MS = 6000;
 
@@ -115,8 +114,8 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
               onPointerMove={event => { if (event.pointerType === 'mouse' && offset === 0) setHoveredCard(index); }}
               onPointerLeave={() => setHoveredCard(previous => previous === index ? null : previous)}
               ref={node => { shells.current[index] = node; }}>
-              <GenreTile genre={genre} sceneNumber={index + 1} playing={active && ready && visible && offset === 0} delayMs={0} solo={false}
-                previewOnly={offset !== 0} onBlocked={ignoreBlocked}
+              <GenreTile genre={genre} sceneNumber={index + 1} playing={active && ready && visible && offset === 0}
+                previewOnly={offset !== 0}
                 onSelect={offset === 0 ? onSelect : () => choose(index)} />
             </div>
           );
