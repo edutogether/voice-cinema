@@ -13,8 +13,14 @@
 - 🟠 **라이브는 아직 1.0(6장르)이다.** 2.0 앱 반영은 가지 `feat/vc2-scenes`에만 있다 — GitHub 계정 정지로 push·CI·배포가 막혀
   로컬 커밋만 했다. 아래 10/8 절의 «master와 라이브가 같다»는 master 기준으로 여전히 맞다
 - 🟢 확인: E2E 126개 중 120 통과·6 조건부 건너뜀, 유닛 106개, 린트·타입 통과(10/16 로컬)
-- 원판 8개는 그린 키프레임을 넘기는 **시험용**이다(`node tools/build-scene.mjs <장르> --slides _media/scenes/<장르>`).
-  실사 원판(Higgsfield 두 토막)은 관문 C 허락 뒤 `--parts`로 바꿔 넣는다
+- 🔴 **Higgsfield 절대 금지**(10/17 Bumm님, 모든 세션 — 영상·음성·음악, 조회도). 원판 8개는 **슬라이드 원판**이 정식이다:
+  키프레임을 이름 속 시각에 맞춰 넘기는 10초(`node tools/build-scene.mjs <장르> --slides _media/scenes/<장르> --audio <소리.wav>`).
+  소리는 Mixkit 무료 음원 + PC 내장 한국어 음성으로 읽은 임시 상대 대사(`tools/build-scene-audio.mjs`, 출처 `_docs/ops/sound-credits.md`).
+  진짜 영상은 나중에 Bumm님이 직접 만들어 같은 원판 자리에 `--parts`로 넣는다
+- 🟢 **미리보기 채널**(10/17, 결정 7): `https://voice-cinema--vc2-pob2jj8b.web.app`(채널 `vc2`, 10/24 만료). 라이브 릴리스는
+  그대로(`ff0918a2268dbe8b`, 배포 커밋 `3e5e8d2`) 확인. 미리보기에서는 «저장 → QR»만 기기 다운로드로 대신된다(서버 허용 목록 밖)
+- 남은 그림: 뮤지컬 18장(Poster Studio 다음 차례에 Bumm님 Chrome으로), 스릴러는 대체안 셋 중 Bumm님 선택 뒤 19장
+  (`_docs/intents/2026-10-11-scene-homage/05-thriller-alternatives.md`)
 - 🟠 **master로 합칠 때는 squash로 합친다** — 이 가지에는 시험용 원판 영상(8장르 약 50MB)이 커밋돼 있다. 실사 원판으로 바꾼 뒤
   한 커밋으로 합쳐야 공개 저장소 기록에 시험용 영상이 남지 않는다
 - 남은 결정·순서는 팀장에게 보낸 «결정 한 장»(10/16, 결정 1~13·6-1)에 있다. 일요일(10/18) 검토 페이지는
