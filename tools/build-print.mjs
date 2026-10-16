@@ -1,4 +1,4 @@
-// 인쇄물 세 종(설치운영설명서·부스 게시물·교사용 안내)을 HTML 원본에서 A4 PDF로 뽑는다(Playwright 크로미움).
+// 인쇄물 네 종(설치운영설명서·부스 게시물·교사용 안내·교육청 장면 검토 자료)을 HTML 원본에서 A4 PDF로 뽑는다(Playwright 크로미움).
 //
 //   node tools/build-print.mjs
 //
@@ -17,6 +17,7 @@ const DOCS = [
   { html: 'operator-manual.html', pdf: 'Voice Cinema_설치운영설명서.pdf' },
   { html: 'booth-poster.html', pdf: 'Voice Cinema_부스게시물.pdf', maxPages: 1 },
   { html: 'teacher-guide.html', pdf: 'Voice Cinema_교사용안내.pdf', maxPages: 3 },
+  { html: 'review-summary.html', pdf: 'Voice Cinema_장면검토자료.pdf', maxPages: 1 },
 ];
 
 const browser = await chromium.launch();
