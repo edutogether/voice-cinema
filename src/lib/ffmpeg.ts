@@ -1,3 +1,4 @@
+import { PAUSE_SECONDS, RECORD_SECONDS } from '../config';
 import { clipUrl } from '../genres';
 import { pickAudioExtension } from '../logic';
 import { loadFFmpegModule, loadFFmpegUtil, type FFmpegInstance } from './vendor';
@@ -56,7 +57,18 @@ export function loadEngine(onProgress?: (percent: number) => void): Promise<FFmp
   return loading;
 }
 
-/** 무음 클립의 영상 + 학생이 녹음한 음성을 브라우저 안에서 합쳐 mp4로 만든다. */
+/**
+ * 원판(영상 + 상대 대사·BGM·효과음) 소리에 학생 녹음 3.5초를 5.0초 자리에 섞는다(app-plan §2-4).
+ * 녹음은 정확히 3.5초로 자르고 모자라면 무음으로 채워 언제나 5.0~8.5초를 차지한다 — 그래서
+ * 완성본은 언제나 원판 길이(정확히 10.0초) 그대로다. 앞의 빈 소리는 자르지 않는다(대표님 결정).
+ * 90Hz 아래 웅웅거림을 걷고, 갑자기 큰 소리는 리미터로 눌러 찢어지지 않게 한다.
+ */
+export const MIX_FILTER =
+  `[1:a]atrim=0:${RECORD_SECONDS},apad=whole_dur=${RECORD_SECONDS},highpass=f=90,alimiter=limit=0.89,` +
+  `adelay=${PAUSE_SECONDS * 1000}:all=1[voice];` +
+  '[0:a][voice]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[a]';
+
+/** 원판 영상 + 학생이 녹음한 음성을 브라우저 안에서 합쳐 mp4로 만든다. */
 export async function mergeClip(genreId: string, audioBlob: Blob, mime: string): Promise<Blob> {
   const ff = await loadEngine();
   const { fetchFile } = await loadFFmpegUtil();
@@ -69,14 +81,14 @@ export async function mergeClip(genreId: string, audioBlob: Blob, mime: string):
   try {
     await ff.writeFile('v.mp4', await fetchFile(clipUrl(genreId)));
     await ff.writeFile(`a.${ext}`, await fetchFile(audioBlob));
-    // 영상은 그대로 복사(-c:v copy)하고 오디오만 새로 입힌다 — 브라우저 안 WASM에서
+    // 영상은 그대로 복사(-c:v copy)하고 소리만 새로 섞는다 — 브라우저 안 WASM에서
     // 영상까지 재인코딩하면 클립당 40초 가까이 걸려 부스에서 감당할 수 없다.
     const code = await ff.exec([
       '-i', 'v.mp4', '-i', `a.${ext}`,
-      '-map', '0:v:0', '-map', '1:a:0',
+      '-filter_complex', MIX_FILTER,
+      '-map', '0:v:0', '-map', '[a]',
       '-c:v', 'copy',
       '-c:a', 'aac', '-b:a', '160k',
-      '-shortest',
       '-movflags', '+faststart',
       'out.mp4',
     ]);

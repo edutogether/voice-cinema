@@ -2,6 +2,12 @@
 
 export const CLIP_SECONDS = 10;
 
+// 장면 더빙 2.0 박자(대표님 10/11 확정): 영상이 5.0초 최고조에서 멈추고, 녹음 3.5초가 그대로
+// 5.0~8.5초 목소리 칸에 들어가 완성본은 언제나 정확히 10.0초다. 합성(src/lib/ffmpeg.ts)과
+// 녹음실(src/hooks/useDubbing.ts)이 같은 값을 쓴다.
+export const PAUSE_SECONDS = 5;
+export const RECORD_SECONDS = 3.5;
+
 export const API_BASE =
   'https://asia-northeast3-inky-voice-cinema.cloudfunctions.net/voiceCinema';
 

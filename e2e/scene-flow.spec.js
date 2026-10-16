@@ -26,7 +26,7 @@ test('하단 흐름: 호버 중에도 왼쪽 등속 이동하며 수동 정지 �
   await expect(page.locator('.scene-choices')).toHaveAttribute('data-paused', 'false');
 });
 
-test('하단 흐름: 순환 어느 지점에서도 여섯 장르를 고를 수 있고 사본도 같은 녹음실로 간다', async ({ page }) => {
+test('하단 흐름: 순환 어느 지점에서도 여덟 장르를 고를 수 있고 사본도 같은 녹음실로 간다', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await open(page);
   const coverage = await page.locator('.scene-choices').evaluate(view => {
@@ -50,28 +50,28 @@ test('하단 흐름: 순환 어느 지점에서도 여섯 장르를 고를 수 �
     animation.currentTime = duration / 2;
     return { samples, ends };
   });
-  expect(coverage.samples).toEqual(Array(8).fill(6));
+  expect(coverage.samples).toEqual(Array(8).fill(8));
   expect(coverage.ends).toEqual(Array(8).fill(true));
   const copy = page.locator('.scene-choice-copy[data-genre="fantasy"]').first();
   await copy.hover();
-  await expect(page.locator('.scene-shell.is-current')).toHaveAttribute('data-index', '0');
+  await expect(page.locator('.scene-shell.is-current')).toHaveAttribute('data-index', '1');
   await copy.click();
   await expect(page.locator('#chipName')).toHaveText('판타지');
   await expect(page.locator('.scene-choices')).toHaveAttribute('data-paused', 'true');
 });
 
-test('하단 흐름: 키보드는 여섯 원본만 탐색하며 모두 온전히 보인다', async ({ page }) => {
+test('하단 흐름: 키보드는 여덟 원본만 탐색하며 모두 온전히 보인다', async ({ page }) => {
   await open(page);
   await page.locator('.scene-choice-track').evaluate(el => { const animation = el.getAnimations()[0]; animation.currentTime = Number(animation.effect.getTiming().duration) / 2; });
-  const last = page.getByRole('button', { name: '시트콤 미리보기 선택' });
+  const last = page.getByRole('button', { name: '뮤지컬 미리보기 선택' });
   await last.focus();
   await expect(page.locator('.scene-choices')).toHaveAttribute('data-keyboard', 'true');
-  await expect(page.getByRole('button', { name: /미리보기 선택$/ })).toHaveCount(6);
+  await expect(page.getByRole('button', { name: /미리보기 선택$/ })).toHaveCount(8);
   for (const choice of await page.locator('.scene-choice').all()) await expect(choice).toBeInViewport({ ratio: 1 });
   await page.keyboard.press('ArrowRight');
-  await expect(page.getByRole('button', { name: '판타지 미리보기 선택' })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'SF 미리보기 선택' })).toBeFocused();
   await page.keyboard.press('Enter');
-  await expect(page.locator('#chipName')).toHaveText('판타지');
+  await expect(page.locator('#chipName')).toHaveText('SF');
 });
 
 test('하단 흐름: 움직임 줄이기에서는 자동으로 흐르지 않는다', async ({ page }) => {

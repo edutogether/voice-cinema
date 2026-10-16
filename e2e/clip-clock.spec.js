@@ -1,32 +1,22 @@
 import { test, expect } from '@playwright/test';
 
-test('대기는 전체 길이, 재생·녹음은 영상 시계의 초와 100분의 1초를 표시한다', async ({ page }) => {
+test('대기는 전체 길이, 장면·이어 재생은 영상 시계를 표시하고 5.0초 멈춤에서는 05:00에 선다', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
   const clock = page.locator('.clip-time');
   await expect(clock).toHaveText('10:00');
-  await page.locator('#previewBtn').click();
+  await page.locator('#recBtn').click();
   await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(0);
   await expect(clock).toHaveText(/^\d{2}:\d{2} \/ 10:00$/);
-  await page.locator('#clip').evaluate(video => { video.pause(); video.currentTime = 3.45; });
-  await expect(clock).toHaveText('03:45 / 10:00');
-  await expect.poll(() => page.locator('#clip').evaluate(video => {
-    const bar = document.querySelector('#bar');
-    const scale = new window.DOMMatrixReadOnly(getComputedStyle(bar).transform).a;
-    return Math.abs(scale - video.currentTime / video.duration);
-  })).toBeLessThan(.00001);
-  await page.waitForTimeout(300);
-  await expect(clock).toHaveText('03:45 / 10:00');
-  await page.locator('#previewBtn').click();
-  await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(3.45);
-  await page.locator('#recBtn').click();
-  await expect(page.locator('#count')).toBeVisible();
-  await expect(clock).toHaveText('00:00 / 10:00');
-  await expect(page.locator('#recpill')).toBeVisible();
-  await expect.poll(async () => (await clock.textContent()) !== '00:00 / 10:00').toBe(true);
-  await expect(clock).toHaveText(/^\d{2}:\d{2} \/ 10:00$/);
-  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#cue')).toBeVisible({ timeout: 10000 });
+  await expect(clock).toHaveText('05:00 / 10:00');
+  await expect.poll(() => page.locator('#bar').evaluate(bar => new window.DOMMatrixReadOnly(getComputedStyle(bar).transform).a)).toBeCloseTo(.5, 2);
+  await expect(page.locator('#recpill')).toBeVisible({ timeout: 6000 });
+  await expect(clock).toHaveText('05:00 / 10:00');
+  await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'continuing', { timeout: 6000 });
+  await expect.poll(async () => (await clock.textContent()) !== '05:00 / 10:00').toBe(true);
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 10000 });
   await expect(clock).toHaveText('10:00 / 10:00');
   await expect(page.locator('#progress')).toHaveAttribute('aria-valuenow', '100');
   await expect(page.locator('#bar')).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
@@ -42,7 +32,7 @@ for (const [width, height] of [[1440, 900], [390, 844]]) {
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
     await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
-    await page.locator('#previewBtn').click();
+    await page.locator('#recBtn').click();
     await expect.poll(() => page.locator('#clip').evaluate(video => video.currentTime)).toBeGreaterThan(.5);
     const sample = await page.evaluate(() => new Promise(resolve => {
       const video = document.querySelector('#clip');
@@ -63,9 +53,9 @@ for (const [width, height] of [[1440, 900], [390, 844]]) {
     // 0.25초 단위 점프가 되살아나면 대부분의 프레임에서 값이 같아져 실패한다.
     expect(sample.changes / sample.frames).toBeGreaterThan(.5);
     expect(sample.maxLag).toBeLessThan(.1);
-    await page.locator('#clip').evaluate(video => video.pause());
+    // 5.0초 멈춤 동안 막대는 움직이지 않는다.
+    await expect(page.locator('#cue')).toBeVisible({ timeout: 8000 });
     const read = () => page.locator('#bar').evaluate(bar => getComputedStyle(bar).transform);
-    await page.locator('#bar').evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     const paused = await read();
     await page.waitForTimeout(300);
     expect(await read()).toBe(paused);

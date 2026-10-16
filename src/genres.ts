@@ -1,20 +1,17 @@
-// 장르 6종. 이름·색·부제·아이콘이 예전엔 4개의 별도 객체로 흩어져 있어
-// 하나를 고칠 때 네 곳을 맞춰야 했다 — 항목 하나에 모아둔다.
+// 장르 8종(장면 더빙 2.0, 대표님 10/11 확정). 이름·색·장면 이름·상대 대사를 항목 하나에 모아둔다.
 //
-// 아이콘은 Lucide(lucide-static@1.39.0, ISC)의 원본 SVG path를 인라인으로 벤더링했다.
-// CSP가 script-src 'self'라 런타임에 CDN에서 아이콘 라이브러리를 불러올 수 없다.
-//
-// 색은 2026-09-03 대표 지시로 원색 대신 보석톤(자수정/구리/에메랄드/가넷/앤틱골드/사파이어).
-// 부제는 같은 날 5차 지시로 한 문장 느낌으로 다시 썼다 — 느낌표 앞에는 항상 한 칸(전 앱 공통 규칙).
+// 색은 홈 카드를 누를 때(터치 기기)·한 장씩 돌 때 빛나는 색이다. 판타지·애니메이션·드라마는
+// 1.0 색 그대로, 히어로·스릴러·스포츠는 빠진 장르(액션·호러·시트콤)의 색을 물려받고,
+// SF·뮤지컬만 새 색이다(1안 — app-plan §2-5). 원작 제목은 앱 화면 어디에도 쓰지 않는다.
 
 export interface Genre {
   id: string;
   name: string;
   color: string;
-  sub: string;
-  /** PC 선택 화면에서는 장면의 차이를 짧게 읽을 수 있게 한다. */
+  /** 우리 장면 이름 — 카드와 녹음실 제목에 쓴다. */
   summary: string;
-  icon: string;
+  /** 상대 대사 — 앱이 영상 위에 띄우는 넷플릭스식 자막. 영상·완성본에는 굽지 않는다. */
+  line: { text: string; start: number; end: number };
 }
 
 /**
@@ -31,62 +28,27 @@ export function withAlpha(hex: string, alpha: number): string {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
+// 상대 대사는 모든 장르가 1.6초에 시작해 3.4초 전에 끝난다(스토리보드 §0).
+const line = (text: string) => ({ text, start: 1.6, end: 3.4 });
+
 export const GENRES: Genre[] = [
-  {
-    id: 'fantasy',
-    summary: '주문 한마디로 펼치는 마법',
-    name: '판타지',
-    color: '#8a63d2',
-    sub: '마법 지팡이를 들고, 주문 한 줄로 세상을 뒤바꿔보세요 !',
-    icon: '<path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72" /><path d="m14 7 3 3" /><path d="M5 6v4" /><path d="M19 14v4" /><path d="M10 2v2" /><path d="M7 8H3" /><path d="M21 16h-4" /><path d="M11 3H9" />',
-  },
-  {
-    id: 'animation',
-    summary: '상상 속 친구와 나누는 이야기',
-    name: '애니메이션',
-    color: '#d97b3f',
-    sub: '친구가 되어, 마음을 담은 목소리로 대화를 나눠보세요 !',
-    icon: '<path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z" /><circle cx="13.5" cy="6.5" r=".5" fill="currentColor" /><circle cx="17.5" cy="10.5" r=".5" fill="currentColor" /><circle cx="6.5" cy="12.5" r=".5" fill="currentColor" /><circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />',
-  },
-  {
-    id: 'horror',
-    summary: '어둠 속에서 마주친 낯선 소리',
-    name: '호러',
-    color: '#2f9e6e',
-    sub: '어둠 속 발소리, 온몸이 서늘해지는 비명을 질러보세요 !',
-    icon: '<path d="M15 10v1" /><path d="M7.528 20.472a1.6 1.6 0 0 1 2.277 0l1.057 1.056a1.6 1.6 0 0 0 2.276 0l1.057-1.056a1.6 1.6 0 0 1 2.277 0l1.114 1.114a1.4 1.4 0 0 0 2.414-1V10a8 8 0 0 0-16 0v10.586a1.4 1.4 0 0 0 2.414 1z" /><path d="M9 10v1" />',
-  },
-  {
-    id: 'action',
-    summary: '위기의 순간을 뒤집는 한마디',
-    name: '액션',
-    color: '#c94f5c',
-    sub: '위기의 순간, 가장 멋진 한마디로 상황을 뒤집어보세요 !',
-    icon: '<path d="M15.914 4a1.5 1.5 0 0 0-2.474-1.561l-9 9A1.5 1.5 0 0 0 5.5 14h4.002a.5.5 0 0 1 .471.666L8.086 20a1.5 1.5 0 0 0 2.475 1.56l9-9A1.5 1.5 0 0 0 18.5 10h-3.997a.5.5 0 0 1-.472-.667z" />',
-  },
-  {
-    id: 'drama',
-    summary: '마음 깊이 전하고 싶은 진심',
-    name: '드라마',
-    color: '#c9a24b',
-    sub: '말하지 못했던 진심을, 떨리는 목소리에 담아보세요 !',
-    icon: '<path d="M10 11h.01" /><path d="M14 6h.01" /><path d="M18 6h.01" /><path d="M6.5 13.1h.01" /><path d="M22 5c0 9-4 12-6 12s-6-3-6-12c0-2 2-3 6-3s6 1 6 3" /><path d="M17.4 9.9c-.8.8-2 .8-2.8 0" /><path d="M10.1 7.1C9 7.2 7.7 7.7 6 8.6c-3.5 2-4.7 3.9-3.7 5.6 4.5 7.8 9.5 8.4 11.2 7.4.9-.5 1.9-2.1 1.9-4.7" /><path d="M9.1 16.5c.3-1.1 1.4-1.7 2.4-1.4" />',
-  },
-  {
-    id: 'sitcom',
-    summary: '웃음이 터지는 우리들의 일상',
-    name: '시트콤',
-    color: '#3f7fb8',
-    sub: '빵 터지는 타이밍, 웃음 가득한 만담을 펼쳐보세요 !',
-    icon: '<path d="M15 10V9" /><path d="M7.084 14.302a5.12 5.12 0 0 0 9.833 0 .24.24 0 0 0-.235-.302H7.32a.24.24 0 0 0-.235.302" /><path d="M9 10V9" /><circle cx="12" cy="12" r="10" />',
-  },
+  { id: 'sf', name: 'SF', color: '#3fa7c9', summary: '물의 행성', line: line('저 산… 움직여 !') },
+  { id: 'fantasy', name: '판타지', color: '#8a63d2', summary: '빛의 결투', line: line('나와 겨루겠다고 ?') },
+  { id: 'animation', name: '애니메이션', color: '#d97b3f', summary: '멋지게 떨어지기', line: line('장난감은 못 날아 !') },
+  { id: 'hero', name: '히어로', color: '#c94f5c', summary: '왼쪽을 봐', line: line('왼쪽을 봐. 우리가 왔어 !') },
+  { id: 'thriller', name: '스릴러', color: '#2f9e6e', summary: '주방의 발톱', line: line('쉿… 움직이지 마 !') },
+  { id: 'drama', name: '드라마', color: '#c9a24b', summary: '기억의 한마디', line: line('이제… 아무도 몰라보셔.') },
+  { id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '마지막 슛', line: line('너한테 맡긴다 !') },
+  { id: 'musical', name: '뮤지컬', color: '#c4559e', summary: '라면 습격', line: line('이제 내 무대야 !') },
 ];
 
+/**
+ * 장르마다 10초 원판 한 파일(1920×1080 H.264/AAC, 키프레임 1초 간격 + 5.0초).
+ * 녹음실 재생·5.0초 멈춤·최종 합성이 모두 이 한 파일을 쓴다 — 1.0의 녹음실용 사본(`studio/`)은 없앴다.
+ */
 export const clipUrl = (genreId: string) => `/clips/${genreId}.mp4`;
-// 0.2초마다 기준 프레임이 있는 탐색용 사본. 최종 합성은 위의 원본 경로를 유지한다.
-export const studioClipUrl = (genreId: string) => `/clips/studio/${genreId}.mp4`;
-// 선택 화면만 가벼운 사본을 쓴다. 상세 미리보기·녹음·최종 합성은 원본을 유지한다.
+// 선택 화면만 가벼운 사본을 쓴다 — 0~5.0초(최고조까지)를 소리 없이 되풀이한다. 해소는 아낀다.
 export const previewUrl = (genreId: string) => `/clips/previews/${genreId}.mp4`;
 export const thumbUrl = (genreId: string) => `/clips/thumbs/${genreId}.jpg`;
-// 큰 녹음 화면과 메인의 넓은 영상 벽에 사용한다. 메인은 srcSet으로 화면 크기에 맞춰 선택한다.
+// 5.0초 멈춤 화면(`K050`). 녹음실 포스터와 메인의 넓은 영상 벽에 쓴다.
 export const stillUrl = (genreId: string) => `/clips/stills/${genreId}.jpg`;

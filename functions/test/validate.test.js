@@ -3,7 +3,7 @@
 // 가능했던" 결함이 배포까지 간 전례가 있어(2026-08-26), 회귀를 잡아줄
 // 테스트가 필요하다는 판단이었다.
 import { test, expect, describe } from 'vitest';
-import { sanitizeFilename, validateUploadRequest, createRateLimiter, chunk, hasMp4Signature, MAX_DECODED_BYTES, MAX_FILENAME_LEN, isAfterCutoff, buildServerFilename, deleteInBatches, GENRE_IDS } from '../validate.js';
+import { sanitizeFilename, validateUploadRequest, createRateLimiter, chunk, hasMp4Signature, MAX_DECODED_BYTES, MAX_FILENAME_LEN, isAfterCutoff, buildServerFilename, deleteInBatches, GENRE_IDS, LEGACY_GENRE_IDS } from '../validate.js';
 
 // 진짜 mp4 파일 시작부(박스 크기 4바이트 + 'ftyp')를 흉내낸 최소 픽스처.
 const FAKE_MP4_BYTES = Buffer.concat([Buffer.from([0, 0, 0, 32]), Buffer.from('ftypisom')]);
@@ -138,8 +138,13 @@ describe('buildServerFilename — 서버가 정하는 저장 이름', () => {
   test('난수 없이 부르면 예외 — 추측 가능한 이름을 만들지 않는다', () => {
     expect(() => buildServerFilename('dub_drama_1_x.mp4', 7, '')).toThrow();
   });
-  test('장르 목록은 여섯 개다(src/genres.ts와의 대조는 루트 계약 테스트가 한다)', () => {
-    expect(GENRE_IDS.size).toBe(6);
+  test('장르 목록은 2.0의 여덟 개다(src/genres.ts와의 대조는 루트 계약 테스트가 한다)', () => {
+    expect(GENRE_IDS.size).toBe(8);
+  });
+  test('옛 화면(1.0)이 보내는 장르도 이름에 살린다 — 2.0 배포 직후 옛 화면을 든 기기를 위해', () => {
+    expect(buildServerFilename('dub_sitcom_1_x.mp4', 9, 'r')).toBe('dub_sitcom_9_r.mp4');
+    expect(buildServerFilename('dub_hero_1_x.mp4', 9, 'r')).toBe('dub_hero_9_r.mp4');
+    expect([...LEGACY_GENRE_IDS].some((id) => GENRE_IDS.has(id))).toBe(false);
   });
 });
 

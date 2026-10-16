@@ -11,7 +11,7 @@ test('자동 넘김 정지 중 화살표 호버는 이동하지 않고 클릭할
   await next.hover();
   await page.clock.runFor(12000);
   await expect(current).toHaveAttribute('data-index', '0');
-  for (const index of [1, 2, 3, 4, 5, 0]) {
+  for (const index of [1, 2, 3, 4, 5, 6, 7, 0]) {
     await next.click();
     await page.clock.runFor(2000);
     await expect(current).toHaveAttribute('data-index', String(index));
@@ -21,7 +21,7 @@ test('자동 넘김 정지 중 화살표 호버는 이동하지 않고 클릭할
   await page.clock.runFor(6000);
   await expect(current).toHaveAttribute('data-index', '0');
   await previous.click();
-  await expect(current).toHaveAttribute('data-index', '5');
+  await expect(current).toHaveAttribute('data-index', '7');
 });
 
 test('중앙 카드의 영상·제목·더빙하기 위에서만 자동 넘김을 멈추고 이탈 후 재개한다', async ({ page }) => {

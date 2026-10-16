@@ -29,11 +29,11 @@ for (const [name, width, height, screen, touch] of [
       }
       if (screen === 'recorded' || screen === 'result') {
         await page.locator('#recBtn').click();
-        await expect(page.locator('#afterRow')).toBeVisible({ timeout: 20000 });
+        await expect(page.locator('#afterRow')).toBeVisible({ timeout: 40000 });
       }
       if (screen === 'result') {
         await page.locator('#saveBtn').click();
-        await expect(page.locator('#qrbox')).toBeVisible({ timeout: 30000 });
+        await expect(page.locator('#qrbox')).toBeVisible({ timeout: 60000 });
       }
       // 움직이는 영상·시계만 같은 순간에 고정한다. 제품의 배치·폰트·색은 덮어쓰지 않는다.
       await page.clock.install();

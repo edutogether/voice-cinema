@@ -79,7 +79,7 @@ test('인터넷이 끊긴 상태에서 탭을 새로 열어도 앱이 정상 부
   });
   expect(마이크크기).toEqual([160, 160]);
 
-  await expect(page.locator('.tile')).toHaveCount(6);
+  await expect(page.locator('.tile')).toHaveCount(8);
   await expect(page.locator('.tile', { hasText: '판타지' })).toBeVisible();
 
   // 개인정보처리방침도 오프라인에서 열려야 한다(고지 가용성).

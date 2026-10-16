@@ -69,7 +69,7 @@ export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, de
     };
   }, []);
 
-  // 마우스가 없는 기기: 여섯 장이 전부 재생된다. 한 장만 고르면 사용자는 "왜 저것만"이
+  // 마우스가 없는 기기: 모든 장(2.0은 여덟 장)이 전부 재생된다. 한 장만 고르면 사용자는 "왜 저것만"이
   // 되고, 스크롤이 없는 화면에서는 그 한 장이 영영 바뀌지 않아 나머지가 죽은 것처럼
   // 보인다(2026-09-09 대표 지적). PC에서 한 장만 사는 건 거기에 마우스가 있어서다.
   //
@@ -168,9 +168,4 @@ export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, de
       </span>
     </button>
   );
-}
-
-// 아이콘은 이 저장소가 직접 벤더링한 고정 문자열(genres.ts)이라 외부 입력이 아니다.
-export function iconSvg(genre: Genre): string {
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${genre.icon}</svg>`;
 }

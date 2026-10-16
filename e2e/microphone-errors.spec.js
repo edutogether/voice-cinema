@@ -25,7 +25,7 @@ for (const [name, reason, hint] of [
     await expect(page.locator('#hint')).toContainText(hint);
     await expect(page.locator('#recBtn')).toBeEnabled();
     await page.locator('#recBtn').click();
-    await expect(page.locator('#count')).toHaveAttribute('aria-label', '3초 뒤 녹음 시작');
+    await expect(page.locator('#count')).toHaveAttribute('aria-label', '3초 뒤 녹음 시작', { timeout: 10000 });
     await expect(page.locator('#recpill')).toBeVisible({ timeout: 5000 });
     await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
   });
@@ -57,11 +57,11 @@ test('연결이 끊긴 마이크는 다시 얻어 다음 참가자가 녹음한�
   await page.locator('#splash').waitFor({ state: 'detached' });
   await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
   await page.locator('#recBtn').click();
-  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 30000 });
   await page.evaluate(() => window.testMic.getTracks().forEach(track => track.stop()));
   await page.locator('#resetBtn').click();
   await page.locator('#recBtn').click();
-  await expect(page.locator('#recpill')).toBeVisible({ timeout: 5000 });
+  await expect(page.locator('#recpill')).toBeVisible({ timeout: 12000 });
   expect(await page.evaluate(() => window.micRequests)).toBe(2);
   await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
 });

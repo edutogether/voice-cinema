@@ -48,22 +48,22 @@ test('움직임 줄이기는 즉시 정지 화면을 표시하고 진입 중 뒤
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
+  await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();
   await expect(page.locator('.studio-video-frame')).toHaveCSS('transform', 'none');
   await expect(page.locator('#clip')).toHaveJSProperty('paused', true);
   await expect(page.locator('#screenPlaybackBtn span')).toBeVisible();
   await page.goBack();
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
+  await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();
   await page.goBack();
   await expect(page.locator('#home')).toBeVisible();
   await expect(page.locator('#studio')).toHaveCount(0);
 });
 
-test('처음엔 대기하고 중앙 재생 버튼은 재생·일시정지·끝난 뒤 다시 재생한다', async ({ page }) => {
+test('처음엔 대기하고 화면 가운데 버튼은 장면을 시작한다(되감기·일시정지 없음)', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
+  await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();
   const clip = page.locator('#clip');
   const screen = page.locator('#screenPlaybackBtn');
   await expect(page.locator('.studio-video-frame')).not.toHaveClass(/is-entering/);
@@ -73,19 +73,10 @@ test('처음엔 대기하고 중앙 재생 버튼은 재생·일시정지·끝�
   await expect(page.locator('.clip-time')).toHaveText('10:00');
   await expect(screen.locator('span')).toBeVisible();
   await expect(screen.locator('span')).toHaveCSS('border-radius', '50%');
+  await expect(screen).toHaveAccessibleName('장면 시작');
   await screen.click();
   await expect.poll(() => clip.evaluate(v => !v.paused && !v.muted && v.currentTime > .2)).toBe(true);
-  await expect(screen.locator('span')).toHaveCount(0);
-  await screen.click();
-  await expect(screen.locator('span')).toBeVisible();
-  const time = await clip.evaluate(v => v.currentTime);
-  await page.waitForTimeout(250);
-  expect(await clip.evaluate(v => v.currentTime)).toBe(time);
-  await screen.press('Space');
-  await expect.poll(() => clip.evaluate(v => !v.paused && v.currentTime)).toBeGreaterThan(time);
-  await clip.evaluate(v => { v.currentTime = v.duration - .15; });
-  await expect(page.locator('#previewBtn')).toHaveText('다시 재생');
-  await expect(screen.locator('span')).toBeVisible();
-  await screen.click();
-  await expect.poll(() => clip.evaluate(v => !v.paused && v.currentTime > 0 && v.currentTime < 2)).toBe(true);
+  // 장면이 시작되면 가운데 버튼은 사라진다 — 멈춤·되감기는 없고 5.0초에서 앱이 멈춘다.
+  await expect(screen).toHaveCount(0);
+  await expect(page.locator('#cue')).toBeVisible({ timeout: 8000 });
 });

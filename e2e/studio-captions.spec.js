@@ -1,24 +1,58 @@
 import { test, expect } from '@playwright/test';
 
-test('드라마 원본 자막은 해당 대사 구간에만 보이고 끄거나 다시 녹음한 목소리를 들을 때 숨는다', async ({ page }) => {
+// 장면 더빙 2.0 상대 대사 자막(app-plan §2-3): 넷플릭스식 — 영상 안 아래 가운데, 영상 폭 80% 안, 두 줄 이내,
+// 영상 높이의 약 5%(최소 14px). 멈춤 뒤 문구·카운트다운·녹음 중에는 없고, 다시 듣기에서는 1.6~3.4초에 다시 나온다.
+const LONGEST = ['히어로', '왼쪽을 봐. 우리가 왔어 !'];
+
+for (const [width, height] of [[1440, 900], [390, 844], [360, 640], [844, 390]]) {
+  test(`${width}×${height}: 가장 긴 대사도 영상 안에 두 줄 이내로, 폭 80% 안에 놓인다`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.locator('#splash').waitFor({ state: 'detached' });
+    await page.getByRole('button', { name: `${LONGEST[0]} 더빙 시작`, exact: true }).click();
+    await page.locator('#recBtn').click();
+    const caption = page.getByTestId('scene-caption');
+    await expect(caption).toHaveText(LONGEST[1], { timeout: 6000 });
+    const box = await page.evaluate(() => {
+      const video = document.querySelector('#clip');
+      const v = video.getBoundingClientRect();
+      // 세로 휴대폰은 영상이 16:9로 가운데 놓인다(contain) — 실제 그림이 그려지는 칸을 계산한다.
+      const contain = getComputedStyle(video).objectFit === 'contain';
+      const pictureHeight = contain ? Math.min(v.height, v.width * 9 / 16) : v.height;
+      const pictureWidth = contain ? pictureHeight * 16 / 9 : v.width;
+      const top = v.top + (v.height - pictureHeight) / 2;
+      const el = document.querySelector('[data-testid="scene-caption"]');
+      const c = el.getBoundingClientRect();
+      const s = getComputedStyle(el);
+      return {
+        fontSize: parseFloat(s.fontSize), lines: Math.round(c.height / parseFloat(s.lineHeight)),
+        widthRatio: c.width / pictureWidth, inside: c.top >= top && c.bottom <= top + pictureHeight,
+        bottomGap: (top + pictureHeight - c.bottom) / pictureHeight,
+      };
+    });
+    expect(box.fontSize).toBeGreaterThanOrEqual(14);
+    expect(box.lines).toBeLessThanOrEqual(2);
+    expect(box.widthRatio).toBeLessThanOrEqual(.81);
+    expect(box.inside).toBe(true);
+    expect(box.bottomGap).toBeGreaterThan(.03);
+    expect(box.bottomGap).toBeLessThan(.2);
+  });
+}
+
+test('자막은 멈춘 뒤 문구·카운트다운·녹음 중에는 없고, 다시 듣기의 1.6~3.4초에 다시 나온다', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: '드라마 더빙 시작', exact: true }).click();
-  await page.locator('#previewBtn').click();
-  await page.locator('#clip').evaluate(video => { video.pause(); video.currentTime = 3; });
-  await expect(page.locator('.studio-captions')).toContainText('I wanted to tell you the truth.');
-  await expect(page.locator('.studio-captions')).toContainText('너에게 진실을 말하고 싶었어.');
-  await page.getByRole('button', { name: '원본 자막' }).click();
-  await expect(page.locator('.studio-captions')).toHaveCount(0);
-  await page.getByRole('button', { name: '원본 자막' }).click();
-  await expect(page.locator('.studio-captions')).toBeVisible();
-  await page.locator('#clip').evaluate(video => { video.currentTime = 5; });
-  await expect(page.locator('.studio-captions')).toHaveCount(0);
+  await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();
   await page.locator('#recBtn').click();
-  await expect(page.locator('.studio-captions')).toBeVisible({ timeout: 10000 });
+  const caption = page.getByTestId('scene-caption');
+  await expect(caption).toHaveText('저 산… 움직여 !', { timeout: 6000 });
+  await expect(page.locator('#cue')).toBeVisible({ timeout: 8000 });
+  await expect(caption).toHaveCount(0);
+  await expect(page.locator('#count')).toBeVisible();
+  await expect(caption).toHaveCount(0);
+  await expect(page.locator('#recpill')).toBeVisible({ timeout: 5000 });
+  await expect(caption).toHaveCount(0);
   await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
   await page.locator('#replayBtn').click();
-  await page.locator('#clip').evaluate(video => { video.currentTime = 3; });
-  await expect(page.locator('.studio-captions')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: '원본 자막' })).toHaveCount(0);
+  await expect(caption).toHaveText('저 산… 움직여 !', { timeout: 6000 });
 });

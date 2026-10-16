@@ -18,7 +18,7 @@ async function openSample(page) {
   await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
 }
 
-test('마이크 없이 321·10초 진행·원본 다시 듣기·원본 다운로드를 체험한다', async ({ page }) => {
+test('마이크 없이 장면·5.0초 멈춤·321·3.5초·이어 재생·원본 다운로드를 체험한다', async ({ page }) => {
   const externalRequests = [];
   page.on('request', request => {
     if (/cloudfunctions|firebaseappcheck|ffmpeg-core/.test(request.url())) externalRequests.push(request.url());
@@ -26,19 +26,18 @@ test('마이크 없이 321·10초 진행·원본 다시 듣기·원본 다운로
   await openSample(page);
   await expect(page.locator('#hint')).toContainText('샘플 체험 · 마이크 녹음 없음');
   await page.locator('#recBtn').click();
+  await expect(page.locator('#cue')).toBeVisible({ timeout: 10000 });
   for (const n of [3, 2, 1]) await expect(page.locator('#count')).toHaveAttribute('aria-label', `${n}초 뒤 녹음 시작`);
-  await expect(page.locator('#recpill')).toContainText('샘플 녹음 진행 중');
-  await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(0.5);
+  await expect(page.locator('#recpill')).toContainText('샘플 녹음 체험 중');
   await expect(page.locator('#recBtn')).toBeDisabled();
   await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
-  await page.screenshot({ path: 'tmp/recording-sample-complete.png' });
   await page.locator('#replayBtn').click();
   await expect.poll(() => page.locator('#clip').evaluate(v => !v.paused && !v.muted && v.currentTime > 0)).toBe(true);
   await page.locator('#resetBtn').click();
   await expect(page.locator('#afterRow')).toHaveCount(0);
   await expect.poll(() => page.locator('#clip').evaluate(v => v.paused && v.currentTime === 0)).toBe(true);
   await page.locator('#recBtn').click();
-  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 25000 });
   await page.locator('#saveBtn').click();
   await expect(page.locator('#result.active')).toContainText('원본 영상을 받아보세요');
   await expect(page.locator('#qrbox')).toHaveCount(0);
@@ -57,11 +56,11 @@ test('마이크 없이 321·10초 진행·원본 다시 듣기·원본 다운로
 test('카운트다운 도중 뒤로가면 남은 체험이 취소된다', async ({ page }) => {
   await openSample(page);
   await page.locator('#recBtn').click();
-  await expect(page.locator('#count')).toBeVisible();
+  await expect(page.locator('#count')).toBeVisible({ timeout: 10000 });
   await page.goBack();
   await expect(page.locator('#home.active')).toBeVisible();
-  await page.getByRole('button', { name: '호러 더빙 시작', exact: true }).click();
-  await page.waitForTimeout(3200);
+  await page.getByRole('button', { name: '스릴러 더빙 시작', exact: true }).click();
+  await page.waitForTimeout(4000);
   await expect(page.locator('#recBtn')).toBeEnabled();
   await expect(page.locator('#count')).toHaveCount(0);
   await expect(page.locator('#afterRow')).toHaveCount(0);

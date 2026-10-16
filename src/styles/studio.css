@@ -18,7 +18,6 @@ body:has(#studio.active) { background:#fff; }
 .studio-brand em { color:#df291f; font-style:normal; }
 .studio-video-frame { position:relative; min-height:0; background:#f3f3f3; isolation:isolate; }
 .stage video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
-.studio-scrub-frame { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; pointer-events:none; }
 .studio-screen-playback { position:absolute; inset:0; width:100%; height:100%; display:grid; place-items:center; border:0; background:transparent; cursor:pointer; color:white; }
 .studio-screen-playback > span { display:grid; place-items:center; width:96px; height:96px; border:1px solid #ffffff80; border-radius:50%; background:#18181866; transition:transform .18s ease-out,background .18s ease-out,border-color .18s ease-out; }
 .studio-screen-playback .action-icon { width:48px; height:48px; fill:currentColor; stroke:none; margin-left:5px; }
@@ -35,22 +34,29 @@ body:has(#studio.active) { background:#fff; }
 }
 .studio-screen-playback:active > span { transform:scale(.96); }
 .studio-screen-playback:focus-visible { outline:3px solid #df291f; outline-offset:-4px; }
-.studio-video-frame:has(.studio-scrub-frame:not([hidden])) .studio-screen-playback > span { visibility:hidden; }
-.studio-video-frame:has(.studio-scrub-frame:not([hidden])) :is(.studio-pause-shade,.studio-pause-title) { opacity:0; transition:none; }
-/* 대사가 나오는 프레임에서 멈추면 장면 제목보다 실제 자막을 우선한다. */
-.studio-video-frame:has(.studio-captions) .studio-pause-title { opacity:0; }
 /* 세로 휴대폰에서는 인물 양옆이 크게 잘리지 않도록 전체 구도를 유지한다. */
 @media (orientation:landscape) { .stage video { object-fit:cover; } }
-@media (orientation:landscape) { .studio-scrub-frame { object-fit:cover; } }
-.studio-caption-toggle { position:absolute; top:20px; right:28px; z-index:2; min-height:40px; padding:8px 14px; border:1px solid #ffffff70; border-radius:999px; color:#fff; background:#171717d9; font:inherit; font-size:.8125rem; cursor:pointer; }
-.studio-caption-toggle:focus-visible { outline:3px solid #df291f; outline-offset:3px; }
-/* 배경 상자 없이 영상 위에 놓고, 밝은 장면에서도 글자 윤곽이 남도록 그림자를 겹친다. */
-.studio-captions { position:absolute; bottom:clamp(20px,4%,52px); left:50%; transform:translateX(-50%); width:max-content; max-width:calc(100% - 40px); color:#fff; text-align:center; line-height:1.35; pointer-events:none; text-shadow:-1px -1px 1px #000b,1px -1px 1px #000b,-1px 1px 1px #000b,1px 1px 1px #000b,0 2px 4px #000e; }
-.studio-captions span { display:block; margin-bottom:5px; font-size:clamp(.8125rem,1.15vw,1.25rem); font-weight:500; }
-.studio-captions strong { display:block; font-size:clamp(1.125rem,2.1vw,2.25rem); font-weight:600; letter-spacing:0; word-break:keep-all; }
+/* 상대 대사 자막 — 넷플릭스식(app-plan §2-3). 흰 글씨·배경 상자 없음·얇은 외곽선과 그림자, 두 줄 이내,
+   한 줄 너비는 영상 폭의 80% 안, 글줄 아랫선은 영상 높이의 약 8% 위, 크기는 영상 높이의 약 5%(최소 14px).
+   영상 크기는 이 틀의 크기에서 계산한다 — 가로 화면은 영상이 틀을 덮고(cover), 세로 휴대폰은 16:9로 가운데 놓인다(contain).
+   컨테이너 단위를 모르는 옛 브라우저는 앞의 px·vw 선언을 쓴다. */
+.studio-video-frame { container-type:size; }
+.scene-caption { position:absolute; z-index:2; left:50%; bottom:6%; transform:translateX(-50%); width:max-content; max-width:80%;
+  color:#fff; text-align:center; font-size:clamp(14px,2.6vw,54px); font-weight:600; line-height:1.3; letter-spacing:0; word-break:keep-all;
+  pointer-events:none; text-shadow:-1px 0 #000,1px 0 #000,0 -1px #000,0 1px #000,0 2px 6px #000c; }
+.scene-caption { bottom:8cqh; max-width:80cqw; font-size:max(14px,5cqh); }
+@media (orientation:portrait) {
+ .scene-caption { bottom:calc((100cqh - 56.25cqw) / 2 + 4.5cqw); font-size:max(14px,2.8cqw); }
+}
+/* 5.0초에서 멈춘 직후 «이제 당신의 차례입니다 !» — 앱 글씨라 영상·완성본에 굽지 않는다. */
+.studio-cue { position:absolute; inset:0; z-index:3; display:grid; place-items:center; padding:24px; background:#0007; pointer-events:none; animation:countIn .25s ease-out; }
+.studio-cue strong { color:#fff; font-size:clamp(1.75rem,4.2vw,3.5rem); font-weight:700; letter-spacing:-.02em; line-height:1.3; text-align:center; word-break:keep-all; text-shadow:0 4px 24px #0009; }
+/* 녹음 3.5초 중 남은 시간 */
+.record-left { position:absolute; z-index:2; left:0; right:0; bottom:0; height:8px; background:#ffffff40; }
+.record-left > i { display:block; height:100%; background:#df291f; transform-origin:left center; }
 .overlay { position:absolute; inset:0; z-index:3; display:grid; place-items:center; background:#0008; }
 .count { color:#fff; font-size:clamp(6rem,14vw,12rem); font-weight:600; line-height:1; text-align:center; font-variant-numeric:tabular-nums; text-shadow:0 4px 32px #0008; animation:countIn .25s ease-out; }
-.count span { display:block; margin-top:24px; font-size:1rem; font-weight:500; line-height:1.5; }
+.count span { display:block; margin-top:24px; padding-inline:24px; font-size:clamp(1.125rem,2.4vw,2rem); font-weight:700; line-height:1.4; letter-spacing:-.02em; word-break:keep-all; }
 @keyframes countIn { from { opacity:.3; transform:scale(.9); } to { opacity:1; transform:none; } }
 .recpill { display:flex; align-items:center; gap:8px; position:absolute; z-index:2; top:20px; left:28px; color:#fff; background:#d52620; border:1px solid #ee655e; border-radius:999px; padding:8px 14px; font-size:.875rem; font-weight:600; }
 .recpill .d { width:8px; height:8px; border-radius:50%; background:white; }
@@ -61,11 +67,6 @@ body:has(#studio.active) { background:#fff; }
 .progress { flex:1; position:relative; height:24px; margin-block:-10.5px; }
 .progress::before { content:''; position:absolute; inset:10.5px 0; background:#e7e7e7; border-radius:3px; }
 .progress > i { position:absolute; top:10.5px; display:block; width:100%; height:3px; background:#df291f; transform:scaleX(0); transform-origin:left center; }
-.progress.is-seekable { cursor:pointer; touch-action:none; }
-.progress.is-seekable::after { content:''; position:absolute; left:var(--position,0%); top:50%; width:12px; height:12px; border-radius:50%; background:#df291f; transform:translate(-50%,-50%); opacity:0; }
-.progress.is-seekable:is(:hover,:focus-visible,.is-dragging)::after { opacity:1; }
-.progress.is-dragging { cursor:grabbing; }
-.progress:focus-visible { outline:2px solid #df291f; outline-offset:3px; border-radius:4px; }
 .controls { display:flex; flex-wrap:wrap; gap:20px 32px; align-items:center; justify-content:space-between; }
 .controls-copy { flex:1 1 320px; min-width:0; }
 .controls h2 { font-size:1.375rem; font-weight:700; letter-spacing:-.025em; margin:0 0 6px; line-height:1.4; word-break:keep-all; }
@@ -92,7 +93,6 @@ body:has(#studio.active) { background:#fff; }
  .studio-brand { display:none; }
 }
 @media (max-width:900px) and (orientation:portrait) {
- .studio-captions { bottom:max(12px,calc((100% - 56.25vw) / 2 + 12px)); }
  .studio-pause-shade { top:50%; bottom:auto; height:min(100%,56.25vw); transform:translateY(-50%); }
  .studio-pause-title { color:#171717; text-shadow:none; }
  .studio-pause-title small,.studio-pause-title p { color:#626262; }
@@ -130,7 +130,7 @@ body:has(#studio.active) { background:#fff; }
  .controls-copy { flex-basis:220px; }
  .controls h2 { font-size:1.125rem; }
 }
-@media (prefers-reduced-motion:reduce) { .count { animation:none; } :is(.btn,.back) { transition:none; } }
+@media (prefers-reduced-motion:reduce) { .count,.studio-cue { animation:none; } :is(.btn,.back) { transition:none; } }
 
 /* 짧은 로딩에는 번쩍이지 않고, 실제 대기만 알린다. */
 .studio-buffering { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); padding:12px 18px; border-radius:999px; background:#171717cc; color:#fff; font-size:.875rem; pointer-events:none; animation:bufferNotice .2s .3s both; }

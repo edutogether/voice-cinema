@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
 
-test('미리보기·녹음은 원본 소리를 출력하고 다시 듣기는 녹음한 목소리만 재생한다', async ({ page }) => {
+// 장면 더빙 2.0의 소리: 장면은 원판 소리(상대 대사·BGM·효과음)와 함께 재생되고, 녹음 중에는 영상이 5.0초에
+// 멈춰 스피커가 조용하다(스피커 소리가 마이크로 들어가 겹치지 않게). 이어 재생·다시 듣기는 원판 소리가 다시 난다.
+test('장면은 원판 소리를 내고, 녹음 중에는 조용하며, 이어 재생에서 원판 소리가 다시 난다', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
-  // 실제 오디오가 있는 원본으로 검사한다. 나머지 다섯 원본은 사실상 무음이다.
   await page.getByRole('button', { name: '드라마 더빙 시작', exact: true }).click();
   await page.locator('#clip').evaluate(video => {
     const context = new window.AudioContext();
@@ -13,34 +14,26 @@ test('미리보기·녹음은 원본 소리를 출력하고 다시 듣기는 녹
     const output = context.createGain();
     output.gain.value = 0;
     analyser.connect(output).connect(context.destination);
-    window.previewAudioProbe = { context, analyser };
+    window.probe = { context, analyser };
   });
-  await page.locator('#previewBtn').click();
-  await page.evaluate(() => window.previewAudioProbe.context.resume());
-  await expect.poll(() => page.locator('#clip').evaluate(video => {
-    const { analyser } = window.previewAudioProbe;
-    const samples = new Float32Array(analyser.fftSize);
-    analyser.getFloatTimeDomainData(samples);
-    return !video.muted && video.volume > 0 && !video.paused &&
-      samples.some(sample => Math.abs(sample) > .005);
-  }), { timeout: 8000, intervals: [100] }).toBe(true);
-  await expect.poll(() => page.locator('#clip').evaluate(video => video.currentTime)).toBeGreaterThan(1);
-  await expect(page.locator('#clip')).toHaveJSProperty('muted', false);
-  await page.locator('#previewBtn').click();
-  await expect(page.locator('#clip')).toHaveJSProperty('paused', true);
-  await expect(page.locator('#clip')).toHaveJSProperty('muted', false);
-  await page.locator('#recBtn').click();
-  await expect(page.locator('#recpill')).toBeVisible();
-  await expect.poll(() => page.locator('#clip').evaluate(video => {
-    const samples = new Float32Array(window.previewAudioProbe.analyser.fftSize);
-    window.previewAudioProbe.analyser.getFloatTimeDomainData(samples);
+  const sounding = () => page.locator('#clip').evaluate(video => {
+    const samples = new Float32Array(window.probe.analyser.fftSize);
+    window.probe.analyser.getFloatTimeDomainData(samples);
     return !video.muted && !video.paused && samples.some(sample => Math.abs(sample) > .005);
-  }), { timeout: 8000, intervals: [100] }).toBe(true);
-  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
+  });
+  await page.locator('#recBtn').click();
+  await page.evaluate(() => window.probe.context.resume());
+  await expect.poll(sounding, { timeout: 8000, intervals: [100] }).toBe(true);
+
+  await expect(page.locator('#recpill')).toBeVisible({ timeout: 12000 });
   await expect(page.locator('#clip')).toHaveJSProperty('paused', true);
-  await expect(page.locator('#clip')).toHaveJSProperty('muted', true);
+  expect(await sounding()).toBe(false);
+
+  await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'continuing', { timeout: 6000 });
+  await expect.poll(sounding, { timeout: 5000, intervals: [100] }).toBe(true);
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 10000 });
+
   await page.locator('#replayBtn').click();
-  await expect.poll(() => page.locator('#clip').evaluate(video => video.paused)).toBe(false);
-  await expect(page.locator('#clip')).toHaveJSProperty('muted', true);
-  await page.evaluate(() => window.previewAudioProbe.context.close());
+  await expect.poll(sounding, { timeout: 5000, intervals: [100] }).toBe(true);
+  await page.evaluate(() => window.probe.context.close());
 });

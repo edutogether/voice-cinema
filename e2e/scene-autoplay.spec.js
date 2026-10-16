@@ -11,7 +11,7 @@ test('아무 입력 없이 실제 시간으로 01·02·03 장면이 자동 재�
   }
 });
 
-test('마우스 없이 첫 장면을 재생하고 여섯 장면을 순서대로 순환한다', async ({ page }) => {
+test('마우스 없이 첫 장면을 재생하고 여덟 장면을 순서대로 순환한다', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   const current = page.locator('.scene-shell.is-current');
@@ -25,7 +25,7 @@ test('마우스 없이 첫 장면을 재생하고 여섯 장면을 순서대로 
   await page.mouse.move(1, 1);
   await expect(current).toHaveAttribute('data-index', '1');
   let elapsed = 0;
-  for (const index of [2, 3, 4, 5, 0]) {
+  for (const index of [2, 3, 4, 5, 6, 7, 0]) {
     await page.clock.runFor(5900 - elapsed);
     await expect(current).not.toHaveAttribute('data-index', String(index));
     await page.clock.runFor(100);
@@ -51,7 +51,7 @@ test('자동 넘김을 멈추거나 녹음실에 들어가면 장면이 저절�
   await page.mouse.move(1, 1);
   await page.clock.runFor(6000);
   await expect(page.locator('.scene-shell.is-current')).toHaveAttribute('data-index', '1');
-  await page.getByRole('button', { name: '애니메이션 더빙 시작', exact: true }).press('Enter');
+  await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).press('Enter');
   await page.clock.runFor(12000);
   await expect(page.locator('#studio')).toHaveClass(/active/);
   await expect(page.locator('.scene-shell.is-current')).toHaveAttribute('data-index', '1');

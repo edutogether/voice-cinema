@@ -7,7 +7,7 @@ const ignoreBlocked = () => {};
 // 대기 화면은 한 장면을 충분히 본 뒤 다음 장면을 소개한다. 직접 조작하는 간격과 구분한다.
 const AUTO_ADVANCE_MS = 6000;
 
-/** 중앙 작품은 앞으로, 이웃 작품은 뒤로 놓는다. 여섯 장면의 바로가기는 항상 보인다. */
+/** 중앙 작품은 앞으로, 이웃 작품은 뒤로 놓는다. 여덟 장면의 바로가기는 항상 보인다. */
 export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect: (genre: Genre, source?: HTMLElement) => void }) {
   const [selected, setSelected] = useState(0);
   const [ready, setReady] = useState(() => !document.getElementById('splash'));
@@ -132,13 +132,13 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
         ))}
       </div>
       <div className="scene-navigation">
-        <p className="scene-position" aria-live={autoPaused || keyboardPaused ? 'polite' : 'off'}><strong>{String(selected + 1).padStart(2, '0')}</strong><span>/ 06</span><span className="scene-current-name">{GENRES[selected].name}</span></p>
+        <p className="scene-position" aria-live={autoPaused || keyboardPaused ? 'polite' : 'off'}><strong>{String(selected + 1).padStart(2, '0')}</strong><span>/ {String(GENRES.length).padStart(2, '0')}</span><span className="scene-current-name">{GENRES[selected].name}</span></p>
         {!reducedMotion && <button className="scene-auto-toggle" type="button" aria-label={autoPaused ? '장면 자동 넘김 재생' : '장면 자동 넘김 일시정지'} aria-pressed={autoPaused} onClick={() => setAutoPaused(value => !value)}>
           {autoPaused ? <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6z" /></svg> : <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 4h3v12H6zM12 4h3v12h-3z" /></svg>}
         </button>}
       </div>
       <div className="scene-choice-row">
-        <div className="scene-choices" ref={choiceViewport} role="group" aria-label="여섯 장면 바로 고르기"
+        <div className="scene-choices" ref={choiceViewport} role="group" aria-label="여덟 장면 바로 고르기"
           data-paused={!active || !visible || flowPaused} data-keyboard={keyboardChoices}
           onKeyDownCapture={() => setKeyboardChoices(true)}
           onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setKeyboardChoices(false); }}>

@@ -1,20 +1,29 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CLIP_SECONDS } from '../config';
+import { PAUSE_SECONDS, RECORD_SECONDS } from '../config';
 import { pickSupportedMime } from '../logic';
+import { stopVideoAt, watchVideoTime } from '../lib/videoClock';
 
-// 예전 app.js에서는 정리(리셋) 작업이 resetRecord/stopAll/stopPreview/녹음 실패 분기
-// 네 곳에 겹쳐 흩어져 있어, 상태를 하나 추가할 때마다 네 곳을 모두 고쳐야 했다.
-// 여기서는 단계(phase) 하나가 화면 전체를 결정하고, 정리는 effect cleanup이 맡는다.
-export type Phase = 'idle' | 'ready' | 'preview' | 'requesting' | 'countdown' | 'recording' | 'recorded' | 'replaying';
+// 장면 더빙 2.0 흐름(대표님 10/11 확정, app-plan §1):
+//   장면 시작 → 0~5.0초 재생(상대 대사 자막) → 5.0초에서 멈춤 → «이제 당신의 차례입니다 !»
+//   → 3·2·1 «지금 바로 당신의 목소리를 들려주세요 !» → «1»이 사라지는 순간부터 녹음 3.5초
+//   → 같은 영상을 5.0초부터 이어 재생하며 녹음을 5.0~8.5초에 깔아 들려줌 → 다시 듣기·다시 녹음·저장.
+// 단계(phase) 하나가 화면 전체를 결정하고, 정리는 effect cleanup이 맡는다.
+export type Phase = 'idle' | 'requesting' | 'watching' | 'cue' | 'countdown' | 'recording' | 'continuing' | 'recorded' | 'replaying';
 
-// 권한 대기·카운트다운·실패 원인을 해당 전환 시점의 안내로 보여준다.
+/** 5.0초 멈춤 뒤 «이제 당신의 차례입니다 !»를 보여 주는 시간 */
+export const CUE_MS = 1200;
+/** 3·2·1 숫자 하나의 시간(1.0과 같다) */
+export const COUNT_MS = 900;
+
+// 권한 대기·실패 원인을 해당 전환 시점의 안내로 보여준다.
 const HINT = {
-  idle: "'녹음 시작'을 누르면 잠시 후 녹음이 시작돼요 !",
-  ready: "'녹음 시작'을 누르면 잠시 후 녹음이 시작돼요 !",
-  preview: '영상을 보며 어떤 더빙을 할지 생각해 보세요',
+  idle: "'장면 시작'을 누르면 장면이 흐르다 가장 긴박한 순간에 멈춰요. 그때 내 목소리로 외쳐 주세요 !",
   requesting: '마이크를 준비하고 있어요. 권한 요청이 뜨면 허용해 주세요.',
-  countdown: '숫자가 사라지면 장면에 맞춰 목소리를 들려주세요.',
-  recording: '지금 목소리를 연기해 보세요 !',
+  watching: '장면을 보세요. 곧 내 차례가 와요 !',
+  cue: '장면이 멈췄어요. 이제 내 차례예요 !',
+  countdown: '숫자가 사라지면 3.5초 동안 목소리를 들려주세요.',
+  recording: '지금 목소리를 들려주세요 !',
+  continuing: '내 목소리가 들어간 장면을 이어 보는 중이에요…',
   recorded: '잘했어요 ! 다시 듣고, 마음에 들면 저장하세요',
   replaying: '내 더빙 영화 재생 중…',
   micDenied: '마이크 접근이 차단됐어요. 브라우저의 사이트 권한과 기기의 마이크 권한을 허용한 뒤 다시 눌러 주세요.',
@@ -25,21 +34,20 @@ const HINT = {
   insecure: '녹음하려면 HTTPS 주소 또는 이 기기의 localhost 주소에서 열어 주세요.',
   micBroken: '⚠ 마이크에 문제가 생겼어요 — 연결 확인 후 다시 눌러 주세요',
   recordFailed: '⚠ 녹음을 시작하지 못했어요 — 다시 눌러 주세요',
+  playFailed: '영상을 재생하지 못했어요. 장면 시작을 다시 눌러 주세요.',
 } as const;
-
-// 진행바가 보이는 단계. 미리보기 중과 녹음이 시작된 뒤에만 보이고, 대기·카운트다운
-// 중에는 숨는다(전환 전 `.progress.show` 토글 시점과 동일).
-const PROGRESS_PHASES: readonly Phase[] = ['preview', 'recording', 'recorded', 'replaying'];
 
 const MIME_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
 
-// 녹음 시작·초기화 때 영상을 처음 상태(정지·시작 지점·무음)로 되돌린다.
+// 처음 상태(정지·시작 지점·무음)로 되돌린다.
 function resetVideo(v: HTMLVideoElement | null): void {
   if (!v) return;
   v.pause();
   v.currentTime = 0;
   v.muted = true;
 }
+
+const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 // 마이크 스트림은 한 번 얻으면 앱이 살아있는 동안 재사용한다(장르를 바꿀 때마다
 // 권한 프롬프트가 다시 뜨지 않도록).
@@ -74,14 +82,13 @@ async function ensureMic(): Promise<MicResult> {
 export interface Dubbing {
   phase: Phase;
   hint: string;
-  showProgress: boolean;
-  progress: number;
   countdown: number;
+  /** 녹음 3.5초 중 남은 몫(1 → 0). 녹음 중에만 의미가 있다. */
+  recordLeft: number;
   recordedBlob: Blob | null;
   recordedMime: string;
   micError: MicFailure | null;
-  togglePreview: () => void;
-  startRecord: () => void;
+  startTake: () => void;
   replay: () => void;
   reset: () => void;
 }
@@ -89,24 +96,29 @@ export interface Dubbing {
 export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoElement | null>, sampleMode = false): Dubbing {
   const [phase, setPhase] = useState<Phase>('idle');
   const [hint, setHint] = useState<string>(HINT.idle);
-  const [progress, setProgress] = useState(0);
   const [countdown, setCountdown] = useState(0);
+  const [recordLeft, setRecordLeft] = useState(1);
   const [micError, setMicError] = useState<MicFailure | null>(null);
   const [recorded, setRecorded] = useState<{ blob: Blob; mime: string } | null>(null);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
-  const replayRef = useRef<{ audio: HTMLAudioElement; url: string } | null>(null);
+  const voiceRef = useRef<{ audio: HTMLAudioElement; url: string } | null>(null);
+  const cancelClockRef = useRef<(() => void) | null>(null);
   // 진행 중이던 비동기 작업(카운트다운, 마이크 권한 등)이 끝났을 때 그 사이 사용자가
-  // 화면을 떠났거나 다시 녹음을 눌렀는지 판단하는 단일 취소 토큰.
-  // 예전에는 같은 발상의 토큰이 녹음(session)과 호버 미리보기(hoverToken)에 따로 있었다.
+  // 화면을 떠났거나 처음부터 다시 했는지 판단하는 단일 취소 토큰.
   const runRef = useRef(0);
 
-  const stopReplay = useCallback(() => {
-    const r = replayRef.current;
+  const stopVoice = useCallback(() => {
+    const r = voiceRef.current;
     if (!r) return;
     r.audio.pause();
     URL.revokeObjectURL(r.url);
-    replayRef.current = null;
+    voiceRef.current = null;
+  }, []);
+
+  const stopClock = useCallback(() => {
+    cancelClockRef.current?.();
+    cancelClockRef.current = null;
   }, []);
 
   const stopRecorder = useCallback(() => {
@@ -114,99 +126,79 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     if (rec && rec.state !== 'inactive') rec.stop();
   }, []);
 
-  /** 녹음·재생·미리보기를 모두 멈추고 처음 상태로 되돌린다. */
+  /** 녹음·재생을 모두 멈추고 처음 상태로 되돌린다. */
   const reset = useCallback(() => {
     runRef.current++;
+    stopClock();
     stopRecorder();
-    stopReplay();
+    stopVoice();
     resetVideo(videoRef.current);
     recorderRef.current = null;
     setRecorded(null);
-    setProgress(0);
     setCountdown(0);
+    setRecordLeft(1);
     setMicError(null);
     setHint(HINT.idle);
     setPhase('idle');
-  }, [stopRecorder, stopReplay, videoRef]);
+  }, [stopClock, stopRecorder, stopVoice, videoRef]);
 
-  // 장르가 바뀌거나 화면을 벗어나면 무조건 초기화된다 — 예전엔 이걸 goHome()과
-  // openStudio()가 각각 손으로 호출해야 했고, 빠뜨리면 옛 녹음이 살아남았다.
+  // 장르가 바뀌거나 화면을 벗어나면 무조건 초기화된다.
   useEffect(() => reset, [genreId, reset]);
 
-  // 진행바와 "영상이 끝났을 때"의 처리는 단계마다 다르지만, 이전에는 같은 코드가
-  // 미리보기·녹음 두 곳에 복사돼 있었다. 여기 한 곳에서 단계에 따라 갈라놓는다.
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    const onTime = () => {
-      if (v.duration) setProgress(Math.min(100, (v.currentTime / v.duration) * 100));
-    };
-    const onEnded = () => {
-      if (phase === 'preview') {
-        setHint('다시 보려면 재생을 눌러 주세요.');
-      }
-      else if (phase === 'recording') {
-        if (sampleMode) {
-          setProgress(100);
-          setHint('체험을 마쳤어요. 다시 듣기는 원본 소리, 다운로드는 원본 영상으로 확인해 보세요.');
-          setPhase('recorded');
-          resetVideo(v);
-        } else stopRecorder();
-      }
-      else if (phase === 'replaying') {
-        stopReplay();
-        setHint(sampleMode ? '원본 영상 다시 듣기를 마쳤어요.' : HINT.recorded);
-        setPhase('recorded');
-      }
-    };
-    v.addEventListener('timeupdate', onTime);
-    v.addEventListener('ended', onEnded);
-    return () => {
-      v.removeEventListener('timeupdate', onTime);
-      v.removeEventListener('ended', onEnded);
-    };
-  }, [phase, stopRecorder, stopReplay, videoRef, sampleMode]);
-
-  const playPreview = useCallback(() => {
-    const v = videoRef.current;
-    if (!v) return;
+  /**
+   * 영상을 5.0초부터 끝까지 재생하며, 녹음이 있으면 5.0초에 맞춰 함께 튼다(합성 전 미리 듣기).
+   * 녹음은 정확히 3.5초라 8.5초에 끝나고, 8.5~10.0초는 원판의 해소 장면 소리만 남는다.
+   */
+  const playFromPause = useCallback((v: HTMLVideoElement, voice: Blob | null, myRun: number, onEnd: () => void) => {
+    stopVoice();
+    if (voice) {
+      const url = URL.createObjectURL(voice);
+      voiceRef.current = { audio: new Audio(url), url };
+    }
+    const audio = voiceRef.current?.audio;
     v.muted = false;
-    setHint(HINT.preview);
-    setPhase('preview');
-    const myRun = runRef.current;
-    void v.play().catch((error: unknown) => {
-      if (myRun !== runRef.current || (error instanceof DOMException && error.name === 'AbortError')) return;
-      setHint('재생 버튼을 눌러 영상을 시작해 주세요.');
+    v.currentTime = PAUSE_SECONDS;
+    const ended = () => {
+      v.removeEventListener('ended', ended);
+      if (myRun !== runRef.current) return;
+      stopVoice();
+      onEnd();
+    };
+    v.addEventListener('ended', ended);
+    void v.play().then(() => {
+      if (myRun === runRef.current) void audio?.play().catch(() => {});
+    }).catch(() => {
+      v.removeEventListener('ended', ended);
+      if (myRun === runRef.current) onEnd();
     });
-  }, [videoRef]);
+  }, [stopVoice]);
 
-  const startPreview = useCallback(() => {
-    if (videoRef.current) videoRef.current.currentTime = 0;
-    playPreview();
-  }, [videoRef, playPreview]);
-
-  const togglePreview = useCallback(() => {
-    if (phase !== 'idle' && phase !== 'ready' && phase !== 'preview') return;
+  const finishTake = useCallback((voice: Blob | null, myRun: number) => {
     const v = videoRef.current;
-    if (!v) return;
-    if (phase === 'preview' && !v.paused) v.pause();
-    else if (phase !== 'preview' || v.ended) startPreview();
-    else playPreview();
-  }, [phase, videoRef, startPreview, playPreview]);
+    if (!v || myRun !== runRef.current) return;
+    setHint(HINT.continuing);
+    setPhase('continuing');
+    playFromPause(v, voice, myRun, () => {
+      setHint(sampleMode ? '체험을 마쳤어요. 다운로드는 원본 영상이에요.' : HINT.recorded);
+      setPhase('recorded');
+    });
+  }, [videoRef, playFromPause, sampleMode]);
 
-  const startRecord = useCallback(() => {
-    if (phase !== 'idle' && phase !== 'ready' && phase !== 'preview') return;
+  const startTake = useCallback(() => {
+    if (phase !== 'idle') return;
     const myRun = ++runRef.current;
     const stale = () => myRun !== runRef.current;
-    resetVideo(videoRef.current);
-    setProgress(0);
+    const v = videoRef.current;
+    if (!v) return;
+    resetVideo(v);
     setMicError(null);
-    setPhase(sampleMode ? 'countdown' : 'requesting');
-    setHint(sampleMode ? '숫자가 사라지면 10초 녹음 화면 체험이 시작됩니다.' : HINT.requesting);
+    setRecorded(null);
 
     void (async () => {
       let stream: MediaStream | null = null;
       if (!sampleMode) {
+        setPhase('requesting');
+        setHint(HINT.requesting);
         const result = await ensureMic();
         if (stale()) return;
         if (result.error) {
@@ -218,145 +210,164 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
         stream = result.stream;
       }
 
+      // 1) 0~5.0초 — 소리와 함께 재생하다 5.0초에서 정확히 멈춘다.
+      setHint(HINT.watching);
+      setPhase('watching');
+      v.muted = false;
+      const reachedPause = new Promise<void>((resolve) => {
+        cancelClockRef.current = stopVideoAt(v, PAUSE_SECONDS, resolve);
+      });
+      try {
+        await v.play();
+      } catch {
+        if (stale()) return;
+        stopClock();
+        resetVideo(v);
+        setHint(HINT.playFailed);
+        setPhase('idle');
+        return;
+      }
+      await reachedPause;
+      cancelClockRef.current = null;
+      if (stale()) return;
+
+      // 2) 멈춤 → «이제 당신의 차례입니다 !» → 3·2·1
+      setHint(HINT.cue);
+      setPhase('cue');
+      await wait(CUE_MS);
+      if (stale()) return;
+      setHint(HINT.countdown);
       setPhase('countdown');
-      setHint(sampleMode ? '숫자가 사라지면 10초 녹음 화면 체험이 시작됩니다.' : HINT.countdown);
       for (let n = 3; n > 0; n--) {
         setCountdown(n);
-        await new Promise((r) => setTimeout(r, 900));
+        await wait(COUNT_MS);
         if (stale()) return;
       }
       setCountdown(0);
 
-      const v = videoRef.current;
-      if (!v) return;
-      // 녹음 중에도 원본 소리를 듣는다. 저장할 음성은 마이크 스트림만 사용한다.
-      v.muted = false;
-      v.currentTime = 0;
+      // 3) 녹음 3.5초 — 영상은 5.0초 정지 화면 그대로, 소리 없음(스피커 소리가 마이크로 들어가 겹치지 않게).
+      setRecordLeft(1);
+      setHint(sampleMode ? '샘플 체험이라 목소리는 녹음하지 않아요.' : HINT.recording);
+      setPhase('recording');
+      const startedAt = performance.now();
+      let frame = 0;
+      const tickLeft = () => {
+        if (stale()) return;
+        setRecordLeft(Math.max(0, 1 - (performance.now() - startedAt) / (RECORD_SECONDS * 1000)));
+        frame = requestAnimationFrame(tickLeft);
+      };
+      frame = requestAnimationFrame(tickLeft);
 
-      if (sampleMode) {
-        setPhase('recording');
-        setHint('샘플 영상과 진행바를 확인해 보세요. 목소리는 녹음하지 않습니다.');
-        try {
-          await v.play();
-          if (stale()) v.pause();
-        } catch {
-          if (!stale()) {
-            resetVideo(v);
-            setPhase('idle');
-            setHint('영상을 재생하지 못했어요. 녹음 시작을 다시 눌러 주세요.');
-          }
-        }
+      if (sampleMode || !stream) {
+        await wait(RECORD_SECONDS * 1000);
+        cancelAnimationFrame(frame);
+        if (stale()) return;
+        setRecordLeft(0);
+        finishTake(null, myRun);
         return;
       }
-      if (!stream) return;
 
-      let limitTimer: ReturnType<typeof setTimeout> | undefined;
       let recorder: MediaRecorder;
       try {
         const mime = pickSupportedMime(MIME_CANDIDATES, (m) => MediaRecorder.isTypeSupported(m));
         recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
       } catch {
+        cancelAnimationFrame(frame);
         micStream = null;
+        resetVideo(v);
         setHint(HINT.micBroken);
         setPhase('idle');
         return;
       }
-
       const chunks: Blob[] = [];
       recorder.ondataavailable = (e) => {
         if (e.data?.size) chunks.push(e.data);
       };
       recorder.onstop = () => {
-        clearTimeout(limitTimer);
+        cancelAnimationFrame(frame);
         if (stale()) return;
-        const mime = chunks[0]?.type || 'audio/webm';
-        setRecorded({ blob: new Blob(chunks, { type: mime }), mime });
-        setProgress(100);
-        setHint(HINT.recorded);
-        setPhase('recorded');
-        const vv = videoRef.current;
-        if (vv) {
-          vv.pause();
-          vv.muted = true;
-          vv.currentTime = 0;
-        }
+        const mime = chunks[0]?.type || recorder.mimeType || 'audio/webm';
+        const blob = new Blob(chunks, { type: mime });
+        setRecorded({ blob, mime });
+        setRecordLeft(0);
+        finishTake(blob, myRun);
       };
       recorderRef.current = recorder;
-
-      setHint(HINT.recording);
-      setPhase('recording');
-      await v.play().catch(() => {});
-      if (stale()) {
-        v.pause();
-        return;
-      }
       try {
         recorder.start();
       } catch {
+        cancelAnimationFrame(frame);
         resetVideo(v);
         micStream = null;
         setHint(HINT.recordFailed);
         setPhase('idle');
         return;
       }
-
-      // 영상이 끝나면 onEnded가 멈추지만, 재생이 막히거나 길이를 못 읽는 경우를 대비한 상한.
-      const limitSec = (isFinite(v.duration) && v.duration > 0 ? v.duration : CLIP_SECONDS) + 2;
-      limitTimer = setTimeout(() => {
-        if (!stale()) stopRecorder();
-      }, limitSec * 1000);
+      // 합성 때 정확히 3.5초로 자르고 모자라면 무음으로 채우므로(ffmpeg.ts) 여기서는 시간에 맞춰 멈추기만 한다.
+      await wait(RECORD_SECONDS * 1000);
+      if (!stale()) stopRecorder();
     })();
-  }, [phase, stopRecorder, videoRef, sampleMode]);
+  }, [phase, videoRef, sampleMode, stopClock, stopRecorder, finishTake]);
 
+  /** 완성본을 미리 듣는다 — 처음부터 재생하고 5.0초에 녹음을 함께 튼다. */
   const replay = useCallback(() => {
-    if (sampleMode) {
-      if (phase !== 'recorded' && phase !== 'replaying') return;
-      const v = videoRef.current;
-      if (!v) return;
-      v.currentTime = 0;
-      v.muted = false;
-      setHint('원본 영상의 소리를 다시 듣고 있어요.');
-      setPhase('replaying');
-      const myRun = runRef.current;
-      void v.play().catch(() => {
-        if (myRun !== runRef.current) return;
-        setPhase('recorded');
-        setHint('영상을 재생하지 못했어요. 다시 듣기를 다시 눌러 주세요.');
-      });
-      return;
-    }
-    if (!recorded) return;
-    stopReplay();
+    if (phase !== 'recorded') return;
     const v = videoRef.current;
     if (!v) return;
-    v.muted = true;
+    const myRun = ++runRef.current;
+    stopVoice();
+    const voice = recorded?.blob ?? null;
+    if (voice) {
+      const url = URL.createObjectURL(voice);
+      voiceRef.current = { audio: new Audio(url), url };
+    }
+    const audio = voiceRef.current?.audio;
+    v.muted = false;
     v.currentTime = 0;
-    const url = URL.createObjectURL(recorded.blob);
-    const audio = new Audio(url);
-    replayRef.current = { audio, url };
-    setHint(HINT.replaying);
+    setHint(sampleMode ? '원본 영상을 다시 보고 있어요.' : HINT.replaying);
     setPhase('replaying');
-    void v.play().catch(() => {});
-    void audio.play().catch(() => {});
-  }, [recorded, stopReplay, videoRef, sampleMode, phase]);
+    let voiceStarted = false;
+    cancelClockRef.current = watchVideoTime(v, (time) => {
+      if (voiceStarted || !audio || time < PAUSE_SECONDS) return;
+      voiceStarted = true;
+      // 원판이 5.0초를 지난 만큼 녹음도 앞으로 맞춘다(프레임 콜백 간격만큼의 어긋남을 없앤다).
+      audio.currentTime = Math.max(0, time - PAUSE_SECONDS);
+      void audio.play().catch(() => {});
+    });
+    const ended = () => {
+      v.removeEventListener('ended', ended);
+      if (myRun !== runRef.current) return;
+      stopClock();
+      stopVoice();
+      setHint(sampleMode ? '원본 영상 다시 보기를 마쳤어요.' : HINT.recorded);
+      setPhase('recorded');
+    };
+    v.addEventListener('ended', ended);
+    void v.play().catch(() => {
+      v.removeEventListener('ended', ended);
+      if (myRun !== runRef.current) return;
+      stopClock();
+      setPhase('recorded');
+      setHint('영상을 재생하지 못했어요. 다시 듣기를 다시 눌러 주세요.');
+    });
+  }, [phase, recorded, videoRef, sampleMode, stopVoice, stopClock]);
 
-  // 화면을 벗어날 때 남은 리소스(재생용 blob URL, 녹음기)를 확실히 반환한다.
+  // 화면을 벗어날 때 남은 리소스(재생용 blob URL, 녹음기, 프레임 감시)를 확실히 반환한다.
   useEffect(() => () => {
-    stopReplay();
+    stopClock();
+    stopVoice();
     stopRecorder();
-  }, [stopReplay, stopRecorder]);
+  }, [stopClock, stopVoice, stopRecorder]);
 
   return {
     phase,
     hint: sampleMode ? `샘플 체험 · 마이크 녹음 없음. ${hint}` : hint,
-    showProgress: PROGRESS_PHASES.includes(phase),
-    progress,
     countdown,
+    recordLeft,
     recordedBlob: recorded?.blob ?? null,
     recordedMime: recorded?.mime ?? '',
     micError,
-    togglePreview,
-    startRecord,
+    startTake,
     replay,
     reset,
   };

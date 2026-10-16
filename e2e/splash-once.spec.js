@@ -30,10 +30,10 @@ async function 스플래시가_끝까지_재생되는가(page) {
 test('페이지를 열 때마다 스플래시가 끝까지 재생된다', async ({ page }) => {
   await page.goto('/');
   await 스플래시가_끝까지_재생되는가(page);
-  await expect(page.locator('.tile')).toHaveCount(6);
+  await expect(page.locator('.tile')).toHaveCount(8);
 
   // 새로고침해도 첫 진입과 같아야 한다.
   await page.reload();
   await 스플래시가_끝까지_재생되는가(page);
-  await expect(page.locator('.tile')).toHaveCount(6);
+  await expect(page.locator('.tile')).toHaveCount(8);
 });

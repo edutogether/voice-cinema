@@ -13,8 +13,8 @@ interface Props {
   onSelect: (genre: Genre, source?: HTMLElement) => void;
 }
 
-// 여섯 장이 한꺼번에 내려받기를 시작하면 행사장 와이파이에서 첫 화면이 한참 멈춘다
-// (메인 전용 클립 6개 합쳐 약 2.9MB). 카드마다 시차를 둬 요청이 줄을 서게 한다.
+// 모든 장이 한꺼번에 내려받기를 시작하면 행사장 와이파이에서 첫 화면이 한참 멈춘다
+// (2.0 메인 전용 클립 8개 합쳐 약 1.5MB — 0~5.0초만). 카드마다 시차를 둬 요청이 줄을 서게 한다.
 const STAGGER_MS = 250;
 
 // 한 장씩 돌려 재생할 때 다음 카드로 넘어가는 간격. 클립이 10초라 한 바퀴(6장)에
@@ -91,7 +91,7 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
         </aside>
         <div className="chart-main">
           <div className="chart-heading">
-            <div><p className="chart-eyebrow">오늘, 내가 출연할 영화</p><h1><b className="chart-title"><em>더빙</em>할 영화 고르기</b> <span>6</span></h1></div>
+            <div><p className="chart-eyebrow">오늘, 내가 출연할 영화</p><h1><b className="chart-title"><em>더빙</em>할 영화 고르기</b> <span>{GENRES.length}</span></h1></div>
             {!SUPPORTS_HOVER && <p>마음에 드는 장면을 누르면 녹음실로 들어가요.</p>}
           </div>
 

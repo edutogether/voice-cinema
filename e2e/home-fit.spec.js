@@ -1,13 +1,13 @@
 import { test, expect } from '@playwright/test';
 
 for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [655, 760, false], [1024, 768, true], [375, 812, true], [360, 640, true]]) {
-  test(`${width}×${height}: 여섯 장면 선택지와 이름이 첫 화면에 모두 보인다`, async ({ browser }) => {
+  test(`${width}×${height}: 여덟 장면 선택지와 이름이 첫 화면에 모두 보인다`, async ({ browser }) => {
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: touch, isMobile: touch });
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
-    // PC 입체 미리보기 아래의 여섯 바로가기가 모두 보여야 한다. 터치는 카드 자체를 고른다.
+    // PC 입체 미리보기 아래의 여덟 바로가기가 모두 보여야 한다. 터치는 카드 자체를 고른다.
     const tiles = page.locator(touch ? '.tile' : '.scene-choice');
-    await expect(tiles).toHaveCount(6);
+    await expect(tiles).toHaveCount(8);
     if (touch) {
       for (const tile of await tiles.all()) {
         await expect(tile).toBeInViewport({ ratio: 1 });
@@ -22,7 +22,7 @@ for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [
           return r.left >= bounds.left && r.right <= bounds.right && r.bottom <= window.innerHeight;
         });
         return new Set(visible.map(card => card.dataset.genre)).size;
-      })).toBe(6);
+      })).toBe(8);
     }
     expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1)).toBe(true);
     await page.close();
@@ -42,7 +42,7 @@ test('PC: 선택한 카드만 경량 영상으로 재생하고 녹음실 진입 
   expect(clips.every(url => url.includes('/clips/previews/'))).toBe(true);
   expect(await tile.locator('video').evaluate(v => v.videoWidth)).toBe(640);
   await tile.click();
-  await expect(page.locator('#clip')).toHaveAttribute('src', '/clips/studio/fantasy.mp4');
+  await expect(page.locator('#clip')).toHaveAttribute('src', '/clips/sf.mp4');
   await expect(tile.locator('video')).not.toHaveAttribute('src');
 });
 

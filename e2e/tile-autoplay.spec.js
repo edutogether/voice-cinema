@@ -29,7 +29,7 @@ async function tileStates(page) {
 test.describe('마우스가 없는 기기', () => {
   test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
 
-  test('여섯 장이 모두 음소거로 재생된다', async ({ page }) => {
+  test('여덟 장이 모두 음소거로 재생된다', async ({ page }) => {
     await page.goto('/');
     await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
 
@@ -42,7 +42,7 @@ test.describe('마우스가 없는 기기', () => {
         timeout: 60000,
         intervals: [500, 1000],
       })
-      .toBe(6);
+      .toBe(8);
 
     const before = await tileStates(page);
     // 소리가 있으면 브라우저가 자동재생을 막아 정지 화면 그대로가 되고,
@@ -67,7 +67,7 @@ test.describe('마우스가 없는 기기', () => {
         timeout: 60000,
         intervals: [500, 1000],
       })
-      .toBe(6);
+      .toBe(8);
 
     // 정지와 그 상태의 확인을 같은 브라우저 작업에서 한다. 두 번의 evaluate 사이에
     // 정상 복구 타이머가 돌면 이미 다시 재생된 카드를 정지 실패로 오판한다(CI 9/29).
@@ -76,14 +76,14 @@ test.describe('마우스가 없는 기기', () => {
       videos.forEach((v) => v.pause());
       return videos.map((v) => v.paused);
     });
-    expect(정지직후).toEqual([true, true, true, true, true, true]);
+    expect(정지직후).toEqual([true, true, true, true, true, true, true, true]);
 
     await expect
       .poll(async () => (await tileStates(page)).filter((s) => !s.paused).length, {
         timeout: 15000,
         intervals: [500],
       })
-      .toBe(6);
+      .toBe(8);
   });
 
   // 홈이 다시 그려져도 카드는 멈췄다 다시 틀지 않아야 한다.

@@ -15,7 +15,7 @@ async function openStudio(page) {
 test('브라우저 뒤로가기는 재생을 멈추고 홈으로, 앞으로가기는 새 녹음실로 이동한다', async ({ page }) => {
   await openHome(page);
   await openStudio(page);
-  await page.locator('#previewBtn').click();
+  await page.locator('#recBtn').click();
   await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(.1);
   await page.locator('#clip').evaluate(v => { window.previousClip = v; });
   await page.goBack();
@@ -56,7 +56,7 @@ test('녹음 중 뒤로가면 녹음을 중단하고 이전 목소리를 앞으�
   await openHome(page);
   await openStudio(page);
   await page.locator('#recBtn').click();
-  await expect(page.locator('.recpill')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.recpill')).toBeVisible({ timeout: 15000 });
   await page.goBack();
   await expect(page.locator('#home')).toHaveClass(/active/);
   expect(await page.evaluate(() => window.lastRecorder.state)).toBe('inactive');
@@ -74,9 +74,9 @@ test('결과에서 뒤로가면 녹음이 남고 앞으로가기로 중복 저�
   await openHome(page);
   await openStudio(page);
   await page.locator('#recBtn').click();
-  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 40000 });
   await page.locator('#saveBtn').click();
-  await expect(page.locator('#done')).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('#done')).toBeVisible({ timeout: 60000 });
   expect(uploads).toBe(1);
   await page.goBack();
   await expect(page.locator('#studio')).toHaveClass(/active/);

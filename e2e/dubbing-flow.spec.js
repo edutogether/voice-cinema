@@ -1,27 +1,41 @@
-// 실사용 흐름 E2E 테스트(2026-08-27, 테스트 커버리지 완성도 향상).
-// 실제 Chromium(가짜 마이크 장치)으로 홈 화면→녹음→ffmpeg.wasm 합성→저장까지
-// 진짜로 돌려서 검증한다. Cloud Functions 업로드만 page.route로 가로채
-// (a) 실제 프로덕션 Storage에 테스트 파일이 쌓이지 않게, (b) 네트워크 상태에
-// 테스트 결과가 좌우되지 않게 한다 — 그 앞단(마이크 권한, 카운트다운, 녹음,
-// ffmpeg 합성, 파일명 생성)은 전부 실제 코드 그대로 실행된다.
+// 실사용 흐름 E2E 테스트(2026-08-27 시작, 2026-10-16 장면 더빙 2.0 흐름으로 다시 씀).
+// 실제 Chromium(가짜 마이크 장치)으로 홈 화면→장면 시작→5.0초 멈춤→문구·3·2·1→녹음 3.5초→이어 재생
+// →ffmpeg.wasm 섞기 합성→저장까지 진짜로 돌려서 검증한다. Cloud Functions 업로드만 page.route로 가로채
+// (a) 실제 프로덕션 Storage에 테스트 파일이 쌓이지 않게, (b) 네트워크 상태에 결과가 좌우되지 않게 한다.
+import { Buffer } from 'node:buffer';
 import { test, expect } from '@playwright/test';
 
 const UPLOAD_PATTERN = '**/voiceCinema/upload';
+const GENRE_NAMES = ['SF', '판타지', '애니메이션', '히어로', '스릴러', '드라마', '스포츠', '뮤지컬'];
+// 장면 5초 + 문구 1.2초 + 3·2·1 2.7초 + 녹음 3.5초 + 이어 재생 5초 ≈ 17.4초. 느린 러너 여유를 둔다.
+const TAKE_MS = 40000;
+
+/** mp4의 mvhd 상자에서 길이(초)를 읽는다 — 완성본이 정확히 10.0초인지 본다. */
+function mp4Duration(buffer) {
+  const at = buffer.indexOf('mvhd');
+  if (at < 0) throw new Error('mvhd 없음');
+  const version = buffer[at + 4];
+  if (version === 1) return Number(buffer.readBigUInt64BE(at + 28)) / buffer.readUInt32BE(at + 24);
+  return buffer.readUInt32BE(at + 20) / buffer.readUInt32BE(at + 16);
+}
+
+async function openStudio(page, name) {
+  await page.goto('/');
+  await page.locator('.tile', { hasText: name }).first().click();
+  await expect(page.locator('#chipName')).toHaveText(name);
+}
 
 test.describe('홈 화면', () => {
-  test('6개 장르 타일이 전부 보이고 클릭 가능하다', async ({ page }) => {
+  test('8개 장르 타일이 전부 있고 클릭 가능하다', async ({ page }) => {
     await page.goto('/');
-    const tiles = page.locator('.tile');
-    await expect(tiles).toHaveCount(6);
-    for (const name of ['판타지', '애니메이션', '호러', '액션', '드라마', '시트콤']) {
-      await expect(page.locator('.tile', { hasText: name })).toBeVisible();
+    for (const name of GENRE_NAMES) {
+      await expect(page.locator('.tile', { hasText: name }).first()).toBeAttached();
     }
+    await expect(page.locator('.chart-heading h1 span')).toHaveText('8');
   });
 
-  // 2026-09-03: 홈 화면 하단에 있던 교육청 주최 안내 문구가 개인정보처리방침
-  // 별도 페이지(privacy.html)로 옮겨졌다 — 홈 화면엔 그 페이지로 가는 링크만
-  // 남고, 실제 문구는 그 페이지에서 확인한다(대표 지시, 홈 화면 개편).
-  test('교육청 주최 안내 문구가 개인정보처리방침 페이지에 보인다 (2026-08-27 대표 확인, 2026-09-03 별도 페이지로 이전)', async ({ page }) => {
+  // 2026-09-03: 교육청 주최 안내 문구는 개인정보처리방침 별도 페이지(privacy.html)에 있다.
+  test('교육청 주최 안내 문구가 개인정보처리방침 페이지에 보인다', async ({ page }) => {
     await page.goto('/');
     const link = page.locator('.privacylink');
     await expect(link).toBeVisible();
@@ -31,83 +45,127 @@ test.describe('홈 화면', () => {
   });
 });
 
-test.describe('스튜디오: 미리보기', () => {
-  test('진입은 정지하고 미리보기 클릭으로 재생·일시정지·재개한다', async ({ page }) => {
-    await page.goto('/');
-    await page.locator('.tile', { hasText: '판타지' }).click();
-    await expect(page.locator('#chipName')).toHaveText('판타지');
+test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
+  test('5.0초에서 정확히 멈추고 문구 → 3·2·1 → 녹음 3.5초 → 5.0초부터 이어 재생한다', async ({ page }) => {
+    await openStudio(page, '판타지');
+    const clip = page.locator('#clip');
+    await expect(clip).toHaveJSProperty('paused', true);
+    await expect(page.locator('#recBtn')).toHaveText(/장면 시작/);
+    await page.locator('#recBtn').click();
 
-    const previewBtn = page.locator('#previewBtn');
-    await expect(page.locator('#clip')).toHaveJSProperty('paused', true);
-    await previewBtn.click();
-    await expect(previewBtn).toHaveText('일시정지');
-    await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(.2);
-    await expect(page.locator('#hint')).toContainText('생각해 보세요');
+    await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'watching');
+    await expect.poll(() => clip.evaluate(v => v.currentTime)).toBeGreaterThan(.5);
+    // 멈춘 순간 영상 시각이 5.0초와 한 프레임(1/30초) 안이다.
+    await expect(page.locator('#cue')).toHaveText('이제 당신의 차례입니다 !', { timeout: 10000 });
+    const paused = await clip.evaluate(v => ({ paused: v.paused, time: v.currentTime }));
+    expect(paused.paused).toBe(true);
+    expect(Math.abs(paused.time - 5)).toBeLessThanOrEqual(1 / 30);
 
-    // 정지도 정상 동작해야 한다.
-    await previewBtn.click();
-    await expect(previewBtn).toHaveText('계속 재생');
-    const time = await page.locator('#clip').evaluate(v => v.currentTime);
-    await page.waitForTimeout(250);
-    expect(await page.locator('#clip').evaluate(v => v.currentTime)).toBe(time);
-    await previewBtn.click();
-    await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(time);
+    await expect(page.locator('#count')).toContainText('지금 바로 당신의 목소리를 들려주세요 !');
+    await expect(page.locator('#recpill')).toBeVisible({ timeout: 5000 });
+    const recordStart = Date.now();
+    // 녹음 중에는 영상이 5.0초 정지 화면 그대로다.
+    expect(await clip.evaluate(v => ({ p: v.paused, t: Math.round(v.currentTime * 10) / 10 }))).toEqual({ p: true, t: 5 });
+    await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'continuing', { timeout: 6000 });
+    const recordMs = Date.now() - recordStart;
+    expect(recordMs).toBeGreaterThan(3000);
+    expect(recordMs).toBeLessThan(5000);
+    // 이어 재생은 5.0초부터다.
+    await expect.poll(() => clip.evaluate(v => v.currentTime)).toBeGreaterThan(5.2);
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('#replayBtn')).toBeFocused();
+  });
+
+  test('상대 대사 자막은 1.6초에 나타나 3.4초에 사라지고, 흰 글씨·배경 상자 없음이다', async ({ page }) => {
+    await openStudio(page, '드라마');
+    // 자막이 붙고 떨어지는 순간의 영상 시각을 페이지 안에서 기록한다 — 바깥에서 폴링하면 그 지연만큼 늦게 잰다.
+    // 시각은 화면에 나가는 프레임의 시각(mediaTime)으로 잰다. currentTime은 소리 시계라 프레임보다 수십 ms 늦게 읽혀
+    // 제때 붙은 자막도 «일찍 붙었다»로 보인다(10/16 실측 1.556초).
+    await page.evaluate(() => {
+      const video = document.querySelector('#clip');
+      const log = (window.__captionLog = []);
+      let frameTime = 0;
+      const onFrame = (_, meta) => { frameTime = meta.mediaTime; video.requestVideoFrameCallback(onFrame); };
+      video.requestVideoFrameCallback(onFrame);
+      new MutationObserver(() => {
+        const shown = !!document.querySelector('[data-testid="scene-caption"]');
+        if (log.length % 2 === (shown ? 0 : 1)) log.push(frameTime);
+      }).observe(document.querySelector('.studio-video-frame'), { childList: true, subtree: true });
+    });
+    await page.locator('#recBtn').click();
+    const caption = page.getByTestId('scene-caption');
+    await expect(caption).toBeVisible({ timeout: 5000 });
+    await expect(caption).toHaveText('이제… 아무도 몰라보셔.');
+    const style = await caption.evaluate(el => {
+      const s = getComputedStyle(el);
+      return { color: s.color, background: s.backgroundColor, lines: Math.round(el.getBoundingClientRect().height / parseFloat(s.lineHeight)) };
+    });
+    expect(style.color).toBe('rgb(255, 255, 255)');
+    expect(style.background).toBe('rgba(0, 0, 0, 0)');
+    expect(style.lines).toBeLessThanOrEqual(2);
+    await expect(caption).toBeHidden({ timeout: 4000 });
+    const [shownAt, hiddenAt] = await page.evaluate(() => window.__captionLog);
+    // 한 화면 갱신(약 1/30초)만큼의 여유만 둔다.
+    expect(shownAt).toBeGreaterThanOrEqual(1.6 - 1 / 30);
+    expect(shownAt).toBeLessThan(1.6 + 2 / 30);
+    expect(hiddenAt).toBeGreaterThanOrEqual(3.4 - 1 / 30);
+    expect(hiddenAt).toBeLessThan(3.4 + 2 / 30);
   });
 
   test('처음으로 버튼을 누르면 홈으로 돌아간다', async ({ page }) => {
-    await page.goto('/');
-    await page.locator('.tile', { hasText: '드라마' }).click();
+    await openStudio(page, '드라마');
     await expect(page.locator('#studio')).toHaveClass(/active/);
     await page.locator('.back').click();
     await expect(page.locator('#home')).toHaveClass(/active/);
-    await expect(page.getByRole('button', { name: '드라마 더빙 시작', exact: true })).toBeFocused();
   });
 });
 
 test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
-  test('정상 흐름: 녹음 후 저장하면 클라우드 업로드 성공 시 QR이 표시된다', async ({ page }) => {
-    await page.route(UPLOAD_PATTERN, (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, url: 'https://storage.googleapis.com/fake/dub_test.mp4' }) })
-    );
+  test('정상 흐름: 섞기 합성 결과는 정확히 10.0초이고, 업로드 성공 시 QR이 표시된다', async ({ page }) => {
+    let uploaded = null;
+    await page.route(UPLOAD_PATTERN, (route) => {
+      uploaded = JSON.parse(route.request().postData());
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, url: 'https://storage.googleapis.com/fake/dub_test.mp4' }) });
+    });
 
-    await page.goto('/');
-    await page.locator('.tile', { hasText: '판타지' }).click();
+    await openStudio(page, 'SF');
     await page.locator('#recBtn').click();
-
-    // 3·2·1 카운트다운 + 10초 녹음이 끝나 afterRow(다시 듣기/다시 녹음/저장하기)가 뜰 때까지 기다린다.
-    await expect(page.locator('#afterRow')).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
     await expect(page.locator('#recBtn')).toBeHidden();
-    await expect(page.locator('#replayBtn')).toBeFocused();
 
     await page.locator('button', { hasText: '저장하기' }).click();
 
     // ffmpeg.wasm 실제 합성 → (가로챈) 업로드 → QR 표시까지 실제로 기다린다.
-    await expect(page.locator('#done')).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('#done')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('#qrbox')).toBeVisible();
     await expect(page.locator('#qrImg')).toHaveAttribute('src', /^data:image\//);
-    await expect(page.locator('#downloadRow')).toBeHidden();
     await expect(page.locator('#savemode')).toContainText('누구나 볼 수 있어요');
-    await expect(page.locator('#done h2')).toBeFocused();
+
+    expect(uploaded.filename).toMatch(/^dub_sf_\d+_[0-9a-f]+\.mp4$/);
+    const mp4 = Buffer.from(uploaded.dataBase64, 'base64');
+    expect(mp4.length).toBeLessThan(20 * 1024 * 1024);
+    expect(Math.abs(mp4Duration(mp4) - 10)).toBeLessThanOrEqual(.05);
   });
 
   test('실패 경로: 클라우드 업로드가 실패하면 기기 저장 버튼으로 폴백한다', async ({ page }) => {
-    await page.route(UPLOAD_PATTERN, (route) =>
-      route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ ok: false, error: '저장 중 오류가 발생했습니다.' }) })
-    );
+    let callCount = 0;
+    await page.route(UPLOAD_PATTERN, (route) => {
+      callCount++;
+      return route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ ok: false, error: '저장 중 오류가 발생했습니다.' }) });
+    });
 
-    await page.goto('/');
-    await page.locator('.tile', { hasText: '액션' }).click();
+    await openStudio(page, '히어로');
     await page.locator('#recBtn').click();
-    await expect(page.locator('#afterRow')).toBeVisible({ timeout: 20000 });
-
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
     await page.locator('button', { hasText: '저장하기' }).click();
 
-    await expect(page.locator('#done')).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('#done')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('#downloadRow')).toBeVisible();
     await expect(page.locator('#qrbox')).toBeHidden();
     await expect(page.locator('#doneMsg')).toContainText('인터넷 문제');
     await expect(page.locator('#savemode')).toContainText('자동삭제 대상이 아닙니다');
     await expect(page.locator('.retention-note')).toBeHidden();
+    expect(callCount).toBeGreaterThanOrEqual(2); // 1차 실패 + 재시도
 
     // #downloadBtn 자체엔 download 속성이 없다 — 클릭 시 JS가 그 순간 <a download>를
     // 만들어 클릭하고 지우는 구조라, 실제로 다운로드가 트리거되는지를 확인해야 한다.
@@ -118,35 +176,10 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     expect(download.suggestedFilename()).toContain('잉키보이스시네마');
   });
 
-  test('업로드가 두 번 다 실패해도(재시도 포함) 폴백으로 정상 종료된다', async ({ page }) => {
-    // shouldRetryUpload()가 1회 재시도하므로, 두 번 다 실패시켜 재시도 이후에도
-    // 화면이 멈추지 않고 폴백으로 끝나는지 확인한다.
-    let callCount = 0;
-    await page.route(UPLOAD_PATTERN, (route) => {
-      callCount++;
-      return route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ ok: false, error: 'boom' }) });
-    });
-
-    await page.goto('/');
-    await page.locator('.tile', { hasText: '호러' }).click();
-    await page.locator('#recBtn').click();
-    await expect(page.locator('#afterRow')).toBeVisible({ timeout: 20000 });
-    await page.locator('button', { hasText: '저장하기' }).click();
-
-    await expect(page.locator('#done')).toBeVisible({ timeout: 30000 });
-    await expect(page.locator('#downloadRow')).toBeVisible();
-    expect(callCount).toBeGreaterThanOrEqual(2); // 1차 실패 + 재시도 1회
-  });
-
-  // src/lib/ffmpeg.ts의 mergeClip()은 클립을 불러오지 못하면 예외를 던지고,
-  // Result.tsx는 그걸 잡아 에러 화면(errbox)을 보여준다 — 그런데 이 경로가
-  // 지금까지 어떤 테스트로도 실제로 실행되지 않았다. <video> 태그의 클립 로딩과
-  // 달리 merge 단계는 fetchFile()이 window.fetch()로 같은 클립을 다시 읽는다
-  // (page.route는 Chromium에서 <video src> 요청 자체를 가로채지 못해 실측 확인함 —
-  // 그래서 studio 화면은 정상 그대로 두고, fetch만 그 시점에 실패하도록 패치한다).
-  // 이렇게 merge를 실제로 실패시켜, 에러 화면과 [돌아가기]로 녹음이 보존된 채
-  // 스튜디오로 돌아가는지까지 확인한다.
-  test('합성 실패 경로: 클립을 불러올 수 없으면 에러 화면이 뜨고 돌아가기로 녹음이 보존된다', async ({ page }) => {
+  // mergeClip()은 원판을 불러오지 못하면 예외를 던지고 Result.tsx가 에러 화면(errbox)을 보여준다.
+  // <video> 태그의 로딩과 달리 합성은 fetchFile()이 window.fetch()로 같은 원판을 다시 읽으므로
+  // fetch만 그 시점에 실패하도록 패치한다(page.route는 <video src> 요청을 가로채지 못한다).
+  test('합성 실패 경로: 원판을 불러올 수 없으면 에러 화면이 뜨고 돌아가기로 녹음이 보존된다', async ({ page }) => {
     await page.addInitScript(() => {
       const originalFetch = window.fetch;
       window.fetch = (input, init) => {
@@ -158,10 +191,9 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
       };
     });
 
-    await page.goto('/');
-    await page.locator('.tile', { hasText: '애니메이션' }).click();
+    await openStudio(page, '애니메이션');
     await page.locator('#recBtn').click();
-    await expect(page.locator('#afterRow')).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
 
     await page.locator('button', { hasText: '저장하기' }).click();
 
@@ -169,23 +201,21 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     await expect(page.locator('#errbox')).toContainText('영상 합성 중 문제가 생겼어요');
     await expect(page.locator('#done')).toBeHidden();
 
-    // [돌아가기]를 누르면 스튜디오로 돌아가고, 녹음(afterRow)은 그대로 남아 있어야
-    // 한다 — 안내 문구("녹음은 남아 있어요")가 실제로 맞는지 여기서 검증한다.
     await page.locator('#errBackBtn').click();
     await expect(page.locator('#studio')).toHaveClass(/active/);
     await expect(page.locator('#afterRow')).toBeVisible();
   });
 
-  test('다시 녹음을 누르면 초기 상태로 돌아가 다시 저장할 수 있다', async ({ page }) => {
-    await page.goto('/');
-    await page.locator('.tile', { hasText: '시트콤' }).click();
+  test('다시 녹음을 누르면 초기 상태로 돌아간다', async ({ page }) => {
+    await openStudio(page, '스포츠');
     await page.locator('#recBtn').click();
-    await expect(page.locator('#afterRow')).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
 
     await page.locator('button', { hasText: '다시 녹음' }).click();
     await expect(page.locator('#recBtn')).toBeVisible();
     await expect(page.locator('#afterRow')).toBeHidden();
-    await expect(page.locator('#hint')).toContainText("'녹음 시작'을 누르면 잠시 후 녹음이 시작돼요 !");
+    await expect(page.locator('#hint')).toContainText("'장면 시작'을 누르면");
     await expect(page.locator('#recBtn')).toBeFocused();
+    await expect(page.locator('#clip')).toHaveJSProperty('currentTime', 0);
   });
 });

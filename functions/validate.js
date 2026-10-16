@@ -59,12 +59,16 @@ export function validateUploadRequest(body) {
 // 알아내는 데만 쓰고, 시각과 난수는 서버 값이다 — 이미 있는 이름으로 다시 저장되는 일이 없다.
 // 장르 목록은 src/genres.ts와 같아야 하고 test/contract.test.js가 대조한다. 목록에 없으면
 // 업로드를 막지 않고 'dub'으로 둔다(이름이 덜 친절할 뿐 학생의 저장은 실패하지 않는다).
-export const GENRE_IDS = new Set(['fantasy', 'animation', 'horror', 'action', 'drama', 'sitcom']);
+// 장면 더빙 2.0(2026-10-16)부터 8장르다.
+export const GENRE_IDS = new Set(['sf', 'fantasy', 'animation', 'hero', 'thriller', 'drama', 'sports', 'musical']);
+// 2.0 배포 직후에도 부스 기기가 옛 화면(1.0)을 잠시 들고 있을 수 있다(새 버전은 다음에 탭을 열 때 적용).
+// 그 기기가 보내는 1.0 장르도 이름에 살린다 — 2.0이 자리 잡은 뒤(12월 말 분기 감사) 지운다.
+export const LEGACY_GENRE_IDS = new Set(['horror', 'action', 'sitcom']);
 
 export function buildServerFilename(clientFilename, now, random) {
   if (!random) throw new Error('난수 없이 저장 이름을 만들 수 없다');
   const m = /^dub_([a-z]+)_/.exec(String(clientFilename || ''));
-  const genre = m && GENRE_IDS.has(m[1]) ? m[1] : 'dub';
+  const genre = m && (GENRE_IDS.has(m[1]) || LEGACY_GENRE_IDS.has(m[1])) ? m[1] : 'dub';
   return `dub_${genre}_${now}_${random}.mp4`;
 }
 

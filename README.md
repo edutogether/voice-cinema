@@ -1,8 +1,9 @@
 # InKY Voice Cinema (잉키 보이스 시네마)
 
 제4회 인천어린이청소년영화제(InKY Festival, 2026-11-14, 인천 CGV) "InKY 놀이터" 부스 프로그램.
-학생이 무성 영상 6종(장르별) 중 하나를 골라 자기 목소리로 더빙하면, **브라우저 안에서** 영상과
-음성을 합쳐 완성본 mp4를 만들고 클라우드에 저장한 뒤 QR로 전달한다.
+학생이 장르별 10초 장면 8종 중 하나를 고르면, 장면이 가장 긴박한 순간(5.0초)에 멈추고 학생이 3.5초 동안 외친다.
+**브라우저 안에서** 원판 소리와 목소리를 섞어 정확히 10초짜리 완성본 mp4를 만들고 클라우드에 저장한 뒤 QR로 전달한다
+(장면 더빙 2.0, 2026-10-16).
 
 - **라이브**: https://voice.edutogether.kr (옛 주소 https://voice-cinema.web.app 도 같은 사이트로 계속 살아 있다)
 - **백엔드**: Firebase Functions + Storage (`inky-voice-cinema` 프로젝트, `asia-northeast3`)
@@ -14,7 +15,7 @@
 | 경로 | 내용 |
 |---|---|
 | `src/` | 앱 소스(React + TypeScript). 화면 컴포넌트, 훅, ffmpeg·업로드 라이브러리 |
-| `public/` | 번들러가 건드리지 않고 그대로 복사되는 자산 — `clips/`(장르 영상 6종), `vendor/`(ffmpeg 엔진·qrcode·App Check 번들) |
+| `public/` | 번들러가 건드리지 않고 그대로 복사되는 자산 — `clips/`(장르 장면 8종 — `tools/build-scene.mjs`가 원판·미리보기·정지 화면을 함께 만든다), `vendor/`(ffmpeg 엔진·qrcode·App Check 번들) |
 | `tools/` | 빌드 도구 — 서비스워커 프리캐시 목록을 산출물에서 자동 생성하는 Vite 플러그인, 서비스워커 원본, 폰트 서브셋 플러그인 |
 | `fonts/` | Pretendard 원본 woff2와 라이선스. **배포되지 않는다** — 빌드가 화면에 나올 글자만 남겨 `dist/fonts/`로 내보낸다(3.9MB → 328KB) |
 | `dist/` | 빌드 산출물 **겸 Firebase Hosting 배포 폴더**(`firebase.json`의 `public`). 저장소에 커밋하지 않는다 |

@@ -61,7 +61,7 @@ body:has(#home.active) { background:#fff; }
 .chart-title em { color:#df291f; font-style:normal; }
 .chart-heading h1 span { display:grid; place-items:center; width:26px; height:26px; background:#f3f3f3; border-radius:50%; font-size:.875rem; letter-spacing:0; font-weight:600; }
 .chart-heading > p { margin:0; max-width:290px; color:#626262; font-size:.875rem; line-height:1.6; word-break:keep-all; }
-.grid { display:grid; flex:1; min-height:0; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-rows:repeat(2,minmax(0,1fr)); gap:22px 24px; }
+.grid { display:grid; flex:1; min-height:0; grid-template-columns:repeat(4,minmax(0,1fr)); grid-template-rows:repeat(2,minmax(0,1fr)); gap:20px 20px; }
 .tile { position:relative; display:flex; flex-direction:column; width:100%; min-width:0; min-height:0; appearance:none; border:0; padding:0; text-align:left; background:white; color:#171717; font:inherit; cursor:pointer; border-radius:12px; --hl-shadow:0 0 0 2px var(--c),0 0 12px var(--c-glow),inset 0 0 0 100vmax var(--c-wash); }
 .tile-media { display:block; position:relative; flex:1; min-height:0; width:100%; overflow:hidden; background:#181818; }
 /* 모바일에서 확대되는 모든 자식도 자신의 모서리를 갖는다. */
@@ -116,7 +116,7 @@ body:has(#home.active) { background:#fff; }
   .festival-steps { grid-column:1 / -1; grid-row:2; justify-content:center; }
   .partner-cgv { width:58px; }
   .partner-education { width:145px; }
-  .grid { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:repeat(3,minmax(0,1fr)); gap:16px; }
+  .grid { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:repeat(4,minmax(0,1fr)); gap:12px; }
   .tile-enter { display:none; }
   .chart-heading > p { max-width:230px; }
   .enginebar { top:98px; }
@@ -193,11 +193,11 @@ body:has(#home.active) { background:#fff; }
 .scene-position { display:flex; align-items:center; gap:8px; font-size:.875rem; font-variant-numeric:tabular-nums; margin:0; }
 .scene-position > span { color:#777; }
 .scene-position .scene-current-name { display:none; }
-/* 여섯 장 + 한 칸의 여유로 순환 중에도 모든 장르의 온전한 선택지를 노출한다. */
+/* 여덟 장 + 한 칸의 여유로 순환 중에도 모든 장르의 온전한 선택지를 노출한다. */
 .scene-choice-row { position:relative; flex-shrink:0; padding-right:28px; border-top:1px solid #ececec; }
 .scene-choices { --choice-gap:14px; overflow:hidden; contain:paint; padding:32px 4px 6px; }
-.scene-choice-track { display:flex; width:calc(1800% / 7); animation:sceneChoicesFlow var(--flow-duration,48s) linear infinite; transform:translate3d(0,0,0); will-change:transform; }
-.scene-choice-set { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:var(--choice-gap); padding-right:var(--choice-gap); flex:0 0 33.333333%; min-width:0; }
+.scene-choice-track { display:flex; width:calc(2400% / 9); animation:sceneChoicesFlow var(--flow-duration,48s) linear infinite; transform:translate3d(0,0,0); will-change:transform; }
+.scene-choice-set { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:var(--choice-gap); padding-right:var(--choice-gap); flex:0 0 33.333333%; min-width:0; }
 @keyframes sceneChoicesFlow {
  from { transform:translate3d(0,0,0); }
  to { transform:translate3d(var(--flow-distance,-33.333333%),0,0); }
