@@ -57,8 +57,10 @@ const k = Math.pow(10, VOICE.db / 20);
 const down = `clip((t-${VOICE.from - VOICE.ramp})/${VOICE.ramp},0,1)`;
 const up = `clip((t-${VOICE.to})/${VOICE.ramp},0,1)`;
 const duck = `volume='1-${(1 - k).toFixed(4)}*${down}*(1-${up})':eval=frame`;
+// 섞은 뒤 시각을 샘플 수로 다시 매긴다 — 비트레이트로 길이를 짐작하는 mp3가 섞이면 시각이 비어 낮추기 식이 NaN이 되고,
+// volume 필터는 NaN을 0으로 바꿔 그 뒤가 통째로 무음이 된다(10/17 판타지·애니메이션·드라마에서 실제로 겪음).
 const mix = `${tracks.map((_, i) => `[t${i}]`).join('')}amix=inputs=${tracks.length}:duration=longest:normalize=0,` +
-  `${duck},apad=whole_dur=${SECONDS},atrim=0:${SECONDS},alimiter=limit=0.89[out]`;
+  `asetpts=N/SR/TB,${duck},apad=whole_dur=${SECONDS},atrim=0:${SECONDS},alimiter=limit=0.89[out]`;
 
 execFileSync('ffmpeg', ['-y', '-v', 'error', ...tracks.flatMap((t) => ['-i', t.file]),
   '-filter_complex', [...chains, mix].join(';'), '-map', '[out]', '-ar', '48000', '-c:a', 'pcm_s16le', out],
