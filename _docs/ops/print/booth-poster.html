@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Voice Cinema 부스 게시물</title>
+<link rel="stylesheet" href="print.css">
+<style>
+  @page { margin: 14mm; }
+  body { font-size: 12pt; }
+  .poster { height: 267mm; display: flex; flex-direction: column; }
+  .top { text-align: center; }
+  .top .eyebrow { color: var(--sub); font-size: 12pt; }
+  .top h1 { font-size: 52pt; margin: 6pt 0 2pt; letter-spacing: -0.03em; }
+  .top h1 .red { color: var(--red); }
+  .top .lead { font-size: 15pt; font-weight: 600; margin: 4pt 0 0; }
+  .genres { display: flex; flex-wrap: wrap; justify-content: center; gap: 5pt; margin: 12pt 0 0; }
+  .genres span { border: 1pt solid var(--line); border-radius: 999px; padding: 2pt 10pt; font-weight: 600; font-size: 11.5pt; }
+  .steps { list-style: none; margin: 18pt 0 0; padding: 0; display: grid; gap: 7pt; }
+  .steps li { display: grid; grid-template-columns: 30pt 1fr; align-items: center; gap: 10pt; background: #f6f7f9; border-radius: 10pt; padding: 9pt 12pt; margin: 0; }
+  .steps .n { width: 30pt; height: 30pt; border-radius: 50%; background: var(--ink); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 14pt; }
+  .steps b { font-size: 15pt; display: block; }
+  .steps span.d { color: var(--sub); font-size: 11.5pt; }
+  .time { text-align: center; margin: 10pt 0 0; font-size: 12pt; }
+  .privacy { margin-top: auto; border: 1.2pt solid var(--ink); border-radius: 10pt; padding: 10pt 14pt; }
+  .privacy h2 { border: 0; margin: 0 0 4pt; padding: 0; font-size: 13pt; }
+  .privacy ul { margin: 0; padding-left: 14pt; font-size: 10.5pt; }
+  .bottom { text-align: center; color: var(--sub); font-size: 10pt; margin-top: 10pt; }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="top">
+    <p class="eyebrow">제4회 인천어린이청소년영화제 · InKY 놀이터 체험 부스</p>
+    <h1>Voice <span class="red">Cinema</span></h1>
+    <p class="lead">영화 명장면의 가장 긴박한 순간, 내 목소리로 외쳐<br>나만의 10초 영화를 완성해요&nbsp;!</p>
+    <div class="genres"><span>SF</span><span>판타지</span><span>애니메이션</span><span>히어로</span><span>스릴러</span><span>드라마</span><span>스포츠</span><span>뮤지컬</span></div>
+  </div>
+
+  <ol class="steps">
+    <li><span class="n">1</span><div><b>장면 고르기</b><span class="d">8개 영화 장면 중 마음에 드는 하나를 눌러요</span></div></li>
+    <li><span class="n">2</span><div><b>장면 시작</b><span class="d">장면이 흐르다 가장 긴박한 순간에 딱 멈춰요</span></div></li>
+    <li><span class="n">3</span><div><b>3 · 2 · 1, 외치기&nbsp;!</b><span class="d">«지금 바로 당신의 목소리를 들려주세요&nbsp;!» — 3.5초 동안 크게</span></div></li>
+    <li><span class="n">4</span><div><b>다시 듣기</b><span class="d">내 목소리가 들어간 장면 확인 — 마음에 들 때까지 다시 해도 돼요</span></div></li>
+    <li><span class="n">5</span><div><b>QR 찍기</b><span class="d">휴대폰 카메라로 찍으면 내 영화가 폰으로&nbsp;! (11월 30일까지)</span></div></li>
+  </ol>
+  <p class="time">한 사람에 약 1~2분</p>
+
+  <div class="privacy">
+    <h2>개인정보 안내</h2>
+    <ul>
+      <li>이름·학교·연락처는 받지 않아요. 내 목소리가 담긴 완성 영상만 만들어요.</li>
+      <li>완성 영상은 QR과 링크로 전달되고, <strong>링크를 아는 사람은 누구나 볼 수 있어요.</strong></li>
+      <li><strong>11월 30일까지</strong> 받을 수 있고, <strong>12월 1일부터 자동으로 삭제</strong>돼요.</li>
+      <li>사전에 동의서를 낸 학교가 참여해요. 체험은 자유 참여이며, 원하지 않으면 언제든 그만둘 수 있어요.</li>
+    </ul>
+  </div>
+  <p class="bottom">인천광역시교육청 · InKY 2026 · 2026. 11. 14.(토) CGV 인천</p>
+</div>
+</body>
+</html>
