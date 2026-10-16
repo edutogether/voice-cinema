@@ -136,7 +136,8 @@ body:has(#home.active) { background:#fff; }
   .festival-symbol { display:none; }
   .festival-signature { font-size:1rem; }
   .festival-steps { gap:10px; font-size:.75rem; }
-  .festival-steps li { gap:6px; }
+  /* 글자를 키운 휴대폰(200%)에서 «3 영화 저장»이 화면 밖으로 넘치던 것 — 칸이 모자랄 때만 이름이 띄어쓰기 자리에서 두 줄이 된다(결정 10, 10/17) */
+  .festival-steps li { gap:6px; white-space:normal; word-break:keep-all; }
   .festival-steps li + li::before { width:14px; margin-right:4px; }
   .chart-layout { padding-top:16px; }
   .chart-heading { display:block; padding-bottom:14px; }

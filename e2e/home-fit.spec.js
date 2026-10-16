@@ -69,3 +69,29 @@ for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080]]) {
     await page.screenshot({ path: `tmp/apple-layout-${width}.png` });
   });
 }
+
+// 결정 10(10/17): 글자를 200%로 키운 휴대폰에서 상단 단계 표시 «3 영화 저장»이 화면 오른쪽 밖으로 35px 넘쳤다.
+// 칸이 모자랄 때만 단계 이름이 띄어쓰기 자리에서 두 줄이 되게 했다 — 100%에서는 한 줄 그대로다.
+test('375px 글자 200%: 상단 단계 표시가 화면 안에 들어오고, 100%에서는 한 줄이다', async ({ browser }) => {
+  const page = await browser.newPage({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
+  await page.goto('/');
+  await page.locator('#splash').waitFor({ state: 'detached' });
+  const read = () => page.evaluate(() => ({
+    pageWidth: document.documentElement.scrollWidth,
+    steps: [...document.querySelectorAll('.festival-steps li')].map(li => {
+      const r = li.getBoundingClientRect();
+      return { left: r.left, right: r.right, height: r.height };
+    }),
+  }));
+  const normal = await read();
+  expect(normal.steps).toHaveLength(3);
+  for (const step of normal.steps) expect(step.height).toBeLessThanOrEqual(26);
+  await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
+  const zoomed = await read();
+  expect(zoomed.pageWidth).toBeLessThanOrEqual(375);
+  for (const step of zoomed.steps) {
+    expect(step.left).toBeGreaterThanOrEqual(0);
+    expect(step.right).toBeLessThanOrEqual(375);
+  }
+  await page.close();
+});
