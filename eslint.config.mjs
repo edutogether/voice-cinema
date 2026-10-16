@@ -14,6 +14,8 @@ export default [
       'outputs/**',
       'cert/**',
       'tmp/**',
+      '_backups/**', // Git 제외 백업(롤백 사본) — 저장소 코드가 아니다
+      '_media/**',
       'test-results/**',
       'playwright-report/**',
     ],
