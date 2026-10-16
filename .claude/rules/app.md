@@ -87,7 +87,9 @@
 - **원판의 소리 트랙을 지우거나 무음으로 바꾸지 말 것** — 2.0(2026-10-16)에서는 원판 소리(상대 대사·배경음·효과음)가
   완성본의 일부다. 합성은 원판 소리에 학생 목소리를 5.0초 늦춰 섞는다(`src/lib/ffmpeg.ts`의 `MIX_FILTER`, `amix`) —
   원판에 소리 트랙이 없으면 `[0:a]`를 못 찾아 합성이 실패한다. 원판을 만들 때 5.0~8.5초(목소리 칸)의 원판 소리는
-  목소리를 덮지 않게 작게 둔다(`_docs/intents/2026-10-11-scene-homage/storyboards.md` §0)
+  목소리를 덮지 않게 작게 둔다(`_docs/intents/2026-10-11-scene-homage/storyboards.md` §0). 원판 소리는
+  `tools/build-scene-audio.mjs`가 큐 목록(JSON)에서 만들며 목소리 칸 전체를 −8dB로 낮춘다. 🟠 **트랙마다 출처·라이선스를
+  적지 않으면 만들지 않는 검사를 빼지 말 것** — 받은 소리는 출처 기록이 사용 조건이다
 - **업로드 타임아웃을 한쪽만 고치지 말 것** — `src/config.ts`의 `UPLOAD_TIMEOUT_MS`와 `functions/index.js`의
   `timeoutSeconds`를 항상 같은 값으로(현재 110초). 서버가 먼저 끊으므로 클라이언트만 늘리면 효과가 없다.
   어긋나면 `test/contract.test.js`가 실패한다 — 그 테스트를 고쳐 통과시키지 말고 값을 맞출 것
