@@ -19,6 +19,8 @@
   진짜 영상은 나중에 Bumm님이 직접 만들어 같은 원판 자리에 `--parts`로 넣는다
 - 🟢 **미리보기 채널**(10/17, 결정 7): `https://voice-cinema--vc2-pob2jj8b.web.app`(채널 `vc2`, 10/24 만료). 라이브 릴리스는
   그대로(`ff0918a2268dbe8b`, 배포 커밋 `3e5e8d2`) 확인. 미리보기에서는 «저장 → QR»만 기기 다운로드로 대신된다(서버 허용 목록 밖)
+- 🟢 **인쇄물 네 종**(10/17, 결정 11·12·13): 원본 `_docs/ops/print/*.html` → `node tools/build-print.mjs` → `_docs/ops/Voice Cinema_*.pdf`
+  (설명서 5쪽·게시물 1쪽·교사용 2쪽·교육청 검토 자료 1쪽). 남은 `[확인]`은 `_docs/ops/manuals-reuse.md` 끝
 - 남은 그림: 뮤지컬 18장(Poster Studio 다음 차례에 Bumm님 Chrome으로), 스릴러는 대체안 셋 중 Bumm님 선택 뒤 19장
   (`_docs/intents/2026-10-11-scene-homage/05-thriller-alternatives.md`)
 - 🟠 **master로 합칠 때는 squash로 합친다** — 이 가지에는 시험용 원판 영상(8장르 약 50MB)이 커밋돼 있다. 실사 원판으로 바꾼 뒤
