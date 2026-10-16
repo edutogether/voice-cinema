@@ -22,10 +22,10 @@
 | 02 | 판타지 | [«빛의 결투»](02-fantasy.md) | 18 | 5 | 13 | Photorealistic fantasy film look |
 | 03 | 애니메이션 | [«멋지게 떨어지기»](03-animation.md) | 19 | 6 | 13 | 3D animated feature film look |
 | 04 | 히어로 | [«왼쪽을 봐»](04-hero.md) | 20 | 7 | 13 | Photorealistic blockbuster live-action look |
-| 05 | 스릴러 | [«주방의 발톱»](05-thriller.md) | 19 | 6 | 13 | Photorealistic modern dinosaur-film live-action look |
+| 05 | 스릴러 | [«등대의 마지막 불»](05-thriller.md) | 19 | 6 | 13 | Photorealistic period-film look |
 | 06 | 드라마 | [«기억의 한마디»](06-drama.md) | 25 | 8 | 17 | Photorealistic warm family-drama live-action look |
 | 07 | 스포츠 | [«마지막 슛»](07-sports.md) | 19 | 6 | 13 | Photorealistic sports-film live-action look |
-| 08 | 뮤지컬 | [«라면 습격»](08-musical.md) | 19 | 6 | 13 | Stylized animated feature-film look |
+| 08 | 뮤지컬 | [«서커스 첫 무대»](08-musical.md) | 19 | 6 | 13 | Photorealistic stage-musical film look inside a red-and-gold circus big top |
 | | | **합계** | **159** | | | |
 
 장르 문서마다: ① 그림 결 ② 그림 목록 ③ 영상 만들기(«영상 만들기 전 확인»의 원본) ④ 상대 목소리 ⑤ 소리 ⑥ 프롬프트 전문.

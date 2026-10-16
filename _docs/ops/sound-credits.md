@@ -67,13 +67,13 @@
 
 | 시작 | 길이 | 제목 | 출처 | 파일 | 라이선스 | SHA-256 앞 12자 |
 |---|---|---|---|---|---|---|
-| 0.0초 | 1.7초 | Refrigerator hum | https://mixkit.co/free-sound-effects/appliances/ | https://assets.mixkit.co/active_storage/sfx/1837/1837-preview.mp3 | Mixkit SFX | a9cb4526eacb |
-| 0.0초 | 10초 | Fun Jazz — Francisco Alvear | https://mixkit.co/free-stock-music/mood/stealth/ | https://assets.mixkit.co/music/647/647.mp3 | Mixkit 음악 | 814d6b221195 |
-| 1.6초 | 1.719초 | 상대 대사(임시 — PC 내장 한국어 음성) | Windows 내장 음성 Microsoft Heami로 세션이 읽음(2026-10-17) | — | [확인] Windows 내장 음성 출력 — 임시본, 행사 전 교체 예정 | — |
-| 3.5초 | 1.5초 | Dog sniffing the ground | https://mixkit.co/free-sound-effects/dog/ | https://assets.mixkit.co/active_storage/sfx/49/49-preview.mp3 | Mixkit SFX | edccd872cfb3 |
-| 5.0초 | 3.5초 | Creature cry of hurt | https://mixkit.co/free-sound-effects/monster/ | https://assets.mixkit.co/active_storage/sfx/2208/2208-preview.mp3 | Mixkit SFX | 46462bafb910 |
-| 8.5초 | 1.5초 | Refrigerator door slam | https://mixkit.co/free-sound-effects/appliances/ | https://assets.mixkit.co/active_storage/sfx/1864/1864-preview.mp3 | Mixkit SFX | 3b40a7214930 |
-| 8.5초 | 1.5초 | Heavenly swell | https://mixkit.co/free-sound-effects/swell/ | https://assets.mixkit.co/active_storage/sfx/2674/2674-preview.mp3 | Mixkit SFX | e334ac048dc5 |
+| 0.0초 | 10초 | Rough sea waves loop (폭풍 바다) | https://mixkit.co/free-sound-effects/waves/ | https://assets.mixkit.co/active_storage/sfx/1194/1194-preview.mp3 | Mixkit SFX | 7d5c40dcbde0 |
+| 0.0초 | 5.2초 | Wind in the top of the mountain (등대 바람) | https://mixkit.co/free-sound-effects/wind/ | https://assets.mixkit.co/active_storage/sfx/1267/1267-preview.mp3 | Mixkit SFX | ec45b068b72a |
+| 0.9초 | 2.6초 | Mystwrious bass pulse (유령이 나타남) | https://mixkit.co/free-sound-effects/hum/ | https://assets.mixkit.co/active_storage/sfx/2298/2298.wav | Mixkit SFX | 24061a964384 |
+| 1.6초 | 1.004초 | 상대 대사(임시 — PC 내장 한국어 음성) | Windows 내장 음성 Microsoft Heami로 세션이 읽음(2026-10-17) | — | [확인] Windows 내장 음성 출력 — 임시본, 행사 전 교체 예정 | — |
+| 3.4초 | 1.7초 | Deep cinematic wind hum (번개·성냥 직전의 긴장) | https://mixkit.co/free-sound-effects/wind/ | https://assets.mixkit.co/active_storage/sfx/1177/1177-preview.mp3 | Mixkit SFX | bb968edde0b0 |
+| 5.4초 | 3.1초 | Magical light transition (렌즈에 불이 붙음) | https://mixkit.co/free-sound-effects/magic/ | https://assets.mixkit.co/active_storage/sfx/2583/2583.wav | Mixkit SFX | 05c0fd6182ac |
+| 8.4초 | 1.6초 | Heavenly swell (배가 항구로) | https://mixkit.co/free-sound-effects/swell/ | https://assets.mixkit.co/active_storage/sfx/2674/2674-preview.mp3 | Mixkit SFX | e334ac048dc5 |
 
 ## 드라마 (`drama`)
 
@@ -102,11 +102,11 @@
 
 | 시작 | 길이 | 제목 | 출처 | 파일 | 라이선스 | SHA-256 앞 12자 |
 |---|---|---|---|---|---|---|
-| 0.0초 | 1.7초 | Soft slurp | https://mixkit.co/free-sound-effects/drink/ | https://assets.mixkit.co/active_storage/sfx/3207/3207-preview.mp3 | Mixkit SFX | 62fa8664b977 |
-| 0.0초 | 10초 | Karma — Michael Ramir C. | https://mixkit.co/free-stock-music/dance-pop/ | https://assets.mixkit.co/music/1183/1183.mp3 | Mixkit 음악 | 56f331c37552 |
-| 1.5초 | 2.2초 | Bass rumble hum | https://mixkit.co/free-sound-effects/hum/ | https://assets.mixkit.co/active_storage/sfx/2297/2297-preview.mp3 | Mixkit SFX | 90c50094fc83 |
-| 1.6초 | 0.971초 | 상대 대사(임시 — PC 내장 한국어 음성) | Windows 내장 음성 Microsoft Heami로 세션이 읽음(2026-10-17) | — | [확인] Windows 내장 음성 출력 — 임시본, 행사 전 교체 예정 | — |
-| 3.5초 | 1.5초 | Bass double swell | https://mixkit.co/free-sound-effects/swell/ | https://assets.mixkit.co/active_storage/sfx/2666/2666-preview.mp3 | Mixkit SFX | db4d34625326 |
-| 5.0초 | 3.5초 | Fairy sparkle whoosh | https://mixkit.co/free-sound-effects/magic/ | https://assets.mixkit.co/active_storage/sfx/869/869-preview.mp3 | Mixkit SFX | c4ee1a64554b |
-| 8.5초 | 1.5초 | Clear firework explosions | https://mixkit.co/free-sound-effects/fireworks/ | https://assets.mixkit.co/active_storage/sfx/2994/2994-preview.mp3 | Mixkit SFX | 341fc62bea23 |
-| 8.5초 | 1.5초 | Magic sparkle poof hit | https://mixkit.co/free-sound-effects/magic/ | https://assets.mixkit.co/active_storage/sfx/3082/3082.wav | Mixkit SFX | cb2f7cf71078 |
+| 0.0초 | 10초 | Comical — Ahjay Stelino (천막 음악) | https://mixkit.co/free-stock-music/tag/cartoons/ | https://assets.mixkit.co/music/2/2.mp3 | Mixkit 음악 | 2f5ed23f2c51 |
+| 0.0초 | 3.4초 | Big crowd talking loop (천막 관객 웅성임) | https://mixkit.co/free-sound-effects/crowd/ | https://assets.mixkit.co/active_storage/sfx/364/364-preview.mp3 | Mixkit SFX | a8e9d737d38a |
+| 1.6초 | 1.343초 | 상대 대사(임시 — PC 내장 한국어 음성) | Windows 내장 음성 Microsoft Heami로 세션이 읽음(2026-10-17) | — | [확인] Windows 내장 음성 출력 — 임시본, 행사 전 교체 예정 | — |
+| 3.3초 | 1.7초 | Bass double swell (조명이 꺼짐) | https://mixkit.co/free-sound-effects/swell/ | https://assets.mixkit.co/active_storage/sfx/2666/2666-preview.mp3 | Mixkit SFX | db4d34625326 |
+| 3.8초 | 1.2초 | Drum Roll (핀 조명 북 굴림) | https://mixkit.co/free-sound-effects/drum/ | https://assets.mixkit.co/active_storage/sfx/566/566.wav | Mixkit SFX | 906a3296a474 |
+| 5.5초 | 3초 | Fairy sparkle whoosh (그네·공중제비) | https://mixkit.co/free-sound-effects/magic/ | https://assets.mixkit.co/active_storage/sfx/869/869-preview.mp3 | Mixkit SFX | c4ee1a64554b |
+| 8.5초 | 1.5초 | Grand brass fanfare (착지 팡파르) | https://mixkit.co/free-sound-effects/brass/ | https://assets.mixkit.co/active_storage/sfx/631/631.wav | Mixkit SFX | f4ad13e761bd |
+| 8.6초 | 1.4초 | Male crowd cheering short (기립 박수) | https://mixkit.co/free-sound-effects/crowd/ | https://assets.mixkit.co/active_storage/sfx/459/459-preview.mp3 | Mixkit SFX | 2bbde3e55e1d |
