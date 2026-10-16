@@ -27,9 +27,9 @@ try {
     const file = join(src, doc.html);
     if (!existsSync(file)) throw new Error(`원본이 없다: ${file}`);
     await page.goto(pathToFileURL(file).href, { waitUntil: 'networkidle' });
-    await page.evaluate(() => document.fonts.ready);
+    await page.evaluate('document.fonts.ready');
     // 그림이 안 보이면(경로 틀림·아직 안 찍음) PDF에 빈 칸이 나가므로 이름을 알린다
-    const broken = await page.evaluate(() => [...document.images].filter((i) => !i.complete || !i.naturalWidth).map((i) => i.getAttribute('src')));
+    const broken = await page.locator('img').evaluateAll((imgs) => imgs.filter((i) => !i.complete || !i.naturalWidth).map((i) => i.getAttribute('src')));
     if (broken.length) { failed = true; console.error(`${doc.html}: 그림을 못 읽음 — ${broken.join(', ')}`); }
     const out = join(root, '_docs', 'ops', doc.pdf);
     await page.pdf({ path: out, format: 'A4', printBackground: true, preferCSSPageSize: true });
