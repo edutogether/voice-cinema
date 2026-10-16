@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>장면 새 아이디어</title>
+<style>
+:root { --bg:#F8FAFC; --panel:#FFFFFF; --ink:#0F172A; --sub:#475569; --line:#E2E8F0;
+  --indigo:#4F46E5; --indigo-bg:#EEF2FF; --ok:#047857; --ok-bg:#ECFDF5; --warn:#B45309; --warn-bg:#FFFBEB; --rose:#BE123C; --rose-bg:#FFF1F2; --info:#0369A1; --info-bg:#F0F9FF; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0B1020; --panel:#121A2E; --ink:#E2E8F0; --sub:#94A3B8; --line:#22304D;
+  --indigo:#A5B4FC; --indigo-bg:#1E1B4B; --ok:#6EE7B7; --ok-bg:#052E25; --warn:#FCD34D; --warn-bg:#2E1F05; --rose:#FDA4AF; --rose-bg:#3B0A17; --info:#7DD3FC; --info-bg:#082F49; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.6 Pretendard,"Malgun Gothic","Apple SD Gothic Neo",sans-serif; word-break:keep-all; }
+main { max-width:1280px; margin:0 auto; padding:24px; }
+h1 { font-size:26px; margin:0 0 4px; }
+.lead { color:var(--sub); margin:4px 0 0; }
+.time { background:var(--panel); border:2px solid var(--indigo); border-radius:16px; padding:16px 20px; margin:18px 0; }
+.time h2 { margin:0 0 8px; font-size:18px; }
+.tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin:10px 0; }
+.tile { border-radius:12px; padding:10px 14px; background:var(--indigo-bg); }
+.tile b { display:block; font-size:22px; color:var(--indigo); }
+.tile span { font-size:13px; color:var(--sub); }
+.time ul { margin:8px 0 0; padding-left:20px; }
+.time li { margin:3px 0; }
+.rule { background:var(--rose-bg); color:var(--rose); border-radius:10px; padding:8px 12px; margin:10px 0 0; font-weight:600; }
+nav { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+nav a { text-decoration:none; color:var(--indigo); font-weight:700; padding:4px 10px; border:1px solid var(--line); border-radius:999px; background:var(--panel); }
+.card { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:16px 18px; margin:16px 0; }
+.card h2 { margin:0; font-size:20px; }
+.card .said { margin:6px 0 10px; color:var(--sub); font-size:14px; }
+.card .said b { color:var(--ink); }
+table { width:100%; border-collapse:collapse; font-size:14px; }
+th, td { border-top:1px solid var(--line); padding:8px 8px; vertical-align:top; text-align:left; }
+th { color:var(--sub); font-weight:600; width:116px; white-space:nowrap; }
+.opts { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:12px; }
+.opt { border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+.opt.star { border:2px solid var(--indigo); }
+.opt h3 { margin:0 0 6px; font-size:16px; }
+.opt dl { margin:0; display:grid; grid-template-columns:78px 1fr; gap:4px 8px; font-size:14px; }
+.opt dt { color:var(--sub); }
+.opt dd { margin:0; }
+.badge { display:inline-block; font-size:12px; font-weight:700; padding:1px 8px; border-radius:999px; }
+.low { background:var(--ok-bg); color:var(--ok); } .mid { background:var(--warn-bg); color:var(--warn); }
+.keep { background:var(--info-bg); color:var(--info); border-radius:10px; padding:10px 12px; font-size:14px; }
+.foot { color:var(--sub); font-size:13px; margin-top:20px; }
+@media (max-width:640px) { main { padding:16px; } .opt dl { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<main>
+<h1>장면 더빙 2.0 — 새 아이디어 한 장</h1>
+<p class="lead">대표님 그림 검토(10/17 새벽)를 반영했습니다. 장르마다 ⭐ 안이 세션 추천이며, 다른 안을 고르셔도 됩니다. 모든 안은 원작을 «향기만» 빌리고 원작 인물·의상·로고·음악·대사는 쓰지 않습니다.</p>
+
+<section class="time">
+<h2>걸리는 시간 — 실측 근거</h2>
+<div class="tiles">
+  <div class="tile"><b>약 155장</b><span>8장르 전부 새로 그림(장르당 약 19장)</span></div>
+  <div class="tile"><b>장르당 약 45분</b><span>실측: 이어 그린 5장르 34~52분, 한 장 약 2.4분(그 자리 다시 그리기 포함)</span></div>
+  <div class="tile"><b>Chrome 약 6~7시간</b><span>Chrome을 혼자 쓸 때. Poster Studio와 나눠 쓰면 그만큼 늘어남</span></div>
+  <div class="tile"><b>그 뒤 약 4~5시간</b><span>소리·목소리·원판·앱·검사·설명서·미리보기</span></div>
+</div>
+<ul>
+  <li><strong>① 그림(고르신 뒤)</strong>: 새 콘티·프롬프트 쓰기 약 1시간(장르 6개는 도우미 세션이 나눠 쓰고 세션이 검토, 첫 장르는 이 시간 안에 시작) → 그리기 8장르 × 약 45분 = <strong>약 6시간</strong> + 거절·다시 그리기 여유 약 1시간. <strong>Chrome을 혼자 쓰면 약 7시간</strong>, Poster Studio와 반씩 나누면 <strong>약 12~14시간</strong>.</li>
+  <li><strong>② 완성까지(그림 뒤)</strong>: 새 장르 소리 후보 찾기·받기·조립 약 2시간(그림 그리는 동안 도우미 세션이 먼저 찾음) · 상대 목소리 8줄 30분 · 슬라이드 원판 8개 20분 · 앱 반영(장면 이름·대사·자막) 40분 · 전체 검사 20분 · 설명서·검토 자료 다시 뽑기 40분 · 미리보기 올리기 10분 = <strong>약 4~5시간</strong>(소리 찾기를 그림과 겹치면 약 3시간).</li>
+  <li><strong>대표님 몫</strong>: 관문 B 거르기 40~60분. 장르가 통째로 «다시»면 그 장르 약 45분이 더 듭니다(아래 원칙).</li>
+  <li><strong>06:00에 고르시면</strong>: Chrome을 혼자 쓰는 경우 토요일 15시 전후 그림 끝 → 토요일 밤 미리보기 완성 → 일요일 오전 거르기·시사. Chrome을 나눠 쓰면 그림이 토요일 밤까지 이어지고 완성은 일요일 오전입니다.</li>
+</ul>
+<p class="rule">원칙(대표님): 고치는 장르는 한두 장 끼워 넣지 않고 그 장르 전체를 처음부터 다시 그립니다.</p>
+</section>
+
+<nav><a href="#sf">SF</a><a href="#fantasy">판타지</a><a href="#animation">애니메이션</a><a href="#hero">히어로</a><a href="#thriller">스릴러</a><a href="#drama">드라마</a><a href="#sports">스포츠</a><a href="#musical">뮤지컬</a></nav>
+
+<section class="card" id="sf">
+<h2>SF — 새 아이디어</h2>
+<p class="said">대표님: <b>«물의 행성 말고 다른 아이디어 있어 ? 너무 인터스텔라 베낀 것 같아»</b></p>
+<div class="opts">
+  <div class="opt star"><h3>⭐ ① «첫 만남» <span class="badge low">막힐 위험 낮음</span></h3><dl>
+    <dt>줄거리</dt><dd>낯선 빛의 행성에 내린 착륙선 앞으로 거대한 외계 생명체가 다가오고, 내가 먼저 손을 내밀어 친구가 된다</dd>
+    <dt>향기</dt><dd>외계 생명체와 손끝을 맞대는 «첫 만남» 영화들의 분위기</dd>
+    <dt>상대·대사</dt><dd>대장(어른 우주인): «움직이지 마… 다가온다 !»</dd>
+    <dt>⏸ 5.0초</dt><dd>빛나는 거대한 생명체가 바로 앞에서 촉수 끝을 내미는 순간, 장갑 낀 내 손도 뻗어 있음</dd>
+    <dt>외침 예시</dt><dd>«안녕 ! 우린 친구야 !» / «무서워하지 마 !»</dd>
+    <dt>해소</dt><dd>손끝이 닿자 행성 전체가 빛으로 물들고 생명체가 하늘로 날아오름</dd></dl></div>
+  <div class="opt"><h3>② «소행성 미로» <span class="badge low">막힐 위험 낮음</span></h3><dl>
+    <dt>줄거리</dt><dd>작은 우주선으로 소행성 떼 사이를 빠져나가 집 행성으로 돌아가는 추격</dd>
+    <dt>향기</dt><dd>우주 추격 영화의 소행성대 비행</dd>
+    <dt>상대·대사</dt><dd>로봇 부조종사: «앞에 거대한 바위야 !»</dd>
+    <dt>⏸ 5.0초</dt><dd>앞 유리 가득 다가온 거대한 소행성, 조종간을 쥔 두 손</dd>
+    <dt>외침 예시</dt><dd>«꽉 잡아, 회전 !» / «지금이야, 오른쪽 !»</dd>
+    <dt>해소</dt><dd>아슬아슬 비틀어 빠져나가자 푸른 집 행성이 보임</dd></dl></div>
+  <div class="opt"><h3>③ «고장 난 정거장» <span class="badge mid">막힐 위험 중간</span></h3><dl>
+    <dt>줄거리</dt><dd>우주정거장 밖에서 태양 폭풍이 오기 전에 마지막 전원 장치를 연결</dd>
+    <dt>향기</dt><dd>우주 유영 수리 장면</dd>
+    <dt>상대·대사</dt><dd>관제 언니(무전): «폭풍 온다, 서둘러 !»</dd>
+    <dt>⏸ 5.0초</dt><dd>밀려오는 빛의 폭풍 앞, 연결 단자 두 개를 쥔 두 손</dd>
+    <dt>외침 예시</dt><dd>«연결 ! 전원 켜 !»</dd>
+    <dt>해소</dt><dd>정거장에 불이 켜지고 방어막이 폭풍을 막음</dd></dl></div>
+</div>
+</section>
+
+<section class="card" id="fantasy">
+<h2>판타지 — 구성 유지, 장르 전체 새로 그림</h2>
+<p class="said">대표님: <b>«상대가 가까이까지 다가온 것처럼 느껴져, 사실은 멀리 있는데. 빌런 단독 샷을 잡자고 한 건데 이상해졌음. 그 외에는 괜찮아»</b></p>
+<div class="keep"><b>새 콘티 한 줄</b>: «빛의 결투» 그대로 — 0~1.5초 폐허 정원 건너편 멀리 선 어둠의 마법사(작게) → 1.5~3.5초 <b>빌런 단독 샷을 망원으로</b>(정원 건너편 그 자리 그대로, 배경이 같이 압축돼 보이고 거리감 유지 — 내 지팡이 끝은 화면 아래에만) «나와 겨루겠다고&nbsp;?» → 3.5~5.0초 다시 1인칭, 두 광선이 정원 한가운데서 이어짐 → ⏸ 빛 구슬이 내 지팡이 쪽으로 밀려옴(상대는 여전히 멀리 작게) → 되밀기 → 금빛 폭발. <b>고칠 점</b>: 모든 키프레임에서 상대와의 거리를 «정원 건너편» 하나로 고정해 프롬프트에 적고, 단독 샷은 망원 구도로 지정합니다.</div>
+</section>
+
+<section class="card" id="animation">
+<h2>애니메이션 — 새 아이디어</h2>
+<p class="said">대표님: <b>«너무 토이 스토리 따라한 것 같아»</b></p>
+<div class="opts">
+  <div class="opt star"><h3>⭐ ① «구름 고래의 별비» <span class="badge low">막힐 위험 낮음</span></h3><dl>
+    <dt>줄거리</dt><dd>밤하늘을 헤엄치는 구름 고래 등에 올라, 쏟아지는 별비를 모아 꺼진 마을에 불을 켠다</dd>
+    <dt>향기</dt><dd>손그림 애니메이션의 하늘을 나는 거대한 생물과 별빛</dd>
+    <dt>상대·대사</dt><dd>구름 고래(말함): «꽉 잡아, 별비가 온다 !»</dd>
+    <dt>⏸ 5.0초</dt><dd>고래 등 위에서 두 손을 뻗은 순간, 하늘 가득 쏟아지기 직전의 별들</dd>
+    <dt>외침 예시</dt><dd>«별들아, 다 모여라 !» / «마을에 불을 켜자 !»</dd>
+    <dt>해소</dt><dd>두 손에 모인 별빛이 아래 마을로 쏟아져 집집마다 불이 켜짐</dd></dl></div>
+  <div class="opt"><h3>② «로봇 강아지를 깨워라» <span class="badge low">막힐 위험 낮음</span></h3><dl>
+    <dt>줄거리</dt><dd>비 오는 골목에서 멈춘 작은 로봇 강아지에게 내 배터리를 넣어 다시 깨운다</dd>
+    <dt>향기</dt><dd>작은 로봇과 친구가 되는 애니메이션</dd>
+    <dt>상대·대사</dt><dd>우산 쓴 친구: «배터리가 다 됐나 봐 !»</dd>
+    <dt>⏸ 5.0초</dt><dd>꺼진 로봇 강아지 가슴의 빈 배터리 칸, 빛나는 배터리를 든 내 손</dd>
+    <dt>외침 예시</dt><dd>«일어나, 친구야 !»</dd>
+    <dt>해소</dt><dd>눈이 켜지며 꼬리를 흔들고 비구름 위로 함께 날아오름</dd></dl></div>
+  <div class="opt"><h3>③ «종이비행기 대모험» <span class="badge low">막힐 위험 낮음</span></h3><dl>
+    <dt>줄거리</dt><dd>작아진 내가 교실 창밖으로 날린 종이비행기를 타고 도시 위를 난다</dd>
+    <dt>향기</dt><dd>바람을 타고 하늘을 나는 모험 애니메이션</dd>
+    <dt>상대·대사</dt><dd>종이학 친구: «바람이 바뀐다 !»</dd>
+    <dt>⏸ 5.0초</dt><dd>앞에 우뚝 선 유리 빌딩, 종이비행기 앞쪽을 쥔 두 손</dd>
+    <dt>외침 예시</dt><dd>«위로 ! 더 높이 !»</dd>
+    <dt>해소</dt><dd>상승 바람을 타고 빌딩 위로 솟아 무지개를 지나감</dd></dl></div>
+</div>
+</section>
+
+<section class="card" id="hero">
+<h2>히어로 — 새 아이디어 · 등장인물은 다양한 서양 인종 위주</h2>
+<p class="said">대표님: <b>«어벤져스랑 블랙팬서 베낀 느낌. 주인공이 동양인 아저씨인 게 너무 부자연스러워»</b></p>
+<div class="opts">
+  <div class="opt star"><h3>⭐ ① «첫 출동 시험» <span class="badge low">막힐 위험 낮음</span></h3><dl>
+    <dt>줄거리</dt><dd>히어로 학교 마지막 시험 — 거대한 훈련 로봇 앞에서 내 힘을 처음 보여 준다(싸움 아닌 시험)</dd>
+    <dt>향기</dt><dd>새내기 히어로가 처음 힘을 깨닫는 장면</dd>
+    <dt>상대·대사</dt><dd>교관(라틴계 여성 히어로): «지금이야, 네 힘을 보여 줘 !»</dd>
+    <dt>⏸ 5.0초</dt><dd>훈련 로봇의 커다란 손이 내려오는 순간, 빛이 모이기 시작한 내 두 손. 뒤 관람석에 동기들(여러 인종)</dd>
+    <dt>외침 예시</dt><dd>«내 힘을 믿어 !» / «빛의 방패 !»</dd>
+    <dt>해소</dt><dd>빛의 방패에 로봇이 멈추고 엄지를 척 — 동기들 환호, 합격 표시등</dd></dl></div>
+  <div class="opt"><h3>② «하늘 도시의 정전» <span class="badge low">막힐 위험 낮음</span></h3><dl>
+    <dt>줄거리</dt><dd>하늘에 떠 있는 도시의 동력이 꺼져 기울고, 팀이 기둥을 붙잡는 동안 내가 마지막 동력핵을 다시 켠다</dd>
+    <dt>향기</dt><dd>팀 히어로물의 «모두가 버티는 동안 마지막 한 명»</dd>
+    <dt>상대·대사</dt><dd>팀원(흑인 남성 히어로): «동력이 꺼져 가 !»</dd>
+    <dt>⏸ 5.0초</dt><dd>꺼져 가는 거대한 동력핵 앞, 빛나는 두 손. 양옆에서 기둥을 붙든 팀원들</dd>
+    <dt>외침 예시</dt><dd>«다시 빛나라 !»</dd>
+    <dt>해소</dt><dd>동력핵이 켜지며 도시가 수평을 되찾고 하늘에 불빛</dd></dl></div>
+  <div class="opt"><h3>③ «관람차를 잡아라» <span class="badge mid">막힐 위험 중간</span></h3><dl>
+    <dt>줄거리</dt><dd>놀이공원 관람차의 축이 부러져 굴러가기 직전, 팀이 힘을 모아 붙잡는다</dd>
+    <dt>향기</dt><dd>구조형 히어로 장면</dd>
+    <dt>상대·대사</dt><dd>팀원(금발 여성 히어로): «너만 남았어, 잡아 줘 !»</dd>
+    <dt>⏸ 5.0초</dt><dd>기울어진 관람차 바퀴 앞, 빛나는 두 손</dd>
+    <dt>외침 예시</dt><dd>«내가 잡았어 !»</dd>
+    <dt>해소</dt><dd>바퀴가 제자리에 서고 사람들이 손을 흔듦(사람이 위험에 처한 장면이라 ①·②보다 엄격할 수 있음)</dd></dl></div>
+</div>
+</section>
+
+<section class="card" id="thriller">
+<h2>스릴러 — 서양식 유령 · 무섭기보다 긴장 · 1인칭만(아이 얼굴·몸 없음)</h2>
+<p class="said">대표님: <b>«공룡 필요 없이 귀신이라든가 서양식 스릴러. 대신 아이를 그리지 말고 1인칭으로만»</b> — 앞서 올린 «레이저 금고» 등 셋은 이 방향으로 대신합니다.</p>
+<div class="opts">
+  <div class="opt star"><h3>⭐ ① «등대의 마지막 불» <span class="badge low">막힐 위험 낮음</span></h3><dl>
+    <dt>줄거리</dt><dd>폭풍 치는 밤, 오래된 등대 꼭대기에 오르자 유령 등대지기가 나타나 «불을 켜야 배가 돌아온다»고 한다</dd>
+    <dt>향기</dt><dd>바닷가 등대의 유령 이야기</dd>
+    <dt>상대·대사</dt><dd>유령 등대지기(반투명 노인, 정중하게): «불을 켜야… 배가 돌아온다 !»</dd>
+    <dt>⏸ 5.0초</dt><dd>꺼진 거대한 등대 렌즈 앞, 성냥을 쥔 손(손만), 창밖 폭풍 속 작은 배의 불빛</dd>
+    <dt>외침 예시</dt><dd>«불을 밝혀라 !» / «이쪽이야, 돌아와 !»</dd>
+    <dt>해소</dt><dd>렌즈가 빛을 뿜고 배가 무사히 항구로 — 등대지기가 모자를 벗어 인사하며 사라짐</dd></dl></div>
+  <div class="opt"><h3>② «저택의 촛불» <span class="badge low">막힐 위험 낮음</span></h3><dl>
+    <dt>줄거리</dt><dd>낡은 서양 저택 복도, 촛불이 하나씩 꺼지고 초상화 속 귀부인이 걸어 나와 잃어버린 반지를 찾는다</dd>
+    <dt>향기</dt><dd>고딕 저택 유령 이야기</dd>
+    <dt>상대·대사</dt><dd>유령 귀부인(반투명, 슬프고 다정하게): «내 반지를… 찾아 주겠니 ?»</dd>
+    <dt>⏸ 5.0초</dt><dd>촛불이 모두 꺼진 순간 바로 앞에 선 귀부인, 반지를 쥔 내 손(손만)</dd>
+    <dt>외침 예시</dt><dd>«여기 있어요, 받으세요 !»</dd>
+    <dt>해소</dt><dd>반지를 받은 귀부인이 미소 지으며 빛으로 사라지고 저택에 불이 켜짐</dd></dl></div>
+  <div class="opt"><h3>③ «자정의 시계탑» <span class="badge low">막힐 위험 낮음</span></h3><dl>
+    <dt>줄거리</dt><dd>안개 낀 옛 유럽 거리의 시계탑, 자정 종이 울리면 갑옷 유령 기사가 깨어나 시계를 지킨다</dd>
+    <dt>향기</dt><dd>안개 낀 옛 거리의 유령 기사 전설</dd>
+    <dt>상대·대사</dt><dd>유령 기사(낮은 목소리): «시계를 멈추는 자는 누구냐 !»</dd>
+    <dt>⏸ 5.0초</dt><dd>거대한 톱니바퀴 사이, 바로 앞에 선 반투명 기사, 멈춘 시계 바늘을 붙잡은 손(손만)</dd>
+    <dt>외침 예시</dt><dd>«시계를 고치러 왔어요 !»</dd>
+    <dt>해소</dt><dd>시계가 다시 돌고 기사가 고개 숙여 인사하며 안개로 흩어짐</dd></dl></div>
+</div>
+</section>
+
+<section class="card" id="drama">
+<h2>드라마 — 아이들의 우정 · 감동</h2>
+<p class="said">대표님: <b>«사진이 우리 화면 쪽으로 보이게 들려 있는 게 부자연스럽고, 코코 느낌이 안 나서 아이들 입장에서 '뭐 어쩌라고'가 될 것 같아. 차라리 아이들 간의 따뜻한 감동·우정 스토리로»</b></p>
+<div class="opts">
+  <div class="opt star"><h3>⭐ ① «떠나는 기차» <span class="badge low">막힐 위험 낮음</span></h3><dl>
+    <dt>줄거리</dt><dd>전학 가는 친구가 기차에 오르는 마지막 순간, 함께 만든 우정 팔찌를 건넨다</dd>
+    <dt>향기</dt><dd>기차역 이별 장면의 따뜻함</dd>
+    <dt>상대·대사</dt><dd>친구: «나… 잊으면 안 돼 !»</dd>
+    <dt>⏸ 5.0초</dt><dd>문이 닫히기 직전 창가의 친구, 팔찌를 쥔 내 손이 친구 쪽으로 뻗음(소품은 친구 쪽을 향함)</dd>
+    <dt>외침 예시</dt><dd>«잊긴 왜 잊어, 우린 영원히 친구야 !»</dd>
+    <dt>해소</dt><dd>창틈으로 팔찌를 받은 친구가 손목에 차고 웃으며 손을 흔듦, 기차가 노을 속으로</dd></dl></div>
+  <div class="opt"><h3>② «같이 뛰는 계주» <span class="badge low">막힐 위험 낮음</span></h3><dl>
+    <dt>줄거리</dt><dd>운동회 마지막 계주에서 넘어진 친구에게 손을 내밀어 함께 결승선으로</dd>
+    <dt>향기</dt><dd>승패보다 우정을 고르는 성장 영화</dd>
+    <dt>상대·대사</dt><dd>넘어진 친구: «미안해… 나 때문에 !»</dd>
+    <dt>⏸ 5.0초</dt><dd>트랙에 주저앉은 친구에게 내민 내 손, 뒤로 달려오는 다른 반</dd>
+    <dt>외침 예시</dt><dd>«괜찮아, 같이 뛰자 !»</dd>
+    <dt>해소</dt><dd>손잡고 함께 결승선 — 꼴찌인데 반 친구들이 가장 크게 환호</dd></dl></div>
+  <div class="opt"><h3>③ «무대 뒤의 친구» <span class="badge low">막힐 위험 낮음</span></h3><dl>
+    <dt>줄거리</dt><dd>학예회 커튼이 열리기 직전, 떨고 있는 친구의 손을 잡아 준다</dd>
+    <dt>향기</dt><dd>무대 공포를 함께 넘는 성장 영화</dd>
+    <dt>상대·대사</dt><dd>친구: «못 하겠어… 다 쳐다봐 !»</dd>
+    <dt>⏸ 5.0초</dt><dd>커튼 틈으로 객석 불빛, 떨리는 친구 손을 잡은 내 손</dd>
+    <dt>외침 예시</dt><dd>«내가 옆에 있을게, 하나 둘 셋 !»</dd>
+    <dt>해소</dt><dd>커튼이 열리고 둘이 함께 첫 소절, 객석 박수(뮤지컬 장르와 결이 겹칠 수 있음)</dd></dl></div>
+</div>
+</section>
+
+<section class="card" id="sports">
+<h2>스포츠 — 구성 유지, 장르 전체 새로 그림</h2>
+<p class="said">대표님: <b>«골대가 멀어졌다 가까워졌다, 주변 선수들이 생겼다 사라졌다 엉망. 왜 싹 다 흑인이야 ? 유니폼에 이름·등번호·마크도 없고. 투핸드나 원핸드 덩크로, 이왕 멋있게»</b></p>
+<div class="keep"><b>새 콘티 한 줄</b>: «마지막 덩크» — 0~1.5초 종료 3초 전, 하프라인 근처에서 공을 받음(전광판 3초) → 1.5~3.5초 동료(지어낸 팀 «인천 웨이브스», 파란 유니폼·등번호 7) «너한테 맡긴다&nbsp;!» → 3.5~5.0초 드리블로 수비 둘 사이를 파고듦 → ⏸ 림 바로 앞에서 공을 두 손으로 머리 위로 든 순간(뛰기 직전) → 뛰어올라 <b>투핸드 덩크</b> → 림이 흔들리고 버저, 환호. <b>고칠 점</b>: 키프레임마다 «골대까지 거리(하프라인 → 자유투 라인 → 림 바로 앞)»와 «화면 속 선수 수(동료 1 · 수비 2, 상대 팀 흰 유니폼 «블루포트 스톰», 등번호 4·11)»를 숫자로 고정해 프롬프트에 적고, 선수 인종은 백인·흑인·라틴계·아시아계가 섞이게 지정합니다. 팀 이름·마크·등번호는 지어낸 것만 씁니다(글자가 깨지면 그 장만이 아니라 원칙대로 장르 전체를 다시).</div>
+</section>
+
+<section class="card" id="musical">
+<h2>뮤지컬 — 새 아이디어</h2>
+<p class="said">대표님: <b>«라면 습격 말고 너무 베끼지 않은 느낌의 아이디어»</b></p>
+<div class="opts">
+  <div class="opt star"><h3>⭐ ① «서커스 첫 무대» <span class="badge low">막힐 위험 낮음</span></h3><dl>
+    <dt>줄거리</dt><dd>서커스 천막의 첫 무대, 조명이 꺼진 순간 단장이 나를 지목하고 쇼가 시작된다</dd>
+    <dt>향기</dt><dd>화려한 쇼맨십의 서커스 뮤지컬</dd>
+    <dt>상대·대사</dt><dd>서커스 단장(콧수염, 붉은 연미복): «쇼는 계속되어야 해 !»</dd>
+    <dt>⏸ 5.0초</dt><dd>스포트라이트가 나를 비추는 순간, 객석 가득, 지팡이를 높이 든 내 손</dd>
+    <dt>외침 예시</dt><dd>«신사 숙녀 여러분, 쇼 타임 !»</dd>
+    <dt>해소</dt><dd>곡예사들이 날아오르고 반짝이 꽃가루 피날레, 기립 박수</dd></dl></div>
+  <div class="opt"><h3>② «비 오는 거리의 춤» <span class="badge low">막힐 위험 낮음</span></h3><dl>
+    <dt>줄거리</dt><dd>비 내리는 밤거리, 멈춘 거리 악단 대신 내가 첫 박자를 넣자 온 거리가 춤춘다</dd>
+    <dt>향기</dt><dd>우산과 빗속 춤의 고전 뮤지컬</dd>
+    <dt>상대·대사</dt><dd>거리 악단 리더: «음악이 멈췄어, 네가 이어 !»</dd>
+    <dt>⏸ 5.0초</dt><dd>모두가 멈춰 나를 보는 순간, 우산을 높이 든 내 손</dd>
+    <dt>외침 예시</dt><dd>«비야, 노래해라 !»</dd>
+    <dt>해소</dt><dd>가로등이 하나씩 켜지며 우산들이 함께 돌고 빗방울이 반짝</dd></dl></div>
+  <div class="opt"><h3>③ «급식실 비트» <span class="badge low">막힐 위험 낮음</span></h3><dl>
+    <dt>줄거리</dt><dd>조용한 급식실, 숟가락 한 번에 시작된 리듬이 식판·컵·의자로 번져 모두의 합주가 된다</dd>
+    <dt>향기</dt><dd>생활 소품으로 리듬을 만드는 퍼포먼스</dd>
+    <dt>상대·대사</dt><dd>급식실 조리사 선생님: «오늘은 다 같이 한 곡 !»</dd>
+    <dt>⏸ 5.0초</dt><dd>모든 아이가 식판을 들고 나를 보는 순간, 숟가락을 든 내 손</dd>
+    <dt>외침 예시</dt><dd>«하나 둘, 비트 시작 !»</dd>
+    <dt>해소</dt><dd>식판·숟가락 합주와 단체 춤, 조리사 선생님도 국자로 박자</dd></dl></div>
+</div>
+</section>
+
+<p class="foot">막힐 위험은 10/16까지 ChatGPT에서 겪은 것에 비춘 추정입니다(어린이가 위험에 처한 실사 장면이 막혔고, 어른·생물이 위험한 장면은 대체로 통과). 고르신 뒤 장르마다 콘티·19장 프롬프트를 쓰고 그립니다. Higgsfield는 쓰지 않습니다.</p>
+</main>
+</body>
+</html>
