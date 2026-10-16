@@ -14,7 +14,7 @@ type Stage =
   | { kind: 'sample' }
   | { kind: 'merging' }
   | { kind: 'uploading' }
-  | { kind: 'cloud'; qr: string }
+  | { kind: 'cloud'; qr: string; url: string }
   | { kind: 'fallback'; blob: Blob }
   | { kind: 'error'; message: string };
 
@@ -63,7 +63,7 @@ export function Result({ active, job, onHome, onBack }: Props) {
           .map((b) => b.toString(16).padStart(2, '0'))
           .join('');
         const url = await uploadToCloud(merged, buildUploadFilename(job.genre.id, Date.now(), token));
-        if (!cancelled) setStage({ kind: 'cloud', qr: makeQR(url) });
+        if (!cancelled) setStage({ kind: 'cloud', qr: makeQR(url), url });
       } catch (e) {
         console.error('[클라우드 저장 실패]', e instanceof Error ? e.message : e);
         if (!cancelled) setStage({ kind: 'fallback', blob: merged });
@@ -128,6 +128,10 @@ export function Result({ active, job, onHome, onBack }: Props) {
                 : '인터넷 문제로 자동 전달이 안 됐어요 — 아래 버튼으로 이 기기에 저장하고 운영자에게 알려주세요'}
             </p>
 
+            {/* 휴대폰에서 직접 체험하면 자기 화면의 QR을 찍을 수 없다 — 같은 공개 주소를 바로 여는 단추(휴대폰에서만 보임, result.css). 휴대폰 한 화면에 들어오게 QR보다 위에 둔다. 10/17 팀장 임시 진행, 대표님 일요일 확인 */}
+            {stage.kind === 'cloud' && (
+              <a className="btn btn-lg btn-save open-movie" id="openMovieBtn" href={stage.url} target="_blank" rel="noopener"><ActionIcon name="play" /> 내 영화 열기</a>
+            )}
             {stage.kind === 'cloud' && (
               <div className="qrbox" id="qrbox">
                 <img id="qrImg" src={stage.qr} alt="QR 코드" />

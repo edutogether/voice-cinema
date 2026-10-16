@@ -140,6 +140,8 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     await expect(page.locator('#qrbox')).toBeVisible();
     await expect(page.locator('#qrImg')).toHaveAttribute('src', /^data:image\//);
     await expect(page.locator('#savemode')).toContainText('누구나 볼 수 있어요');
+    // «내 영화 열기»는 휴대폰에서만 보인다 — 부스의 노트북에서는 학생이 자기 휴대폰으로 QR을 찍는다.
+    await expect(page.locator('#openMovieBtn')).toBeHidden();
 
     expect(uploaded.filename).toMatch(/^dub_sf_\d+_[0-9a-f]+\.mp4$/);
     const mp4 = Buffer.from(uploaded.dataBase64, 'base64');
@@ -217,5 +219,25 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     await expect(page.locator('#hint')).toContainText("'장면 시작'을 누르면");
     await expect(page.locator('#recBtn')).toBeFocused();
     await expect(page.locator('#clip')).toHaveJSProperty('currentTime', 0);
+  });
+});
+
+// 10/17: 휴대폰에서 직접 체험하면 자기 화면의 QR을 찍을 수 없다 — QR 아래 «내 영화 열기»가 같은 공개 주소를 연다.
+test.describe('휴대폰에서 직접 체험', () => {
+  test.use({ viewport: { width: 390, height: 664 }, hasTouch: true, isMobile: true });
+
+  test('저장되면 QR 아래 «내 영화 열기» 단추가 보이고 같은 공개 주소를 가리킨다', async ({ page }) => {
+    const url = 'https://storage.googleapis.com/fake/dub_phone.mp4';
+    await page.route(UPLOAD_PATTERN, (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, url }) }));
+    await openStudio(page, 'SF');
+    await page.locator('#recBtn').click();
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
+    await page.locator('button', { hasText: '저장하기' }).click();
+    await expect(page.locator('#qrbox')).toBeVisible({ timeout: 60000 });
+    const open = page.locator('#openMovieBtn');
+    await expect(open).toBeVisible();
+    await expect(open).toHaveAttribute('href', url);
+    await expect(open).toHaveAttribute('target', '_blank');
+    await expect(open).toBeInViewport();
   });
 });

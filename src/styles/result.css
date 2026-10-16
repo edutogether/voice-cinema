@@ -79,3 +79,7 @@ body:has(#result.active) { background:#fff; }
  .result-fallback .savemode { padding:16px; }
 }
 @media (prefers-reduced-motion:reduce) { .spinner { animation:none; } }
+/* 휴대폰에서 직접 체험하면 자기 화면의 QR을 찍을 수 없으므로 같은 공개 주소를 여는 단추를 QR 아래에 둔다(10/17).
+   부스의 노트북·태블릿(넓은 화면)에서는 QR만 보인다 — 학생이 자기 휴대폰으로 받아 가는 것이 기본이다. */
+#result .open-movie { display:none; }
+@media (max-width:760px) and (hover:none) { #result .open-movie { display:flex; width:100%; margin:0 0 18px; } }
