@@ -142,7 +142,7 @@ export function Result({ active, job, onHome, onBack }: Props) {
                   id="downloadBtn"
                   onClick={() => {
                     revokeRef.current?.();
-                    revokeRef.current = downloadBlob(stage.blob, `잉키보이스시네마_${job.genre.name}.mp4`);
+                    revokeRef.current = downloadBlob(stage.blob, `Voice Cinema_${job.genre.name}.mp4`);
                   }}
                 >
                   <ActionIcon name="download" /> 이 기기에 저장

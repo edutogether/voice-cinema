@@ -173,7 +173,7 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
       page.waitForEvent('download'),
       page.locator('#downloadBtn').click(),
     ]);
-    expect(download.suggestedFilename()).toContain('잉키보이스시네마');
+    expect(download.suggestedFilename()).toBe('Voice Cinema_히어로.mp4');
   });
 
   // mergeClip()은 원판을 불러오지 못하면 예외를 던지고 Result.tsx가 에러 화면(errbox)을 보여준다.
