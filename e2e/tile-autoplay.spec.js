@@ -135,6 +135,36 @@ test.describe('마우스가 없는 기기', () => {
     await expect(번호).toHaveText('01');
   });
 
+  // 휴대폰에는 멈춤 단추가 없다(10/19 대표님) — 손가락으로 한 번 밀거나 누르면 자동 넘김(6초)과 아래 그림 띠의 흐름이 멈춘다(V-h).
+  for (const 동작 of ['밀기', '누르기']) {
+    test(`한 번 ${동작}면 자동 넘김과 아래 그림 띠의 흐름이 멈춘다`, async ({ page }) => {
+      await 첫화면(page);
+      const 번호 = page.locator('.scene-position strong');
+      await expect(번호).toHaveText('01');
+      await expect(page.locator('.scene-auto-toggle')).toHaveAttribute('aria-pressed', 'false');
+      const box = await page.locator('.scene-shell.is-current .tile-media').boundingBox();
+      const stage = await page.locator('.scene-stage').boundingBox();
+      const y = box.y + box.height / 2;
+      if (동작 === '밀기') {
+        const cdp = await page.context().newCDPSession(page);
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: box.x + box.width * 0.8, y }] });
+        for (let i = 1; i <= 6; i++) {
+          await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: box.x + box.width * (0.8 - 0.1 * i), y }] });
+        }
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      } else {
+        // 옆(다음) 장면 조각을 누른다 — 녹음실로 들어가지 않고 그 장면이 가운데로 온다
+        await page.touchscreen.tap(stage.x + stage.width - 6, y);
+      }
+      await expect(번호).toHaveText('02');
+      await expect(page.locator('.scene-auto-toggle')).toHaveAttribute('aria-pressed', 'true');
+      await expect(page.locator('.scene-choices')).toHaveAttribute('data-paused', 'true');
+      // 자동 넘김 간격(6초)보다 오래 기다려도 그대로다
+      await page.waitForTimeout(7000);
+      await expect(번호).toHaveText('02');
+    });
+  }
+
   // 카카오톡 같은 인앱 브라우저는 동시 디코딩을 하나로 제한하는 경우가 있다(2026-09-09 대표 발견).
   // 캐러셀은 가운데 한 장만 재생하므로 그 환경에서도 그대로 돌아야 한다 — 그 제약을 직접 만들어 본다.
   test('한 번에 하나만 재생되는 환경에서도 가운데 장면이 재생된다', async ({ page, context }) => {

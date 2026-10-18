@@ -78,7 +78,11 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
 
   return (
     <div className="scene-carousel"
-      onPointerDownCapture={() => setKeyboardPaused(false)}
+      onPointerDownCapture={event => {
+        setKeyboardPaused(false);
+        // 휴대폰에는 멈춤 단추가 없다(10/19 대표님) — 손가락으로 한 번 밀거나 누르면 자동 넘김과 아래 그림 띠의 흐름을 멈춘다(10/19 V-h).
+        if (event.pointerType === 'touch') { setAutoPaused(true); setFlowPaused(true); }
+      }}
       onFocusCapture={event => { if ((event.target as HTMLElement).matches(':focus-visible')) setKeyboardPaused(true); }}
       onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setKeyboardPaused(false); }}
       onKeyDown={event => {
