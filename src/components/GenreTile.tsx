@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { previewUrl, thumbUrl, stillUrl, type Genre } from '../genres';
+import { ActionIcon } from './ActionIcon';
 
 // 재생이 멈췄는지 되돌아보는 간격. loop만으로는 실제 기기에서 계속 돈다는 보장이
 // 없다 — 절전 모드, 동시 디코드 한도, 백그라운드 전환 등으로 브라우저가 임의로
@@ -88,7 +89,7 @@ export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, on
           <span className="gname">{genre.name}<span className="tile-length">10초</span></span>
           <span className="gsub">{genre.summary}</span>
         </span>
-        <span className="tile-enter" aria-hidden="true">더빙하기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></span>
+        <span className="tile-enter" aria-hidden="true"><span className="tile-enter-icon"><ActionIcon name="mic" /></span>더빙하기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></span>
       </span>
     </button>
   );

@@ -13,14 +13,16 @@ for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [
     await expect(page.locator('.scene-choice')).toHaveCount(8);
     if (phone) {
       // 자동 넘김이 재는 도중에 가운데 장면을 바꾸지 않게 멈춘다(위치를 한 장면에서 잰다)
-      await page.locator('.scene-auto-toggle').click();
+      // 휴대폰 폭에서는 «01 / 08 ⏸» 줄을 없앴다(10/19 대표님) — 숨은 단추를 코드로 눌러 멈춘다(검사 준비일 뿐)
+      await page.locator('.scene-auto-toggle').evaluate(b => b.click());
+      await expect(page.locator('.scene-auto-toggle')).toHaveAttribute('aria-pressed', 'true');
       // 휴대폰 폭(10/17 대표님, 10/19 첫 화면 다듬기): 위에는 «나만의 더빙 극장 / Voice Cinema» 한 덩어리, 제목 자리에는
       // «내 목소리로 완성하는 10초의 영화.»(설명 줄 없음). 가운데 장면은 화면 폭의 94%·영화 비율(16:9), 장르 배지와 장면 이름은
       // 그림 오른쪽 아래에 얹는다. 바로가기 줄은 흐르므로 여덟 칸이 한꺼번에 보이지 않는다(그 대신 이름이 겹치지 않는다).
       // 600 미만으로 낮으면 위 안내 줄을 접는다.
       const intro = height >= 600 ? ['.chart-label', '.chart-app'] : [];
       for (const selector of [...intro, '.festival-signature', '.chart-heading h1', '.scene-shell.is-current .tile-media',
-        '.scene-shell.is-current .tile-tag', '.scene-shell.is-current .tile-enter', '.scene-navigation', '.scene-choices', '#home .cinema-footer']) {
+        '.scene-shell.is-current .tile-tag', '.scene-shell.is-current .tile-enter', '.scene-shell.is-current .tile-enter-icon', '.scene-choices', '#home .cinema-footer']) {
         await expect(page.locator(selector), selector).toBeInViewport({ ratio: 1 });
       }
       await expect(page.locator('.chart-heading h1')).toHaveText('내 목소리로 완성하는 10초의 영화.', { useInnerText: true });
@@ -37,6 +39,13 @@ for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [
         const app = await page.locator('.chart-app').boundingBox();
         expect(label.bg, '«나만의 더빙 극장»에 띠가 남아 있다').toBe('rgba(0, 0, 0, 0)');
         expect(label.bottom, '«나만의 더빙 극장»이 Voice Cinema 위에 있지 않다').toBeLessThanOrEqual(app.y + 1);
+        // 맨 위 줄은 오른쪽 위 «개인정보처리방침» 줄 아래에서 시작한다(10/19 대표님 «더 아래로»)
+        const top = await page.locator('.chart-aside').boundingBox();
+        expect(top.y, '맨 위 줄이 개인정보처리방침 줄과 겹친다').toBeGreaterThanOrEqual(privacy.y + privacy.height);
+      }
+      // «01 / 08 ⏸» 줄과 아래 그림 띠의 일시정지 단추는 휴대폰에서 없앤다(10/19 대표님)
+      for (const selector of ['.scene-navigation', '.scene-flow-toggle']) {
+        await expect(page.locator(selector), `${selector}는 휴대폰에서 없앤다`).toBeHidden();
       }
       // 로고는 Poster Studio처럼 심벌과 «InKY Film Festival» 전부(10/17 대표님)
       await expect(page.locator('.festival-signature')).toContainText('InKY Film Festival');
@@ -82,6 +91,12 @@ for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [
       // 더빙하기 버튼은 가운데 장면 폭을 꽉 채운다.
       const button = await page.locator('.scene-shell.is-current .tile-enter').boundingBox();
       expect(button.width).toBeGreaterThan(media.width - 8);
+      // 단추는 마이크 아이콘을 앞에 달고 그림에서 조금 떨어진다(10/19 대표님)
+      expect(button.y - (media.y + media.height), '«더빙하기»가 그림에 너무 붙어 있다').toBeGreaterThanOrEqual(14);
+      const icon = await page.locator('.scene-shell.is-current .tile-enter-icon').boundingBox();
+      expect(icon.x + icon.width, '마이크 아이콘이 글자 앞에 있지 않다').toBeLessThan(button.x + button.width / 2);
+      // 아래 그림 띠의 그림을 크게(10/19 대표님)
+      expect(thumb.width, '아래 그림 띠의 그림이 작다').toBeGreaterThanOrEqual(90);
     } else {
       // 흐르는 줄은 순환용 사본까지 포함해 각 장르의 온전한 선택지가 하나 이상 보여야 한다.
       expect(await page.locator('.scene-choices').evaluate(view => {

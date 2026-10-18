@@ -32,9 +32,11 @@ const 첫화면 = async (page) => {
 };
 
 // 장면 자동 넘김을 멈춘다 — 6초마다 가운데가 바뀌면 «같은 장면»을 지켜보는 검사가 흔들린다.
+// 휴대폰 폭에서는 «01 / 08 ⏸» 줄을 없앴다(10/19 대표님) — 숨은 단추를 코드로 눌러 멈춘다(검사 준비일 뿐, 사용자 동작이 아니다).
 const 자동넘김멈춤 = async (page) => {
-  await page.getByRole('button', { name: '장면 자동 넘김 일시정지' }).click();
-  await expect(page.getByRole('button', { name: '장면 자동 넘김 재생' })).toBeVisible();
+  const 단추 = page.locator('.scene-auto-toggle');
+  await 단추.evaluate((b) => b.click());
+  await expect(단추).toHaveAttribute('aria-pressed', 'true');
 };
 
 test.describe('마우스가 없는 기기', () => {
