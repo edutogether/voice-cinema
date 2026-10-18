@@ -79,6 +79,8 @@ export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, on
           <video className="preview" ref={videoRef} muted playsInline preload="none" />
         </span>
         <span className="tile-number">{String(sceneNumber).padStart(2, '0')}</span>
+        {/* 휴대폰 폭에서만 보인다 — 장르 배지와 장면 이름을 그림 오른쪽 아래에 얹고 아래 이름 줄을 접는다(10/19 대표님, home.css) */}
+        <span className="tile-tag"><b>{genre.name}</b>{genre.summary}</span>
         <span className="tile-preview-label"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m8 5 11 7-11 7z" /></svg> 미리보기 재생 중</span>
       </span>
       <span className="tile-body">

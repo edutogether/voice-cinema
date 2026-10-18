@@ -35,7 +35,8 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
         </aside>
         <div className="chart-main">
           <div className="chart-heading">
-            <div><p className="chart-eyebrow">오늘, 내가 출연할 영화</p><h1><b className="chart-title"><em>더빙</em>할 영화 고르기</b> <span>{GENRES.length}</span></h1></div>
+            {/* 휴대폰 폭에서는 제목 자리에 «내 목소리로 완성하는 10초의 영화.»를 두고 아래 설명 줄은 접는다(10/19 대표님, home.css) */}
+            <div><p className="chart-eyebrow">오늘, 내가 출연할 영화</p><h1><b className="chart-title"><em>더빙</em>할 영화 고르기</b> <span>{GENRES.length}</span><b className="chart-title chart-title-phone">내 목소리로 완성하는 <em>10초의 영화.</em></b></h1></div>
             {!SUPPORTS_HOVER && <p>옆으로 넘겨 고르고, 가운데 장면을 누르면 녹음실로 들어가요.</p>}
           </div>
 
@@ -53,7 +54,7 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
       </div>
 
       <footer className="cinema-footer">
-        <p>제4회 인천어린이청소년영화제<br />2026. 11. 14. (토) · CGV 인천</p>
+        <p>제4회 인천어린이청소년영화제<br /><time dateTime="2026-11-14">2026. 11. 14. (토) · CGV 인천</time></p>
       </footer>
     </section>
   );

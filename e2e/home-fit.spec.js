@@ -12,13 +12,31 @@ for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [
     await expect(page.locator('#grid')).toHaveCount(0);
     await expect(page.locator('.scene-choice')).toHaveCount(8);
     if (phone) {
-      // 휴대폰 폭(10/17 대표님): PC 왼쪽 안내가 제목 위로 올라오고, 가운데 장면은 장면 칸 폭의 84%·영화 비율(16:9)로 크게 둔다.
-      // 바로가기 줄은 흐르므로 여덟 칸이 한꺼번에 보이지 않는다(그 대신 이름이 겹치지 않는다).
-      // 높이가 모자라면 위 안내를 줄인다: 760 미만은 마이크·이름·제목 한 줄만, 600 미만은 안내를 접는다.
-      const intro = height >= 760 ? ['.chart-aside h2', '.chart-guide'] : height >= 600 ? ['.chart-aside h2'] : [];
+      // 자동 넘김이 재는 도중에 가운데 장면을 바꾸지 않게 멈춘다(위치를 한 장면에서 잰다)
+      await page.locator('.scene-auto-toggle').click();
+      // 휴대폰 폭(10/17 대표님, 10/19 첫 화면 다듬기): 위에는 «나만의 더빙 극장 / Voice Cinema» 한 덩어리, 제목 자리에는
+      // «내 목소리로 완성하는 10초의 영화.»(설명 줄 없음). 가운데 장면은 화면 폭의 94%·영화 비율(16:9), 장르 배지와 장면 이름은
+      // 그림 오른쪽 아래에 얹는다. 바로가기 줄은 흐르므로 여덟 칸이 한꺼번에 보이지 않는다(그 대신 이름이 겹치지 않는다).
+      // 600 미만으로 낮으면 위 안내 줄을 접는다.
+      const intro = height >= 600 ? ['.chart-label', '.chart-app'] : [];
       for (const selector of [...intro, '.festival-signature', '.chart-heading h1', '.scene-shell.is-current .tile-media',
-        '.scene-shell.is-current .gname', '.scene-shell.is-current .tile-enter', '.scene-navigation', '.scene-choices']) {
+        '.scene-shell.is-current .tile-tag', '.scene-shell.is-current .tile-enter', '.scene-navigation', '.scene-choices', '#home .cinema-footer']) {
         await expect(page.locator(selector), selector).toBeInViewport({ ratio: 1 });
+      }
+      await expect(page.locator('.chart-heading h1')).toHaveText('내 목소리로 완성하는 10초의 영화.', { useInnerText: true });
+      for (const selector of ['.chart-heading > p', '.chart-aside h2', '.scene-shell.is-current .tile-copy']) {
+        await expect(page.locator(selector), `${selector}는 휴대폰에서 접는다`).toBeHidden();
+      }
+      // 제목은 오른쪽 위 «개인정보처리방침»과 겹치지 않는다(안내 줄을 접는 낮은 화면에서 실제로 겹쳤다)
+      const heading = await page.locator('.chart-heading h1').boundingBox();
+      const privacy = await page.locator('.privacylink').boundingBox();
+      expect(heading.y >= privacy.y + privacy.height || heading.x + heading.width <= privacy.x, '제목이 개인정보처리방침과 겹친다').toBe(true);
+      if (height >= 600) {
+        // «나만의 더빙 극장»은 검은 띠 없이 «Voice Cinema» 위의 글씨다
+        const label = await page.locator('.chart-label').evaluate(el => ({ bg: getComputedStyle(el).backgroundColor, bottom: el.getBoundingClientRect().bottom }));
+        const app = await page.locator('.chart-app').boundingBox();
+        expect(label.bg, '«나만의 더빙 극장»에 띠가 남아 있다').toBe('rgba(0, 0, 0, 0)');
+        expect(label.bottom, '«나만의 더빙 극장»이 Voice Cinema 위에 있지 않다').toBeLessThanOrEqual(app.y + 1);
       }
       // 로고는 Poster Studio처럼 심벌과 «InKY Film Festival» 전부(10/17 대표님)
       await expect(page.locator('.festival-signature')).toContainText('InKY Film Festival');
@@ -28,8 +46,32 @@ for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [
       const arrow = await page.locator('.scene-arrow-prev').boundingBox();
       const number = await page.locator('.scene-shell.is-current .tile-number').boundingBox();
       const media = await page.locator('.scene-shell.is-current .tile-media').boundingBox();
-      // 휴대폰(세로)은 80% 이상. 마우스로 좁힌 넓고 낮은 창(655×760)은 화면 높이가 상한이 되어 그보다 작아진다.
-      if (width <= 500) expect(media.width / stage.width, '가운데 장면이 장면 칸 폭의 80%보다 좁다').toBeGreaterThanOrEqual(.8);
+      // 휴대폰(세로)은 화면 폭의 90% 이상(10/19 대표님: 이름 줄을 그림 위로 올려 생긴 공간만큼 키움). 장면 칸은 양옆 여백까지 넓힌 화면 폭이다.
+      if (width <= 500) {
+        expect(stage.width, '장면 칸이 화면 폭과 다르다').toBeCloseTo(width, 0);
+        expect(media.width / stage.width, '가운데 장면이 화면 폭의 90%보다 좁다').toBeGreaterThanOrEqual(.9);
+      }
+      // 장르는 작은 배지, 장면 이름은 그냥 글씨로 그림 오른쪽 아래에 얹는다. «10초»는 장면마다 같아 뺐다.
+      await expect(page.locator('.tile[data-genre="sf"] .tile-tag b')).toHaveText('SF');
+      await expect(page.locator('.tile[data-genre="sf"] .tile-tag')).toHaveText('SF물의 행성');
+      const tag = page.locator('.scene-shell.is-current .tile-tag');
+      const tagBox = await tag.boundingBox();
+      expect(media.x + media.width - (tagBox.x + tagBox.width), '장면 이름이 그림 오른쪽 끝에 붙어 있지 않다').toBeLessThan(20);
+      expect(media.y + media.height - (tagBox.y + tagBox.height), '장면 이름이 그림 아래쪽에 있지 않다').toBeLessThan(20);
+      expect(tagBox.x, '장면 이름이 장면 번호와 겹친다').toBeGreaterThan(number.x + number.width);
+      expect(await tag.locator('b').evaluate(el => getComputedStyle(el).backgroundColor), '장르 배지에 상자가 없다').not.toBe('rgba(0, 0, 0, 0)');
+      // 바닥글: 날짜는 왼쪽, 영화제 이름은 오른쪽 — 한 줄
+      const footer = await page.locator('#home .cinema-footer p').evaluate(p => {
+        const date = p.querySelector('time').getBoundingClientRect();
+        const range = document.createRange();
+        range.setStart(p.firstChild, 0);
+        range.setEnd(p.firstChild, p.firstChild.length);
+        const festival = range.getBoundingClientRect();
+        return { dateRight: date.right, dateTop: date.top, festivalLeft: festival.left, festivalTop: festival.top, festivalRight: festival.right, right: p.getBoundingClientRect().right };
+      });
+      expect(footer.dateRight, '날짜가 영화제 이름보다 왼쪽에 있지 않다').toBeLessThan(footer.festivalLeft);
+      expect(Math.abs(footer.dateTop - footer.festivalTop), '날짜와 영화제 이름이 한 줄이 아니다').toBeLessThan(3);
+      expect(footer.right - footer.festivalRight, '영화제 이름이 오른쪽 끝에 있지 않다').toBeLessThan(2);
       const overlap = arrow.x < number.x + number.width && number.x < arrow.x + arrow.width && arrow.y < number.y + number.height && number.y < arrow.y + arrow.height;
       expect(overlap, '왼쪽 화살표가 장면 번호와 겹친다').toBe(false);
       expect(Math.abs(media.width * 9 / 16 - media.height), '가운데 장면이 영화 비율이 아니다').toBeLessThan(2);
