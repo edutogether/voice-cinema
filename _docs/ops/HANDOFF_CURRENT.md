@@ -81,8 +81,11 @@
   키프레임을 이름 속 시각에 맞춰 넘기는 10초(`node tools/build-scene.mjs <장르> --slides _media/scenes/<장르> --audio <소리.wav>`).
   소리는 Mixkit 무료 음원 + PC 내장 한국어 음성으로 읽은 임시 상대 대사(`tools/build-scene-audio.mjs`, 출처 `_docs/ops/sound-credits.md`).
   진짜 영상은 나중에 Bumm님이 직접 만들어 같은 원판 자리에 `--parts`로 넣는다
-- 🟢 **미리보기 채널**(10/17, 결정 7): `https://voice-cinema--vc2-pob2jj8b.web.app`(채널 `vc2`, 10/24 만료). 라이브 릴리스는
-  그대로(`ff0918a2268dbe8b`, 배포 커밋 `3e5e8d2`) 확인. 미리보기에서는 «저장 → QR»만 기기 다운로드로 대신된다(서버 허용 목록 밖)
+- 🟢 **미리보기 채널**(10/17, 결정 7): `https://voice-cinema--vc2-pob2jj8b.web.app`(채널 `vc2`, 10/26 만료). 미리보기에서는
+  «저장 → QR»만 기기 다운로드로 대신된다(서버 허용 목록 밖)
+  - 10/19 10:39: 가지 `feat/vc2-v3`의 `187a1fd`(새 장면 4개 원판·외칠 말 글자)를 올렸다. 라이브는 그대로 `be7972e`이고 옛 원판이다(해시로 대조).
+    미리보기 주소에서 SF·애니메이션·스릴러를 PC 1440·휴대폰 390×664로 홈 → 녹음 → 합성 → 결과까지 돌렸다(업로드만 가로챔,
+    캡처 `_media/scenes/captures/2026-10-19/preview-v3*/`, Git 제외)
 - 🟢 **인쇄물 네 종**(10/17, 결정 11·12·13): 원본 `_docs/ops/print/*.html` → `node tools/build-print.mjs` → `_docs/ops/Voice Cinema_*.pdf`
   (설명서 5쪽·게시물 1쪽·교사용 2쪽·교육청 검토 자료 1쪽). 남은 `[확인]`은 `_docs/ops/manuals-reuse.md` 끝
 - 그림(10/17 03:40 Bumm님 결정 «그린 것은 그대로 살리고 안 그린 것만»): SF·판타지·애니메이션·히어로·드라마·스포츠는 **원래 판 그대로**.
