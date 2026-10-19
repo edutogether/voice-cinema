@@ -60,6 +60,13 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
   const done = phase === 'recorded';
   const previewing = phase === 'previewing';
   const playing = phase === 'watching' || phase === 'continuing' || previewing;
+  const shouting = phase === 'cue' || phase === 'countdown' || phase === 'recording';
+  // 외칠 말은 두 자리에 두고 CSS가 하나만 보인다 — 영상 아래쪽(PC·태블릿·가로), 영상 바로 아래 설명 자리(세로 휴대폰은 영상이 작아 3·2·1과 겹친다).
+  const shout = (place: 'screen' | 'dock') => shouting && (
+    <p className={`studio-shout studio-shout-${place}`} data-testid={`studio-shout-${place}`}>
+      <small>{STUDIO_COPY.shoutLabel}</small><strong>“{genre.shout}”</strong>
+    </p>
+  );
 
   useEffect(() => {
     if (active) titleRef.current?.focus({ preventScroll: true });
@@ -120,6 +127,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
               </button>}
               {playing && buffering && <div className="studio-buffering" role="status">영상을 불러오고 있어요</div>}
               <SceneCaption genre={genre} videoRef={videoRef} enabled={phase === 'watching' || previewing} />
+              {shout('screen')}
               {phase === 'cue' && <div className="studio-cue" role="status" id="cue"><strong>{STUDIO_COPY.yourTurn}</strong></div>}
               {dub.countdown > 0 && <div className="overlay show" id="overlay"><div className="count" id="count" key={dub.countdown} aria-label={`${dub.countdown}초 뒤 녹음 시작`}>{dub.countdown}<span>{STUDIO_COPY.speakNow}</span></div></div>}
               {phase === 'recording' && <>
@@ -136,6 +144,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
               <div className={`controls${inTake ? ' is-recording' : ''}${done ? ' is-recorded' : ''}`}>
                 <div className="controls-copy">
                   <h2>{sampleMode && done ? '샘플 체험을 마쳤어요' : HEADLINE[phase]}</h2>
+                  {shout('dock')}
                   <div className="hint" id="hint" role="status" data-mic-error={dub.micError ?? undefined}>{dub.hint}</div>
                 </div>
                 {!done && <div className="record-actions">

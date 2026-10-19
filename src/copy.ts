@@ -5,4 +5,6 @@ export const STUDIO_COPY = {
   yourTurn: '이제 당신의 차례입니다 !',
   /** 3·2·1과 함께 */
   speakNow: '지금 바로 당신의 목소리를 들려주세요 !',
+  /** 장르마다 외칠 말 위에 — 멈춘 뒤부터 녹음이 끝날 때까지(V-g) */
+  shoutLabel: '외쳐 보세요',
 } as const;

@@ -70,6 +70,10 @@
   - 대표 컷: `_media/scenes/_rep-20261019/`(index.html로 한 화면, 프롬프트 prompts.md). SF·히어로·드라마·스포츠는 다시 그린 판(`*2.png`)이 대표님 답을 기다린다
   - 본 그림(장르당 19장): 애니메이션·스릴러·뮤지컬·판타지 76장 끝 — `_media/scenes/v3/`(index.html로 한 화면, Git 제외). 판타지 제목은 대표님 답 대기
   - 남은 장르도 대표 컷이 통과하면 같은 방식으로 19장을 그린다.
+  - 🟠 **새 장면 4개 원판과 외칠 말 글자(V-g)는 가지 `feat/vc2-v3`에만 있다**(10/19, `feat/vc2-scenes` 끝에서 갈라짐) — 미리보기 채널 전용,
+    라이브·master에 넣지 않는다. 원판은 `node tools/build-scene.mjs <장르> --slides _media/scenes/v3/<장르> --audio _media/scenes/audio/mix/v3-<장르>.wav`,
+    소리는 `_media/scenes/audio/<장르>/cue-v3.json` → `tools/build-scene-audio.mjs`. V-h 배포는 이 가지가 아니라 `feat/vc2-scenes`에서 한다.
+    확인: E2E 141개 중 135 통과·6 조건부 건너뜀·실패 0, 유닛 106개, 린트·타입 통과(10/19 로컬).
   - 멈춤 화면 «외칠 대사» 글자 띄우기는 «띄워»로 정해졌고, 새 장면을 넣을 때 함께 한다. 로고는 모든 폭에서 «심벌 + InKY Film Festival». 녹음실은 영상 16:9를 위에 두고
   버튼을 아래에 꽉 차게, 결과 화면은 휴대폰에서 QR 위 «내 영화 열기»(팀장 임시 진행). PC(1280·1440·1920)는 픽셀 대조로 그대로.
   전/후 캡처(3배)는 `_media/scenes/captures/2026-10-17/mobile/{before,after,after-final}/`(Git 제외)

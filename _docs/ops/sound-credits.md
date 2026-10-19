@@ -1,9 +1,10 @@
-# 장면 원판 소리 출처 (2026-10-17)
+# 장면 원판 소리 출처 (2026-10-17, 10/19 새 장면 반영)
 
 장면 더빙 2.0 원판 8개에 섞은 소리 전부의 출처다. **10/17 대표님 결정으로 원판에는 Mixkit 배경음과 상대 대사(임시 목소리)만 넣는다** —
 효과음은 나중에 대표님이 장면 영상을 만들 때 함께 입힌다(받아 둔 효과음 파일은 지우지 않고 둔다). 소리 파일은 따로 배포하지 않고 장면 영상 안에 섞어서만 쓴다
 (Mixkit 라이선스의 «단독 재배포 금지» 조건). 파일은 Git에 넣지 않고 `_media/scenes/audio/`(로컬)에 있다.
-받은 날 2026-10-17(Bumm님 결정 6-1 허락), 받은 파일 51개, 합계 70.6MB.
+10/19 새 장면 4개(판타지·애니메이션·스릴러·뮤지컬)는 새 큐(`cue-v3.json`)를 쓰고, 그 배경음으로 두 곡(애니메이션·스릴러)을 같은 허락으로 더 받았다.
+받은 날 2026-10-17·10-19(Bumm님 결정 6-1 허락), 받은 파일 53개, 합계 77.8MB.
 
 | 라이선스 | 조건 |
 |---|---|
@@ -23,14 +24,14 @@
 | 시작 | 길이 | 제목 | 출처 | 파일 | 라이선스 | SHA-256 앞 12자 |
 |---|---|---|---|---|---|---|
 | 0.0초 | 10초 | Wedding 02 — Francisco Alvear | https://mixkit.co/free-stock-music/tag/fantasy/ | https://assets.mixkit.co/music/660/660.mp3 | Mixkit 음악 | 7328eacd0996 |
-| 1.6초 | 1.268초 | 상대 대사(임시 — PC 내장 한국어 음성) | Windows 내장 음성 Microsoft Heami로 세션이 읽음(2026-10-17) | — | [확인] Windows 내장 음성 출력 — 임시본, 행사 전 교체 예정 | — |
+| 1.6초 | 1.268초 | 상대 대사 — 어둠의 마법사(10/17 것 그대로)(임시 — PC 내장 한국어 음성) | Windows 내장 음성 Microsoft Heami로 세션이 읽음(2026-10-17) | — | [확인] Windows 내장 음성 출력 — 임시본, 행사 전 교체 예정 | — |
 
 ## 애니메이션 (`animation`)
 
 | 시작 | 길이 | 제목 | 출처 | 파일 | 라이선스 | SHA-256 앞 12자 |
 |---|---|---|---|---|---|---|
-| 0.0초 | 10초 | Comical — Ahjay Stelino | https://mixkit.co/free-stock-music/tag/cartoons/ | https://assets.mixkit.co/music/2/2.mp3 | Mixkit 음악 | 2f5ed23f2c51 |
-| 1.6초 | 1.223초 | 상대 대사(임시 — PC 내장 한국어 음성) | Windows 내장 음성 Microsoft Heami로 세션이 읽음(2026-10-17) | — | [확인] Windows 내장 음성 출력 — 임시본, 행사 전 교체 예정 | — |
+| 0.0초 | 10초 | Dreaming Big — Ahjay Stelino | https://mixkit.co/free-stock-music/tag/fantasy/ | https://assets.mixkit.co/music/31/31.mp3 | Mixkit 음악 | 8c89819547b4 |
+| 1.6초 | 1.632초 | 상대 대사 — 아기 용 미르(임시 — PC 내장 한국어 음성) | Windows 내장 음성 Microsoft Heami로 세션이 읽음(2026-10-19) | — | [확인] Windows 내장 음성 출력 — 임시본, 행사 전 교체 예정 | — |
 
 ## 히어로 (`hero`)
 
@@ -43,8 +44,8 @@
 
 | 시작 | 길이 | 제목 | 출처 | 파일 | 라이선스 | SHA-256 앞 12자 |
 |---|---|---|---|---|---|---|
-| 0.0초 | 10초 | Fun Jazz — Francisco Alvear | https://mixkit.co/free-stock-music/mood/stealth/ | https://assets.mixkit.co/music/647/647.mp3 | Mixkit 음악 | 814d6b221195 |
-| 1.6초 | 1.304초 | 상대 대사(임시 — PC 내장 한국어 음성) | Windows 내장 음성 Microsoft Heami로 세션이 읽음(2026-10-17) | — | [확인] Windows 내장 음성 출력 — 임시본, 행사 전 교체 예정 | — |
+| 0.0초 | 10초 | Piano Horror — Francisco Alvear | https://mixkit.co/free-stock-music/tag/thriller/ | https://assets.mixkit.co/music/671/671.mp3 | Mixkit 음악 | f7ce9f4c051f |
+| 1.6초 | 1.646초 | 상대 대사 — 쌍둥이 유령(두 목소리 겹침)(임시 — PC 내장 한국어 음성) | Windows 내장 음성 Microsoft Heami로 세션이 읽음(2026-10-19) | — | [확인] Windows 내장 음성 출력 — 임시본, 행사 전 교체 예정 | — |
 
 ## 드라마 (`drama`)
 
@@ -65,4 +66,4 @@
 | 시작 | 길이 | 제목 | 출처 | 파일 | 라이선스 | SHA-256 앞 12자 |
 |---|---|---|---|---|---|---|
 | 0.0초 | 10초 | Karma — Michael Ramir C. | https://mixkit.co/free-stock-music/dance-pop/ | https://assets.mixkit.co/music/1183/1183.mp3 | Mixkit 음악 | 56f331c37552 |
-| 1.6초 | 1.343초 | 상대 대사(임시 — PC 내장 한국어 음성) | Windows 내장 음성 Microsoft Heami로 세션이 읽음(2026-10-17) | — | [확인] Windows 내장 음성 출력 — 임시본, 행사 전 교체 예정 | — |
+| 1.6초 | 1.626초 | 상대 대사 — 차 지붕 위 춤꾼(임시 — PC 내장 한국어 음성) | Windows 내장 음성 Microsoft Heami로 세션이 읽음(2026-10-19) | — | [확인] Windows 내장 음성 출력 — 임시본, 행사 전 교체 예정 | — |
