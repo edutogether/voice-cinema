@@ -22,16 +22,16 @@ export interface Genre {
 // 상대 대사는 모든 장르가 1.6초에 시작해 3.4초 전에 끝난다(스토리보드 §0).
 const line = (text: string) => ({ text, start: 1.6, end: 3.4 });
 
-// 판타지·애니메이션·스릴러·뮤지컬은 10/19 새 장면(ideas-20261019.md, 판타지 제목은 대표님 답 대기 — ⭐ 후보로 둔다).
-// 나머지 넷은 10/16 장면 그대로이고, 외칠 말은 storyboards.md의 첫 «예시 외침»이다.
+// SF·판타지·애니메이션·스릴러·스포츠·뮤지컬은 10/19 새 장면(ideas-20261019.md, 판타지 제목은 대표님 답 대기 — ⭐ 후보로 둔다).
+// 히어로·드라마는 대표 컷을 다시 그리는 중이라 10/16 장면 그대로이고, 외칠 말은 storyboards.md의 첫 «예시 외침»이다.
 export const GENRES: Genre[] = [
-  { id: 'sf', name: 'SF', color: '#3fa7c9', summary: '물의 행성', line: line('저 산… 움직여 !'), shout: '엔진 점화 ! 출발 !' },
+  { id: 'sf', name: 'SF', color: '#3fa7c9', summary: '퍼스트 헬로', line: line('인사해 봐… 크게 !'), shout: '안녕 ! 우린 지구에서 왔어 !' },
   { id: 'fantasy', name: '판타지', color: '#8a63d2', summary: '미드나잇 듀얼', line: line('나와 겨루겠다고 ?'), shout: '그래 ! 내가 이긴다 !' },
   { id: 'animation', name: '애니메이션', color: '#d97b3f', summary: '날아라 미르', line: line('준비됐어 ? 하나, 둘…'), shout: '셋 ! 날아라, 미르 !' },
   { id: 'hero', name: '히어로', color: '#c94f5c', summary: '왼쪽을 봐', line: line('왼쪽을 봐. 우리가 왔어 !'), shout: '모두, 함께 간다 !' },
   { id: 'thriller', name: '스릴러', color: '#2f9e6e', summary: '같이 놀자', line: line('우리랑… 같이 놀자.'), shout: '싫어 ! 저리 가 !' },
   { id: 'drama', name: '드라마', color: '#c9a24b', summary: '기억의 한마디', line: line('이제… 아무도 몰라보셔.'), shout: '할머니, 사진 속 아빠 기억나요 ?' },
-  { id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '마지막 슛', line: line('너한테 맡긴다 !'), shout: '마지막 한 골, 들어가라 !' },
+  { id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '버저비터', line: line('3초 ! 네가 끝내 !'), shout: '간다 ! 내가 끝낸다 !' },
   { id: 'musical', name: '뮤지컬', color: '#c4559e', summary: '선셋 하이웨이', line: line('음악 간다, 신호 줘 !'), shout: '하나, 둘, 셋, 넷 !' },
 ];
 

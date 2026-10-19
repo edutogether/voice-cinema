@@ -60,7 +60,7 @@ for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [
       }
       // 장르는 작은 배지, 장면 이름은 그냥 글씨로 그림 오른쪽 아래에 얹는다. «10초»는 장면마다 같아 뺐다.
       await expect(page.locator('.tile[data-genre="sf"] .tile-tag b')).toHaveText('SF');
-      await expect(page.locator('.tile[data-genre="sf"] .tile-tag')).toHaveText('SF물의 행성');
+      await expect(page.locator('.tile[data-genre="sf"] .tile-tag')).toHaveText('SF퍼스트 헬로');
       const tag = page.locator('.scene-shell.is-current .tile-tag');
       const tagBox = await tag.boundingBox();
       expect(media.x + media.width - (tagBox.x + tagBox.width), '장면 이름이 그림 오른쪽 끝에 붙어 있지 않다').toBeLessThan(20);

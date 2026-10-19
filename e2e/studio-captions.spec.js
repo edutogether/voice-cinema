@@ -45,7 +45,7 @@ test('자막은 멈춘 뒤 문구·카운트다운·녹음 중에는 없고, 미
   await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();
   await page.locator('#recBtn').click();
   const caption = page.getByTestId('scene-caption');
-  await expect(caption).toHaveText('저 산… 움직여 !', { timeout: 6000 });
+  await expect(caption).toHaveText('인사해 봐… 크게 !', { timeout: 6000 });
   await expect(page.locator('#cue')).toBeVisible({ timeout: 8000 });
   await expect(caption).toHaveCount(0);
   await expect(page.locator('#count')).toBeVisible();
@@ -55,5 +55,5 @@ test('자막은 멈춘 뒤 문구·카운트다운·녹음 중에는 없고, 미
   await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
   await page.locator('#resetBtn').click();
   await page.locator('#previewBtn').click();
-  await expect(caption).toHaveText('저 산… 움직여 !', { timeout: 6000 });
+  await expect(caption).toHaveText('인사해 봐… 크게 !', { timeout: 6000 });
 });
