@@ -98,6 +98,8 @@
     - 캡처(PC 1440 2배·휴대폰 390×664 3배, 7장르): `C:\Users\817be\work\voice-cinema\captures\2026-10-20\preview-v3\`,
       확대 비교(원화·원판·옛/새 미리보기 따로): `C:\Users\817be\work\voice-cinema\captures\2026-10-20\quality\`
     - 히어로는 대표님 답을 기다려 옛 판 그대로(미리보기 640×360).
+  - 10/20 18:55: 스릴러 제목 «우리 같이 놀자»(`2f6541b`)를 올렸다. 홈 카드·녹음실 제목을 PC 1440·휴대폰 390×664로 확인했다
+    (캡처 `C:\Users\817be\work\voice-cinema\captures\2026-10-20\preview-v3-title\`). 라이브는 그대로 `9bf401e`.
     - 🟡 자동화로 캡처할 때 움직이는 카드를 도구의 클릭으로 누르면 도구가 «보이게 스크롤»하며 카드 무대를 밀 수 있다(17번 중 2번 −205px).
       스크롤 없는 클릭은 20번 모두 0이라 앱 결함이 아니다 — 캡처·검사에서는 카드가 멈춘 뒤 누르거나 `dispatchEvent('click')`을 쓴다.
 - 🟢 **인쇄물 네 종**(10/17, 결정 11·12·13): 원본 `_docs/ops/print/*.html` → `node tools/build-print.mjs` → `_docs/ops/Voice Cinema_*.pdf`
