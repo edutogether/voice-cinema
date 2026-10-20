@@ -33,12 +33,12 @@ for (const [name, ua, hint] of [['아이폰', UA.iphone, '화면 위 가운데 �
       await expect(page.locator('.kakao-escape-hint')).toContainText(hint);
       await expect(page.locator('.kakao-escape-open')).toHaveAttribute('href', tried[0]);
       await expect(page.locator('.kakao-escape-open')).toBeFocused();
-      // 넘기기 전에는 앱을 띄우지 않는다(엔진·영상·reCAPTCHA를 받지 않는다) — 받는 중에 이동하면 요청이 끊긴다
+      // 넘기기 전에는 앱을 띄우지 않는다(곧 떠날 탭에서 엔진·영상·reCAPTCHA를 받지 않는다)
       expect(app).toEqual([]);
       expect(cut).toEqual([]);
     });
 
-    test('페이지가 늦게 떠도 다 뜬 뒤에 넘긴다 — 받는 중인 요청을 끊지 않는다', async ({ page }) => {
+    test('페이지가 늦게 떠도 다 뜬 뒤(load)에 넘긴다', async ({ page }) => {
       let released = 0;
       await page.route('**/brands/education.png', async (route) => {
         await sleep(2000);
