@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { pauseScenes } from './pause-scenes.js';
 
 test('자동 넘김 정지 중 화살표 호버는 이동하지 않고 클릭할 때만 한 장씩 순환한다', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: '장면 자동 넘김 일시정지', exact: true }).click();
+  await pauseScenes(page);
   await page.clock.install();
   await page.clock.pauseAt(new Date(Date.now() + 1000));
   const current = page.locator('.scene-shell.is-current');

@@ -8,6 +8,7 @@
 //
 // 스크린샷으로는 정지 화면과 구분되지 않는다 — currentTime이 실제로 흐르는지 본다.
 import { test, expect } from '@playwright/test';
+import { pauseScenes } from './pause-scenes.js';
 
 test.setTimeout(120000);
 
@@ -32,12 +33,8 @@ const 첫화면 = async (page) => {
 };
 
 // 장면 자동 넘김을 멈춘다 — 6초마다 가운데가 바뀌면 «같은 장면»을 지켜보는 검사가 흔들린다.
-// 휴대폰 폭에서는 «01 / 08 ⏸» 줄을 없앴다(10/19 대표님) — 숨은 단추를 코드로 눌러 멈춘다(검사 준비일 뿐, 사용자 동작이 아니다).
-const 자동넘김멈춤 = async (page) => {
-  const 단추 = page.locator('.scene-auto-toggle');
-  await 단추.evaluate((b) => b.click());
-  await expect(단추).toHaveAttribute('aria-pressed', 'true');
-};
+// 멈춤 단추는 없다(10/20 대표님) — 손가락 한 번 누르기로 멈춘다(검사 준비일 뿐, e2e/pause-scenes.js).
+const 자동넘김멈춤 = pauseScenes;
 
 test.describe('마우스가 없는 기기', () => {
   test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
@@ -141,7 +138,7 @@ test.describe('마우스가 없는 기기', () => {
       await 첫화면(page);
       const 번호 = page.locator('.scene-position strong');
       await expect(번호).toHaveText('01');
-      await expect(page.locator('.scene-auto-toggle')).toHaveAttribute('aria-pressed', 'false');
+      await expect(page.locator('.scene-choices')).toHaveAttribute('data-paused', 'false');
       const box = await page.locator('.scene-shell.is-current .tile-media').boundingBox();
       const stage = await page.locator('.scene-stage').boundingBox();
       const y = box.y + box.height / 2;
@@ -157,7 +154,6 @@ test.describe('마우스가 없는 기기', () => {
         await page.touchscreen.tap(stage.x + stage.width - 6, y);
       }
       await expect(번호).toHaveText('02');
-      await expect(page.locator('.scene-auto-toggle')).toHaveAttribute('aria-pressed', 'true');
       await expect(page.locator('.scene-choices')).toHaveAttribute('data-paused', 'true');
       // 자동 넘김 간격(6초)보다 오래 기다려도 그대로다
       await page.waitForTimeout(7000);

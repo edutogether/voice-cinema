@@ -1,11 +1,12 @@
 import { test, expect } from '@playwright/test';
+import { pauseScenes } from './pause-scenes.js';
 
 for (const origin of ['중앙 카드', '아래 썸네일']) {
   test(`${origin} 중심에서 실제 플레이어 하나가 비율을 유지하며 확대된다`, async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
-    await page.getByRole('button', { name: '장면 흐름 일시정지', exact: true }).click();
+    await pauseScenes(page);
     const button = origin === '중앙 카드' ? page.locator('.scene-shell.is-current .tile') : page.locator('.scene-choice').filter({ hasText: '드라마' }).first();
     const media = button.locator(origin === '중앙 카드' ? '.tile-media' : 'img');
     const source = await media.boundingBox();
@@ -60,7 +61,7 @@ test('움직임 줄이기는 즉시 정지 화면을 표시하고 진입 중 뒤
   await expect(page.locator('#studio')).toHaveCount(0);
 });
 
-test('처음엔 대기하고 화면 가운데 버튼은 장면을 시작한다(되감기·일시정지 없음)', async ({ page }) => {
+test('처음엔 대기하고 화면 가운데 버튼은 녹음 없이 장면을 미리 본다(10/20)', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();
@@ -73,10 +74,12 @@ test('처음엔 대기하고 화면 가운데 버튼은 장면을 시작한다(�
   await expect(page.locator('.clip-time')).toHaveText('10:00');
   await expect(screen.locator('span')).toBeVisible();
   await expect(screen.locator('span')).toHaveCSS('border-radius', '50%');
-  await expect(screen).toHaveAccessibleName('장면 시작');
+  await expect(screen).toHaveAccessibleName('장면 미리보기');
   await screen.click();
   await expect.poll(() => clip.evaluate(v => !v.paused && !v.muted && v.currentTime > .2)).toBe(true);
-  // 장면이 시작되면 가운데 버튼은 사라진다 — 멈춤·되감기는 없고 5.0초에서 앱이 멈춘다.
+  // 미리보기가 시작되면 가운데 버튼은 사라지고, 5.0초에서 멈추지 않고 녹음도 하지 않는다(녹음은 «장면 시작»으로만).
   await expect(screen).toHaveCount(0);
-  await expect(page.locator('#cue')).toBeVisible({ timeout: 8000 });
+  await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'previewing');
+  await expect.poll(() => clip.evaluate(v => v.currentTime), { timeout: 8000 }).toBeGreaterThan(5.5);
+  await expect(page.locator('#cue')).toHaveCount(0);
 });

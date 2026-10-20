@@ -38,18 +38,15 @@ test('마우스 없이 첫 장면을 재생하고 여덟 장면을 순서대로 
   }
 });
 
-test('자동 넘김을 멈추거나 녹음실에 들어가면 장면이 저절로 바뀌지 않는다', async ({ page }) => {
+test('멈춤 단추는 없고, 녹음실에 들어가면 장면이 저절로 바뀌지 않는다', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
+  // 10/20 대표님 «멈춤을 다 뺀다» — «02 / 08 ⏸»와 그림 띠 ⏸ 모두 없다
+  await expect(page.locator('.scene-auto-toggle, .scene-flow-toggle')).toHaveCount(0);
   await page.clock.install();
   await page.clock.pauseAt(new Date(Date.now() + 1000));
-  await page.getByRole('button', { name: '장면 자동 넘김 일시정지', exact: true }).click();
+  await page.getByRole('button', { name: '다음 장면', exact: true }).click();
   await page.mouse.move(1, 1);
-  await page.clock.runFor(12000);
-  await expect(page.locator('.scene-shell.is-current')).toHaveAttribute('data-index', '0');
-  await page.getByRole('button', { name: '장면 자동 넘김 재생', exact: true }).click();
-  await page.mouse.move(1, 1);
-  await page.clock.runFor(6000);
   await expect(page.locator('.scene-shell.is-current')).toHaveAttribute('data-index', '1');
   await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).press('Enter');
   await page.clock.runFor(12000);

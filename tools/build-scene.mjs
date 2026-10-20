@@ -6,9 +6,15 @@
 //     시험용 원판: 그린 키프레임(vc2_<장르>_K###.png)을 그 시각에 맞춰 넘기는 10초 슬라이드. 앱 개발·시사 준비용.
 //
 // 만드는 것(app-plan §2-5): public/clips/<장르>.mp4(1920×1080 H.264/AAC, 30fps, 키프레임 1초 간격 — 5.0초 포함,
-// 글자·자막 없음), previews/<장르>.mp4(0~5.0초 무음, 640×360 — 최고조까지만, 해소는 아낀다),
+// 자막 없음), previews/<장르>.mp4(0~5.0초 무음, 1280×720 — 최고조까지만, 해소는 아낀다),
 // thumbs/<장르>.jpg(640×360)와 stills/<장르>.jpg(1280×720) — 둘 다 5.0초 멈춤 화면.
-import { mkdirSync, readdirSync, statSync, writeFileSync, rmSync, mkdtempSync } from 'node:fs';
+// 내려받는 영상에는 로고 띠(tools/video-logos.png — 왼쪽 위 InKY Film Festival, 오른쪽 위 인천광역시교육청)가 들어간다(10/20 대표님).
+// 합성은 영상을 다시 인코딩하지 않으므로(-c:v copy) 로고를 구운 합성용 원판 final/<장르>.mp4를 따로 만든다 — 녹음실은 로고 없는
+// <장르>.mp4를 튼다. PC 녹음실은 영상을 위아래로 잘라 꽉 채우므로(원판 기준 위 83~166px) 위 모서리 로고가 잘려 흰 조각만 남는다.
+// 미리보기·정지·썸네일도 로고 없는 그림에서 만든다 — 완성 화면 그림은 같은 로고를 화면에서 얹는다(Result.tsx).
+// 미리보기는 PC 가운데 카드(약 650px, 화면 배율 2면 1300px)와 휴대폰 카드(폭 94%, 3배면 약 1100px)에 크게 보인다 —
+// 10/19까지의 640×360·약 350kbps는 원화와 SSIM 0.86으로 눈에 띄게 뭉개졌다(10/20 대표님 «화질이 많이 열화»).
+import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync, rmSync, mkdtempSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -20,11 +26,13 @@ const SECONDS = 10;
 const PAUSE = 5;
 const root = fileURLToPath(new URL('../', import.meta.url));
 const clips = join(root, 'public', 'clips');
+const logos = join(root, 'tools', 'video-logos.png');
 const [genre, mode, ...rest] = process.argv.slice(2);
 if (!/^[a-z]+$/.test(genre ?? '') || !['--parts', '--slides'].includes(mode)) {
   console.error('사용: node tools/build-scene.mjs <장르> --parts A.mp4 B.mp4 [--audio 소리.wav] | --slides <그림 폴더> [--audio 소리.wav]');
   process.exit(2);
 }
+if (!existsSync(logos)) throw new Error('로고 띠(tools/video-logos.png)가 없다 — node tools/build-video-logos.mjs');
 const audioAt = rest.indexOf('--audio');
 const audio = audioAt >= 0 ? rest[audioAt + 1] : null;
 const inputs = audioAt >= 0 ? rest.slice(0, audioAt) : rest;
@@ -67,19 +75,26 @@ if (!audio) {
 mkdirSync(join(clips, 'previews'), { recursive: true });
 mkdirSync(join(clips, 'thumbs'), { recursive: true });
 mkdirSync(join(clips, 'stills'), { recursive: true });
+mkdirSync(join(clips, 'final'), { recursive: true });
 const main = join(clips, `${genre}.mp4`);
+const final = join(clips, 'final', `${genre}.mp4`);
 // 키프레임 1초 간격(-g 30, 장면 전환으로 끼어드는 키프레임 없음) + 5.0초를 명시 — 5.0초 멈춤 탐색이 정확하고 빠르다.
-ff(['-i', picture, '-i', sound, '-map', '0:v:0', '-map', '1:a:0', '-t', String(SECONDS),
+const encode = (video, out) => ff(['-i', picture, '-i', sound, ...video, '-map', '1:a:0', '-t', String(SECONDS),
   '-c:v', 'libx264', '-profile:v', 'high', '-preset', 'slow', '-crf', '20', '-maxrate', '8M', '-bufsize', '16M',
   '-g', '30', '-keyint_min', '30', '-sc_threshold', '0', '-force_key_frames', `0,${PAUSE}`, '-pix_fmt', 'yuv420p',
-  '-af', `apad,atrim=0:${SECONDS}`, '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-movflags', '+faststart', main]);
-ff(['-i', main, '-t', String(PAUSE), '-an', '-vf', 'scale=640:360:flags=lanczos', '-c:v', 'libx264', '-profile:v', 'main',
-  '-preset', 'slow', '-crf', '27', '-maxrate', '500k', '-bufsize', '1000k', '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
+  '-af', `apad,atrim=0:${SECONDS}`, '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-movflags', '+faststart', out]);
+encode(['-map', '0:v:0'], main);
+encode(['-i', logos, '-filter_complex', '[0:v][2:v]overlay=0:0,format=yuv420p[v]', '-map', '[v]'], final);
+ff(['-i', picture, '-t', String(PAUSE), '-an', '-vf', 'scale=1280:720:flags=lanczos', '-c:v', 'libx264', '-profile:v', 'high',
+  '-preset', 'slow', '-crf', '20', '-maxrate', '3M', '-bufsize', '6M', '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
   join(clips, 'previews', `${genre}.mp4`)]);
-ff(['-ss', String(PAUSE), '-i', main, '-frames:v', '1', '-vf', 'scale=1280:720:flags=lanczos', '-q:v', '3', join(clips, 'stills', `${genre}.jpg`)]);
-ff(['-ss', String(PAUSE), '-i', main, '-frames:v', '1', '-vf', 'scale=640:360:flags=lanczos', '-q:v', '4', join(clips, 'thumbs', `${genre}.jpg`)]);
+ff(['-ss', String(PAUSE), '-i', picture, '-frames:v', '1', '-vf', 'scale=1280:720:flags=lanczos', '-q:v', '2', join(clips, 'stills', `${genre}.jpg`)]);
+ff(['-ss', String(PAUSE), '-i', picture, '-frames:v', '1', '-vf', 'scale=640:360:flags=lanczos', '-q:v', '2', join(clips, 'thumbs', `${genre}.jpg`)]);
 
-const duration = Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', main]).toString());
 rmSync(work, { recursive: true, force: true });
-if (Math.abs(duration - SECONDS) > 0.05) throw new Error(`${genre}: 길이 ${duration}초 — 정확히 ${SECONDS}초여야 한다`);
-console.log(`${genre}: ${(statSync(main).size / 1e6).toFixed(1)}MB, ${duration.toFixed(3)}초`);
+const duration = (file) => Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]).toString());
+for (const file of [main, final]) {
+  if (Math.abs(duration(file) - SECONDS) > 0.05) throw new Error(`${file}: 길이 ${duration(file)}초 — 정확히 ${SECONDS}초여야 한다`);
+}
+const mb = (file) => (statSync(file).size / 1e6).toFixed(2);
+console.log(`${genre}: 원판 ${mb(main)}MB · 합성용(로고) ${mb(final)}MB · 미리보기 ${mb(join(clips, 'previews', `${genre}.mp4`))}MB`);

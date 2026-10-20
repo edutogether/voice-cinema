@@ -5,6 +5,8 @@
 // 격자 카드뿐이었는데 10/17 휴대폰도 캐러셀로 바꾸며 그 격자가 없어져, 지금은 화면 어디에도 쓰이지 않는다
 // (10/17 06:40 대표님: 휴대폰도 캐러셀 확정, 장르 색 질문은 끝 — 확정값이라 지우지 않고 둔다). 원작 제목은 앱 화면 어디에도 쓰지 않는다.
 
+import clipVersions from 'virtual:clip-versions';
+
 export interface Genre {
   id: string;
   name: string;
@@ -30,12 +32,23 @@ export const GENRES: Genre[] = [
 ];
 
 /**
- * 장르마다 10초 원판 한 파일(1920×1080 H.264/AAC, 키프레임 1초 간격 + 5.0초).
- * 녹음실 재생·5.0초 멈춤·최종 합성이 모두 이 한 파일을 쓴다 — 1.0의 녹음실용 사본(`studio/`)은 없앴다.
+ * 장르마다 10초 원판(1920×1080 H.264/AAC, 키프레임 1초 간격 + 5.0초). 녹음실 재생·5.0초 멈춤이 이 파일을 쓴다.
  */
-export const clipUrl = (genreId: string) => `/clips/${genreId}.mp4`;
+export const clipUrl = (genreId: string) => clip(`${genreId}.mp4`);
+/**
+ * 합성용 원판 — 위 원판에 로고 띠(왼쪽 위 InKY Film Festival, 오른쪽 위 인천광역시교육청)를 구운 것이다(10/20 대표님).
+ * 합성은 영상을 다시 인코딩하지 않으므로 로고는 여기 미리 구워 둔다. 녹음실은 로고 없는 원판을 튼다 — PC 녹음실은 영상
+ * 위아래를 잘라 꽉 채워 위 모서리 로고가 잘린다(tools/build-scene.mjs).
+ */
+export const finalClipUrl = (genreId: string) => clip(`final/${genreId}.mp4`);
 // 선택 화면만 가벼운 사본을 쓴다 — 0~5.0초(최고조까지)를 소리 없이 되풀이한다. 해소는 아낀다.
-export const previewUrl = (genreId: string) => `/clips/previews/${genreId}.mp4`;
-export const thumbUrl = (genreId: string) => `/clips/thumbs/${genreId}.jpg`;
+export const previewUrl = (genreId: string) => clip(`previews/${genreId}.mp4`);
+export const thumbUrl = (genreId: string) => clip(`thumbs/${genreId}.jpg`);
 // 5.0초 멈춤 화면(`K050`). 녹음실 포스터와 메인의 넓은 영상 벽에 쓴다.
-export const stillUrl = (genreId: string) => `/clips/stills/${genreId}.jpg`;
+export const stillUrl = (genreId: string) => clip(`stills/${genreId}.jpg`);
+
+// 주소 뒤에 내용 해시를 붙인다 — 그림·영상을 바꾸면 주소가 바뀌어 브라우저·서비스워커 캐시가 옛 파일을 내지 않는다
+// (10/20 미리보기에서 바꾼 장면이 옛 장면과 섞여 보였다. 까닭은 `tools/clip-versions.js`).
+function clip(file: string) {
+  return `/clips/${file}?v=${clipVersions[file]}`;
+}

@@ -9,9 +9,9 @@ function formatTime(seconds: number): string {
 
 const total = formatTime(CLIP_SECONDS);
 
-// 2.0에서는 장면을 마음대로 넘겨 보는 미리보기가 없다(장면 시작 → 5.0초 멈춤 → 녹음 → 이어 재생).
+// 2.0에서는 장면을 마음대로 넘겨 보지 않는다(미리보기는 처음부터 끝까지, 녹음은 장면 시작 → 5.0초 멈춤 → 녹음 → 이어 재생).
 // 그래서 진행바는 탐색 막대가 아니라 영상 시계를 보여 주기만 한다.
-const SHOWN: readonly Phase[] = ['watching', 'cue', 'countdown', 'recording', 'continuing', 'recorded', 'replaying'];
+const SHOWN: readonly Phase[] = ['previewing', 'watching', 'cue', 'countdown', 'recording', 'continuing', 'recorded'];
 
 export function ClipTimeline({ phase, videoRef }: { phase: Phase; videoRef: React.RefObject<HTMLVideoElement | null> }) {
   const textRef = useRef<HTMLSpanElement>(null);

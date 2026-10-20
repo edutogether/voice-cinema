@@ -135,10 +135,9 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
         ))}
       </div>
       <div className="scene-navigation">
+        {/* 멈춤 단추는 없다(10/20 대표님 «멈춤을 다 뺀다»). 자동 넘김은 가운데 장면에 마우스를 올리거나, 키보드로 다니거나,
+            손가락으로 한 번 밀거나 누르면(10/19 V-h) 멈춘다. */}
         <p className="scene-position" aria-live={autoPaused || keyboardPaused ? 'polite' : 'off'}><strong>{String(selected + 1).padStart(2, '0')}</strong><span>/ {String(GENRES.length).padStart(2, '0')}</span><span className="scene-current-name">{GENRES[selected].name}</span></p>
-        {!reducedMotion && <button className="scene-auto-toggle" type="button" aria-label={autoPaused ? '장면 자동 넘김 재생' : '장면 자동 넘김 일시정지'} aria-pressed={autoPaused} onClick={() => setAutoPaused(value => !value)}>
-          {autoPaused ? <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6z" /></svg> : <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 4h3v12H6zM12 4h3v12h-3z" /></svg>}
-        </button>}
       </div>
       <div className="scene-choice-row">
         <div className="scene-choices" ref={choiceViewport} role="group" aria-label="여덟 장면 바로 고르기"
@@ -167,11 +166,6 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
             ))}
           </div>
         </div>
-        <button type="button" className="scene-flow-toggle" aria-label={flowPaused ? '장면 흐름 재생' : '장면 흐름 일시정지'}
-          aria-pressed={flowPaused} onClick={() => setFlowPaused(value => !value)}>
-          {flowPaused ? <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 9 6-9 6z" /></svg>
-            : <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 4h3v12H6zM12 4h3v12h-3z" /></svg>}
-        </button>
       </div>
     </div>
   );

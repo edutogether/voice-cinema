@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { pauseScenes } from './pause-scenes.js';
 
 // 휴대폰은 화면 크기가 아니라 실제 브라우저 높이(주소창 포함)로도 잰다 — iPhone 13 사파리 390×664, 큰 아이폰 430×740,
 // 작은 아이폰 375×553, 안드로이드 360×640(10/17 팀장 검수에서 390×844로만 재서 놓친 것이 드러났다).
@@ -13,9 +14,8 @@ for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [
     await expect(page.locator('.scene-choice')).toHaveCount(8);
     if (phone) {
       // 자동 넘김이 재는 도중에 가운데 장면을 바꾸지 않게 멈춘다(위치를 한 장면에서 잰다)
-      // 휴대폰 폭에서는 «01 / 08 ⏸» 줄을 없앴다(10/19 대표님) — 숨은 단추를 코드로 눌러 멈춘다(검사 준비일 뿐)
-      await page.locator('.scene-auto-toggle').evaluate(b => b.click());
-      await expect(page.locator('.scene-auto-toggle')).toHaveAttribute('aria-pressed', 'true');
+      // 멈춤 단추는 없다(10/20 대표님) — 손가락 한 번 누르기로 멈춘다(검사 준비일 뿐, e2e/pause-scenes.js)
+      await pauseScenes(page);
       // 휴대폰 폭(10/17 대표님, 10/19 첫 화면 다듬기): 위에는 «나만의 더빙 극장 / Voice Cinema» 한 덩어리, 제목 자리에는
       // «내 목소리로 완성하는 10초의 영화.»(설명 줄 없음). 가운데 장면은 화면 폭의 94%·영화 비율(16:9), 장르 배지와 장면 이름은
       // 그림 오른쪽 아래에 얹는다. 바로가기 줄은 흐르므로 여덟 칸이 한꺼번에 보이지 않는다(그 대신 이름이 겹치지 않는다).
@@ -43,10 +43,8 @@ for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [
         const top = await page.locator('.chart-aside').boundingBox();
         expect(top.y, '맨 위 줄이 개인정보처리방침 줄과 겹친다').toBeGreaterThanOrEqual(privacy.y + privacy.height);
       }
-      // «01 / 08 ⏸» 줄과 아래 그림 띠의 일시정지 단추는 휴대폰에서 없앤다(10/19 대표님)
-      for (const selector of ['.scene-navigation', '.scene-flow-toggle']) {
-        await expect(page.locator(selector), `${selector}는 휴대폰에서 없앤다`).toBeHidden();
-      }
+      // «01 / 08» 줄은 휴대폰에서 없앤다(10/19 대표님). 멈춤 단추는 10/20부터 어느 폭에도 없다
+      await expect(page.locator('.scene-navigation'), '.scene-navigation는 휴대폰에서 없앤다').toBeHidden();
       // 로고는 Poster Studio처럼 심벌과 «InKY Film Festival» 전부(10/17 대표님)
       await expect(page.locator('.festival-signature')).toContainText('InKY Film Festival');
       await expect(page.locator('.festival-symbol')).toBeVisible();
@@ -124,9 +122,9 @@ test('PC: 선택한 카드만 경량 영상으로 재생하고 녹음실 진입 
   expect(await tile.locator('video').evaluate(v => v.muted)).toBe(true);
   expect(clips.length).toBeGreaterThan(0);
   expect(clips.every(url => url.includes('/clips/previews/'))).toBe(true);
-  expect(await tile.locator('video').evaluate(v => v.videoWidth)).toBe(640);
+  expect(await tile.locator('video').evaluate(v => v.videoWidth)).toBe(1280);
   await tile.click();
-  await expect(page.locator('#clip')).toHaveAttribute('src', '/clips/sf.mp4');
+  await expect(page.locator('#clip')).toHaveAttribute('src', /^\/clips\/sf\.mp4\?v=[0-9a-f]{8}$/);
   await expect(tile.locator('video')).not.toHaveAttribute('src');
 });
 

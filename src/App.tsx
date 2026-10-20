@@ -8,6 +8,7 @@ import { installServiceWorker } from './lib/sw';
 import { initAppCheck } from './lib/upload';
 import { captureSceneEntrance, type SceneEntrance } from './lib/sceneEntrance';
 import { isLocalRecordingSample } from './lib/sampleMode';
+import { lastInputWasKeyboard } from './lib/inputModality';
 
 type View = 'home' | 'studio' | 'result';
 
@@ -87,8 +88,9 @@ export function App() {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
+  // 녹음실에서 돌아올 때 장면 카드로 초점을 되돌리는 것은 키보드로 다니는 사람에게만 한다(src/lib/inputModality.ts).
   useEffect(() => {
-    if (view === 'home' && lastGenreRef.current) {
+    if (view === 'home' && lastGenreRef.current && lastInputWasKeyboard()) {
       wrapRef.current?.querySelector<HTMLButtonElement>(`[data-genre="${lastGenreRef.current}"]`)?.focus();
     }
   }, [view]);

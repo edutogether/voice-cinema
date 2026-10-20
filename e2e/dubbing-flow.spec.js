@@ -73,7 +73,9 @@ test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
     // 이어 재생은 5.0초부터다.
     await expect.poll(() => clip.evaluate(v => v.currentTime)).toBeGreaterThan(5.2);
     await expect(page.locator('#afterRow')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('#replayBtn')).toBeFocused();
+    // «다시 듣기»는 없다(10/20 대표님). 마우스로 녹음했으면 다음 단추에 초점(빨간 띠)을 남기지 않는다.
+    await expect(page.locator('#afterRow button')).toHaveText(['다시 녹음', '저장하기']);
+    await expect(page.locator('#saveBtn')).not.toBeFocused();
   });
 
   test('상대 대사 자막은 1.6초에 나타나 3.4초에 사라지고, 흰 글씨·배경 상자 없음이다', async ({ page }) => {
@@ -127,6 +129,8 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
       uploaded = JSON.parse(route.request().postData());
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, url: 'https://storage.googleapis.com/fake/dub_test.mp4' }) });
     });
+    const merged = [];
+    page.on('request', (r) => { if (r.url().includes('/clips/final/')) merged.push(r.url()); });
 
     await openStudio(page, 'SF');
     await page.locator('#recBtn').click();
@@ -139,7 +143,11 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     await expect(page.locator('#done')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('#qrbox')).toBeVisible();
     await expect(page.locator('#qrImg')).toHaveAttribute('src', /^data:image\//);
-    await expect(page.locator('#savemode')).toContainText('누구나 볼 수 있어요');
+    // QR 위 두 줄(공개 범위·11/30)과 QR 아래 «내 영화 받기»는 뺐다(10/20 대표님 — 개인정보처리방침에 있다)
+    await expect(page.locator('#savemode')).toHaveCount(0);
+    await expect(page.locator('#qrbox')).not.toContainText('내 영화 받기');
+    // 합성은 로고를 구운 합성용 원판(final/)으로 한다(10/20 대표님 «내려받는 영상에도 로고»)
+    expect(merged.some((u) => /\/clips\/final\/sf\.mp4\?v=[0-9a-f]{8}$/.test(u))).toBe(true);
     // «내 영화 열기»는 휴대폰에서만 보인다 — 부스의 노트북에서는 학생이 자기 휴대폰으로 QR을 찍는다.
     await expect(page.locator('#openMovieBtn')).toBeHidden();
 
@@ -166,7 +174,6 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     await expect(page.locator('#qrbox')).toBeHidden();
     await expect(page.locator('#doneMsg')).toContainText('인터넷 문제');
     await expect(page.locator('#savemode')).toContainText('자동삭제 대상이 아닙니다');
-    await expect(page.locator('.retention-note')).toBeHidden();
     expect(callCount).toBeGreaterThanOrEqual(2); // 1차 실패 + 재시도
 
     // #downloadBtn 자체엔 download 속성이 없다 — 클릭 시 JS가 그 순간 <a download>를
@@ -179,14 +186,14 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
   });
 
   // mergeClip()은 원판을 불러오지 못하면 예외를 던지고 Result.tsx가 에러 화면(errbox)을 보여준다.
-  // <video> 태그의 로딩과 달리 합성은 fetchFile()이 window.fetch()로 같은 원판을 다시 읽으므로
+  // 합성은 fetchFile()이 window.fetch()로 로고를 구운 합성용 원판(final/)을 읽으므로
   // fetch만 그 시점에 실패하도록 패치한다(page.route는 <video src> 요청을 가로채지 못한다).
   test('합성 실패 경로: 원판을 불러올 수 없으면 에러 화면이 뜨고 돌아가기로 녹음이 보존된다', async ({ page }) => {
     await page.addInitScript(() => {
       const originalFetch = window.fetch;
       window.fetch = (input, init) => {
         const url = typeof input === 'string' ? input : input.url;
-        if (url.includes('/clips/animation.mp4')) {
+        if (url.includes('/clips/final/animation.mp4')) {
           return Promise.reject(new Error('시뮬레이션된 네트워크 실패'));
         }
         return originalFetch(input, init);
@@ -217,7 +224,8 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     await expect(page.locator('#recBtn')).toBeVisible();
     await expect(page.locator('#afterRow')).toBeHidden();
     await expect(page.locator('#hint')).toContainText("'장면 시작'을 누르면");
-    await expect(page.locator('#recBtn')).toBeFocused();
+    // 마우스로 눌렀으면 «장면 시작»으로 초점을 옮기지 않는다 — 옮기면 빨간 초점 띠가 남는다(10/20, src/lib/inputModality.ts)
+    await expect(page.locator('#recBtn')).not.toBeFocused();
     await expect(page.locator('#clip')).toHaveJSProperty('currentTime', 0);
   });
 });

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 // 장면 더빙 2.0 상대 대사 자막(app-plan §2-3): 넷플릭스식 — 영상 안 아래 가운데, 영상 폭 80% 안, 두 줄 이내,
-// 영상 높이의 약 5%(최소 14px). 멈춤 뒤 문구·카운트다운·녹음 중에는 없고, 다시 듣기에서는 1.6~3.4초에 다시 나온다.
+// 영상 높이의 약 5%(최소 14px). 멈춤 뒤 문구·카운트다운·녹음 중에는 없고, 미리보기에서는 1.6~3.4초에 나온다(10/20 «다시 듣기» 없앰).
 const LONGEST = ['히어로', '왼쪽을 봐. 우리가 왔어 !'];
 
 for (const [width, height] of [[1440, 900], [390, 844], [360, 640], [844, 390]]) {
@@ -39,7 +39,7 @@ for (const [width, height] of [[1440, 900], [390, 844], [360, 640], [844, 390]])
   });
 }
 
-test('자막은 멈춘 뒤 문구·카운트다운·녹음 중에는 없고, 다시 듣기의 1.6~3.4초에 다시 나온다', async ({ page }) => {
+test('자막은 멈춘 뒤 문구·카운트다운·녹음 중에는 없고, 미리보기의 1.6~3.4초에 나온다', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();
@@ -53,6 +53,7 @@ test('자막은 멈춘 뒤 문구·카운트다운·녹음 중에는 없고, 다
   await expect(page.locator('#recpill')).toBeVisible({ timeout: 5000 });
   await expect(caption).toHaveCount(0);
   await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
-  await page.locator('#replayBtn').click();
+  await page.locator('#resetBtn').click();
+  await page.locator('#previewBtn').click();
   await expect(caption).toHaveText('저 산… 움직여 !', { timeout: 6000 });
 });

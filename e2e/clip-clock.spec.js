@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('대기는 전체 길이, 장면·이어 재생은 영상 시계를 표시하고 5.0초 멈춤에서는 05:00에 선다', async ({ page }) => {
+test('대기는 전체 길이, 장면·이어 재생·미리보기는 영상 시계를 표시하고 5.0초 멈춤에서는 05:00에 선다', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
@@ -20,10 +20,12 @@ test('대기는 전체 길이, 장면·이어 재생은 영상 시계를 표시�
   await expect(clock).toHaveText('10:00 / 10:00');
   await expect(page.locator('#progress')).toHaveAttribute('aria-valuenow', '100');
   await expect(page.locator('#bar')).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
-  await page.locator('#replayBtn').click();
-  await expect.poll(async () => (await clock.textContent()).startsWith('00:')).toBe(true);
   await page.locator('#resetBtn').click();
   await expect(clock).toHaveText('10:00');
+  // 미리보기는 처음(00:00)부터 영상 시계를 보여 준다(10/20 «다시 듣기» 대신)
+  await page.locator('#previewBtn').click();
+  await expect.poll(async () => (await clock.textContent()).startsWith('00:')).toBe(true);
+  await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(.3);
 });
 
 for (const [width, height] of [[1440, 900], [390, 844]]) {

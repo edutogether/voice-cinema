@@ -111,11 +111,11 @@ body:has(#studio.active) { background:#fff; }
  .controls { gap:20px; }
  .controls h2 { font-size:1.25rem; }
  .hint { font-size:.875rem; }
- .record-actions { display:grid; grid-template-columns:1fr; gap:8px; width:100%; }
+ /* 버튼은 가로를 꽉 채운다 — «미리보기 | 장면 시작», 녹음 뒤에는 «다시 녹음 | 저장하기»(10/20 «다시 듣기» 없앰). 혼자 남으면 한 줄을 다 쓴다. */
+ .record-actions,#afterRow { display:flex; flex-wrap:nowrap; gap:10px; width:100%; }
+ .record-actions .btn,#afterRow .btn { flex:1 1 0; }
  #studio .btn { padding:12px 10px; min-width:0; font-size:.9375rem; }
- #studio .btn-rec { min-width:0; }
- #afterRow { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; }
- #saveBtn { grid-column:1 / -1; }
+ #studio .btn-rec,#saveBtn { flex-grow:1.6; }
  .recpill { top:16px; left:16px; }
  .workflow-footer { padding:24px 4px; font-size:.8125rem; }
 }

@@ -6,7 +6,7 @@ async function open(page) {
   await page.locator('#splash').waitFor({ state: 'detached' });
 }
 
-test('하단 흐름: 호버 중에도 왼쪽 등속 이동하며 수동 정지 가능', async ({ page }) => {
+test('하단 흐름: 호버 중에도 왼쪽 등속 이동하고, 멈춤 단추는 없다', async ({ page }) => {
   await open(page);
   const start = await offset(page);
   await page.waitForTimeout(500);
@@ -18,11 +18,9 @@ test('하단 흐름: 호버 중에도 왼쪽 등속 이동하며 수동 정지 �
   await page.mouse.move(1, 1);
   await page.waitForTimeout(300);
   expect(await offset(page)).toBeLessThan(paused - 1);
-  await page.getByRole('button', { name: '장면 흐름 일시정지' }).click();
-  const stopped = await offset(page);
-  await page.waitForTimeout(300);
-  expect(await offset(page)).toBeCloseTo(stopped, 0);
-  await page.getByRole('button', { name: '장면 흐름 재생' }).click();
+  // 멈춤 단추는 없다(10/20 대표님 «멈춤을 다 뺀다») — 손가락으로 한 번 누르면 멈춘다(10/19 V-h, e2e/tile-autoplay.spec.js)
+  await expect(page.locator('.scene-flow-toggle, .scene-auto-toggle')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /일시정지|재생/ })).toHaveCount(0);
   await expect(page.locator('.scene-choices')).toHaveAttribute('data-paused', 'false');
 });
 
@@ -78,7 +76,6 @@ test('하단 흐름: 움직임 줄이기에서는 자동으로 흐르지 않는�
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await open(page);
   await expect(page.locator('.scene-choice-track')).toHaveCSS('animation-name', 'none');
-  await expect(page.getByRole('button', { name: '장면 흐름 일시정지' })).toBeHidden();
   for (const choice of await page.locator('.scene-choice').all()) await expect(choice).toBeInViewport({ ratio: 1 });
 });
 

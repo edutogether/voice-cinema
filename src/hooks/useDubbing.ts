@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { PAUSE_SECONDS, RECORD_SECONDS } from '../config';
 import { pickSupportedMime } from '../logic';
-import { stopVideoAt, watchVideoTime } from '../lib/videoClock';
+import { stopVideoAt } from '../lib/videoClock';
 
 // 장면 더빙 2.0 흐름(대표님 10/11 확정, app-plan §1):
 //   장면 시작 → 0~5.0초 재생(상대 대사 자막) → 5.0초에서 멈춤 → «이제 당신의 차례입니다 !»
 //   → 3·2·1 «지금 바로 당신의 목소리를 들려주세요 !» → «1»이 사라지는 순간부터 녹음 3.5초
-//   → 같은 영상을 5.0초부터 이어 재생하며 녹음을 5.0~8.5초에 깔아 들려줌 → 다시 듣기·다시 녹음·저장.
+//   → 같은 영상을 5.0초부터 이어 재생하며 녹음을 5.0~8.5초에 깔아 들려줌 → 다시 녹음·저장.
+// 녹음 전에는 «미리보기»로 장면 전체를 소리와 함께 볼 수 있다(10/20 대표님 — 녹음·합성 없이 보기만, 끝나거나 멈추면 준비 상태로).
+// «다시 듣기»는 10/20 대표님 지시로 없앴다(이어 재생이 이미 내 목소리가 들어간 장면을 들려준다).
 // 단계(phase) 하나가 화면 전체를 결정하고, 정리는 effect cleanup이 맡는다.
-export type Phase = 'idle' | 'requesting' | 'watching' | 'cue' | 'countdown' | 'recording' | 'continuing' | 'recorded' | 'replaying';
+export type Phase = 'idle' | 'previewing' | 'requesting' | 'watching' | 'cue' | 'countdown' | 'recording' | 'continuing' | 'recorded';
 
 /** 5.0초 멈춤 뒤 «이제 당신의 차례입니다 !»를 보여 주는 시간 */
 export const CUE_MS = 1200;
@@ -18,14 +20,14 @@ export const COUNT_MS = 900;
 // 권한 대기·실패 원인을 해당 전환 시점의 안내로 보여준다.
 const HINT = {
   idle: "'장면 시작'을 누르면 장면이 흐르다 가장 긴박한 순간에 멈춰요. 그때 내 목소리로 외쳐 주세요 !",
+  previewing: '녹음 없이 장면을 처음부터 끝까지 보여 줘요. 다 보면 다시 준비 화면으로 돌아와요.',
   requesting: '마이크를 준비하고 있어요. 권한 요청이 뜨면 허용해 주세요.',
   watching: '장면을 보세요. 곧 내 차례가 와요 !',
   cue: '장면이 멈췄어요. 이제 내 차례예요 !',
   countdown: '숫자가 사라지면 3.5초 동안 목소리를 들려주세요.',
   recording: '지금 목소리를 들려주세요 !',
   continuing: '내 목소리가 들어간 장면을 이어 보는 중이에요…',
-  recorded: '잘했어요 ! 다시 듣고, 마음에 들면 저장하세요',
-  replaying: '내 더빙 영화 재생 중…',
+  recorded: '잘했어요 ! 마음에 들면 저장하세요',
   micDenied: '마이크 접근이 차단됐어요. 브라우저의 사이트 권한과 기기의 마이크 권한을 허용한 뒤 다시 눌러 주세요.',
   micMissing: '연결된 마이크를 찾지 못했어요. 마이크를 연결한 뒤 다시 눌러 주세요.',
   micBusy: '마이크를 열지 못했어요. 다른 앱의 마이크 사용을 종료하고 연결 상태를 확인한 뒤 다시 눌러 주세요.',
@@ -35,6 +37,7 @@ const HINT = {
   micBroken: '⚠ 마이크에 문제가 생겼어요 — 연결 확인 후 다시 눌러 주세요',
   recordFailed: '⚠ 녹음을 시작하지 못했어요 — 다시 눌러 주세요',
   playFailed: '영상을 재생하지 못했어요. 장면 시작을 다시 눌러 주세요.',
+  previewFailed: '영상을 재생하지 못했어요. 미리보기를 다시 눌러 주세요.',
 } as const;
 
 const MIME_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
@@ -89,7 +92,7 @@ export interface Dubbing {
   recordedMime: string;
   micError: MicFailure | null;
   startTake: () => void;
-  replay: () => void;
+  preview: () => void;
   reset: () => void;
 }
 
@@ -185,7 +188,8 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
   }, [videoRef, playFromPause, sampleMode]);
 
   const startTake = useCallback(() => {
-    if (phase !== 'idle') return;
+    // 미리보기 중에 «장면 시작»을 누르면 미리보기를 접고 바로 시작한다(아래 resetVideo의 멈춤은 미리보기 쪽에서 지난 실행으로 무시된다).
+    if (phase !== 'idle' && phase !== 'previewing') return;
     const myRun = ++runRef.current;
     const stale = () => myRun !== runRef.current;
     const v = videoRef.current;
@@ -309,48 +313,38 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     })();
   }, [phase, videoRef, sampleMode, stopClock, stopRecorder, finishTake]);
 
-  /** 완성본을 미리 듣는다 — 처음부터 재생하고 5.0초에 녹음을 함께 튼다. */
-  const replay = useCallback(() => {
-    if (phase !== 'recorded') return;
+  /**
+   * 녹음 없이 장면 전체(0~10초)를 소리와 함께 본다(10/20 대표님). 끝나거나 멈추면(브라우저가 멈춘 경우도) 준비 상태로 돌아간다.
+   * 미리보기를 접는 쪽(reset·startTake)은 실행 번호를 먼저 올리므로, 그때 생기는 멈춤은 여기서 지난 실행으로 무시된다.
+   */
+  const preview = useCallback(() => {
+    if (phase !== 'idle') return;
     const v = videoRef.current;
     if (!v) return;
     const myRun = ++runRef.current;
-    stopVoice();
-    const voice = recorded?.blob ?? null;
-    if (voice) {
-      const url = URL.createObjectURL(voice);
-      voiceRef.current = { audio: new Audio(url), url };
-    }
-    const audio = voiceRef.current?.audio;
-    v.muted = false;
-    v.currentTime = 0;
-    setHint(sampleMode ? '원본 영상을 다시 보고 있어요.' : HINT.replaying);
-    setPhase('replaying');
-    let voiceStarted = false;
-    cancelClockRef.current = watchVideoTime(v, (time) => {
-      if (voiceStarted || !audio || time < PAUSE_SECONDS) return;
-      voiceStarted = true;
-      // 원판이 5.0초를 지난 만큼 녹음도 앞으로 맞춘다(프레임 콜백 간격만큼의 어긋남을 없앤다).
-      audio.currentTime = Math.max(0, time - PAUSE_SECONDS);
-      void audio.play().catch(() => {});
-    });
-    const ended = () => {
-      v.removeEventListener('ended', ended);
-      if (myRun !== runRef.current) return;
-      stopClock();
-      stopVoice();
-      setHint(sampleMode ? '원본 영상 다시 보기를 마쳤어요.' : HINT.recorded);
-      setPhase('recorded');
+    resetVideo(v);
+    setMicError(null);
+    setHint(HINT.previewing);
+    setPhase('previewing');
+    const detach = () => {
+      v.removeEventListener('pause', finish);
+      v.removeEventListener('ended', finish);
     };
-    v.addEventListener('ended', ended);
+    function finish() {
+      detach();
+      if (myRun === runRef.current) reset();
+    }
+    v.muted = false;
+    v.addEventListener('pause', finish);
+    v.addEventListener('ended', finish);
     void v.play().catch(() => {
-      v.removeEventListener('ended', ended);
+      detach();
       if (myRun !== runRef.current) return;
-      stopClock();
-      setPhase('recorded');
-      setHint('영상을 재생하지 못했어요. 다시 듣기를 다시 눌러 주세요.');
+      resetVideo(v);
+      setHint(HINT.previewFailed);
+      setPhase('idle');
     });
-  }, [phase, recorded, videoRef, sampleMode, stopVoice, stopClock]);
+  }, [phase, videoRef, reset]);
 
   // 화면을 벗어날 때 남은 리소스(재생용 blob URL, 녹음기, 프레임 감시)를 확실히 반환한다.
   useEffect(() => () => {
@@ -368,7 +362,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     recordedMime: recorded?.mime ?? '',
     micError,
     startTake,
-    replay,
+    preview,
     reset,
   };
 }

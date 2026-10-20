@@ -3,12 +3,20 @@ body:has(#result.active) { background:#fff; }
 #result { width:100vw; margin-inline:calc((100% - 100vw) / 2); min-height:100svh; background:#fff; color:#171717; }
 #result.active { animation:none; }
 #result .festival-header { margin-inline:0; }
-.result-card { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); width:min(calc(100% - 80px),1280px); margin:52px auto 24px; gap:clamp(32px,4vw,64px); }
-.result-poster { position:relative; min-height:560px; overflow:hidden; border-radius:16px; background:#191919; color:white; }
+.result-card { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); align-items:center; width:min(calc(100% - 80px),1280px); margin:52px auto 24px; gap:clamp(32px,4vw,64px); }
+/* 그림 크기는 오른쪽 내용과 상관없이 폭으로만 정한다 — QR이 생기기 전·후 같은 크기(10/20 대표님). 비율은 QR이 생긴 뒤 오른쪽 높이에 맞춘 값이다. */
+.result-poster { position:relative; aspect-ratio:5 / 4; overflow:hidden; border-radius:16px; background:#191919; color:white; }
 .result-poster > img { position:absolute; width:100%; height:100%; inset:0; object-fit:cover; }
 .result-poster::after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(0,0,0,.25),transparent 28%,rgba(0,0,0,.06) 48%,rgba(0,0,0,.82)); }
-.poster-brand { position:absolute; z-index:1; left:32px; top:28px; font-size:1.5rem; font-weight:750; letter-spacing:-.04em; }
-.poster-brand > span { color:#ff443c; }
+/* 왼쪽 위 InKY Film Festival, 오른쪽 위 인천광역시교육청 — 내려받는 영상에 구운 로고 띠(tools/video-logos.png)와 같은 모양이다.
+   교육청 로고 글자가 남색이라 머리글처럼 흰 바탕 위에 둔다(공식 파일 그대로, 색을 바꾸지 않는다). */
+.poster-logo { position:absolute; z-index:1; top:18px; display:flex; align-items:center; gap:7px; height:36px; padding:0 14px; box-sizing:border-box; border-radius:999px; background:#fff; color:#171717; box-shadow:0 2px 8px #00000047; font-size:.9375rem; line-height:1; letter-spacing:-.4px; white-space:nowrap; }
+.poster-logo-inky { left:18px; }
+.poster-logo-education { right:18px; }
+.poster-logo strong { font-weight:800; }
+.poster-logo .festival-symbol { width:33px; height:24px; }
+.poster-logo .festival-symbol img { left:-28.5px; width:190.5px; }
+.poster-logo-education img { display:block; width:auto; height:25px; }
 .poster-credit { position:absolute; z-index:1; bottom:36px; left:32px; right:32px; }
 .poster-credit p { margin:0 0 12px; font-size:.9375rem; line-height:1.6; }
 .poster-credit strong { display:block; font-size:clamp(36px,3.5vw,56px); font-weight:750; line-height:1.2; letter-spacing:-.045em; }
@@ -28,6 +36,9 @@ body:has(#result.active) { background:#fff; }
 .result-details p.savemode { font-size:.875rem; }
 .result-details p.retention-note { margin:8px 0 0; font-size:.8125rem; color:#626262; }
 .result-actions { margin-top:28px; }
+/* «다른 더빙 하기»는 글자 폭만큼, 왼쪽에 붙인다(10/20 대표님 «좌우 폭을 줄인다»). 휴대폰은 아래에서 다시 가로를 채운다 */
+.result-cloud .result-actions,.result-fallback .result-actions { justify-content:flex-start; }
+#result #doneHomeBtn { flex:0 0 auto; padding-inline:28px; }
 #result .btn { border-radius:10px; text-decoration:none; }
 #result .btn-primary,#result .btn-save { background:#e52320; color:white; border:1px solid #e52320; }
 #result .btn-ghost { background:#fff; color:#262626; border:1px solid #d8d8d8; }
@@ -49,21 +60,25 @@ body:has(#result.active) { background:#fff; }
 #result .workflow-footer { color:#737373; padding:20px 24px; font-size:.8125rem; }
 @media (max-height:800px) and (min-width:901px) {
  .result-card { margin-top:40px; }
- .result-poster { min-height:500px; }
  .result-details { padding:0; }
  .result-symbol { margin-bottom:14px; }
  .qrbox img { width:152px; height:152px; }
 }
 @media (max-width:900px) {
  .result-card { width:calc(100% - 48px); gap:28px; grid-template-columns:minmax(0,.85fr) minmax(0,1fr); }
- .poster-brand,.poster-credit { left:24px; right:24px; }
+ .poster-credit { left:24px; right:24px; }
 }
 @media (max-width:600px) {
- .result-card { display:flex; flex-direction:column; width:calc(100% - 40px); margin-top:20px; gap:18px; }
+ .result-card { display:flex; flex-direction:column; align-items:stretch; width:calc(100% - 40px); margin-top:20px; gap:18px; }
  /* 포스터를 영화 비율로 줄여 QR이 첫 화면(360×740)에 다 들어오게 한다(10/17). */
- .result-poster { min-height:0; aspect-ratio:16 / 9; border-radius:12px; }
+ .result-poster { aspect-ratio:16 / 9; border-radius:12px; }
  .result-poster > img { object-position:center 35%; }
- .poster-brand { top:18px; left:20px; font-size:1.125rem; }
+ .poster-logo { top:12px; height:30px; padding:0 11px; font-size:.8125rem; gap:5px; }
+ .poster-logo-inky { left:12px; }
+ .poster-logo-education { right:12px; }
+ .poster-logo .festival-symbol { width:28px; height:20px; }
+ .poster-logo .festival-symbol img { left:-23.75px; width:158.75px; }
+ .poster-logo-education img { height:21px; }
  .poster-credit { bottom:20px; left:20px; }
  .poster-credit p { display:none; }
  .poster-credit strong { font-size:2rem; }

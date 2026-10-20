@@ -31,8 +31,8 @@ test('마이크 없이 장면·5.0초 멈춤·321·3.5초·이어 재생·원본
   await expect(page.locator('#recpill')).toContainText('샘플 녹음 체험 중');
   await expect(page.locator('#recBtn')).toBeDisabled();
   await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
-  await page.locator('#replayBtn').click();
-  await expect.poll(() => page.locator('#clip').evaluate(v => !v.paused && !v.muted && v.currentTime > 0)).toBe(true);
+  // «다시 듣기»는 없다(10/20 대표님) — 녹음 뒤에는 «다시 녹음»·«저장하기»만
+  await expect(page.locator('#replayBtn')).toHaveCount(0);
   await page.locator('#resetBtn').click();
   await expect(page.locator('#afterRow')).toHaveCount(0);
   await expect.poll(() => page.locator('#clip').evaluate(v => v.paused && v.currentTime === 0)).toBe(true);
@@ -46,7 +46,7 @@ test('마이크 없이 장면·5.0초 멈춤·321·3.5초·이어 재생·원본
   const download = await downloadEvent;
   expect(download.suggestedFilename()).toBe('Voice Cinema_판타지_원본.mp4');
   const digest = bytes => createHash('sha256').update(bytes).digest('hex');
-  expect(digest(await readFile(await download.path()))).toBe(digest(await readFile('public/clips/fantasy.mp4')));
+  expect(digest(await readFile(await download.path()))).toBe(digest(await readFile('public/clips/final/fantasy.mp4')));
   await page.locator('#sampleBackBtn').click();
   await expect(page.locator('#studio.active #afterRow')).toBeVisible();
   expect(await page.evaluate(() => window.sampleMicRequests)).toBe(0);

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { clipUrl, stillUrl, type Genre } from '../genres';
+import { finalClipUrl, stillUrl, type Genre } from '../genres';
 import { FestivalHeader } from './FestivalHeader';
 import { ActionIcon } from './ActionIcon';
 import { mergeClip } from '../lib/ffmpeg';
@@ -85,8 +85,10 @@ export function Result({ active, job, onHome, onBack }: Props) {
       <div className={`result-card result-${stage.kind}`} ref={cardRef}>
         <div className="result-poster">
           <img src={stillUrl(job.genre.id)} alt="" />
-          <span className="poster-brand">Voice <span>Cinema</span></span>
-          <div className="poster-credit"><p>{job.kind === 'sample' ? '녹음 화면 샘플 체험' : '내 목소리로 완성하는 영화'}</p><strong>{job.genre.name}</strong><span>{job.kind === 'sample' ? '다운로드 · 원본 영상' : '목소리 출연 · 나'}</span></div>
+          {/* 왼쪽 위 InKY Film Festival, 오른쪽 위 인천광역시교육청 — 내려받는 영상에도 같은 자리에 같은 모양으로 구워져 있다(10/20 대표님, tools/build-video-logos.mjs) */}
+          <span className="poster-logo poster-logo-inky" aria-hidden="true"><span className="festival-symbol"><img src="/brands/inky.png" alt="" /></span><span><strong>InKY</strong> Film Festival</span></span>
+          <span className="poster-logo poster-logo-education" aria-hidden="true"><img src="/brands/education.png" alt="" width="199" height="52" /></span>
+          <div className="poster-credit"><p>{job.kind === 'sample' ? '녹음 화면 샘플 체험' : '내 목소리로 완성하는 영화'}</p><strong>{job.genre.summary}</strong><span>{job.kind === 'sample' ? '다운로드 · 원본 영상' : job.genre.name}</span></div>
         </div>
         <div className="result-details">
         <p className="result-eyebrow">{stage.kind === 'sample' ? '샘플 체험 완료' : stage.kind === 'cloud' ? '내 영화가 완성됐어요' : loading ? '목소리가 영화가 되는 순간' : stage.kind === 'error' ? '녹음 보관 중' : '내 영화 보관하기'}</p>
@@ -96,7 +98,7 @@ export function Result({ active, job, onHome, onBack }: Props) {
             <h2 tabIndex={-1}>원본 영상을 받아보세요</h2>
             <p id="doneMsg">샘플 체험이 완료됐어요. 마이크 녹음 없이 진행했으며, 다운로드 파일은 선택한 장면의 원본 영상입니다.</p>
             <div className="row" id="downloadRow">
-              <a className="btn btn-lg btn-save" id="downloadBtn" href={clipUrl(job.genre.id)} download={`Voice Cinema_${job.genre.name}_원본.mp4`}><ActionIcon name="download" /> 원본 영상 다운로드</a>
+              <a className="btn btn-lg btn-save" id="downloadBtn" href={finalClipUrl(job.genre.id)} download={`Voice Cinema_${job.genre.name}_원본.mp4`}><ActionIcon name="download" /> 원본 영상 다운로드</a>
             </div>
             <p className="savemode">목소리 합성·클라우드 저장은 실행하지 않습니다.</p>
             <div className="row result-actions">
@@ -134,8 +136,7 @@ export function Result({ active, job, onHome, onBack }: Props) {
             )}
             {stage.kind === 'cloud' && (
               <div className="qrbox" id="qrbox">
-                <img id="qrImg" src={stage.qr} alt="QR 코드" />
-                <span>내 영화 받기</span>
+                <img id="qrImg" src={stage.qr} alt="내 영화 QR 코드" />
               </div>
             )}
 
@@ -154,15 +155,13 @@ export function Result({ active, job, onHome, onBack }: Props) {
               </div>
             )}
 
-            <div className="savemode" id="savemode">
-              {stage.kind === 'cloud'
-                ? '클라우드에 저장되었습니다 (이 QR/링크를 아는 사람은 누구나 볼 수 있어요, 11/30까지)'
-                : '클라우드 업로드 실패 — 위 버튼을 누르면 이 기기 다운로드 폴더에 저장됩니다. 학생에게 전달 후 운영자가 이 파일을 꼭 삭제해 주세요 — 자동삭제 대상이 아닙니다.'}
-            </div>
-            {stage.kind === 'cloud' && <p className="savemode retention-note">다운로드는 2026년 11월 30일까지만 가능해요 — 그 이후엔 자동으로 삭제됩니다</p>}
+            {/* 클라우드 저장 뒤의 공개 범위·11/30 안내 두 줄은 10/20 대표님 지시로 뺐다(개인정보처리방침에 있다). 기기 저장 안내는 남긴다 — 자동삭제 대상이 아니다 */}
+            {stage.kind === 'fallback' && (
+              <div className="savemode" id="savemode">클라우드 업로드 실패 — 위 버튼을 누르면 이 기기 다운로드 폴더에 저장됩니다. 학생에게 전달 후 운영자가 이 파일을 꼭 삭제해 주세요 — 자동삭제 대상이 아닙니다.</div>
+            )}
 
             <div className="row result-actions">
-              <button className={`btn btn-lg ${stage.kind === 'cloud' ? 'btn-primary' : 'btn-ghost'}`} id="doneHomeBtn" onClick={onHome}>다른 더빙 하기 <ActionIcon name="arrow" /></button>
+              <button className={`btn btn-lg ${stage.kind === 'cloud' ? 'btn-primary' : 'btn-ghost'}`} id="doneHomeBtn" onClick={onHome}><ActionIcon name="clapperboard" /> 다른 더빙 하기</button>
             </div>
           </div>
         )}

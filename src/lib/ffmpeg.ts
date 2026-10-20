@@ -1,5 +1,5 @@
 import { ENGINE_WASM_BYTES, PAUSE_SECONDS, RECORD_SECONDS } from '../config';
-import { clipUrl } from '../genres';
+import { finalClipUrl } from '../genres';
 import { pickAudioExtension, progressPercent } from '../logic';
 import { loadFFmpegModule, loadFFmpegUtil, type FFmpegInstance } from './vendor';
 
@@ -79,7 +79,7 @@ export async function mergeClip(genreId: string, audioBlob: Blob, mime: string):
 
   ff.on('log', onLog);
   try {
-    await ff.writeFile('v.mp4', await fetchFile(clipUrl(genreId)));
+    await ff.writeFile('v.mp4', await fetchFile(finalClipUrl(genreId)));
     await ff.writeFile(`a.${ext}`, await fetchFile(audioBlob));
     // 영상은 그대로 복사(-c:v copy)하고 소리만 새로 섞는다 — 브라우저 안 WASM에서
     // 영상까지 재인코딩하면 클립당 40초 가까이 걸려 부스에서 감당할 수 없다.

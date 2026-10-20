@@ -194,7 +194,7 @@ body:has(#home.active) { background:#fff; }
 .scene-position > span { color:#777; }
 .scene-position .scene-current-name { display:none; }
 /* 여덟 장 + 한 칸의 여유로 순환 중에도 모든 장르의 온전한 선택지를 노출한다. */
-.scene-choice-row { position:relative; flex-shrink:0; padding-right:28px; border-top:1px solid #ececec; }
+.scene-choice-row { position:relative; flex-shrink:0; border-top:1px solid #ececec; }
 .scene-choices { --choice-gap:14px; overflow:hidden; contain:paint; padding:32px 4px 6px; }
 .scene-choice-track { display:flex; width:calc(2400% / 9); animation:sceneChoicesFlow var(--flow-duration,48s) linear infinite; transform:translate3d(0,0,0); will-change:transform; }
 .scene-choice-set { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:var(--choice-gap); padding-right:var(--choice-gap); flex:0 0 33.333333%; min-width:0; }
@@ -205,19 +205,13 @@ body:has(#home.active) { background:#fff; }
 /* 바깥 테두리는 고정해 지나가는 이미지와 글자가 부드럽게 드러나게 한다. */
 .scene-choice-row::before,.scene-choice-row::after { content:""; position:absolute; z-index:1; top:1px; bottom:0; width:20px; pointer-events:none; }
 .scene-choice-row::before { left:0; background:linear-gradient(90deg,#fff,#ffffff00); }
-.scene-choice-row::after { right:28px; background:linear-gradient(270deg,#fff,#ffffff00); }
+.scene-choice-row::after { right:0; background:linear-gradient(270deg,#fff,#ffffff00); }
 .scene-choice-row:has([data-keyboard=true])::before,.scene-choice-row:has([data-keyboard=true])::after { display:none; }
 .scene-choices[data-paused=true] .scene-choice-track,
 body:has(#splash) .scene-choice-track { animation-play-state:paused; }
 .scene-choices[data-keyboard=true] .scene-choice-track { animation:none; transform:none; width:300%; }
-.scene-flow-toggle { position:absolute; right:0; top:50%; transform:translateY(-50%); display:grid; place-items:center; width:24px; height:36px; padding:3px; border:0; border-radius:5px; background:none; color:#767676; cursor:pointer; }
-.scene-flow-toggle svg { width:16px; height:16px; fill:currentColor; }
-.scene-flow-toggle:hover { background:#f0f0f0; color:#171717; }
-.scene-flow-toggle:focus-visible { outline:2px solid #171717; }
 @media (prefers-reduced-motion:reduce) {
  .scene-choice-track { animation:none; transform:none; width:300%; }
- .scene-flow-toggle { display:none; }
- .scene-choice-row { padding-right:0; }
  .scene-choice-row::before,.scene-choice-row::after { display:none; }
 }
 .scene-choice-card { border:0; padding:0; min-width:0; background:none; color:#666; cursor:pointer; font:inherit; }
@@ -289,10 +283,7 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
  /* «01 / 08 ⏸» 줄은 휴대폰에서 없앤다(10/19 대표님) — 어느 장면인지는 그림 위 배지·이름과 아래 그림 띠의 강조가 알려 준다 */
  .scene-navigation { display:none; }
  /* 바로가기는 영화 비율(16:9) 그대로, 이름이 다 들어가는 폭으로 흐른다 — 여덟 칸을 화면 폭에 욱여넣으면 이름이 겹친다. */
- /* 아래 그림 띠는 그림을 크게 하고 오른쪽 일시정지 단추는 없앤다(10/19 대표님) */
- .scene-choice-row { padding-right:0; }
- .scene-choice-row::after { right:0; }
- .scene-flow-toggle { display:none; }
+ /* 아래 그림 띠는 그림을 크게 한다(10/19 대표님) */
  .scene-choices { --choice-gap:10px; padding:10px 4px 4px; }
  .scene-choice-track { width:max-content; }
  .scene-choice-set { flex:none; grid-template-columns:repeat(8,96px); }
@@ -322,7 +313,3 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
 }
 @media (prefers-reduced-motion:reduce) { .scene-shell .tile-body,.scene-shell .tile-tag,.scene-shell .tile-media .preview,.scene-arrow,.scene-arrow svg { transition:none; } }
 
-.scene-auto-toggle { display:grid; place-items:center; width:28px; height:28px; padding:5px; border:0; border-radius:50%; color:#767676; background:transparent; cursor:pointer; }
-.scene-auto-toggle svg { width:16px; height:16px; fill:currentColor; }
-.scene-auto-toggle:hover { background:#f0f0f0; color:#171717; }
-.scene-auto-toggle:focus-visible { outline:2px solid #171717; outline-offset:2px; }

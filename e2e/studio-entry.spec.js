@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { pauseScenes } from './pause-scenes.js';
 
 test.use({ serviceWorkers: 'block' });
 
@@ -10,13 +11,13 @@ for (const [genre, name] of GENRES) {
     let releaseVideo;
     const videoGate = new Promise(resolve => { releaseVideo = resolve; });
     // 2.0은 녹음실 재생·멈춤·합성을 원판 한 파일로 한다(1.0의 studio/ 사본 없음).
-    await page.route(`**/clips/${genre}.mp4`, async route => {
+    await page.route(new RegExp(`/clips/${genre}\\.mp4\\?v=[0-9a-f]{8}$`), async route => {
       await videoGate;
       await route.continue();
     });
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
-    await page.getByRole('button', { name: '장면 흐름 일시정지', exact: true }).click();
+    await pauseScenes(page);
     try {
       await page.locator('.scene-choice').filter({ hasText: name }).first().click();
       await expect(page.locator('.studio-video-frame')).not.toHaveClass(/is-entering/);

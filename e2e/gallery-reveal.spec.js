@@ -86,7 +86,9 @@ test('PC: 화살표 키로 마지막 장면을 고른 뒤 녹음실에서 돌아
   await last.focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('#chipName')).toHaveText('뮤지컬');
-  await page.locator('#studioBackBtn').click();
+  // 키보드로 돌아온다 — 카드로 초점을 되돌리는 것은 키보드로 다니는 사람에게만 한다(10/20, e2e/home-return-focus.spec.js).
+  await page.locator('#studioBackBtn').focus();
+  await page.keyboard.press('Enter');
   await expect(last).toBeFocused();
   await expect(last).toBeInViewport({ ratio: .9 });
 });
@@ -181,7 +183,7 @@ test('PC: 썸네일 호버 즉시 재생을 요청하고 빠르게 훑은 뒤 �
   // 기존 280ms 대기를 제거했다. 다운로드 완료 시간과 재생 요청 시점은 구분한다.
   expect(timing[0]).toBeLessThan(200);
   await expect(page.locator('.tile video[src]')).toHaveCount(1);
-  await expect(page.locator('.tile video[src]')).toHaveAttribute('src', '/clips/previews/musical.mp4');
+  await expect(page.locator('.tile video[src]')).toHaveAttribute('src', /^\/clips\/previews\/musical\.mp4\?v=[0-9a-f]{8}$/);
   await page.getByRole('button', { name: '뮤지컬 더빙 시작', exact: true }).click();
   await expect(page.locator('#studio')).toHaveClass(/active/);
   await expect(page.locator('.tile video[src]')).toHaveCount(0);
