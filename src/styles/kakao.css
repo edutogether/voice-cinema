@@ -1,0 +1,12 @@
+/* 카카오톡 안 브라우저 → 바깥 브라우저 안내(src/lib/kakaoEscape.ts). 스플래시(z-index 999) 위에 화면 전체를 덮는다. */
+#kakao-escape { position:fixed; inset:0; z-index:2000; display:grid; place-items:center; padding:24px 20px; background:#0a0e1c; color:#fff; }
+.kakao-escape-card { width:100%; max-width:360px; text-align:center; }
+.kakao-escape-card h2 { margin:0 0 12px; font-size:1.375rem; font-weight:700; line-height:1.4; letter-spacing:-.02em; word-break:keep-all; }
+.kakao-escape-why { margin:0; color:#ffffffc7; font-size:.9375rem; line-height:1.6; word-break:keep-all; }
+.kakao-escape-help { margin-top:24px; }
+.kakao-escape-help[hidden] { display:none; }
+.kakao-escape-hint { margin:0 0 18px; padding:12px 14px; border-radius:12px; background:#ffffff14; font-size:.9375rem; line-height:1.6; word-break:keep-all; }
+.kakao-escape-open,.kakao-escape-stay { display:flex; align-items:center; justify-content:center; width:100%; min-height:52px; border-radius:999px; font:inherit; font-size:1rem; font-weight:600; cursor:pointer; }
+.kakao-escape-open { background:#df291f; border:1px solid #df291f; color:#fff; text-decoration:none; }
+.kakao-escape-stay { margin-top:10px; background:transparent; border:1px solid #ffffff4d; color:#ffffffd9; }
+.kakao-escape-open:focus-visible,.kakao-escape-stay:focus-visible { outline:3px solid #f2cf6b; outline-offset:3px; }

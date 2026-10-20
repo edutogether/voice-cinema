@@ -8,6 +8,11 @@ export const CLIP_SECONDS = 10;
 export const PAUSE_SECONDS = 5;
 export const RECORD_SECONDS = 3.5;
 
+// 엔진 wasm(public/vendor/ffmpeg-core/ffmpeg-core.wasm)의 실제 크기 — «영상 저장 준비 중…» 진행률의 분모.
+// Hosting이 brotli로 압축해 보내 Content-Length(약 7.3MB)가 받는 바이트보다 작아서, 그것을 분모로 쓰면
+// 100%를 넘었다(10/20 «177%»). test/contract.test.js가 실제 파일 크기와 대조한다.
+export const ENGINE_WASM_BYTES = 32_232_419;
+
 export const API_BASE =
   'https://asia-northeast3-inky-voice-cinema.cloudfunctions.net/voiceCinema';
 

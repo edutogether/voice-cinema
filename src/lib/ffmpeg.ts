@@ -1,22 +1,22 @@
-import { PAUSE_SECONDS, RECORD_SECONDS } from '../config';
+import { ENGINE_WASM_BYTES, PAUSE_SECONDS, RECORD_SECONDS } from '../config';
 import { clipUrl } from '../genres';
-import { pickAudioExtension } from '../logic';
+import { pickAudioExtension, progressPercent } from '../logic';
 import { loadFFmpegModule, loadFFmpegUtil, type FFmpegInstance } from './vendor';
 
 // @ffmpeg/util의 toBlobURL(progress=true)은 스트림 리더가 도중에 실패하면 이미 읽은
 // Response.body를 다시 arrayBuffer()로 읽으려다 "body stream already read" 오류를
 // 낸다(라이브에서 재현 확인됨). 그 경로를 피해 직접 fetch + 진행률을 구현한다.
+// 진행률은 받은(압축을 푼) 바이트로만 알린다 — Content-Length는 압축된 크기라 분모로 쓰면 100%를 넘는다(10/20).
 async function toBlobURLWithProgress(
   url: string,
   mimeType: string,
-  onProgress?: (received: number, total: number) => void
+  onProgress?: (received: number) => void
 ): Promise<string> {
   const resp = await fetch(url);
   if (!resp.ok) throw new Error(`엔진 파일 다운로드 실패: ${resp.status} ${url}`);
   if (!resp.body) {
     return URL.createObjectURL(new Blob([await resp.arrayBuffer()], { type: mimeType }));
   }
-  const total = parseInt(resp.headers.get('content-length') || '-1', 10);
   const reader = resp.body.getReader();
   const chunks: Uint8Array[] = [];
   let received = 0;
@@ -25,7 +25,7 @@ async function toBlobURLWithProgress(
     if (done) break;
     chunks.push(value);
     received += value.length;
-    if (onProgress && total > 0) onProgress(received, total);
+    onProgress?.(received);
   }
   return URL.createObjectURL(new Blob(chunks as BlobPart[], { type: mimeType }));
 }
@@ -44,7 +44,7 @@ export function loadEngine(onProgress?: (percent: number) => void): Promise<FFmp
     const wasmURL = await toBlobURLWithProgress(
       '/vendor/ffmpeg-core/ffmpeg-core.wasm',
       'application/wasm',
-      (received, total) => onProgress?.(Math.round((received / total) * 100))
+      (received) => onProgress?.(progressPercent(received, ENGINE_WASM_BYTES))
     );
     await inst.load({ coreURL, wasmURL });
     engine = inst;
