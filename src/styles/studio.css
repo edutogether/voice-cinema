@@ -61,7 +61,7 @@ body:has(#studio.active) { background:#fff; }
 .recpill { display:flex; align-items:center; gap:8px; position:absolute; z-index:2; top:20px; left:28px; color:#fff; background:#d52620; border:1px solid #ee655e; border-radius:999px; padding:8px 14px; font-size:.875rem; font-weight:600; }
 .recpill .d { width:8px; height:8px; border-radius:50%; background:white; }
 /* 아이가 외칠 말(V-g, 10/19 대표님 «띄워») — 멈춘 뒤 «내 차례»·3·2·1·녹음 중에 영상 아래쪽 가운데에 크게, 어두운 화면 위에서도 보이게 맨 위 겹.
-   크기는 자막처럼 영상 크기에서 계산하고(컨테이너 단위를 모르는 옛 브라우저는 앞의 px·vw), 세로 휴대폰은 영상 바로 아래 설명 자리에 둔다. */
+   크기는 자막처럼 영상 크기에서 계산한다(컨테이너 단위를 모르는 옛 브라우저는 앞의 px·vw). 세로 휴대폰은 아래 휴대폰 묶음. */
 .studio-shout { margin:0; pointer-events:none; }
 .studio-shout small { display:block; font-weight:600; line-height:1.3; }
 .studio-shout strong { display:block; font-weight:750; letter-spacing:-.02em; line-height:1.3; word-break:keep-all; }
@@ -80,12 +80,13 @@ body:has(#studio.active) { background:#fff; }
  .studio-shout-screen small { font-size:max(12px,1.6cqw); }
  .studio-shout-screen strong { font-size:max(18px,3.6cqw); }
 }
-.studio-shout-dock { display:none; }
+/* 세로 휴대폰(10/21): 영상 칸이 16:9보다 길어 장면 아래에 띠가 있다 — 외칠 말은 그 띠의 가운데쯤(띠가 좁으면 칸 맨 아래)에 두고,
+   «내 차례»·3·2·1은 외칠 말 자리를 비운 나머지 칸의 가운데에 온다. 설명 자리(조작부)에 두면 멈춘 뒤 영상 칸이 줄었다 늘었다 한다. */
 @media (max-width:600px) and (orientation:portrait) {
- .studio-shout-screen { display:none; }
- .studio-shout-dock { display:block; margin:12px 0 8px; padding:12px 16px 14px; border-radius:14px; background:#fff1f0; color:#b72119; }
- .studio-shout-dock small { font-size:.8125rem; color:#b72119cc; }
- .studio-shout-dock strong { margin-top:2px; font-size:1.5rem; color:#a01b14; }
+ .studio-shout-screen { bottom:max(12px, calc((100cqh - 56.25cqw) / 4 - 48px)); max-width:calc(100% - 32px); padding:10px 18px 12px; border-radius:14px; }
+ .studio-shout-screen small { font-size:.8125rem; }
+ .studio-shout-screen strong { font-size:1.375rem; }
+ .studio-shout-screen ~ :is(.studio-cue,.overlay) { padding-bottom:calc(12px + 22px + 1.3 * .8125rem + 1.3 * 1.375rem); }
 }
 .studio-player-dock { padding:18px 28px max(24px,env(safe-area-inset-bottom)); background:#fff; border-top:1px solid #e8e8e8; }
 .studio-timeline { display:flex; align-items:center; gap:16px; margin-bottom:20px; }
