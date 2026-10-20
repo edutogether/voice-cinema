@@ -867,7 +867,7 @@ Bumm님이 정할 것·직접 하실 것·세션이 할 것을 11/14 기준 순�
 - 테스트: `npm test` (vitest, 루트 57 + functions 55 = 112개, 2026-10-21 기준). 개별 실행은 `cd functions && npm test`
 - 린트: `npm run lint` (eslint). `src/`는 `tsc`가 담당하므로 eslint 대상에서 뺐다. 빈 `catch{}`는 이 코드베이스가
   의도적으로 쓰는 패턴이라 허용해뒀다 — 버그가 아니다
-- E2E: `npm run test:e2e` (155개 — 그중 6개는 조건부 건너뜀, 2026-10-21 기준) — 빌드 후 `dist/`를 서빙해 실제 산출물로 검증한다. 최초 1회
+- E2E: `npm run test:e2e` (162개 — 그중 6개는 조건부 건너뜀, 2026-10-21 기준) — 빌드 후 `dist/`를 서빙해 실제 산출물로 검증한다. 최초 1회
   `npx playwright install chromium` 필요하고, Playwright 버전을 올리면 이 설치를 다시 해야 한다
 - 에뮬레이터: 쓰지 않음 — 서버 쪽은 순수 함수만 유닛테스트하고, 실제 동작은 배포 후 라이브로 확인한다
 

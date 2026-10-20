@@ -76,7 +76,8 @@
   - 🟠 **새 장면 6개(SF·판타지·애니메이션·스릴러·스포츠·뮤지컬) 원판과 외칠 말 글자(V-g)는 가지 `feat/vc2-v3`에만 있다**(10/19, `feat/vc2-scenes` 끝에서 갈라짐) — 미리보기 채널 전용,
     라이브·master에 넣지 않는다. 원판은 `node tools/build-scene.mjs <장르> --slides _media/scenes/v3/<장르> --audio _media/scenes/audio/mix/v3-<장르>.wav`,
     소리는 `_media/scenes/audio/<장르>/cue-v3.json` → `tools/build-scene-audio.mjs`. V-h 배포는 이 가지가 아니라 `feat/vc2-scenes`에서 한다.
-    확인: E2E 153개 중 147 통과·6 조건부 건너뜀·실패 0, 유닛 111개, 린트·타입 통과(10/20 로컬, 카카오톡 수정 위로 다시 얹은 뒤).
+    확인: E2E 159개 중 153 통과·6 조건부 건너뜀·실패 0(10/20 밤, PC 시사 다섯·로고 판 위로 다시 얹은 뒤).
+    새 장면 6장르의 합성용 로고 판(`clips/final/`)·미리보기·정지·썸네일은 미리보기 쪽 원본으로 다시 구웠다(원판은 그대로 — 다시 구워도 SSIM 1.000·소리 같음).
   - 멈춤 화면 «외칠 대사» 글자 띄우기는 «띄워»로 정해졌고, 새 장면을 넣을 때 함께 한다. 로고는 모든 폭에서 «심벌 + InKY Film Festival». 녹음실은 영상 16:9를 위에 두고
   버튼을 아래에 꽉 차게, 결과 화면은 휴대폰에서 QR 위 «내 영화 열기»(팀장 임시 진행). PC(1280·1440·1920)는 픽셀 대조로 그대로.
   전/후 캡처(3배)는 `_media/scenes/captures/2026-10-17/mobile/{before,after,after-final}/`(Git 제외)
