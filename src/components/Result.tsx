@@ -4,7 +4,7 @@ import { FestivalHeader } from './FestivalHeader';
 import { ActionIcon } from './ActionIcon';
 import { mergeClip } from '../lib/ffmpeg';
 import { downloadBlob, uploadToCloud } from '../lib/upload';
-import { buildUploadFilename } from '../logic';
+import { buildUploadFilename, isPreviewChannel } from '../logic';
 import { makeQR } from '../lib/vendor';
 
 export type RecordingSource = { kind: 'sample' } | { kind: 'recording'; blob: Blob; mime: string };
@@ -127,7 +127,9 @@ export function Result({ active, job, onHome, onBack }: Props) {
             <p id="doneMsg">
               {stage.kind === 'cloud'
                 ? '휴대폰 카메라로 QR을 스캔하면 내 영화를 받을 수 있어요'
-                : '인터넷 문제로 자동 전달이 안 됐어요 — 아래 버튼으로 이 기기에 저장하고 운영자에게 알려주세요'}
+                : isPreviewChannel(window.location.hostname)
+                  ? '미리보기 주소에서는 QR을 만들 수 없어요 — 서버 저장은 실제 주소(voice.edutogether.kr)에서만 돼요. 아래 단추로 이 기기에 저장해 확인해 주세요.'
+                  : '인터넷이 잠깐 불안해서 QR을 만들지 못했어요. 아래 단추를 눌러 이 기기에 저장한 뒤 선생님께 알려 주세요.'}
             </p>
 
             {/* 휴대폰에서 직접 체험하면 자기 화면의 QR을 찍을 수 없다 — 같은 공개 주소를 바로 여는 단추(휴대폰에서만 보임, result.css). 휴대폰 한 화면에 들어오게 QR보다 위에 둔다. 10/17 팀장 임시 진행, 대표님 일요일 확인 */}
@@ -155,9 +157,10 @@ export function Result({ active, job, onHome, onBack }: Props) {
               </div>
             )}
 
-            {/* 클라우드 저장 뒤의 공개 범위·11/30 안내 두 줄은 10/20 대표님 지시로 뺐다(개인정보처리방침에 있다). 기기 저장 안내는 남긴다 — 자동삭제 대상이 아니다 */}
+            {/* 클라우드 저장 뒤의 공개 범위·11/30 안내 두 줄은 10/20 대표님 지시로 뺐다(개인정보처리방침에 있다). 기기 저장 안내는 남긴다 —
+                자동삭제 대상이 아니라 아이 목소리가 부스 기기에 남는다. 문구는 아이·선생님이 읽기 쉽게(10/20), 자세한 절차는 운영자 설명서 5·6장 */}
             {stage.kind === 'fallback' && (
-              <div className="savemode" id="savemode">클라우드 업로드 실패 — 위 버튼을 누르면 이 기기 다운로드 폴더에 저장됩니다. 학생에게 전달 후 운영자가 이 파일을 꼭 삭제해 주세요 — 자동삭제 대상이 아닙니다.</div>
+              <div className="savemode" id="savemode">선생님께: 이 기기에 저장된 영화는 자동으로 지워지지 않아요. 학생에게 전달한 뒤 꼭 지워 주세요.</div>
             )}
 
             <div className="row result-actions">

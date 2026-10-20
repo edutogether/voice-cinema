@@ -172,8 +172,9 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     await expect(page.locator('#done')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('#downloadRow')).toBeVisible();
     await expect(page.locator('#qrbox')).toBeHidden();
-    await expect(page.locator('#doneMsg')).toContainText('인터넷 문제');
-    await expect(page.locator('#savemode')).toContainText('자동삭제 대상이 아닙니다');
+    await expect(page.locator('#doneMsg')).toContainText('인터넷이 잠깐 불안해서');
+    // 기기에 저장된 영화는 자동 삭제 대상이 아니다 — 선생님께 지워 달라는 한 줄은 남긴다(아이 목소리 보호)
+    await expect(page.locator('#savemode')).toContainText('자동으로 지워지지 않아요');
     expect(callCount).toBeGreaterThanOrEqual(2); // 1차 실패 + 재시도
 
     // #downloadBtn 자체엔 download 속성이 없다 — 클릭 시 JS가 그 순간 <a download>를

@@ -245,8 +245,10 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
  .chart-label { grid-column:2; grid-row:1; justify-self:start; margin:0; padding:0; border-radius:0; background:none; color:#626262; font-size:.6875rem; line-height:1.4; }
  .chart-app { grid-column:2; grid-row:2; font-size:1.0625rem; line-height:1.3; }
  .chart-app > span,.chart-invitation h2,.chart-invitation > p:last-of-type,.chart-guide { display:none; }
- /* 제목은 장면과 한 덩어리 — 남는 높이는 그 묶음의 위아래로 나눠 제목이 장면에서 떨어지지 않게 한다 */
- .chart-main { position:relative; justify-content:center; }
+ /* 남는 높이는 세 몫으로 고르게 나눈다(10/20 대표님 «여백이 엉망») — 맨 위 줄과 제목 사이, «더빙하기»와 그림 띠 사이, 그림 띠와 바닥글 사이.
+    제목·장면·«더빙하기»는 한 덩어리로 붙여 둔다. 앞의 한 몫은 ::before가, 뒤의 두 몫은 장면 칸(flex 2)에서 그림 띠의 위아래 auto 여백이 받는다 */
+ .chart-main { position:relative; justify-content:flex-start; }
+ .chart-main::before { content:""; flex:1 0 0; }
  .chart-heading { padding-bottom:2px; }
  .chart-heading h1 > :not(.chart-title-phone),.chart-heading > p { display:none; }
  .chart-title-phone { display:inline; }
@@ -257,7 +259,8 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
  /* 카드 폭은 양옆 여백까지 넓힌 장면 칸의 94%(컨테이너 단위, 못 쓰는 브라우저는 화면 폭 기준). 휴대폰은 늘 이 폭이고, 넓고 낮은 창(마우스로 좁힌
     PC 창·가로로 든 휴대폰)에서만 화면 높이가 상한이 된다 — --vc-reserve는 카드 그림 밖의 세로 몫(머리글·안내·제목·단추·번호·바로가기·바닥글)이고,
     안내를 접는 높이 구간에서 아래가 같이 줄인다. 아주 낮으면 장면 칸의 50% 아래로는 줄이지 않고 스크롤을 허용한다. */
- .scene-carousel { flex:none; --vc-reserve:408px; }
+ .scene-carousel { flex:2 0 auto; --vc-reserve:408px; }
+ .scene-choice-row { margin-block:auto; }
  .scene-stage { --scene-caption-height:62px; --scene-width:max(50vw, min(94vw, (100vh - var(--vc-reserve)) * 16 / 9)); flex:none; min-height:0; margin-inline:-16px; height:calc(var(--scene-width) * 9 / 16 + var(--scene-caption-height) + 8px); }
  @supports (width:1cqw) and (height:1svh) {
   .scene-carousel { container-type:inline-size; }
@@ -294,6 +297,18 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
  /* 날짜는 왼쪽, 영화제 이름은 오른쪽(10/19 대표님) — 글자를 키워 한 줄에 안 들면 날짜가 아랫줄로 내려간다 */
  #home .cinema-footer p { flex:1; display:flex; flex-direction:row-reverse; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:2px 8px; }
  #home .cinema-footer br { display:none; }
+}
+/* 키 큰 휴대폰(10/20): 남는 높이를 빈 곳으로만 두지 않고 글자·단추·그림 띠를 화면 높이에 맞춰 조금 키운다(장면 카드는 16:9 그대로) */
+@media (max-width:600px) and (min-height:720px) {
+ .chart-aside { grid-template-columns:clamp(40px,6.4svh,56px) minmax(0,1fr); }
+ .chart-invitation img { width:clamp(40px,6.4svh,56px); height:clamp(40px,6.4svh,56px); }
+ .chart-label { font-size:clamp(.6875rem,1.5svh,.8125rem); }
+ .chart-app { font-size:clamp(1.0625rem,2.5svh,1.375rem); }
+ .chart-heading h1 { font-size:clamp(1.3125rem,3svh,1.625rem); }
+ .scene-stage { --scene-caption-height:calc(clamp(44px,6.4svh,56px) + 18px); }
+ .scene-shell .tile-enter { min-height:clamp(44px,6.4svh,56px); font-size:clamp(1rem,2.1svh,1.125rem); }
+ .scene-choice-set { grid-template-columns:repeat(8,clamp(96px,15svh,132px)); }
+ .scene-choice-card > span { font-size:clamp(.75rem,1.6svh,.875rem); }
 }
 /* 아주 낮은 화면(작은 아이폰 사파리 등): 안내 줄을 접고 장면을 먼저 보인다. 그러면 제목이 머리글 바로 아래로 올라오므로,
    한 줄을 다 쓰는 제목이 오른쪽 위 «개인정보처리방침»과 겹치지 않게 그 링크 아래에서 시작한다 */

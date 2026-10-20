@@ -18,6 +18,7 @@ body:has(#studio.active) { background:#fff; }
 .studio-brand em { color:#df291f; font-style:normal; }
 .studio-video-frame { position:relative; min-height:0; background:#f3f3f3; isolation:isolate; }
 .stage video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
+.studio-ambient { display:none; }
 .studio-screen-playback { position:absolute; inset:0; width:100%; height:100%; display:grid; place-items:center; border:0; background:transparent; cursor:pointer; color:white; }
 .studio-screen-playback > span { display:grid; place-items:center; width:96px; height:96px; border:1px solid #ffffff80; border-radius:50%; background:#18181866; transition:transform .18s ease-out,background .18s ease-out,border-color .18s ease-out; }
 .studio-screen-playback .action-icon { width:48px; height:48px; fill:currentColor; stroke:none; margin-left:5px; }
@@ -63,7 +64,8 @@ body:has(#studio.active) { background:#fff; }
 .studio-player-dock { padding:18px 28px max(24px,env(safe-area-inset-bottom)); background:#fff; border-top:1px solid #e8e8e8; }
 .studio-timeline { display:flex; align-items:center; gap:16px; margin-bottom:20px; }
 .timeline-state,.clip-time { flex-shrink:0; color:#626262; font-size:.8125rem; line-height:1.5; font-variant-numeric:tabular-nums; }
-.clip-time { min-width:13ch; text-align:right; }
+/* 시간 글자 폭을 미리 잡아 두지 않는다 — 대기 중 «10:00»만 있을 때도 막대가 시간 글자 바로 앞까지 온다(10/20 대표님) */
+.clip-time { text-align:right; }
 .progress { flex:1; position:relative; height:24px; margin-block:-10.5px; }
 .progress::before { content:''; position:absolute; inset:10.5px 0; background:#e7e7e7; border-radius:3px; }
 .progress > i { position:absolute; top:10.5px; display:block; width:100%; height:3px; background:#df291f; transform:scaleX(0); transform-origin:left center; }
@@ -119,13 +121,28 @@ body:has(#studio.active) { background:#fff; }
  .recpill { top:16px; left:16px; }
  .workflow-footer { padding:24px 4px; font-size:.8125rem; }
 }
-/* 세로 휴대폰(10/17): 영상은 위에 16:9 그대로 두고(회색 빈 띠 없음), 설명은 그 아래, 버튼은 엄지가 닿는 맨 아래에 가로를 꽉 채운다. */
+/* 세로 휴대폰(10/20 대표님 «영상 칸이 짧고 아래가 텅 빈다»): 영상 칸이 남는 높이를 차지한다 — 16:9에서 5:7까지. 장면은 자르지 않고
+   (10/01 «인물 양옆이 잘리지 않게») 가운데 16:9로 두고, 위아래 남는 칸은 그 장면의 색을 번져 채운다(StudioAmbient).
+   그보다 남으면 아래 조작부가 받아 설명과 단추 사이로 나눈다. 단추는 엄지가 닿는 맨 아래에 가로를 꽉 채운다.
+   영상 칸의 flex 1000·조작부 1은 영상 칸이 상한에 닿기 전까지 남는 높이를 거의 다 영상 칸에 주려는 것이다.
+   안내 글은 늘 두 줄 몫을 잡아 둔다 — 단계마다 글 길이가 달라도 장면이 흐르는 중에 영상 칸 크기가 출렁이지 않는다. */
 @media (max-width:600px) and (orientation:portrait) {
- .stage { grid-template-rows:auto auto 1fr; }
- .studio-video-frame { aspect-ratio:16 / 9; }
- .studio-player-dock { display:flex; flex-direction:column; }
+ .stage { display:flex; flex-direction:column; }
+ .studio-heading { flex:none; }
+ .studio-video-frame { flex:1000 1 0; min-height:56.25vw; max-height:140vw; }
+ .hint { min-height:3.3em; }
+ .studio-ambient { display:block; position:absolute; inset:0; width:100%; height:100%; }
+ .studio-player-dock { flex:1 0 auto; display:flex; flex-direction:column; }
+ /* 제목은 위 머리줄에 한 번만(10/20) — 영상 위의 «장면 더빙 / 제목 / 장르 | 10초»는 세로 휴대폰에서 접는다 */
+ .studio-pause-title { display:none; }
  .controls { flex:1; flex-direction:column; flex-wrap:nowrap; align-items:stretch; justify-content:space-between; }
  .controls-copy { flex:none; }
+}
+/* 키 큰 휴대폰: 영상 칸이 상한에 닿고도 남는 높이는 글과 단추를 PC 크기로 키워 채운다(10/20) */
+@media (max-width:600px) and (orientation:portrait) and (min-height:800px) {
+ .controls h2 { font-size:1.375rem; }
+ .hint { font-size:.9375rem; }
+ #studio .btn { min-height:56px; font-size:1rem; }
 }
 @media (max-height:500px) and (orientation:landscape) {
  .stage { min-height:440px; grid-template-rows:auto minmax(200px,1fr) auto; }

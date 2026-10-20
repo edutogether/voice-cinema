@@ -3,7 +3,7 @@
 import { test, expect } from 'vitest';
 import {
   pickAudioExtension, buildUploadFilename, pickSupportedMime, shouldRetryUpload,
-  progressPercent, isKakaoInApp, kakaoExternalUrl, kakaoMenuHint,
+  progressPercent, isKakaoInApp, kakaoExternalUrl, kakaoMenuHint, isPreviewChannel,
 } from './logic';
 
 test('pickAudioExtension: mp4 계열은 m4a, 그 외(webm/opus)는 webm', () => {
@@ -82,4 +82,11 @@ test('kakaoExternalUrl: 지금 주소를 통째로 인코딩해 카카오톡의 
 test('kakaoMenuHint: 카카오가 안내한 메뉴 위치대로 — 아이폰은 위 가운데 주소, 안드로이드는 아래 오른쪽 메뉴', () => {
   expect(kakaoMenuHint(UA.kakaoIphone)).toContain('위 가운데 주소');
   expect(kakaoMenuHint(UA.kakaoAndroid)).toContain('아래 오른쪽 메뉴');
+});
+
+test('isPreviewChannel: Firebase 미리보기 채널 주소만 참이다(업로드가 막히는 주소)', () => {
+  expect(isPreviewChannel('voice-cinema--vc2-pob2jj8b.web.app')).toBe(true);
+  expect(isPreviewChannel('voice.edutogether.kr')).toBe(false);
+  expect(isPreviewChannel('voice-cinema.web.app')).toBe(false);
+  expect(isPreviewChannel('localhost')).toBe(false);
 });

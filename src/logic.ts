@@ -40,6 +40,14 @@ export function progressPercent(received: number, total: number): number {
 
 // 카카오톡 안 브라우저인가 — 카카오톡은 UA 끝에 «KAKAOTALK 버전»을 붙인다(안드로이드·아이폰 공통).
 // 카카오스토리 등 다른 인앱은 이번 대상이 아니다(10/20 대표님).
+/**
+ * Firebase Hosting 미리보기 채널(`<사이트>--<채널>-<해시>.web.app`)인지. 미리보기 주소는 서버 허용 출처 밖이라 업로드가 늘 막힌다
+ * (functions/index.js의 ALLOWED_ORIGINS) — 실패 화면이 «인터넷 문제»로 보이지 않게 그 사실을 알린다(10/20 대표님 아이폰 시험에서 오진).
+ */
+export function isPreviewChannel(hostname: string): boolean {
+  return /--[a-z0-9-]+\.web\.app$/.test(hostname);
+}
+
 export function isKakaoInApp(ua: string): boolean {
   return /\bKAKAOTALK\b/i.test(ua);
 }
