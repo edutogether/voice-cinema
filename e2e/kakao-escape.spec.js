@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { setTimeout as sleep } from 'node:timers/promises';
 
 // 카카오톡 안 브라우저로 열리면 바깥 브라우저로 넘긴다(10/20 대표님 — 카톡 안에서는 녹음 마이크·영상 저장이 막힐 수 있다).
 // 진짜 카카오톡은 여기서 못 띄우므로 UA만 흉내 낸다 — 이동 주소가 맞는지·한 번만 시도하는지·안내가 맞는지를 고정하고,
@@ -17,7 +18,13 @@ for (const [name, ua, hint] of [['아이폰', UA.iphone, '화면 위 가운데 �
 
     test('«브라우저로 여는 중…»을 보인 뒤 바깥 브라우저 열기 주소로 한 번 이동하고, 안 열리면 손으로 여는 길을 안내한다', async ({ page }) => {
       const tried = [];
-      page.on('request', (r) => { if (isExternal(r.url())) tried.push(r.url()); });
+      const app = [];
+      const cut = [];
+      page.on('request', (r) => {
+        if (isExternal(r.url())) tried.push(r.url());
+        else if (/ffmpeg-core|\/clips\/|recaptcha/.test(r.url())) app.push(r.url());
+      });
+      page.on('requestfailed', (r) => { if (!isExternal(r.url())) cut.push(r.url()); });
       await page.goto('/');
       await expect(page.locator('#kakao-escape-title')).toHaveText('브라우저로 여는 중…');
       await expect.poll(() => tried.length).toBe(1);
@@ -26,6 +33,24 @@ for (const [name, ua, hint] of [['아이폰', UA.iphone, '화면 위 가운데 �
       await expect(page.locator('.kakao-escape-hint')).toContainText(hint);
       await expect(page.locator('.kakao-escape-open')).toHaveAttribute('href', tried[0]);
       await expect(page.locator('.kakao-escape-open')).toBeFocused();
+      // 넘기기 전에는 앱을 띄우지 않는다(엔진·영상·reCAPTCHA를 받지 않는다) — 받는 중에 이동하면 요청이 끊긴다
+      expect(app).toEqual([]);
+      expect(cut).toEqual([]);
+    });
+
+    test('페이지가 늦게 떠도 다 뜬 뒤에 넘긴다 — 받는 중인 요청을 끊지 않는다', async ({ page }) => {
+      let released = 0;
+      await page.route('**/brands/education.png', async (route) => {
+        await sleep(2000);
+        released = Date.now();
+        await route.continue();
+      });
+      const tried = [];
+      page.on('request', (r) => { if (isExternal(r.url())) tried.push(Date.now()); });
+      await page.goto('/', { waitUntil: 'commit' });
+      await expect.poll(() => tried.length, { timeout: 8000 }).toBe(1);
+      expect(released).toBeGreaterThan(0);
+      expect(tried[0]).toBeGreaterThanOrEqual(released);
     });
 
     test('다시 열려도(새로고침) 자동 이동을 되풀이하지 않고 안내만 보이며, «여기서 계속하기»로 앱을 쓸 수 있다', async ({ page }) => {

@@ -10,11 +10,13 @@ import './styles/studio.css';
 import './styles/result.css';
 import './styles/kakao.css';
 
-escapeKakaoInApp();
-installSplash();
+function startApp() {
+  installSplash();
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>
+  );
+}
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-);
+if (!escapeKakaoInApp(startApp)) startApp();
