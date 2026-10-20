@@ -8,7 +8,6 @@ import { lastInputWasKeyboard } from '../lib/inputModality';
 import { ActionIcon } from './ActionIcon';
 import { ClipTimeline } from './ClipTimeline';
 import { SceneCaption } from './SceneCaption';
-import { StudioAmbient } from './StudioAmbient';
 import { StudioEntrance } from './StudioEntrance';
 import type { SceneEntrance } from '../lib/sceneEntrance';
 import type { RecordingSource } from './Result';
@@ -106,7 +105,6 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
               <span className="studio-brand"><img src="/icons/studio-microphone.png" width="34" height="34" alt="" /><span>Voice <em>Cinema</em></span></span>
             </div>
             <div className={`studio-video-frame${phase === 'idle' ? ' is-paused' : ''}`}>
-              <StudioAmbient videoRef={videoRef} still={stillUrl(genre.id)} />
               <video id="clip" ref={videoRef} poster={stillUrl(genre.id)} playsInline muted preload="auto"
                 onWaiting={() => setBuffering(true)} onPlaying={() => setBuffering(false)} onError={() => setBuffering(false)} />
               <div className="studio-pause-shade" aria-hidden="true" />

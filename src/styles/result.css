@@ -89,6 +89,8 @@ body:has(#result.active) { background:#fff; }
  .result-details h2 { font-size:1.625rem; }
  .result-symbol { display:none; }
  #result .btn { width:100%; white-space:normal; }
+ /* «다른 더빙 하기»는 휴대폰에서도 좁은 보조 단추로 가운데에(10/21 팀장 검수 — 빨간 큰 단추 둘이면 주 단추를 모른다) */
+ #result #doneHomeBtn { width:auto; margin-inline:auto; }
  .qrbox { margin-inline:auto; max-width:100%; }
  .result-actions { gap:10px; }
  .result-fallback .savemode { padding:16px; }

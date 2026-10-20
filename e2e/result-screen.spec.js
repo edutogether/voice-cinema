@@ -45,6 +45,15 @@ for (const [width, height] of [[1440, 900], [390, 664]]) {
     const home = page.locator('#doneHomeBtn');
     await expect(home).toHaveText('다른 더빙 하기');
     await expect(home.locator('svg.action-icon')).toHaveCount(1);
+    // «다른 더빙 하기»는 모든 폭에서 좁은 보조 단추(흰 바탕·테두리) — 빨간 주 단추는 «내 영화 열기» 하나(10/21 팀장 검수)
+    const look = await home.evaluate((el) => { const s = getComputedStyle(el); return { bg: s.backgroundColor, border: s.borderTopWidth }; });
+    expect(look.bg).toBe('rgb(255, 255, 255)');
+    expect(parseFloat(look.border)).toBeGreaterThan(0);
+    const detailsWidth = await page.locator('.result-details').evaluate((el) => el.clientWidth);
+    expect((await home.boundingBox()).width).toBeLessThan(detailsWidth * .75);
+    // QR 안내 문장은 한 줄(«있어요»만 아랫줄로 떨어지지 않게)
+    const msgLines = await page.locator('#doneMsg').evaluate((el) => Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)));
+    expect(msgLines).toBe(1);
     if (width > 760) {
       // 단추는 글자 폭만큼, 그림은 오른쪽 내용 높이에 맞춘다
       const details = await page.locator('.result-details').evaluate((el) => {

@@ -126,7 +126,7 @@ export function Result({ active, job, onHome, onBack }: Props) {
             <h2 tabIndex={-1}>{stage.kind === 'cloud' ? '세상에 하나뿐인, 내 영화.' : '영화를 이 기기에 저장해 주세요'}</h2>
             <p id="doneMsg">
               {stage.kind === 'cloud'
-                ? '휴대폰 카메라로 QR을 스캔하면 내 영화를 받을 수 있어요'
+                ? 'QR을 찍으면 내 영화를 받을 수 있어요'
                 : isPreviewChannel(window.location.hostname)
                   ? '미리보기 주소에서는 QR을 만들 수 없어요 — 서버 저장은 실제 주소(voice.edutogether.kr)에서만 돼요. 아래 단추로 이 기기에 저장해 확인해 주세요.'
                   : '인터넷이 잠깐 불안해서 QR을 만들지 못했어요. 아래 단추를 눌러 이 기기에 저장한 뒤 선생님께 알려 주세요.'}
@@ -164,7 +164,8 @@ export function Result({ active, job, onHome, onBack }: Props) {
             )}
 
             <div className="row result-actions">
-              <button className={`btn btn-lg ${stage.kind === 'cloud' ? 'btn-primary' : 'btn-ghost'}`} id="doneHomeBtn" onClick={onHome}><ActionIcon name="clapperboard" /> 다른 더빙 하기</button>
+              {/* «다른 더빙 하기»는 보조 단추(흰 바탕·테두리, 좁게) — 주 단추는 «내 영화 열기»·«이 기기에 저장»이다(10/21 팀장 검수) */}
+              <button className="btn btn-lg btn-ghost" id="doneHomeBtn" onClick={onHome}><ActionIcon name="clapperboard" /> 다른 더빙 하기</button>
             </div>
           </div>
         )}
