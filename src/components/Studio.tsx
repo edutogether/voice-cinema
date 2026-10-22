@@ -143,7 +143,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
                 <ClipTimeline phase={phase} videoRef={videoRef} />
               </div>
               <div className={`controls${inTake ? ' is-recording' : ''}${done ? ' is-recorded' : ''}`}>
-                <div className="controls-copy">
+                <div className={`controls-copy${shouting ? ' is-shouting' : ''}`}>
                   <h2>{sampleMode && done ? '샘플 체험을 마쳤어요' : HEADLINE[phase]}</h2>
                   <div className="hint" id="hint" role="status" data-mic-error={dub.micError ?? undefined}>{dub.hint}</div>
                   {shout('dock')}

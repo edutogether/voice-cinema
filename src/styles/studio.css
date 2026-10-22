@@ -90,6 +90,8 @@ body:has(#studio.active) { background:#fff; }
  .studio-shout-dock { display:flex; flex-direction:column; justify-content:center; position:absolute; inset:0; z-index:1; padding:8px 14px 10px; border-radius:14px; background:#fff1f0; color:#b72119; }
  .studio-shout-dock small { font-size:.6875rem; color:#b72119cc; }
  .studio-shout-dock strong { margin-top:2px; font-size:1.125rem; line-height:1.25; color:#a01b14; }
+ /* 밑의 제목·설명은 글자만 투명하게 — 둥근 모서리 틈으로 글자 조각이 비치지 않게 하되 자리와 읽어 주기는 그대로 */
+ .controls-copy.is-shouting > :is(h2,.hint) { color:transparent; }
 }
 @media (max-width:600px) and (orientation:portrait) and (min-height:800px) {
  .studio-shout-dock { padding:10px 16px 12px; }
