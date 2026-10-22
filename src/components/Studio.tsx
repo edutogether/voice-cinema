@@ -61,6 +61,13 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
   const previewing = phase === 'previewing';
   const playing = phase === 'watching' || phase === 'continuing' || previewing;
   const shouting = phase === 'cue' || phase === 'countdown' || phase === 'recording';
+  // 외칠 말은 두 자리에 두고 CSS가 하나만 보인다 — 영상 아래쪽 가운데(PC·태블릿·가로), 세로 휴대폰은 안내 글 자리에 덮어서
+  // (10/22 — 화면 폭 16:9 영상 안에서는 3·2·1과 겹치고, 조작부에 끼우면 영상·단추 덩어리가 움직인다)
+  const shout = (place: 'screen' | 'dock') => shouting && (
+    <p className={`studio-shout studio-shout-${place}`} data-testid={`studio-shout-${place}`}>
+      <small>{STUDIO_COPY.shoutLabel}</small><strong>“{genre.shout}”</strong>
+    </p>
+  );
 
   useEffect(() => {
     if (active) titleRef.current?.focus({ preventScroll: true });
@@ -121,10 +128,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
               </button>}
               {playing && buffering && <div className="studio-buffering" role="status">영상을 불러오고 있어요</div>}
               <SceneCaption genre={genre} videoRef={videoRef} enabled={phase === 'watching' || previewing} />
-              {/* 외칠 말은 영상 칸 아래쪽 가운데 — 세로 휴대폰은 장면 아래 띠에 둔다(조작부에 끼우면 영상 칸이 출렁인다, 10/21) */}
-              {shouting && <p className="studio-shout studio-shout-screen" data-testid="studio-shout-screen">
-                <small>{STUDIO_COPY.shoutLabel}</small><strong>“{genre.shout}”</strong>
-              </p>}
+              {shout('screen')}
               {phase === 'cue' && <div className="studio-cue" role="status" id="cue"><strong>{STUDIO_COPY.yourTurn}</strong></div>}
               {dub.countdown > 0 && <div className="overlay show" id="overlay"><div className="count" id="count" key={dub.countdown} aria-label={`${dub.countdown}초 뒤 녹음 시작`}>{dub.countdown}<span>{STUDIO_COPY.speakNow}</span></div></div>}
               {phase === 'recording' && <>
@@ -142,6 +146,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
                 <div className="controls-copy">
                   <h2>{sampleMode && done ? '샘플 체험을 마쳤어요' : HEADLINE[phase]}</h2>
                   <div className="hint" id="hint" role="status" data-mic-error={dub.micError ?? undefined}>{dub.hint}</div>
+                  {shout('dock')}
                 </div>
                 {!done && <div className="record-actions">
                   {(phase === 'idle' || previewing) && <button className="btn btn-ghost" id="previewBtn" type="button" onClick={previewing ? dub.reset : dub.preview}>
