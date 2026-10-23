@@ -97,7 +97,7 @@ test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
     await page.locator('#recBtn').click();
     const caption = page.getByTestId('scene-caption');
     await expect(caption).toBeVisible({ timeout: 5000 });
-    await expect(caption).toHaveText('이제… 아무도 몰라보셔.');
+    await expect(caption).toHaveText('설이한테 꼭 온다고 해 !');
     const style = await caption.evaluate(el => {
       const s = getComputedStyle(el);
       return { color: s.color, background: s.backgroundColor, lines: Math.round(el.getBoundingClientRect().height / parseFloat(s.lineHeight)) };

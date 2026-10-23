@@ -22,16 +22,15 @@ export interface Genre {
 // 상대 대사는 모든 장르가 1.6초에 시작해 3.4초 전에 끝난다(스토리보드 §0).
 const line = (text: string) => ({ text, start: 1.6, end: 3.4 });
 
-// SF·판타지·애니메이션·스릴러·스포츠·뮤지컬은 10/19 새 장면(ideas-20261019.md)이고 제목은 대표님 확정이다(다섯은 10/20, 판타지는 10/22).
-// 히어로·드라마는 10/16 장면 그대로이고, 외칠 말은 storyboards.md의 첫 «예시 외침»이다. 10/22 확정된 새 제목(히어로 «폭주기관차»·
-// 드라마 «안녕, 설이»)은 새 장면 원판과 함께 바꾼다 — 대사·외칠 말도 새 장면 것이라 제목만 바꾸면 다른 영화로 보인다.
+// 8장르 모두 새 장면(ideas-20261019.md)이고 제목은 대표님 확정이다(다섯은 10/20, 판타지·히어로·드라마는 10/22).
+// 원판은 그린 키프레임을 첫·끝 그림으로 넣은 Higgsfield 영상 두 토막을 이은 것이다(10/23, 8편 모두 대표님 통과).
 export const GENRES: Genre[] = [
   { id: 'sf', name: 'SF', color: '#3fa7c9', summary: '퍼스트 헬로', line: line('인사해 봐… 크게 !'), shout: '안녕 ! 우린 지구에서 왔어 !' },
   { id: 'fantasy', name: '판타지', color: '#8a63d2', summary: '빛의 결투', line: line('나와 겨루겠다고 ?'), shout: '그래 ! 내가 이긴다 !' },
   { id: 'animation', name: '애니메이션', color: '#d97b3f', summary: '날아라 미르', line: line('준비됐어 ? 하나, 둘…'), shout: '셋 ! 날아라, 미르 !' },
-  { id: 'hero', name: '히어로', color: '#c94f5c', summary: '왼쪽을 봐', line: line('왼쪽을 봐. 우리가 왔어 !'), shout: '모두, 함께 간다 !' },
+  { id: 'hero', name: '히어로', color: '#c94f5c', summary: '폭주기관차', line: line('기차를 멈춰, 지금 !'), shout: '멈춰라 ! 멈춰 !' },
   { id: 'thriller', name: '스릴러', color: '#2f9e6e', summary: '우리 같이 놀자', line: line('우리랑… 같이 놀자.'), shout: '싫어 ! 저리 가 !' },
-  { id: 'drama', name: '드라마', color: '#c9a24b', summary: '기억의 한마디', line: line('이제… 아무도 몰라보셔.'), shout: '할머니, 사진 속 아빠 기억나요 ?' },
+  { id: 'drama', name: '드라마', color: '#c9a24b', summary: '안녕, 설이', line: line('설이한테 꼭 온다고 해 !'), shout: '설이야 ! 꼭 다시 올게 !' },
   { id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '버저비터', line: line('3초 ! 네가 끝내 !'), shout: '간다 ! 내가 끝낸다 !' },
   { id: 'musical', name: '뮤지컬', color: '#c4559e', summary: '선셋 하이웨이', line: line('음악 간다, 신호 줘 !'), shout: '하나, 둘, 셋, 넷 !' },
 ];
