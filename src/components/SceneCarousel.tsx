@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { GENRES, thumbUrl, type Genre } from '../genres';
 import { GenreTile } from './GenreTile';
 import { useSceneMotion } from '../hooks/useSceneMotion';
+import { fitScale } from '../lib/fit';
 
 // 대기 화면은 한 장면을 충분히 본 뒤 다음 장면을 소개한다. 직접 조작하는 간격과 구분한다.
 const AUTO_ADVANCE_MS = 6000;
@@ -57,7 +58,7 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
     // 좁은 화면에서도 지나치게 느려지지 않도록 초당 이동 거리를 고정한다.
     // 순환 거리도 실제 첫 묶음 너비와 맞춰 마지막 프레임의 위치 오차를 피한다.
     const measure = () => {
-      const width = set.getBoundingClientRect().width;
+      const width = set.getBoundingClientRect().width / fitScale();
       if (width <= 0) return;
       track.style.setProperty('--flow-distance', `${-width}px`);
       track.style.setProperty('--flow-duration', `${width / 22}s`);

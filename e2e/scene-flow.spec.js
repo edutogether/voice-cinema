@@ -86,10 +86,12 @@ for (const width of [655, 1440]) {
     const motion = await page.locator('.scene-choice-track').evaluate(track => {
       const animation = track.getAnimations()[0];
       animation.pause();
+      // 기준 화면 px로 잰다 — 화면을 통째로 맞추므로(public/fit.js, 10/23) 실제 화면에서는 그 비율만큼 빠르거나 느리다
+      const fit = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fit')) || 1;
       const duration = Number(animation.effect.getTiming().duration);
       const sample = (time, copy) => {
         animation.currentTime = time;
-        return track.children[copy].firstElementChild.getBoundingClientRect().x;
+        return track.children[copy].firstElementChild.getBoundingClientRect().x / fit;
       };
       // 시간에 따른 실제 화면 이동과, 경계 전후 같은 장면의 이어짐을 본다.
       const speed = sample(1000, 0) - sample(2000, 0);

@@ -14,6 +14,19 @@
   --ok: #39d59a;
   --danger: #ff5470;
   --shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  /* 해상도별 화면 맞춤(10/23): public/fit.js가 기기 종류마다 기준 화면(PC 1366 · 태블릿 가로 1024/세로 768 · 휴대폰 390)을 통째로 비율 조정하고,
+     그 «기준 화면 크기»를 --app-w·--app-h로 준다. 크롬은 zoom 안에서 vw·vh까지 키우므로 화면 단위 대신 이것을 쓴다.
+     스크립트가 없을 때(비율 1)는 실제 화면 크기와 같다. */
+  --app-w: 100vw;
+  --app-h: 100svh;
+  --vw: calc(var(--app-w) / 100);
+  --vh: calc(var(--app-h) / 100);
+}
+
+/* 폭·높이 구간은 이 상자(@container app)로 판정한다 — 화면을 통째로 비율 조정해도 기준 화면 크기로 갈린다. */
+#root {
+  container: app / size;
+  height: var(--app-h);
 }
 
 * {
@@ -38,7 +51,7 @@ body {
   text-rendering: optimizeLegibility;
   color: var(--cream);
   background: var(--bg);
-  min-height: 100dvh;
+  min-height: var(--app-h);
   overflow-x: hidden;
   user-select: none;
 }
@@ -47,7 +60,7 @@ body {
   max-width: 1520px;
   margin: 0 auto;
   padding: 0 48px;
-  min-height: 100dvh;
+  min-height: var(--app-h);
   display: flex;
   flex-direction: column;
 }
@@ -62,8 +75,8 @@ body {
   display: flex;
   animation: fade 0.35s ease;
 }
-@media (max-width: 900px) { .wrap { padding: 0 24px; } }
-@media (max-width: 600px) { .wrap { padding: 0 20px; } }
+@container app (max-width: 900px) { .wrap { padding: 0 24px; } }
+@container app (max-width: 600px) { .wrap { padding: 0 20px; } }
 @media (prefers-reduced-motion: reduce) { .view.active { animation: none; } }
 @keyframes fade {
   from {
@@ -94,7 +107,7 @@ body {
 }
 .btn-lg {
   padding: 18px 22px;
-  font-size: clamp(16px, 2.2vw, 19px);
+  font-size: clamp(16px, calc(2.2 * var(--vw)), 19px);
   min-width: 130px;
   flex: 1 1 130px;
   max-width: 220px;
@@ -125,8 +138,8 @@ body {
    position: fixed라 레이아웃을 밀지 않는다. */
 .update-nudge {
   position: fixed;
-  right: clamp(12px, 2vw, 20px);
-  bottom: clamp(12px, 2vw, 20px);
+  right: clamp(12px, calc(2 * var(--vw)), 20px);
+  bottom: clamp(12px, calc(2 * var(--vw)), 20px);
   z-index: 50;
   appearance: none;
   cursor: pointer;
@@ -153,7 +166,7 @@ body {
 }
 /* 좁은 화면에서는 개인정보처리방침 링크가 화면 아래 가운데에 있어 알림과 겹친다 —
    링크 위로 올려 붙인다(실측으로 확인). */
-@media (max-width: 759px) {
+@container app (max-width: 759px) {
   .update-nudge {
     bottom: 48px;
   }

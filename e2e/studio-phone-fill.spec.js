@@ -18,7 +18,8 @@ const measure = (page) => page.evaluate(() => {
     actionsTop: Math.round(actions.top),
     videoFit: getComputedStyle(document.querySelector('#clip')).objectFit,
     pauseTitle: getComputedStyle(document.querySelector('.studio-pause-title')).display,
-    barToTime: Math.round(box('.clip-time').left - box('.progress').right),
+    // 기준 화면(390) px로 잰다 — 430 폭은 기준 화면을 1.1배로 키워 보인다(public/fit.js, 10/23)
+    barToTime: Math.round((box('.clip-time').left - box('.progress').right) / (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fit')) || 1)),
     scroll: document.scrollingElement.scrollHeight - window.innerHeight,
   };
 });

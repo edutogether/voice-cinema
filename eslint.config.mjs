@@ -80,6 +80,15 @@ export default [
     rules: { 'no-undef': 'off' },
   },
   {
+    // 해상도별 화면 맞춤 — 번들 밖에서 body 첫머리에 읽는 고전 스크립트다(브라우저 전역).
+    files: ['public/fit.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'script',
+      globals: { window: 'readonly', document: 'readonly', navigator: 'readonly', matchMedia: 'readonly' },
+    },
+  },
+  {
     // Playwright E2E 테스트 + 설정
     files: ['e2e/**/*.js', 'playwright.config.js'],
     languageOptions: {

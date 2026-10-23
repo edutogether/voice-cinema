@@ -41,6 +41,8 @@
   <link rel="preload" as="font" type="font/woff2" crossorigin href="/fonts/pretendard-800.woff2">
 </head>
 <body>
+<!-- 해상도별 화면 맞춤(기준 화면을 통째로 비율 조정)은 첫 그림 전에 걸려야 해서 body 첫머리에서 읽는다 — public/fit.js -->
+<script src="/fit.js"></script>
 <!-- 스플래시는 정적 마크업으로 둔다 — 리액트가 그리면 번들 로드 전까지 빈 화면이
      잠깐 보인다. 사라지는 시점만 src/lib/splash.ts가 맡는다. -->
 <div id="splash">

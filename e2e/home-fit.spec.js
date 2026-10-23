@@ -4,7 +4,8 @@ import { pauseScenes } from './pause-scenes.js';
 // 휴대폰은 화면 크기가 아니라 실제 브라우저 높이(주소창 포함)로도 잰다 — iPhone 13 사파리 390×664, 큰 아이폰 430×740,
 // 작은 아이폰 375×553, 안드로이드 360×640(10/17 팀장 검수에서 390×844로만 재서 놓친 것이 드러났다).
 for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [1024, 768, true], [655, 760, false], [375, 812, true], [360, 640, true], [375, 553, true], [390, 664, true], [430, 740, true], [390, 844, true]]) {
-  const phone = width <= 760;
+  // 655×760처럼 짧은 변이 600 이상인 세로 창은 태블릿 세로 기준(768)으로 맞춘다(public/fit.js, 10/23) — 휴대폰 배열은 600 미만이다
+  const phone = width < 600;
   test(`${width}×${height}: ${phone ? '안내·가운데 장면·더빙하기·바로가기 줄이 스크롤 없이 한 화면에 들어온다' : '여덟 장면 선택지와 이름이 첫 화면에 모두 보인다'}`, async ({ browser }) => {
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: touch, isMobile: touch });
     await page.goto('/');
@@ -93,8 +94,9 @@ for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [
       expect(button.y - (media.y + media.height), '«더빙하기»가 그림에 너무 붙어 있다').toBeGreaterThanOrEqual(14);
       const icon = await page.locator('.scene-shell.is-current .tile-enter-icon').boundingBox();
       expect(icon.x + icon.width, '마이크 아이콘이 글자 앞에 있지 않다').toBeLessThan(button.x + button.width / 2);
-      // 아래 그림 띠의 그림을 크게(10/19 대표님)
-      expect(thumb.width, '아래 그림 띠의 그림이 작다').toBeGreaterThanOrEqual(90);
+      // 아래 그림 띠의 그림을 크게(10/19 대표님) — 기준 화면(390) px로 잰다. 360 폭은 기준 화면을 0.92배로 줄여 보인다(10/23)
+      const fit = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fit')) || 1);
+      expect(thumb.width / fit, '아래 그림 띠의 그림이 작다').toBeGreaterThanOrEqual(90);
     } else {
       // 흐르는 줄은 순환용 사본까지 포함해 각 장르의 온전한 선택지가 하나 이상 보여야 한다.
       expect(await page.locator('.scene-choices').evaluate(view => {

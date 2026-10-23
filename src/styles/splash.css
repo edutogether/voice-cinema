@@ -57,7 +57,7 @@ body:not(.app-ready) #splash {
   }
 }
 #splash .logo {
-  font-size: clamp(48px, 10vw, 72px);
+  font-size: clamp(48px, calc(10 * var(--vw)), 72px);
   /* 기기 글꼴 대신 같은 원본 이미지를 쓴다. 이미지에 filter 그림자를 더하면
      iOS에서 확인된 사각 얼룩을 되살리므로 이미지 자체의 명암을 유지한다. */
   width: 1em;
@@ -87,14 +87,14 @@ body:not(.app-ready) #splash {
   height: 1em;
 }
 #splash .name {
-  font-size: clamp(26px, 5vw, 38px);
+  font-size: clamp(26px, calc(5 * var(--vw)), 38px);
   font-weight: 800;
   letter-spacing: -0.01em;
   color: #171717;
 }
 #splash .name .cinema { color: #ed3124; }
 #splash .stagline {
-  font-size: clamp(13px, 2vw, 16px);
+  font-size: clamp(13px, calc(2 * var(--vw)), 16px);
   color: #626262;
   padding-inline: 24px;
   text-align: center;

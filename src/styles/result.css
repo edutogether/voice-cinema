@@ -1,9 +1,9 @@
 /* 저장의 모든 상태를 메인·녹음실과 같은 흰색/빨간색 행사 화면으로 연결한다. */
 body:has(#result.active) { background:#fff; }
-#result { width:100vw; margin-inline:calc((100% - 100vw) / 2); min-height:100svh; background:#fff; color:#171717; }
+#result { width:var(--app-w); margin-inline:calc((100% - var(--app-w)) / 2); min-height:var(--app-h); background:#fff; color:#171717; }
 #result.active { animation:none; }
 #result .festival-header { margin-inline:0; }
-.result-card { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); align-items:center; width:min(calc(100% - 80px),1280px); margin:52px auto 24px; gap:clamp(32px,4vw,64px); }
+.result-card { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); align-items:center; width:min(calc(100% - 80px),1280px); margin:52px auto 24px; gap:clamp(32px,calc(4 * var(--vw)),64px); }
 /* 그림 크기는 오른쪽 내용과 상관없이 폭으로만 정한다 — QR이 생기기 전·후 같은 크기(10/20 대표님). 비율은 QR이 생긴 뒤 오른쪽 높이에 맞춘 값이다. */
 .result-poster { position:relative; aspect-ratio:5 / 4; overflow:hidden; border-radius:16px; background:#191919; color:white; }
 .result-poster > img { position:absolute; width:100%; height:100%; inset:0; object-fit:cover; }
@@ -19,11 +19,11 @@ body:has(#result.active) { background:#fff; }
 .poster-logo-education img { display:block; width:auto; height:25px; }
 .poster-credit { position:absolute; z-index:1; bottom:36px; left:32px; right:32px; }
 .poster-credit p { margin:0 0 12px; font-size:.9375rem; line-height:1.6; }
-.poster-credit strong { display:block; font-size:clamp(36px,3.5vw,56px); font-weight:750; line-height:1.2; letter-spacing:-.045em; }
+.poster-credit strong { display:block; font-size:clamp(36px,calc(3.5 * var(--vw)),56px); font-weight:750; line-height:1.2; letter-spacing:-.045em; }
 .poster-credit > span { display:block; margin-top:20px; font-size:.875rem; color:#eee; }
 .result-details { min-width:0; padding:26px 0; align-self:center; }
 .result-details .result-eyebrow { color:#e52320; font-size:.875rem; font-weight:700; margin:0 0 22px; }
-.result-details h2 { font-size:clamp(26px,2.15vw,34px); font-weight:750; line-height:1.35; letter-spacing:-.04em; margin:0 0 14px; word-break:keep-all; }
+.result-details h2 { font-size:clamp(26px,calc(2.15 * var(--vw)),34px); font-weight:750; line-height:1.35; letter-spacing:-.04em; margin:0 0 14px; word-break:keep-all; }
 .result-details h2:focus { outline:none; }
 .result-details p { font-size:1rem; line-height:1.7; word-break:keep-all; }
 #doneMsg,#loadingSub { margin:0 0 24px; color:#626262; }
@@ -58,17 +58,17 @@ body:has(#result.active) { background:#fff; }
 .save-steps [aria-current] > span { border-color:#e52320; background:#e52320; color:white; }
 .result-details .result-wait-note { font-size:.875rem; color:#737373; }
 #result .workflow-footer { color:#737373; padding:20px 24px; font-size:.8125rem; }
-@media (max-height:800px) and (min-width:901px) {
+@container app (max-height:800px) and (min-width:901px) {
  .result-card { margin-top:40px; }
  .result-details { padding:0; }
  .result-symbol { margin-bottom:14px; }
  .qrbox img { width:152px; height:152px; }
 }
-@media (max-width:900px) {
+@container app (max-width:900px) {
  .result-card { width:calc(100% - 48px); gap:28px; grid-template-columns:minmax(0,.85fr) minmax(0,1fr); }
  .poster-credit { left:24px; right:24px; }
 }
-@media (max-width:600px) {
+@container app (max-width:600px) {
  .result-card { display:flex; flex-direction:column; align-items:stretch; width:calc(100% - 40px); margin-top:20px; gap:18px; }
  /* 포스터를 영화 비율로 줄여 QR이 첫 화면(360×740)에 다 들어오게 한다(10/17). */
  .result-poster { aspect-ratio:16 / 9; border-radius:12px; }
@@ -99,4 +99,4 @@ body:has(#result.active) { background:#fff; }
 /* 휴대폰에서 직접 체험하면 자기 화면의 QR을 찍을 수 없으므로 같은 공개 주소를 여는 단추를 QR 아래에 둔다(10/17).
    부스의 노트북·태블릿(넓은 화면)에서는 QR만 보인다 — 학생이 자기 휴대폰으로 받아 가는 것이 기본이다. */
 #result .open-movie { display:none; }
-@media (max-width:760px) and (hover:none) { #result .open-movie { display:flex; width:100%; margin:0 0 18px; } }
+@media (hover:none) { @container app (max-width:760px) { #result .open-movie { display:flex; width:100%; margin:0 0 18px; } } }

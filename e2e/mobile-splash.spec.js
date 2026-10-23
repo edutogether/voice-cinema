@@ -18,7 +18,8 @@ for (const name of ['Pixel 7', 'iPhone 13']) {
       await expect.poll(() => image.evaluate(img => img.complete && img.naturalWidth)).toBe(160);
       // 등장 애니메이션의 순간 배율이 아니라 최종 CSS 표시 크기를 확인한다.
       const size = await image.evaluate(img => ({ width: parseFloat(getComputedStyle(img).width), height: parseFloat(getComputedStyle(img).height) }));
-      expect(size.width).toBeGreaterThanOrEqual(48);
+      // 화면을 통째로 맞춘 비율(zoom) 아래에서는 계산값에 47.9957 같은 소수 오차가 붙는다(10/23)
+      expect(Math.round(size.width)).toBeGreaterThanOrEqual(48);
       expect(size.width).toBeLessThanOrEqual(72);
       expect(size.height).toBe(size.width);
       expect(await image.evaluate(img => getComputedStyle(img).filter)).toBe('none');
