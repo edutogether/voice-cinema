@@ -5,7 +5,10 @@ import { useSceneMotion } from '../hooks/useSceneMotion';
 import { fitScale } from '../lib/fit';
 
 // 대기 화면은 한 장면을 충분히 본 뒤 다음 장면을 소개한다. 직접 조작하는 간격과 구분한다.
+// 6초는 가운데 미리보기가 실제로 재생되기 시작한 때부터 센다(10/24 Bumm님 ⑧) — 느린 와이파이에서 고른 때부터 세면 미리보기가
+// 뜨기도 전에 넘어가며 받던 것을 버렸다. 미리보기가 끝내 안 뜨면(받기 실패 등) 고른 때부터 PREVIEW_WAIT_MAX_MS 뒤에 넘긴다.
 const AUTO_ADVANCE_MS = 6000;
+const PREVIEW_WAIT_MAX_MS = 30000;
 
 /** 중앙 작품은 앞으로, 이웃 작품은 뒤로 놓는다. 여덟 장면의 바로가기는 항상 보인다. */
 export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect: (genre: Genre, source?: HTMLElement) => void }) {
@@ -42,13 +45,33 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
     document.addEventListener('visibilitychange', update);
     return () => document.removeEventListener('visibilitychange', update);
   }, []);
+  // 가운데 미리보기가 재생되기 시작했는지(장면 번호) — 재생이 시작되거나 영상을 못 받으면(error) 그 장면 번호를 적는다
+  const [previewStarted, setPreviewStarted] = useState<number | null>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const selectedRef = useRef(selected);
+  selectedRef.current = selected;
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const onMedia = (event: Event) => {
+      const shell = (event.target as HTMLElement).closest<HTMLElement>('.scene-shell');
+      if (shell && Number(shell.dataset.index) === selectedRef.current) setPreviewStarted(selectedRef.current);
+    };
+    // 미디어 이벤트는 거품이 올라오지 않아 캡처로 받는다
+    stage.addEventListener('playing', onMedia, true);
+    stage.addEventListener('error', onMedia, true);
+    return () => {
+      stage.removeEventListener('playing', onMedia, true);
+      stage.removeEventListener('error', onMedia, true);
+    };
+  }, []);
   useEffect(() => {
     if (!active || !ready || !visible || autoPaused || currentCardHovered || keyboardPaused || reducedMotion) return;
     const timer = window.setTimeout(() => {
       setSelected(index => (index + 1) % GENRES.length);
-    }, AUTO_ADVANCE_MS);
+    }, previewStarted === selected ? AUTO_ADVANCE_MS : PREVIEW_WAIT_MAX_MS);
     return () => window.clearTimeout(timer);
-  }, [active, ready, visible, autoPaused, currentCardHovered, keyboardPaused, reducedMotion, selected]);
+  }, [active, ready, visible, autoPaused, currentCardHovered, keyboardPaused, reducedMotion, selected, previewStarted]);
   const choiceViewport = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => { if (keyboardChoices && choiceViewport.current) choiceViewport.current.scrollLeft = 0; }, [keyboardChoices]);
   useLayoutEffect(() => {
@@ -92,7 +115,7 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
       event.preventDefault();
       move(event.key === 'ArrowRight' ? 1 : -1, true);
     }}>
-      <div className="scene-stage" aria-label="장면 미리보기"
+      <div className="scene-stage" ref={stageRef} aria-label="장면 미리보기"
         onDragStart={event => event.preventDefault()}
         onPointerDown={event => {
           if ((event.target as HTMLElement).closest('.scene-arrow')) return;

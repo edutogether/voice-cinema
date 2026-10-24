@@ -9,7 +9,8 @@
 5. 작업 중 발견: App Check 토큰이 끝내 안 오면 업로드가 영영 시작되지 않던 구멍(옛 코드에도 있음) — 20초 상한.
 6. 장면 그림 AVIF(Bumm님 결정 ⑥) — 장면 카드 · 그림 띠 · 완성 화면은 AVIF, 못 읽는 기기는 JPEG. 16장 합계 2,133 → 1,615KB(24%),
    JPEG 대비 SSIM 0.9917~0.9939, 같은 화면 전체 SSIM 0.9988~0.9995(녹음실은 그대로). 값과 캡처 `C:Users817beworkoice-cinemacaptures6-10-24AVIF-전후`.
-⑦ 원판 하나 · ⑧ 넘김 시점은 Bumm님 보류. 브리핑과 결정은 `_docs/intents/2026-10-24-wifi-speed/intent.md`.
+7. 홈 자동 넘김의 6초를 가운데 미리보기가 실제로 재생된 때부터 센다(Bumm님 ⑧) — 끝내 안 뜨면 30초 뒤에 넘긴다.
+⑦(원판 하나 · 로고를 합성 때)은 Bumm님 지시로 «얼마나 걸리나»부터 재는 중. 브리핑과 결정은 `_docs/intents/2026-10-24-wifi-speed/intent.md`.
 화질: 영상 파일은 그대로다. ①~⑤만 넣었을 때 옛 판 · 새 판의 같은 화면 8쌍(첫 페이지 · 녹음실 · 녹음실 2초 프레임 · 완성 × PC 2560 · 휴대폰 3배)이 픽셀까지 같았다(PSNR 무한대). ⑥은 위 값.
 검사: `e2e/background-load.spec.js` 2개 · `e2e/upload-appcheck-wait.spec.js` 1개(옛 코드 빨간불 확인) · `src/lib/backgroundLoad.test.ts` 4개.
 확인(10/24 로컬, ⑥ 포함): E2E 169개 중 163 통과 · 6 조건부 건너뜀 · 실패 0, 유닛 118개(루트 63 + functions 55), 린트 · 타입 통과.

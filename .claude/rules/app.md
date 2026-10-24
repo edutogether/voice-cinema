@@ -866,6 +866,9 @@ Claude in Chrome은 여분의 브라우저가 아니라 **대표 본인의 크�
   함께 만들고 `test/scene-images.test.js`가 짝과 AV1 Main 프로필을 본다. 🟠 **4:4:4(High 프로필)로 바꾸지 말 것** — 더 작지만 일부 사파리가 못 연다.
   🟠 `.pic`은 `display: contents`라 배치에 끼지 않지만, CSS의 `> img`는 `> .pic > img`로 써야 하고 모서리(`border-radius: inherit`)도 `.pic`이 이어 준다 —
   처음에 빠뜨려 카드 그림 모서리가 0이 됐고 `e2e/tile-autoplay.spec.js`가 잡았다(아이폰 «떡네모» 방어)
+- 🟠 **홈 자동 넘김의 6초는 가운데 미리보기가 실제로 재생된 때부터 센다**(10/24 Bumm님 ⑧, `SceneCarousel.tsx`) — 고른 때부터 세면 느린 와이파이에서 미리보기가
+  뜨기도 전에 넘어가며 받던 것을 버렸다. 끝내 안 뜨면(받기 실패) 고른 때부터 30초 뒤에 넘긴다. 시계를 돌리는 검사는 미리보기 재생을 본 뒤에 돌린다
+  (`e2e/scene-autoplay.spec.js`의 «재생되기 전에는…»이 고정한다 — 옛 코드 빨간불 확인)
 - 검사: `e2e/background-load.spec.js`(엔진은 회선으로 한 번 · 안 보이는 카드 그림), `src/lib/backgroundLoad.test.ts`(쉬기 규칙), `e2e/scene-images.spec.js`(AVIF로 보임 · JPEG 주소)
 
 ## 🟡 흔들린 검사 기록 — `e2e/clip-clock.spec.js` 1440×900 (2026-10-23)

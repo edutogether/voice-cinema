@@ -52,6 +52,8 @@ for (const area of ['left', 'right', 'top', 'bottom']) {
   test(`중앙 카드 밖 ${area} 영역에 마우스가 있어도 자동 순환한다`, async ({ page }) => {
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
+    // 6초는 가운데 미리보기가 재생된 때부터 센다(10/24 ⑧)
+    await expect.poll(() => page.locator('.scene-shell.is-current video').evaluate(v => v.currentTime)).toBeGreaterThan(.05);
     await page.locator('.scene-shell.is-current .tile-media').hover();
     await page.clock.install();
     await page.clock.pauseAt(new Date(Date.now() + 1000));
@@ -69,6 +71,7 @@ for (const area of ['left', 'right', 'top', 'bottom']) {
     await expect(current).toHaveAttribute('data-index', '0');
     await page.clock.runFor(100);
     await expect(current).toHaveAttribute('data-index', '1');
+    await expect.poll(() => current.locator('video').evaluate(v => v.currentTime)).toBeGreaterThan(.05);
     await page.clock.runFor(6000);
     await expect(current).toHaveAttribute('data-index', '2');
   });
