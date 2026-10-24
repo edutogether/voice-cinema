@@ -2,11 +2,15 @@
 
 export const CLIP_SECONDS = 10;
 
-// 장면 더빙 2.0 박자(대표님 10/11 확정): 영상이 5.0초 최고조에서 멈추고, 녹음 3.5초가 그대로
+// 장면 더빙 2.0 박자(대표님 10/11 확정): 영상이 5.0초 최고조에서 멈추고, 녹음이 그대로
 // 5.0~8.5초 목소리 칸에 들어가 완성본은 언제나 정확히 10.0초다. 합성(src/lib/ffmpeg.ts)과
 // 녹음실(src/hooks/useDubbing.ts)이 같은 값을 쓴다.
 export const PAUSE_SECONDS = 5;
-export const RECORD_SECONDS = 3.5;
+/** 목소리 칸의 길이 — 원판 소리를 5.0~8.5초에서 −8dB 낮춰 둔 자리다(tools/build-scene-audio.mjs의 VOICE, test/contract.test.js가 대조). */
+export const VOICE_WINDOW_SECONDS = 3.5;
+// 녹음은 기본 3.0초이고, 그때 말이 이어지고 있으면 목소리 칸 끝(3.5초)까지 늘린다(10/24 대표님 — 말끝 보호).
+export const RECORD_BASE_SECONDS = 3;
+export const RECORD_MAX_SECONDS = VOICE_WINDOW_SECONDS;
 
 // 엔진 wasm(public/vendor/ffmpeg-core/ffmpeg-core.wasm)의 실제 크기 — «영상 저장 준비 중…» 진행률의 분모.
 // Hosting이 brotli로 압축해 보내 Content-Length(약 7.3MB)가 받는 바이트보다 작아서, 그것을 분모로 쓰면

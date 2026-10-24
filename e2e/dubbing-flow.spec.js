@@ -1,5 +1,5 @@
 // 실사용 흐름 E2E 테스트(2026-08-27 시작, 2026-10-16 장면 더빙 2.0 흐름으로 다시 씀).
-// 실제 Chromium(가짜 마이크 장치)으로 홈 화면→장면 시작→5.0초 멈춤→문구·3·2·1→녹음 3.5초→이어 재생
+// 실제 Chromium(가짜 마이크 장치)으로 홈 화면→장면 시작→5.0초 멈춤→문구·3·2·1→녹음 3초(말이 이어지면 3.5초까지)→이어 재생
 // →ffmpeg.wasm 섞기 합성→저장까지 진짜로 돌려서 검증한다. Cloud Functions 업로드만 page.route로 가로채
 // (a) 실제 프로덕션 Storage에 테스트 파일이 쌓이지 않게, (b) 네트워크 상태에 결과가 좌우되지 않게 한다.
 import { Buffer } from 'node:buffer';
@@ -7,7 +7,7 @@ import { test, expect } from '@playwright/test';
 
 const UPLOAD_PATTERN = '**/voiceCinema/upload';
 const GENRE_NAMES = ['SF', '판타지', '애니메이션', '히어로', '스릴러', '드라마', '스포츠', '뮤지컬'];
-// 장면 5초 + 문구 1.2초 + 3·2·1 2.7초 + 녹음 3.5초 + 이어 재생 5초 ≈ 17.4초. 느린 러너 여유를 둔다.
+// 장면 5초 + 문구 0.6초 + 3·2·1 0.9초 + 녹음 3~3.5초 + 녹음 확인 + 이어 재생 5초 ≈ 15초. 느린 러너 여유를 둔다.
 const TAKE_MS = 40000;
 
 /** mp4의 mvhd 상자에서 길이(초)를 읽는다 — 완성본이 정확히 10.0초인지 본다. */
@@ -46,7 +46,7 @@ test.describe('홈 화면', () => {
 });
 
 test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
-  test('5.0초에서 정확히 멈추고 문구 → 3·2·1 → 녹음 3.5초 → 5.0초부터 이어 재생한다', async ({ page }) => {
+  test('5.0초에서 정확히 멈추고 문구 → 3·2·1 → 녹음 3초(말이 이어지면 3.5초까지) → 5.0초부터 이어 재생한다', async ({ page }) => {
     await openStudio(page, '판타지');
     const clip = page.locator('#clip');
     await expect(clip).toHaveJSProperty('paused', true);
@@ -56,7 +56,9 @@ test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
     await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'watching');
     await expect.poll(() => clip.evaluate(v => v.currentTime)).toBeGreaterThan(.5);
     // 멈춘 순간 영상 시각이 5.0초와 한 프레임(1/30초) 안이다.
-    await expect(page.locator('#cue')).toHaveText('이제 당신의 차례입니다 !', { timeout: 10000 });
+    // 문구는 0.6초뿐이다(10/24) — 페이지 안에서 매 화면 확인하는 waitFor로 기다린다
+    await page.locator('#cue').waitFor({ timeout: 10000 });
+    expect(await page.locator('#cue').textContent()).toBe('이제 당신의 차례입니다 !');
     const paused = await clip.evaluate(v => ({ paused: v.paused, time: v.currentTime }));
     expect(paused.paused).toBe(true);
     expect(Math.abs(paused.time - 5)).toBeLessThanOrEqual(1 / 30);

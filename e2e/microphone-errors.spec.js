@@ -25,8 +25,8 @@ for (const [name, reason, hint] of [
     await expect(page.locator('#hint')).toContainText(hint);
     await expect(page.locator('#recBtn')).toBeEnabled();
     await page.locator('#recBtn').click();
-    await expect(page.locator('#count')).toHaveAttribute('aria-label', '3초 뒤 녹음 시작', { timeout: 10000 });
-    await expect(page.locator('#recpill')).toBeVisible({ timeout: 5000 });
+    // 숫자 하나가 0.3초라 3·2·1은 e2e/record-countdown.spec.js가 따로 본다 — 여기서는 녹음이 실제로 시작되는지만
+    await expect(page.locator('#recpill')).toBeVisible({ timeout: 12000 });
     await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
   });
 }

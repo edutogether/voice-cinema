@@ -9,7 +9,8 @@ test('대기는 전체 길이, 장면·이어 재생·미리보기는 영상 시
   await page.locator('#recBtn').click();
   await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(0);
   await expect(clock).toHaveText(/^\d{2}:\d{2} \/ 10:00$/);
-  await expect(page.locator('#cue')).toBeVisible({ timeout: 10000 });
+  // 문구는 0.6초뿐이라(10/24) 멈춤 단계(문구·카운트다운·녹음)에 들어선 것을 기다린다
+  await expect(page.locator('#studio')).toHaveAttribute('data-phase', /^(cue|countdown|recording)$/, { timeout: 10000 });
   await expect(clock).toHaveText('05:00 / 10:00');
   await expect.poll(() => page.locator('#bar').evaluate(bar => new window.DOMMatrixReadOnly(getComputedStyle(bar).transform).a)).toBeCloseTo(.5, 2);
   await expect(page.locator('#recpill')).toBeVisible({ timeout: 6000 });
@@ -56,7 +57,7 @@ for (const [width, height] of [[1440, 900], [390, 844]]) {
     expect(sample.changes / sample.frames).toBeGreaterThan(.5);
     expect(sample.maxLag).toBeLessThan(.1);
     // 5.0초 멈춤 동안 막대는 움직이지 않는다.
-    await expect(page.locator('#cue')).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('#studio')).toHaveAttribute('data-phase', /^(cue|countdown|recording)$/, { timeout: 8000 });
     const read = () => page.locator('#bar').evaluate(bar => getComputedStyle(bar).transform);
     const paused = await read();
     await page.waitForTimeout(300);

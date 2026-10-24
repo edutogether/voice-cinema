@@ -2,12 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { finalClipUrl, stillUrl, stillAvifUrl, type Genre } from '../genres';
 import { FestivalHeader } from './FestivalHeader';
 import { ActionIcon } from './ActionIcon';
-import { mergeClip } from '../lib/ffmpeg';
+import { mergeClip, processVoice } from '../lib/ffmpeg';
 import { downloadBlob, uploadToCloud } from '../lib/upload';
 import { buildUploadFilename, isPreviewChannel } from '../logic';
 import { makeQR } from '../lib/vendor';
+import type { Recording } from '../hooks/useDubbing';
 
-export type RecordingSource = { kind: 'sample' } | { kind: 'recording'; blob: Blob; mime: string };
+export type RecordingSource = { kind: 'sample' } | ({ kind: 'recording' } & Recording);
 export type SaveJob = { genre: Genre } & RecordingSource;
 
 type Stage =
@@ -23,6 +24,18 @@ interface Props {
   job: SaveJob;
   onHome: () => void;
   onBack: () => void;
+}
+
+// 녹음실에서 미리 다듬어 둔 목소리를 쓴다 — 아이가 미리 들은 것과 같은 소리다. 없거나 실패했으면 같은 처리를 여기서 한다.
+async function voiceFor(recording: Recording): Promise<Blob> {
+  if (recording.voice) {
+    try {
+      return await recording.voice;
+    } catch {
+      // 아래에서 다시 다듬는다
+    }
+  }
+  return processVoice(recording.take, recording.mime, recording.plan);
 }
 
 export function Result({ active, job, onHome, onBack }: Props) {
@@ -43,7 +56,7 @@ export function Result({ active, job, onHome, onBack }: Props) {
     void (async () => {
       let merged: Blob;
       try {
-        merged = await mergeClip(job.genre.id, job.blob, job.mime);
+        merged = await mergeClip(job.genre.id, await voiceFor(job));
       } catch (e) {
         if (!cancelled) {
           setStage({
