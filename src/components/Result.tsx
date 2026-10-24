@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { finalClipUrl, stillUrl, type Genre } from '../genres';
+import { finalClipUrl, stillUrl, stillAvifUrl, type Genre } from '../genres';
 import { FestivalHeader } from './FestivalHeader';
 import { ActionIcon } from './ActionIcon';
 import { mergeClip } from '../lib/ffmpeg';
@@ -84,7 +84,7 @@ export function Result({ active, job, onHome, onBack }: Props) {
       <FestivalHeader step={3} />
       <div className={`result-card result-${stage.kind}`} ref={cardRef}>
         <div className="result-poster">
-          <img src={stillUrl(job.genre.id)} alt="" />
+          <picture className="pic"><source type="image/avif" srcSet={stillAvifUrl(job.genre.id)} /><img src={stillUrl(job.genre.id)} alt="" /></picture>
           {/* 왼쪽 위 InKY Film Festival, 오른쪽 위 인천광역시교육청 — 내려받는 영상에도 같은 자리에 같은 모양으로 구워져 있다(10/20 대표님, tools/build-video-logos.mjs) */}
           <span className="poster-logo poster-logo-inky" aria-hidden="true"><span className="festival-symbol"><img src="/brands/inky.png" alt="" /></span><span><strong>InKY</strong> Film Festival</span></span>
           <span className="poster-logo poster-logo-education" aria-hidden="true"><img src="/brands/education.png" alt="" width="199" height="52" /></span>

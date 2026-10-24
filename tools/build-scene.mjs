@@ -7,7 +7,7 @@
 //
 // 만드는 것(app-plan §2-5): public/clips/<장르>.mp4(1920×1080 H.264/AAC, 30fps, 키프레임 1초 간격 — 5.0초 포함,
 // 자막 없음), previews/<장르>.mp4(0~5.0초 무음, 1280×720 — 최고조까지만, 해소는 아낀다),
-// thumbs/<장르>.jpg(640×360)와 stills/<장르>.jpg(1280×720) — 둘 다 5.0초 멈춤 화면.
+// thumbs/<장르>.jpg(640×360)와 stills/<장르>.jpg(1280×720) — 둘 다 5.0초 멈춤 화면. 같은 그림의 AVIF도 옆에 만든다(tools/build-avif.mjs, 10/24).
 // 내려받는 영상에는 로고 띠(tools/video-logos.png — 왼쪽 위 InKY Film Festival, 오른쪽 위 인천광역시교육청)가 들어간다(10/20 대표님).
 // 합성은 영상을 다시 인코딩하지 않으므로(-c:v copy) 로고를 구운 합성용 원판 final/<장르>.mp4를 따로 만든다 — 녹음실은 로고 없는
 // <장르>.mp4를 튼다. PC 녹음실은 영상을 위아래로 잘라 꽉 채우므로(원판 기준 위 83~166px) 위 모서리 로고가 잘려 흰 조각만 남는다.
@@ -21,6 +21,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath, URL } from 'node:url';
 import console from 'node:console';
 import process from 'node:process';
+import { buildAvif } from './build-avif.mjs';
 
 const SECONDS = 10;
 const PAUSE = 5;
@@ -90,6 +91,7 @@ ff(['-i', picture, '-t', String(PAUSE), '-an', '-vf', 'scale=1280:720:flags=lanc
   join(clips, 'previews', `${genre}.mp4`)]);
 ff(['-ss', String(PAUSE), '-i', picture, '-frames:v', '1', '-vf', 'scale=1280:720:flags=lanczos', '-q:v', '2', join(clips, 'stills', `${genre}.jpg`)]);
 ff(['-ss', String(PAUSE), '-i', picture, '-frames:v', '1', '-vf', 'scale=640:360:flags=lanczos', '-q:v', '2', join(clips, 'thumbs', `${genre}.jpg`)]);
+buildAvif([genre]);
 
 rmSync(work, { recursive: true, force: true });
 const duration = (file) => Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]).toString());

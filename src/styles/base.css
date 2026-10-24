@@ -29,6 +29,14 @@
   height: var(--app-h);
 }
 
+/* 장면 그림은 <picture>로 AVIF를 먼저 쓰고 못 읽는 기기는 JPEG을 쓴다(10/24) — 감싼 상자가 배치에 끼지 않게 한다.
+   CSS에서 그림을 «바로 아래 img»(>)로 가리킬 때는 `> .pic > img`로 쓴다.
+   모서리도 이어 준다 — 카드 그림은 `border-radius: inherit`로 스스로 둥글어야 하는데(아이폰 «떡네모», app.md) 감싼 상자에서 0으로 끊겼다. */
+.pic {
+  display: contents;
+  border-radius: inherit;
+}
+
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;

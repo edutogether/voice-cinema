@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { GENRES, thumbUrl, type Genre } from '../genres';
+import { GENRES, thumbUrl, thumbAvifUrl, type Genre } from '../genres';
 import { GenreTile } from './GenreTile';
 import { useSceneMotion } from '../hooks/useSceneMotion';
 import { fitScale } from '../lib/fit';
@@ -159,7 +159,7 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
                     onPointerMove={event => { if (event.pointerType === 'mouse') choose(index); }}
                     onFocus={event => { if (event.currentTarget.matches(':focus-visible')) setKeyboardChoices(true); choose(index); }}
                     onClick={event => onSelect(genre, event.currentTarget)}>
-                    <img src={thumbUrl(genre.id)} alt="" width="320" height="180" />
+                    <picture className="pic"><source type="image/avif" srcSet={thumbAvifUrl(genre.id)} /><img src={thumbUrl(genre.id)} alt="" width="320" height="180" /></picture>
                     <span><small>{String(index + 1).padStart(2, '0')}</small>{genre.name}</span>
                   </button>
                 ))}

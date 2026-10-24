@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { previewUrl, thumbUrl, stillUrl, type Genre } from '../genres';
+import { previewUrl, thumbUrl, stillUrl, thumbAvifUrl, stillAvifUrl, type Genre } from '../genres';
 import { ActionIcon } from './ActionIcon';
 
 // 재생이 멈췄는지 되돌아보는 간격. loop만으로는 실제 기기에서 계속 돈다는 보장이
@@ -80,7 +80,10 @@ export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, ne
     >
       <span className="tile-media" aria-hidden="true">
         <span className="tile-visual">
-          {showImage && <img className="thumb" src={thumbUrl(genre.id)} srcSet={`${thumbUrl(genre.id)} 320w, ${stillUrl(genre.id)} 1280w`} sizes="(min-width: 1000px) 33vw, 50vw" alt="" />}
+          {showImage && <picture className="pic">
+            <source type="image/avif" srcSet={`${thumbAvifUrl(genre.id)} 320w, ${stillAvifUrl(genre.id)} 1280w`} sizes="(min-width: 1000px) 33vw, 50vw" />
+            <img className="thumb" src={thumbUrl(genre.id)} srcSet={`${thumbUrl(genre.id)} 320w, ${stillUrl(genre.id)} 1280w`} sizes="(min-width: 1000px) 33vw, 50vw" alt="" />
+          </picture>}
           <video className="preview" ref={videoRef} muted playsInline preload="none" />
         </span>
         <span className="tile-number">{String(sceneNumber).padStart(2, '0')}</span>

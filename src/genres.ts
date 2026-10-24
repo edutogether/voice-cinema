@@ -46,6 +46,10 @@ export const previewUrl = (genreId: string) => clip(`previews/${genreId}.mp4`);
 export const thumbUrl = (genreId: string) => clip(`thumbs/${genreId}.jpg`);
 // 5.0초 멈춤 화면(`K050`). 녹음실 포스터와 메인의 넓은 영상 벽에 쓴다.
 export const stillUrl = (genreId: string) => clip(`stills/${genreId}.jpg`);
+// 같은 그림의 AVIF(10/24 와이파이 최적화 ⑥, 약 24% 작다) — 화면은 <picture>로 이것을 먼저 쓰고, 못 읽는 기기는 위 JPEG을 쓴다.
+// 녹음실 포스터(<video poster>)는 대신 쓸 길이 없어 JPEG 그대로다. 짝은 tools/build-avif.mjs가 만들고 test/scene-images.test.js가 본다.
+export const thumbAvifUrl = (genreId: string) => clip(`thumbs/${genreId}.avif`);
+export const stillAvifUrl = (genreId: string) => clip(`stills/${genreId}.avif`);
 
 // 주소 뒤에 내용 해시를 붙인다 — 그림·영상을 바꾸면 주소가 바뀌어 브라우저·서비스워커 캐시가 옛 파일을 내지 않는다
 // (10/20 미리보기에서 바꾼 장면이 옛 장면과 섞여 보였다. 까닭은 `tools/clip-versions.js`).

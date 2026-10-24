@@ -860,7 +860,13 @@ Claude in Chrome은 여분의 브라우저가 아니라 **대표 본인의 크�
 - 🔴 **App Check 토큰을 상한 없이 기다리지 말 것**(`src/lib/upload.ts`의 `APP_CHECK_WAIT_MS` 20초) — reCAPTCHA가 끝내 준비되지 않으면(학교 망이 구글을 막거나
   느린 와이파이에서 스크립트가 안 오면) 토큰 약속이 끝나지 않아 요청 하나 없이 «내 영화를 저장하고 있어요»에 영영 멈췄다(10/24 느린 회선 측정에서 발견 —
   옛 코드에도 있던 구멍이다). 상한이 지나면 토큰 없이 보내고 판단은 서버가 한다(거절되면 재시도 → 이 기기에 저장). `e2e/upload-appcheck-wait.spec.js`가 고정한다(옛 코드 빨간불 확인)
-- 검사: `e2e/background-load.spec.js`(엔진은 회선으로 한 번 · 안 보이는 카드 그림), `src/lib/backgroundLoad.test.ts`(쉬기 규칙)
+- 🟠 **장면 그림은 AVIF를 먼저, 못 읽는 기기는 JPEG**(10/24 Bumm님 결정 ⑥) — 장면 카드 · 아래 그림 띠 · 완성 화면이 `<picture>`(`.pic`)로 AVIF를 쓴다.
+  녹음실 포스터(`<video poster>`)는 대신 쓸 길이 없어 JPEG 그대로다. 설정은 4:2:0 · crf 10 · SSIM 맞춤(`tools/build-avif.mjs`) — JPEG 대비 SSIM 0.9917~0.9939, 합계 24% 작음.
+  🔴 **JPEG만 바꾸고 AVIF를 안 만들면 AVIF를 읽는 기기에서 그림이 깨진다**(`<picture>`는 받기 실패를 JPEG으로 되돌리지 않는다) — `tools/build-scene.mjs`가
+  함께 만들고 `test/scene-images.test.js`가 짝과 AV1 Main 프로필을 본다. 🟠 **4:4:4(High 프로필)로 바꾸지 말 것** — 더 작지만 일부 사파리가 못 연다.
+  🟠 `.pic`은 `display: contents`라 배치에 끼지 않지만, CSS의 `> img`는 `> .pic > img`로 써야 하고 모서리(`border-radius: inherit`)도 `.pic`이 이어 준다 —
+  처음에 빠뜨려 카드 그림 모서리가 0이 됐고 `e2e/tile-autoplay.spec.js`가 잡았다(아이폰 «떡네모» 방어)
+- 검사: `e2e/background-load.spec.js`(엔진은 회선으로 한 번 · 안 보이는 카드 그림), `src/lib/backgroundLoad.test.ts`(쉬기 규칙), `e2e/scene-images.spec.js`(AVIF로 보임 · JPEG 주소)
 
 ## 🟡 흔들린 검사 기록 — `e2e/clip-clock.spec.js` 1440×900 (2026-10-23)
 - 전체 E2E(12개 병렬) 세 번 중 한 번 «진행 막대가 영상보다 0.12초 늦다»(기준 0.1초)로 실패했다. 같은 파일만 6번씩 18회는 모두 통과, 바로 뒤 전체 실행도 통과

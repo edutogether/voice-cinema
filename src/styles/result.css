@@ -6,7 +6,7 @@ body:has(#result.active) { background:#fff; }
 .result-card { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); align-items:center; width:min(calc(100% - 80px),1280px); margin:52px auto 24px; gap:clamp(32px,calc(4 * var(--vw)),64px); }
 /* 그림 크기는 오른쪽 내용과 상관없이 폭으로만 정한다 — QR이 생기기 전·후 같은 크기(10/20 대표님). 비율은 QR이 생긴 뒤 오른쪽 높이에 맞춘 값이다. */
 .result-poster { position:relative; aspect-ratio:5 / 4; overflow:hidden; border-radius:16px; background:#191919; color:white; }
-.result-poster > img { position:absolute; width:100%; height:100%; inset:0; object-fit:cover; }
+.result-poster > .pic > img { position:absolute; width:100%; height:100%; inset:0; object-fit:cover; }
 .result-poster::after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(0,0,0,.25),transparent 28%,rgba(0,0,0,.06) 48%,rgba(0,0,0,.82)); }
 /* 왼쪽 위 InKY Film Festival, 오른쪽 위 인천광역시교육청 — 내려받는 영상에 구운 로고 띠(tools/video-logos.png)와 같은 모양이다.
    교육청 로고 글자가 남색이라 머리글처럼 흰 바탕 위에 둔다(공식 파일 그대로, 색을 바꾸지 않는다). */
@@ -72,7 +72,7 @@ body:has(#result.active) { background:#fff; }
  .result-card { display:flex; flex-direction:column; align-items:stretch; width:calc(100% - 40px); margin-top:20px; gap:18px; }
  /* 포스터를 영화 비율로 줄여 QR이 첫 화면(360×740)에 다 들어오게 한다(10/17). */
  .result-poster { aspect-ratio:16 / 9; border-radius:12px; }
- .result-poster > img { object-position:center 35%; }
+ .result-poster > .pic > img { object-position:center 35%; }
  .poster-logo { top:12px; height:30px; padding:0 11px; font-size:.8125rem; gap:5px; }
  .poster-logo-inky { left:12px; }
  .poster-logo-education { right:12px; }
