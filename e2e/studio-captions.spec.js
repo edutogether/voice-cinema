@@ -46,9 +46,10 @@ test('자막은 멈춘 뒤 문구·카운트다운·녹음 중에는 없고, 미
   await page.locator('#recBtn').click();
   const caption = page.getByTestId('scene-caption');
   await expect(caption).toHaveText('저 산… 움직여 !', { timeout: 6000 });
-  await expect(page.locator('#cue')).toBeVisible({ timeout: 8000 });
+  // 문구 0.6초 · 숫자 0.3초씩(10/24) — 페이지 안에서 매 화면 확인하는 waitFor로 기다린다
+  await page.locator('#cue').waitFor({ timeout: 8000 });
   await expect(caption).toHaveCount(0);
-  await expect(page.locator('#count')).toBeVisible();
+  await page.locator('#count').waitFor({ timeout: 3000 });
   await expect(caption).toHaveCount(0);
   await expect(page.locator('#recpill')).toBeVisible({ timeout: 5000 });
   await expect(caption).toHaveCount(0);

@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { countdownLog, watchCountdown } from './countdown-watch.js';
 
 test.use({ serviceWorkers: 'block' });
 
@@ -18,17 +19,18 @@ async function openSample(page) {
   await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
 }
 
-test('마이크 없이 장면·5.0초 멈춤·321·3.5초·이어 재생·원본 다운로드를 체험한다', async ({ page }) => {
+test('마이크 없이 장면·5.0초 멈춤·321·3초·이어 재생·원본 다운로드를 체험한다', async ({ page }) => {
   const externalRequests = [];
   page.on('request', request => {
     if (/cloudfunctions|firebaseappcheck|ffmpeg-core/.test(request.url())) externalRequests.push(request.url());
   });
+  await watchCountdown(page);
   await openSample(page);
   await expect(page.locator('#hint')).toContainText('샘플 체험 · 마이크 녹음 없음');
   await page.locator('#recBtn').click();
-  await expect(page.locator('#cue')).toBeVisible({ timeout: 10000 });
-  for (const n of [3, 2, 1]) await expect(page.locator('#count')).toHaveAttribute('aria-label', `${n}초 뒤 녹음 시작`);
+  await page.locator('#cue').waitFor({ timeout: 10000 });
   await expect(page.locator('#recpill')).toContainText('샘플 녹음 체험 중');
+  expect((await countdownLog(page)).map((e) => e.key)).toEqual(['cue', '3초 뒤 녹음 시작', '2초 뒤 녹음 시작', '1초 뒤 녹음 시작', 'recording']);
   await expect(page.locator('#recBtn')).toBeDisabled();
   await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
   // «다시 듣기»는 없다(10/20 대표님) — 녹음 뒤에는 «다시 녹음»·«저장하기»만

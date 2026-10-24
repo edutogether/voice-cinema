@@ -57,7 +57,7 @@ test('미리보기 중에 «장면 시작»을 누르면 미리보기를 접고 
   // 장면은 처음부터 다시 흐른다
   await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'watching');
   expect((await state(page)).time).toBeLessThan(1);
-  await expect(page.locator('#cue')).toBeVisible({ timeout: 10000 });
+  await page.locator('#cue').waitFor({ timeout: 10000 });
 });
 
 test('키보드로 녹음하면 녹음이 끝난 뒤 «저장하기»로 초점이 간다(«다시 듣기»는 없다)', async ({ page }) => {

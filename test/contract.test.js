@@ -91,3 +91,27 @@ test('엔진 크기: src/config.ts의 ENGINE_WASM_BYTES가 실제 ffmpeg-core.wa
   const 상수 = Number(extract(read('src/config.ts'), /export const ENGINE_WASM_BYTES = ([\d_]+);/, 'ENGINE_WASM_BYTES').replace(/_/g, ''));
   expect(상수).toBe(statSync(path.join(root, 'public/vendor/ffmpeg-core/ffmpeg-core.wasm')).size);
 });
+
+// 2026-10-24: 녹음은 원판이 −8dB 낮춰 둔 목소리 칸(5.0~8.5초)에 들어간다. 원판을 만든 도구의 칸과 앱의 칸이 어긋나면
+// 목소리가 낮추지 않은 배경음 위에 얹히거나, 아무도 말하지 않는 자리의 음악만 작아진다.
+test('목소리 칸: 원판 소리를 낮춘 자리(tools/build-scene-audio.mjs)와 앱의 정지·목소리 칸이 같다', () => {
+  const config = read('src/config.ts');
+  const pause = Number(extract(config, /export const PAUSE_SECONDS = ([\d.]+);/, 'PAUSE_SECONDS'));
+  const window = Number(extract(config, /export const VOICE_WINDOW_SECONDS = ([\d.]+);/, 'VOICE_WINDOW_SECONDS'));
+  const voice = extract(read('tools/build-scene-audio.mjs'), /const VOICE = \{ (from: [\d.]+, to: [\d.]+)/, '원판 목소리 칸');
+  expect(voice).toBe(`from: ${pause}, to: ${pause + window}`);
+  expect(config).toMatch(/export const RECORD_MAX_SECONDS = VOICE_WINDOW_SECONDS;/);
+});
+
+// 2026-10-24: FFmpeg의 alimiter는 자동 레벨(level)이 기본으로 켜져 있어 눌러 둔 소리를 다시 0dB 쪽으로 끌어올리고,
+// 앞보기 지연을 보정하지 않으면(latency) 소리가 밀린다 — 섞은 뒤 리미터에서 보정을 빼면 원판 소리 전체가 5ms 밀렸다(엔진에서 확인).
+// 원판의 목소리 칸은 이미 −8dB 낮춰 구웠으므로 합성에서 다시 낮추지 않는다.
+test('합성: 리미터는 자동 레벨을 끄고 지연을 보정하며, 원판 소리를 다시 낮추지 않는다', () => {
+  const source = read('src/lib/ffmpeg.ts');
+  const limiters = source.match(/alimiter=[^'`,[]*/g) ?? [];
+  expect(limiters).toHaveLength(2);
+  for (const limiter of limiters) expect(limiter).toMatch(/level=false:latency=true$/);
+  const mix = extract(source, /export const MIX_FILTER =([\s\S]*?);\r?\n/, 'MIX_FILTER');
+  expect(mix).not.toMatch(/volume|sidechaincompress|acompressor/);
+  expect(source).toMatch(/'-c:v', 'copy'/);
+});

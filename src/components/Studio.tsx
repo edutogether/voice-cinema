@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { clipUrl, stillUrl, type Genre } from '../genres';
 import { useDubbing, type Phase } from '../hooks/useDubbing';
-import { RECORD_SECONDS } from '../config';
+import { RECORD_BASE_SECONDS } from '../config';
 import { STUDIO_COPY } from '../copy';
 import { lastInputWasKeyboard } from '../lib/inputModality';
 
@@ -21,7 +21,7 @@ interface Props {
   entrance: SceneEntrance | null;
 }
 
-const TAKE_PHASES: readonly Phase[] = ['requesting', 'watching', 'cue', 'countdown', 'recording', 'continuing'];
+const TAKE_PHASES: readonly Phase[] = ['requesting', 'watching', 'cue', 'countdown', 'recording', 'checking', 'continuing'];
 
 const TIMELINE_STATE: Record<Phase, string> = {
   idle: '장면 대기',
@@ -31,6 +31,7 @@ const TIMELINE_STATE: Record<Phase, string> = {
   cue: '내 차례',
   countdown: '녹음 준비',
   recording: '녹음 중',
+  checking: '목소리 확인',
   continuing: '내 목소리로 이어 보기',
   recorded: '녹음 완료',
 };
@@ -43,6 +44,7 @@ const HEADLINE: Record<Phase, string> = {
   cue: '이제 내 차례 !',
   countdown: '잠시 후, 내 목소리로',
   recording: '지금, 목소리를 들려주세요',
+  checking: '목소리를 확인하고 있어요',
   continuing: '내 목소리가 들어간 장면',
   recorded: '내 목소리, 마음에 드나요 ?',
 };
@@ -88,7 +90,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
 
   const save = () => {
     if (sampleMode) onSave({ kind: 'sample' });
-    else if (dub.recordedBlob) onSave({ kind: 'recording', blob: dub.recordedBlob, mime: dub.recordedMime });
+    else if (dub.recording) onSave({ kind: 'recording', ...dub.recording });
   };
 
   return (
@@ -124,7 +126,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
               {dub.countdown > 0 && <div className="overlay show" id="overlay"><div className="count" id="count" key={dub.countdown} aria-label={`${dub.countdown}초 뒤 녹음 시작`}>{dub.countdown}<span>{STUDIO_COPY.speakNow}</span></div></div>}
               {phase === 'recording' && <>
                 <div className="recpill show" id="recpill"><span className="d" /> {sampleMode ? '샘플 녹음 체험 중' : '녹음 중'}</div>
-                <div className="record-left" role="progressbar" aria-label={`녹음 ${RECORD_SECONDS}초 중 남은 시간`} aria-valuemin={0} aria-valuemax={100}
+                <div className="record-left" role="progressbar" aria-label={`녹음 ${RECORD_BASE_SECONDS}초 중 남은 시간`} aria-valuemin={0} aria-valuemax={100}
                   aria-valuenow={Math.round(dub.recordLeft * 100)}><i style={{ transform: `scaleX(${dub.recordLeft})` }} /></div>
               </>}
             </div>
@@ -136,7 +138,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
               <div className={`controls${inTake ? ' is-recording' : ''}${done ? ' is-recorded' : ''}`}>
                 <div className="controls-copy">
                   <h2>{sampleMode && done ? '샘플 체험을 마쳤어요' : HEADLINE[phase]}</h2>
-                  <div className="hint" id="hint" role="status" data-mic-error={dub.micError ?? undefined}>{dub.hint}</div>
+                  <div className="hint" id="hint" role="status" data-mic-error={dub.micError ?? undefined} data-take-check={dub.takeCheck ?? undefined}>{dub.hint}</div>
                 </div>
                 {!done && <div className="record-actions">
                   {(phase === 'idle' || previewing) && <button className="btn btn-ghost" id="previewBtn" type="button" onClick={previewing ? dub.reset : dub.preview}>

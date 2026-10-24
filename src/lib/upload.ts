@@ -4,6 +4,11 @@ import { loadAppCheckModule } from './vendor';
 
 let appCheck: Promise<unknown> | null = null;
 
+// App Check 토큰을 기다리는 상한. reCAPTCHA가 끝내 준비되지 않으면(학교 망이 구글을 막거나 느린 와이파이에서 스크립트가 안 오면) 토큰 약속이
+// 끝나지 않아 업로드가 영영 시작되지 않았다 — 요청 하나 없이 «저장하고 있어요»에 멈춘다(10/24 느린 회선 측정에서 발견). 상한이 지나면
+// 토큰 없이 보내고, 판단은 서버가 한다(거절되면 재시도 → 이 기기에 저장으로 이어진다).
+const APP_CHECK_WAIT_MS = 20000;
+
 /** App Check(reCAPTCHA Enterprise) 인스턴스. 저장 시점의 토큰 발급 대기를 줄이려 미리 초기화해 둔다. */
 export function initAppCheck(): Promise<unknown> {
   return (appCheck ??= (async () => {
@@ -37,7 +42,10 @@ async function uploadOnce(dataBase64: string, filename: string): Promise<string>
   // 401을 주든 최종적으로 겪는 재시도·폴백 결과는 같다.
   let token = '';
   try {
-    token = await appCheckToken();
+    token = await Promise.race([
+      appCheckToken(),
+      new Promise<string>((_, reject) => setTimeout(() => reject(new Error(`${APP_CHECK_WAIT_MS / 1000}초 안에 준비되지 않음`)), APP_CHECK_WAIT_MS)),
+    ]);
   } catch (e) {
     console.warn('[App Check 토큰 발급 실패]', e instanceof Error ? e.message : e);
   }
