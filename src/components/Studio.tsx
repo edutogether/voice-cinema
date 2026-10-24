@@ -4,6 +4,8 @@ import { useDubbing, type Phase } from '../hooks/useDubbing';
 import { RECORD_SECONDS } from '../config';
 import { STUDIO_COPY } from '../copy';
 import { lastInputWasKeyboard } from '../lib/inputModality';
+import { holdBackground } from '../lib/backgroundLoad';
+import { prefetchFinalClip } from '../lib/ffmpeg';
 
 import { ActionIcon } from './ActionIcon';
 import { ClipTimeline } from './ClipTimeline';
@@ -20,6 +22,9 @@ interface Props {
   sampleMode: boolean;
   entrance: SceneEntrance | null;
 }
+
+// 장면 영상이 이 시간 안에 다 받히지 않아도 뒤에서 받던 엔진을 다시 받게 한다(저장이 마냥 늦어지지 않게)
+const CLIP_FIRST_MAX_MS = 60000;
 
 const TAKE_PHASES: readonly Phase[] = ['requesting', 'watching', 'cue', 'countdown', 'recording', 'continuing'];
 
@@ -85,6 +90,36 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
     v.currentTime = 0;
     v.muted = true;
   }, [genre.id]);
+
+  // 느린 와이파이에서는 이 장면 영상이 먼저 받히게 뒤에서 받던 엔진은 그동안 쉰다(src/lib/backgroundLoad.ts). 다 받히거나 브라우저가
+  // 그만 받으면(suspend) 놓고, 저장할 때 쓰는 완성용 원판을 미리 받아 둔다 — 녹음하는 동안 받아 «저장하기» 뒤에 기다리지 않게.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || sampleMode) return;
+    const release = holdBackground();
+    let settled = false;
+    const settle = () => {
+      if (settled) return;
+      settled = true;
+      release();
+      prefetchFinalClip(genre.id);
+    };
+    const check = () => {
+      const b = v.buffered;
+      if (v.duration > 0 && b.length && b.end(b.length - 1) >= v.duration - 0.25) settle();
+    };
+    v.addEventListener('progress', check);
+    v.addEventListener('canplaythrough', check);
+    v.addEventListener('suspend', settle);
+    const safety = window.setTimeout(settle, CLIP_FIRST_MAX_MS);
+    return () => {
+      v.removeEventListener('progress', check);
+      v.removeEventListener('canplaythrough', check);
+      v.removeEventListener('suspend', settle);
+      window.clearTimeout(safety);
+      release();
+    };
+  }, [genre.id, sampleMode]);
 
   const save = () => {
     if (sampleMode) onSave({ kind: 'sample' });

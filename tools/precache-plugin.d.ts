@@ -7,4 +7,6 @@ export function precacheSW(options: {
   precacheDirs?: string[];
   /** 프리캐시에서 제외할 폴더명 — 런타임 캐싱으로 넘긴다(기본: clips) */
   excludeDirs?: string[];
+  /** 프리캐시에서 빼되 내용은 캐시 이름에 넣는 폴더 — 서비스워커가 앱이 받을 때 캐시한다(엔진 vendor/ffmpeg-core) */
+  runtimeDirs?: string[];
 }): Plugin;

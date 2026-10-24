@@ -33,6 +33,7 @@ self.addEventListener('activate', (event) => {
 
 const isPrecached = (url) => PRECACHE_URLS.includes(url.pathname);
 const isClip = (url) => url.pathname.startsWith('/clips/');
+const isEngine = (url) => url.pathname.startsWith('/vendor/ffmpeg-core/');
 
 // 응답을 캐시에 넣고 그대로 돌려준다. 실패(용량 초과 등)해도 응답 자체는 살린다.
 // 실패 응답(404·500 등)은 절대 캐시하지 않는다 — 부스 와이파이가 잠깐 흔들려
@@ -43,6 +44,26 @@ function cacheAndReturn(request, response) {
   const copy = response.clone();
   caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)).catch(() => {});
   return response;
+}
+
+// 엔진(31MB)은 설치 때 미리 받지 않고, 앱이 받을 때 그 흐름을 그대로 넘기며 모아 두었다가 다 받으면 캐시에 넣는다(2026-10-24).
+// 설치 때 받으면 첫 방문에 화면의 영상과 회선을 다투고(느린 와이파이에서 장면 5초까지 56초), clone()으로 두 갈래를 만들면 캐시 쪽이
+// 회선을 끝까지 당겨 앱이 장면 영상을 먼저 받으려고 잠시 쉬어도(src/lib/backgroundLoad.ts) 받기가 멈추지 않는다.
+// 이 길로 넘기면 앱이 읽는 속도가 곧 받는 속도다. 캐시 키는 경로다(설치 때 넣던 것과 같다 — 오프라인 검사가 그 키로 찾는다).
+function passAndCache(key, response) {
+  if (!response.ok || !response.body) return response;
+  const chunks = [];
+  const headers = new Headers({ 'content-type': response.headers.get('content-type') || 'application/octet-stream' });
+  const keep = new TransformStream({
+    transform(chunk, controller) {
+      chunks.push(chunk);
+      controller.enqueue(chunk);
+    },
+    flush() {
+      caches.open(CACHE_NAME).then((cache) => cache.put(key, new Response(new Blob(chunks), { headers }))).catch(() => {});
+    },
+  });
+  return new Response(response.body.pipeThrough(keep), { status: response.status, statusText: response.statusText, headers });
 }
 
 self.addEventListener('fetch', (event) => {
@@ -87,6 +108,16 @@ self.addEventListener('fetch', (event) => {
   if (isPrecached(url)) {
     event.respondWith(
       caches.match(url.pathname, { ignoreVary: true }).then((hit) => hit || fetch(request))
+    );
+    return;
+  }
+
+  // 엔진: 캐시에 있으면 캐시, 없으면 받으며 캐시에 넣는다(위 passAndCache).
+  if (isEngine(url)) {
+    event.respondWith(
+      caches
+        .match(url.pathname, { ignoreVary: true })
+        .then((hit) => hit || fetch(request).then((resp) => passAndCache(url.pathname, resp)))
     );
     return;
   }

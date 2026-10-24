@@ -3,6 +3,7 @@ import { Home } from './components/Home';
 import { Result, type SaveJob } from './components/Result';
 import { Studio } from './components/Studio';
 import { GENRES, type Genre } from './genres';
+import { afterFirstMediaReady } from './lib/backgroundLoad';
 import { loadEngine } from './lib/ffmpeg';
 import { installServiceWorker } from './lib/sw';
 import { initAppCheck } from './lib/upload';
@@ -11,6 +12,9 @@ import { isLocalRecordingSample } from './lib/sampleMode';
 import { lastInputWasKeyboard } from './lib/inputModality';
 
 type View = 'home' | 'studio' | 'result';
+
+// 화면의 영상이 끝내 재생할 만큼 받히지 않아도 이만큼 뒤에는 엔진을 받기 시작한다
+const BACKGROUND_START_FALLBACK_MS = 20000;
 
 interface ScreenHistory {
   pageId: string;
@@ -50,7 +54,7 @@ export function App() {
   const [entrance, setEntrance] = useState<SceneEntrance | null>(null);
   const [job, setJob] = useState<SaveJob | null>(null);
   const [enginePercent, setEnginePercent] = useState(0);
-  const [engineLoading, setEngineLoading] = useState(true);
+  const [engineLoading, setEngineLoading] = useState(false);
   const [engineFailed, setEngineFailed] = useState(false);
   // 새 버전이 준비됐는지. 저절로 새로고침하지 않고 사람이 누를 때만 한다 —
   // 부스에서 아이가 녹음·합성 중에 화면이 다시 시작되면 작업이 통째로 날아간다.
@@ -105,19 +109,24 @@ export function App() {
     return installServiceWorker(() => setUpdateReady(true));
   }, []);
 
-  // 첫 더빙 전에 엔진(31MB)과 App Check를 미리 준비해 저장 시 대기시간을 줄인다.
+  // 첫 더빙 전에 엔진(31MB)과 App Check를 미리 준비해 저장 시 대기시간을 줄인다. 다만 화면의 첫 영상이 재생할 만큼 받힌 뒤에
+  // 시작한다 — 느린 와이파이에서 처음부터 같이 받으면 장면 영상이 한참 늦게 뜬다(10/24, src/lib/backgroundLoad.ts).
   useEffect(() => {
-    if (sampleMode) {
-      setEngineLoading(false);
-      return;
-    }
-    loadEngine((percent) => setEnginePercent(percent))
-      .then(() => setEngineLoading(false))
-      .catch((e) => {
-        console.error('[엔진 준비 실패]', e);
-        setEngineFailed(true);
-      });
-    initAppCheck().catch((e) => console.error('[App Check 사전초기화 실패]', e));
+    if (sampleMode) return;
+    let cancelled = false;
+    afterFirstMediaReady(BACKGROUND_START_FALLBACK_MS).then(() => {
+      if (cancelled) return;
+      setEngineLoading(true);
+      loadEngine((percent) => setEnginePercent(percent))
+        .then(() => setEngineLoading(false))
+        .catch((e) => {
+          console.error('[엔진 준비 실패]', e);
+          setEngineLoading(false);
+          setEngineFailed(true);
+        });
+      initAppCheck().catch((e) => console.error('[App Check 사전초기화 실패]', e));
+    });
+    return () => { cancelled = true; };
   }, [sampleMode]);
 
   const openStudio = (g: Genre, source?: HTMLElement) => {

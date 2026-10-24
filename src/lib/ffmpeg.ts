@@ -1,12 +1,16 @@
 import { ENGINE_WASM_BYTES, PAUSE_SECONDS, RECORD_SECONDS } from '../config';
 import { finalClipUrl } from '../genres';
 import { pickAudioExtension, progressPercent } from '../logic';
+import { readInBackground } from './backgroundLoad';
 import { loadFFmpegModule, loadFFmpegUtil, type FFmpegInstance } from './vendor';
+
+const SW_CONTROL_WAIT_MS = 20000;
 
 // @ffmpeg/util의 toBlobURL(progress=true)은 스트림 리더가 도중에 실패하면 이미 읽은
 // Response.body를 다시 arrayBuffer()로 읽으려다 "body stream already read" 오류를
 // 낸다(라이브에서 재현 확인됨). 그 경로를 피해 직접 fetch + 진행률을 구현한다.
 // 진행률은 받은(압축을 푼) 바이트로만 알린다 — Content-Length는 압축된 크기라 분모로 쓰면 100%를 넘는다(10/20).
+// 받는 동안 녹음실 장면 영상이 받히고 있으면 잠시 쉰다(src/lib/backgroundLoad.ts) — 장면이 먼저 재생돼야 한다.
 async function toBlobURLWithProgress(
   url: string,
   mimeType: string,
@@ -14,20 +18,29 @@ async function toBlobURLWithProgress(
 ): Promise<string> {
   const resp = await fetch(url);
   if (!resp.ok) throw new Error(`엔진 파일 다운로드 실패: ${resp.status} ${url}`);
-  if (!resp.body) {
-    return URL.createObjectURL(new Blob([await resp.arrayBuffer()], { type: mimeType }));
-  }
-  const reader = resp.body.getReader();
   const chunks: Uint8Array[] = [];
   let received = 0;
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    received += value.length;
+  await readInBackground(resp, (chunk) => {
+    chunks.push(chunk);
+    received += chunk.length;
     onProgress?.(received);
-  }
+  });
   return URL.createObjectURL(new Blob(chunks as BlobPart[], { type: mimeType }));
+}
+
+// 첫 방문에서는 서비스워커가 이 탭을 맡기 전에 엔진을 받기 시작하면 서비스워커가 그 받기를 못 봐 캐시에 넣지 못한다 —
+// 그러면 다음에 열 때 31MB를 또 받는다. 서비스워커가 맡을 때까지 잠깐(최대 waitMs) 기다린다. 서비스워커가 없으면 바로 받는다.
+async function whenServiceWorkerControls(waitMs: number): Promise<void> {
+  if (!import.meta.env.PROD || !('serviceWorker' in navigator) || navigator.serviceWorker.controller) return;
+  await new Promise<void>((resolve) => {
+    const timer = window.setTimeout(done, waitMs);
+    navigator.serviceWorker.addEventListener('controllerchange', done);
+    function done() {
+      window.clearTimeout(timer);
+      navigator.serviceWorker.removeEventListener('controllerchange', done);
+      resolve();
+    }
+  });
 }
 
 let engine: FFmpegInstance | null = null;
@@ -38,6 +51,7 @@ export function loadEngine(onProgress?: (percent: number) => void): Promise<FFmp
   if (engine) return Promise.resolve(engine);
   if (loading) return loading;
   loading = (async () => {
+    await whenServiceWorkerControls(SW_CONTROL_WAIT_MS);
     const { FFmpeg } = await loadFFmpegModule();
     const inst = new FFmpeg();
     const coreURL = await toBlobURLWithProgress('/vendor/ffmpeg-core/ffmpeg-core.js', 'text/javascript');
@@ -67,6 +81,20 @@ export const MIX_FILTER =
   `[1:a]atrim=0:${RECORD_SECONDS},apad=whole_dur=${RECORD_SECONDS},highpass=f=90,alimiter=limit=0.89,` +
   `adelay=${PAUSE_SECONDS * 1000}:all=1[voice];` +
   '[0:a][voice]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[a]';
+
+const prefetched = new Set<string>();
+
+/**
+ * 저장할 때 합성에 쓰는 완성용 원판(장르당 약 6MB)을 미리 받아 둔다 — 녹음하는 동안 받아 두면 «저장하기» 뒤에 그만큼 기다리지 않는다.
+ * 녹음실 장면 영상이 다 받힌 뒤에 부른다. 받은 것은 서비스워커 캐시와 브라우저 캐시에 남아 합성 때 그대로 쓴다.
+ */
+export function prefetchFinalClip(genreId: string): void {
+  if (prefetched.has(genreId)) return;
+  prefetched.add(genreId);
+  fetch(finalClipUrl(genreId))
+    .then((resp) => (resp.ok ? readInBackground(resp) : Promise.reject(new Error(String(resp.status)))))
+    .catch(() => prefetched.delete(genreId));
+}
 
 /** 원판 영상 + 학생이 녹음한 음성을 브라우저 안에서 합쳐 mp4로 만든다. */
 export async function mergeClip(genreId: string, audioBlob: Blob, mime: string): Promise<Blob> {

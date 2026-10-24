@@ -13,7 +13,7 @@ export default defineConfig({
     clipVersions({ dir: root + 'public/clips' }),
     // 순서가 중요하다 — 서브셋이 먼저 dist/fonts/를 만들어야 프리캐시 목록에 들어간다.
     subsetFonts({ srcDir: root + 'fonts' }),
-    precacheSW({ swSource: root + 'tools/sw-template.js', precacheDirs: ['vendor', 'fonts', 'icons', 'brands'] }),
+    precacheSW({ swSource: root + 'tools/sw-template.js', precacheDirs: ['vendor', 'fonts', 'icons', 'brands'], runtimeDirs: ['vendor/ffmpeg-core'] }),
   ],
   build: {
     // 인라인 스크립트를 하나도 만들지 않는다. CSP의 script-src에 해시를 박아두면

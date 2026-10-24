@@ -16,8 +16,10 @@ import path from 'node:path';
  *    앱이 부팅하려면 반드시 필요한 것들이라 오프라인에 있어야 한다.
  *  - 뺀다: clips/**(6개 합쳐 37MB). install에서 한꺼번에 받으면 행사장 와이파이에서
  *    설치 자체가 실패한다 — 실제로 재생한 장르부터 런타임에 쌓는다.
+ *  - runtimeDirs(엔진 vendor/ffmpeg-core, 2026-10-24)는 목록에서 빼고 서비스워커가 앱이 받을 때 캐시에 넣는다 — 설치 때 받으면
+ *    첫 방문에 화면의 영상과 회선을 다툰다. 다만 그 파일 내용은 캐시 이름에 넣는다: 엔진만 바뀐 배포에서도 옛 엔진이 남지 않게.
  */
-export function precacheSW({ swSource, precacheDirs = ['vendor', 'fonts'], excludeDirs = ['clips'] }) {
+export function precacheSW({ swSource, precacheDirs = ['vendor', 'fonts'], excludeDirs = ['clips'], runtimeDirs = [] }) {
   let outDir;
   return {
     name: 'voice-cinema-precache-sw',
@@ -36,6 +38,7 @@ export function precacheSW({ swSource, precacheDirs = ['vendor', 'fonts'], exclu
       const included = files.filter(({ url }) => {
         if (url === '/sw.js') return false;
         if (excludeDirs.some((d) => url.startsWith(`/${d}/`))) return false;
+        if (runtimeDirs.some((d) => url.startsWith(`/${d}/`))) return false;
         if (precacheDirs.some((d) => url.startsWith(`/${d}/`))) return true;
         return /\.(html|js|css)$/.test(url);
       });
@@ -54,8 +57,13 @@ export function precacheSW({ swSource, precacheDirs = ['vendor', 'fonts'], exclu
 
       // 목록이나 내용이 조금이라도 바뀌면 캐시 이름이 바뀌어 옛 캐시가 폐기된다.
       // 예전처럼 사람이 CACHE_NAME 버전 올리는 걸 잊어 옛 화면이 계속 보이는 일이 없다.
+      const runtime = files
+        .filter(({ url }) => runtimeDirs.some((d) => url.startsWith(`/${d}/`)))
+        .map(({ abs, url }) => ({ url, hash: hashFile(abs) }))
+        .sort((a, b) => a.url.localeCompare(b.url));
+      if (runtimeDirs.length && !runtime.length) throw new Error(`런타임 캐시 대상(${runtimeDirs.join(', ')})이 산출물에 없습니다.`);
       const version = createHash('sha256')
-        .update(manifest.map((e) => e.url + e.hash).join('\n'))
+        .update([...manifest, ...runtime].map((e) => e.url + e.hash).join('\n'))
         .digest('hex')
         .slice(0, 12);
 

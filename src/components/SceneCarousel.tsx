@@ -120,7 +120,7 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
               onPointerLeave={() => setHoveredCard(previous => previous === index ? null : previous)}
               ref={node => { shells.current[index] = node; }}>
               <GenreTile genre={genre} sceneNumber={index + 1} playing={active && ready && visible && offset === 0}
-                previewOnly={offset !== 0}
+                previewOnly={offset !== 0} near={Math.abs(offset) <= 2}
                 onSelect={offset === 0 ? onSelect : () => choose(index)} />
             </div>
           );

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { previewUrl, thumbUrl, stillUrl, type Genre } from '../genres';
 import { ActionIcon } from './ActionIcon';
 
@@ -15,11 +15,15 @@ interface Props {
   previewOnly?: boolean;
   /** 이 카드가 지금 재생돼야 하는지. PC·휴대폰 모두 선택된 가운데 장면만 재생한다. */
   playing: boolean;
+  /** 화면에 보이거나 곧 보일 카드인지 — 아니면 그림을 아직 받지 않는다(첫 화면에 안 보이는 카드 셋, 10/24 느린 와이파이). 한 번 받으면 계속 둔다. */
+  near?: boolean;
   onSelect: (genre: Genre, source?: HTMLElement) => void;
 }
 
-export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, onSelect }: Props) {
+export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, near = true, onSelect }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [showImage, setShowImage] = useState(near);
+  useEffect(() => { if (near) setShowImage(true); }, [near]);
   const releaseTimer = useRef<number | undefined>(undefined);
   // 선택 순간 재생한다. 장면 변경·탭 숨김·녹음실 진입 시 이전 요청까지 무효화한다.
   useEffect(() => {
@@ -76,7 +80,7 @@ export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, on
     >
       <span className="tile-media" aria-hidden="true">
         <span className="tile-visual">
-          <img className="thumb" src={thumbUrl(genre.id)} srcSet={`${thumbUrl(genre.id)} 320w, ${stillUrl(genre.id)} 1280w`} sizes="(min-width: 1000px) 33vw, 50vw" alt="" />
+          {showImage && <img className="thumb" src={thumbUrl(genre.id)} srcSet={`${thumbUrl(genre.id)} 320w, ${stillUrl(genre.id)} 1280w`} sizes="(min-width: 1000px) 33vw, 50vw" alt="" />}
           <video className="preview" ref={videoRef} muted playsInline preload="none" />
         </span>
         <span className="tile-number">{String(sceneNumber).padStart(2, '0')}</span>
