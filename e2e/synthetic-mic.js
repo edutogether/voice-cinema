@@ -5,7 +5,8 @@
 // 녹음 하나의 계획(takes 배열의 n번째가 n번째 녹음):
 //   { delay: 녹음기 켜짐 뒤 몇 초에 말하기 시작, dur: 말하는 길이, amp: 크기(1 = 0dBFS, 넘으면 찢어진 소리), f0: 목소리 높이(Hz),
 //     noise: 배경 소음 크기, early: true면 «1»이 나올 때 미리 말하기 시작, unplug: 녹음기 켜짐 뒤 몇 초에 마이크를 뽑음,
-//     error: 녹음기 켜짐 뒤 몇 초에 녹음기 오류, silent: true면 아무 소리도 안 냄 }
+//     error: 녹음기 켜짐 뒤 몇 초에 녹음기 오류, silent: true면 아무 소리도 안 냄,
+//     more: [{ delay, dur }] 같은 녹음 안에서 이어 말하는 말소리(«셋 ! … 날아라, 미르 !»), delay는 녹음기 켜짐 기준 }
 export async function installSyntheticMic(page, takes) {
   await page.addInitScript((plans) => {
     const RATE = 48000;
@@ -74,6 +75,7 @@ export async function installSyntheticMic(page, takes) {
       mic.earlySpoken = false;
       // 녹음 파일은 start()를 부른 순간부터 담긴다(크롬은 첫 소리 조각이 나온 뒤에야 start 이벤트를 낸다 — 약 50ms 뒤)
       if (!plan.early) speak(plan, ctx.currentTime + (plan.delay ?? 0.3));
+      for (const extra of plan.more ?? []) speak({ ...plan, ...extra }, ctx.currentTime + extra.delay);
       this.addEventListener('start', () => {
         take.startedAt = performance.now();
         // 장치가 빠지면 트랙이 끝나고 ended 이벤트가 온다. 페이지에서 stop()을 부르면 이벤트가 오지 않으므로(표준) 직접 낸다.
@@ -89,7 +91,7 @@ export async function installSyntheticMic(page, takes) {
       this.addEventListener('dataavailable', (e) => { if (e.data?.size) take.chunks.push(e.data); });
       this.addEventListener('error', (e) => { take.error = e.error?.name || e.type; });
       const stop = this.stop;
-      this.stop = function (...a) { take.stopStack = new Error().stack; return stop.apply(this, a); };
+      this.stop = function (...a) { take.stopStack = new Error().stack; take.stopCalledAt ??= performance.now(); return stop.apply(this, a); };
       return start.apply(this, args);
     };
     // 미리 듣기 — 앱이 다듬은 목소리를 언제·어디서부터 트는지, 그 소리가 어디서 시작하는지 기록한다
@@ -115,6 +117,8 @@ export const takes = (page) => page.evaluate(() => window.__mic.takes.map((t) =>
   seconds: t.startedAt && t.stoppedAt ? (t.stoppedAt - t.startedAt) / 1000 : null, state: t.recorder.state, error: t.error ?? null,
   track: t.recorder.stream.getAudioTracks().map((x) => `${x.readyState}${x.muted ? ' muted' : ''}`).join(), stopStack: t.stopStack,
   micContext: window.__mic.ctx.state, startDelay: t.startedAt ? +(t.startedAt - t.calledAt).toFixed(1) : null,
+  // 앱이 멈추기로 한 때 — 녹음기 start()를 부른 때부터(시험용 말소리도 그때부터 예약한다)
+  stopAt: t.stopCalledAt ? +((t.stopCalledAt - t.calledAt) / 1000).toFixed(3) : null,
 })));
 export const previews = (page) => page.evaluate(() => window.__mic.previews);
 

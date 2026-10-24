@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { finalClipUrl, stillUrl, stillAvifUrl, type Genre } from '../genres';
+import { finalClipUrl, sceneFor, stillUrl, stillAvifUrl, type Genre } from '../genres';
 import { FestivalHeader } from './FestivalHeader';
 import { ActionIcon } from './ActionIcon';
 import { mergeClip, processVoice } from '../lib/ffmpeg';
@@ -56,7 +56,7 @@ export function Result({ active, job, onHome, onBack }: Props) {
     void (async () => {
       let merged: Blob;
       try {
-        merged = await mergeClip(job.genre.id, await voiceFor(job));
+        merged = await mergeClip(job.genre.id, await voiceFor(job), sceneFor(job.genre).pause);
       } catch (e) {
         if (!cancelled) {
           setStage({

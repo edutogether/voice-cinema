@@ -6,6 +6,23 @@
 // (10/17 06:40 대표님: 휴대폰도 캐러셀 확정, 장르 색 질문은 끝 — 확정값이라 지우지 않고 둔다). 원작 제목은 앱 화면 어디에도 쓰지 않는다.
 
 import clipVersions from 'virtual:clip-versions';
+import { PAUSE_SECONDS, VOICE_WINDOW_SECONDS } from './config';
+import { nextScenesOn } from './lib/sceneMode';
+
+/**
+ * 장면 하나의 시간표 — 영상마다 다르다. 영상을 바꾸면 이 값도 함께 바꾸고 `node tools/check-scene.mjs <장르> <정지 초> <목소리 칸 초> --cue <큐 목록>`으로
+ * 영상과 맞는지 확인한다(10.000초, 정지 시각의 키프레임, 두 원판의 소리, 소리 트랙을 만든 큐 목록의 목소리 칸).
+ */
+export interface Scene {
+  /** 앱이 영상을 멈추는 시각(초) — 영상의 키프레임이어야 정확히 그 그림에 선다 */
+  pause: number;
+  /** 아이 목소리가 들어가는 칸(초) — pause부터 이만큼, 원판 소리를 −8dB 낮춰 둔 자리. pause + voiceWindow ≤ 10 */
+  voiceWindow: number;
+  /** 멈춘 화면에 크게 보여 줄 아이 대사. 없으면 안내 문구만 보인다(그대로 외치지 않아도 녹음된다) */
+  childLine?: string;
+  /** 상대 대사 — 앱이 영상 위에 띄우는 넷플릭스식 자막. 영상·완성본에는 굽지 않는다 */
+  partnerLine?: { text: string; start: number; end: number };
+}
 
 export interface Genre {
   id: string;
@@ -13,23 +30,47 @@ export interface Genre {
   color: string;
   /** 우리 장면 이름 — 카드와 녹음실 제목에 쓴다. */
   summary: string;
-  /** 상대 대사 — 앱이 영상 위에 띄우는 넷플릭스식 자막. 영상·완성본에는 굽지 않는다. */
-  line: { text: string; start: number; end: number };
+  /** 지금 원판의 시간표 */
+  scene: Scene;
 }
 
-// 상대 대사는 모든 장르가 1.6초에 시작해 3.4초 전에 끝난다(스토리보드 §0).
-const line = (text: string) => ({ text, start: 1.6, end: 3.4 });
+// 지금 원판(2.0): 모든 장르가 5.0초에 멈추고, 상대 대사는 1.6초에 시작해 3.4초 전에 끝난다(스토리보드 §0). 아이 대사는 화면에 없다
+// (예시 외침은 부스 도우미가 말로 안내할 때 참고하는 것).
+const live = (partner: string): Scene => ({
+  pause: PAUSE_SECONDS, voiceWindow: VOICE_WINDOW_SECONDS, partnerLine: { text: partner, start: 1.6, end: 3.4 },
+});
+
+/**
+ * 새 8편(대표님이 만드는 영상, 10/25 지시)의 시간표 — **준비만 해 두고 아직 쓰지 않는다.** 새 영상이 들어오면 그 장르의 `scene`을
+ * 이 값으로 바꾼다 — `scene: NEXT_SCENES.sf`(그래서 GENRES보다 위에 둔다). 영상마다 정지 시각을 맞춰 고친다(7.0초 전후).
+ * 7.0초에 멈추면 남은 영상이 3.0초라 목소리 칸도 3.0초다.
+ * 상대 대사 자막(시각·글)은 영상이 오면 정한다. 대사의 느낌표·물음표 앞에는 한 칸을 띄운다(전 앱 규칙).
+ */
+const next = (childLine: string): Scene => ({ pause: 7, voiceWindow: 3, childLine });
+export const NEXT_SCENES: Record<string, Scene> = {
+  sf: next('안녕 ! 우린 지구에서 왔어 !'),
+  fantasy: next('그래 ! 내가 이긴다 !'),
+  animation: next('셋 ! 날아라, 미르 !'),
+  hero: next('멈춰라 ! 멈춰 !'),
+  thriller: next('싫어 ! 저리 가 !'),
+  drama: next('설이야 ! 꼭 다시 올게 !'),
+  sports: next('간다 ! 내가 끝낸다 !'),
+  musical: next('하나, 둘, 셋, 넷 !'),
+};
 
 export const GENRES: Genre[] = [
-  { id: 'sf', name: 'SF', color: '#3fa7c9', summary: '물의 행성', line: line('저 산… 움직여 !') },
-  { id: 'fantasy', name: '판타지', color: '#8a63d2', summary: '빛의 결투', line: line('나와 겨루겠다고 ?') },
-  { id: 'animation', name: '애니메이션', color: '#d97b3f', summary: '멋지게 떨어지기', line: line('장난감은 못 날아 !') },
-  { id: 'hero', name: '히어로', color: '#c94f5c', summary: '왼쪽을 봐', line: line('왼쪽을 봐. 우리가 왔어 !') },
-  { id: 'thriller', name: '스릴러', color: '#2f9e6e', summary: '레이저 금고', line: line('레이저 바뀐다, 천천히 !') },
-  { id: 'drama', name: '드라마', color: '#c9a24b', summary: '기억의 한마디', line: line('이제… 아무도 몰라보셔.') },
-  { id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '마지막 슛', line: line('너한테 맡긴다 !') },
-  { id: 'musical', name: '뮤지컬', color: '#c4559e', summary: '서커스 첫 무대', line: line('쇼는 계속되어야 해 !') },
+  { id: 'sf', name: 'SF', color: '#3fa7c9', summary: '물의 행성', scene: live('저 산… 움직여 !') },
+  { id: 'fantasy', name: '판타지', color: '#8a63d2', summary: '빛의 결투', scene: live('나와 겨루겠다고 ?') },
+  { id: 'animation', name: '애니메이션', color: '#d97b3f', summary: '멋지게 떨어지기', scene: live('장난감은 못 날아 !') },
+  { id: 'hero', name: '히어로', color: '#c94f5c', summary: '왼쪽을 봐', scene: live('왼쪽을 봐. 우리가 왔어 !') },
+  { id: 'thriller', name: '스릴러', color: '#2f9e6e', summary: '레이저 금고', scene: live('레이저 바뀐다, 천천히 !') },
+  { id: 'drama', name: '드라마', color: '#c9a24b', summary: '기억의 한마디', scene: live('이제… 아무도 몰라보셔.') },
+  { id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '마지막 슛', scene: live('너한테 맡긴다 !') },
+  { id: 'musical', name: '뮤지컬', color: '#c4559e', summary: '서커스 첫 무대', scene: live('쇼는 계속되어야 해 !') },
 ];
+
+/** 이 장르를 지금 어떤 시간표로 트는가 — 이 기기 개발 주소의 `?scenes=next`에서만 새 시간표를 시험한다(src/lib/sceneMode.ts) */
+export const sceneFor = (genre: Genre): Scene => (nextScenesOn ? NEXT_SCENES[genre.id] : genre.scene);
 
 /**
  * 장르마다 10초 원판(1920×1080 H.264/AAC, 키프레임 1초 간격 + 5.0초). 녹음실 재생·5.0초 멈춤이 이 파일을 쓴다.

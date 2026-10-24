@@ -92,15 +92,27 @@ test('엔진 크기: src/config.ts의 ENGINE_WASM_BYTES가 실제 ffmpeg-core.wa
   expect(상수).toBe(statSync(path.join(root, 'public/vendor/ffmpeg-core/ffmpeg-core.wasm')).size);
 });
 
-// 2026-10-24: 녹음은 원판이 −8dB 낮춰 둔 목소리 칸(5.0~8.5초)에 들어간다. 원판을 만든 도구의 칸과 앱의 칸이 어긋나면
+// 2026-10-24: 녹음은 원판이 −8dB 낮춰 둔 목소리 칸(지금 장면 5.0~8.5초)에 들어간다. 원판을 만든 도구의 칸과 앱의 칸이 어긋나면
 // 목소리가 낮추지 않은 배경음 위에 얹히거나, 아무도 말하지 않는 자리의 음악만 작아진다.
-test('목소리 칸: 원판 소리를 낮춘 자리(tools/build-scene-audio.mjs)와 앱의 정지·목소리 칸이 같다', () => {
+// 2026-10-25: 시간표가 장면마다 생겼다(src/genres.ts의 scene) — 도구의 기본값은 지금 장면이고, 새 장면(7.0초 정지)은 큐 목록의 voice와
+// --pause로 만든다. 새 장면은 정지 + 칸이 10초에서 끝나야 하고(해소 장면 없이 목소리로 끝난다), 8장르 모두 아이 대사가 있다.
+test('목소리 칸: 장면 도구의 기본값이 앱의 지금 장면 시간표와 같고, 새 장면 시간표는 8장르 모두 10초에서 끝난다', () => {
   const config = read('src/config.ts');
   const pause = Number(extract(config, /export const PAUSE_SECONDS = ([\d.]+);/, 'PAUSE_SECONDS'));
   const window = Number(extract(config, /export const VOICE_WINDOW_SECONDS = ([\d.]+);/, 'VOICE_WINDOW_SECONDS'));
   const voice = extract(read('tools/build-scene-audio.mjs'), /const VOICE = \{ (from: [\d.]+, to: [\d.]+)/, '원판 목소리 칸');
   expect(voice).toBe(`from: ${pause}, to: ${pause + window}`);
-  expect(config).toMatch(/export const RECORD_MAX_SECONDS = VOICE_WINDOW_SECONDS;/);
+  expect(Number(extract(read('tools/build-scene.mjs'), /const LIVE_PAUSE = ([\d.]+);/, 'LIVE_PAUSE'))).toBe(pause);
+  const genres = read('src/genres.ts');
+  const next = genres.match(/const next = \(childLine: string\): Scene => \(\{ pause: ([\d.]+), voiceWindow: ([\d.]+), childLine \}\);/);
+  expect(next, '새 장면 시간표(next)').toBeTruthy();
+  expect(Number(next[1]) + Number(next[2])).toBe(10);
+  const ids = [...genres.matchAll(/^ {2}\{ id: '([a-z]+)'/gm)].map((m) => m[1]);
+  const lines = Object.fromEntries([...genres.matchAll(/^ {2}([a-z]+): next\('([^']+)'\),\r?$/gm)].map((m) => [m[1], m[2]]));
+  expect(ids).toHaveLength(8);
+  expect(Object.keys(lines).sort()).toEqual([...ids].sort());
+  // 느낌표·물음표 앞은 한 칸 띈다(COMMON_STANDARDS §32)
+  for (const line of Object.values(lines)) expect(line, line).not.toMatch(/\S[!?]/);
 });
 
 // 2026-10-24: FFmpeg의 alimiter는 자동 레벨(level)이 기본으로 켜져 있어 눌러 둔 소리를 다시 0dB 쪽으로 끌어올리고,
@@ -111,7 +123,7 @@ test('합성: 리미터는 자동 레벨을 끄고 지연을 보정하며, 원�
   const limiters = source.match(/alimiter=[^'`,[]*/g) ?? [];
   expect(limiters).toHaveLength(2);
   for (const limiter of limiters) expect(limiter).toMatch(/level=false:latency=true$/);
-  const mix = extract(source, /export const MIX_FILTER =([\s\S]*?);\r?\n/, 'MIX_FILTER');
+  const mix = extract(source, /export const mixFilter = \(pause: number\) =>([\s\S]*?);\r?\n/, 'mixFilter');
   expect(mix).not.toMatch(/volume|sidechaincompress|acompressor/);
   expect(source).toMatch(/'-c:v', 'copy'/);
 });

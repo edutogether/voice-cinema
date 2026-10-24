@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { clipUrl, stillUrl, type Genre } from '../genres';
+import { clipUrl, sceneFor, stillUrl, type Genre } from '../genres';
 import { useDubbing, type Phase } from '../hooks/useDubbing';
-import { RECORD_BASE_SECONDS } from '../config';
 import { STUDIO_COPY } from '../copy';
 import { lastInputWasKeyboard } from '../lib/inputModality';
+import { maxSpeechFor } from '../lib/voiceCheck';
 import { holdBackground } from '../lib/backgroundLoad';
 import { prefetchFinalClip } from '../lib/ffmpeg';
 
@@ -61,7 +61,9 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
   const saveButtonRef = useRef<HTMLButtonElement>(null);
   const startButtonRef = useRef<HTMLButtonElement>(null);
   const previousPhaseRef = useRef<Phase>('idle');
-  const dub = useDubbing(genre.id, videoRef, sampleMode);
+  const scene = sceneFor(genre);
+  const childLine = scene.childLine;
+  const dub = useDubbing(genre.id, scene, videoRef, sampleMode);
   const { phase } = dub;
   const inTake = TAKE_PHASES.includes(phase);
   const done = phase === 'recorded';
@@ -145,6 +147,8 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
               <video id="clip" ref={videoRef} poster={stillUrl(genre.id)} playsInline muted preload="auto"
                 onWaiting={() => setBuffering(true)} onPlaying={() => setBuffering(false)} onError={() => setBuffering(false)} />
               <div className="studio-pause-shade" aria-hidden="true" />
+              {/* 정지 동안만 화면을 살짝(22%) 누른다 — 멈춘 그림은 그대로 보이고, 영상·완성본에는 굽지 않는다(10/25 대표님) */}
+              <div className="studio-hold-shade" aria-hidden="true" />
               <div className="studio-pause-title" aria-hidden="true">
                 <small>장면 더빙</small>
                 <strong>{genre.summary}</strong>
@@ -156,12 +160,14 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
                 <span aria-hidden="true"><ActionIcon name="play" /></span>
               </button>}
               {playing && buffering && <div className="studio-buffering" role="status">영상을 불러오고 있어요</div>}
-              <SceneCaption genre={genre} videoRef={videoRef} enabled={phase === 'watching' || previewing} />
-              {phase === 'cue' && <div className="studio-cue" role="status" id="cue"><strong>{STUDIO_COPY.yourTurn}</strong></div>}
-              {dub.countdown > 0 && <div className="overlay show" id="overlay"><div className="count" id="count" key={dub.countdown} aria-label={`${dub.countdown}초 뒤 녹음 시작`}>{dub.countdown}<span>{STUDIO_COPY.speakNow}</span></div></div>}
+              <SceneCaption scene={scene} videoRef={videoRef} enabled={phase === 'watching' || previewing} />
+              {/* 아이 대사(장면에 있을 때)는 멈춘 순간부터 보인다 — 숫자가 끝난 뒤에야 처음 보면 읽느라 머뭇거린다(10/25 대표님) */}
+              {phase === 'cue' && <div className="studio-cue" role="status" id="cue"><strong>{STUDIO_COPY.yourTurn}</strong>{childLine && <span className="studio-line" data-testid="child-line">{childLine}</span>}</div>}
+              {dub.countdown > 0 && <div className="overlay show" id="overlay"><div className="count" id="count" key={dub.countdown} aria-label={`${dub.countdown}초 뒤 녹음 시작`}>{dub.countdown}<span data-testid={childLine ? 'child-line' : undefined}>{childLine ?? STUDIO_COPY.speakNow}</span></div></div>}
               {phase === 'recording' && <>
+                <div className="studio-shout" role="status" id="shout"><strong>{STUDIO_COPY.shoutNow}</strong>{childLine && <span className="studio-line" data-testid="child-line">{childLine}</span>}</div>
                 <div className="recpill show" id="recpill"><span className="d" /> {sampleMode ? '샘플 녹음 체험 중' : '녹음 중'}</div>
-                <div className="record-left" role="progressbar" aria-label={`녹음 ${RECORD_BASE_SECONDS}초 중 남은 시간`} aria-valuemin={0} aria-valuemax={100}
+                <div className="record-left" role="progressbar" aria-label={`말하기 ${maxSpeechFor(scene.voiceWindow)}초 중 남은 시간`} aria-valuemin={0} aria-valuemax={100}
                   aria-valuenow={Math.round(dub.recordLeft * 100)}><i style={{ transform: `scaleX(${dub.recordLeft})` }} /></div>
               </>}
             </div>

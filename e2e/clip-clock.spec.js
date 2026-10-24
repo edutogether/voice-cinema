@@ -37,25 +37,38 @@ for (const [width, height] of [[1440, 900], [390, 844]]) {
     await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
     await page.locator('#recBtn').click();
     await expect.poll(() => page.locator('#clip').evaluate(video => video.currentTime)).toBeGreaterThan(.5);
+    // 막대는 앱이 프레임마다 읽은 영상 시계(currentTime)다. 그 값은 «이 검사가 앞 프레임에 읽은 시계»와 «지금 읽은 시계» 사이에 있어야 한다 —
+    // 앱의 읽기는 늘 그 둘 사이에 일어나기 때문이다(프레임 안 순서가 어느 쪽이든). 예전에는 막대와 지금 시계의 차이를 0.1초로 쟀는데,
+    // 시계 자체가 한 프레임 안에서 크게 건너뛸 수 있어(12개 병렬 부하 실측: 막대를 쓴 뒤 0ms·1프레임인데 차이 0.072초 — 쓴 값과 바로 뒤에
+    // 읽은 시계가 이미 0.0718초 달랐다) 막대가 아니라 시계의 건너뜀을 쟀다(10/23·10/24 흔들림 0.12~0.168초). 평소 두 프레임 사이는 0.017초라
+    // 이 검사가 예전 0.1초보다 엄격하다. 막대가 0.25초마다 오는 timeupdate를 따르면 앞 프레임 시계보다 뒤처져 실패한다.
     const sample = await page.evaluate(() => new Promise(resolve => {
       const video = document.querySelector('#clip');
       const bar = document.querySelector('#bar');
       const start = performance.now();
-      let frames = 0, changes = 0, previous = -1, maxLag = 0;
+      let frames = 0, changes = 0, previous = -1, before = -1, outside = 0, worst = 0, widest = 0;
       const read = now => {
         const fraction = new window.DOMMatrixReadOnly(getComputedStyle(bar).transform).a;
+        const shown = fraction * video.duration;
+        const clock = video.currentTime;
         frames++;
         if (Math.abs(fraction - previous) > .00001) changes++;
         previous = fraction;
-        maxLag = Math.max(maxLag, Math.abs(fraction * video.duration - video.currentTime));
+        if (before >= 0) {
+          const miss = Math.max(before - shown, shown - clock, 0);
+          if (miss > .002) outside++;
+          worst = Math.max(worst, miss);
+          widest = Math.max(widest, clock - before);
+        }
+        before = clock;
         if (now - start < 1800) requestAnimationFrame(read);
-        else resolve({ frames, changes, maxLag });
+        else resolve({ frames, changes, outside, worst, widest });
       };
       requestAnimationFrame(read);
     }));
     // 0.25초 단위 점프가 되살아나면 대부분의 프레임에서 값이 같아져 실패한다.
     expect(sample.changes / sample.frames).toBeGreaterThan(.5);
-    expect(sample.maxLag).toBeLessThan(.1);
+    expect(sample.outside, JSON.stringify(sample)).toBe(0);
     // 5.0초 멈춤 동안 막대는 움직이지 않는다.
     await expect(page.locator('#studio')).toHaveAttribute('data-phase', /^(cue|countdown|recording)$/, { timeout: 8000 });
     const read = () => page.locator('#bar').evaluate(bar => getComputedStyle(bar).transform);

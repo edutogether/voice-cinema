@@ -2,7 +2,7 @@
 // 앞 아이의 목소리가 다음 아이 영화에 섞이지 않는다. 제품 코드에는 손대지 않고 이 페이지에서만 세어 본다.
 import { test, expect } from '@playwright/test';
 import { installSyntheticMic, rawTake, recordOnce } from './synthetic-mic.js';
-import { voiceInMovie } from './movie-check.js';
+import { leadRange, placement, voiceInMovie } from './movie-check.js';
 
 // 목소리 높이는 서로의 배음(2배·3배)과 겹치지 않게 골랐다 — 220과 440처럼 겹치면 섞이지 않았어도 섞인 것처럼 잡힌다
 const ROUNDS = [['sf', 'SF', 230], ['fantasy', '판타지', 290], ['hero', '히어로', 370], ['drama', '드라마', 470], ['musical', '뮤지컬', 590]];
@@ -50,9 +50,12 @@ test('아이 다섯 명이 잇달아 녹음·저장해도 자원이 쌓이지 �
     const v = await voiceInMovie(page, uploads.at(-1).dataBase64, id, ROUNDS.map(([, , f]) => f));
     const mine = v.tones[i];
     for (const [j, other] of v.tones.entries()) if (j !== i) expect(mine, `${i + 1}번째 영화에 ${j + 1}번째 목소리`).toBeGreaterThan(20 * other);
-    // 목소리는 5.0초 + 녹음 안 말소리 시작 자리에 들어간다(시험이 예약한 때가 아니라 녹음 파일에 실제로 담긴 자리 기준)
+    // 말소리는 5.0초 + 0.12초 안팎에 앞·끝을 잃지 않고 들어간다(녹음 파일에 실제로 담긴 말소리 기준)
     const raw = await rawTake(page, i);
-    expect(Math.abs(v.voiceStart - 5 - raw.start), `${i + 1}번째 영화 ${JSON.stringify({ v, raw })}`).toBeLessThan(0.015);
+    const at = placement(v, raw);
+    expect(at.lead, `${i + 1}번째 영화 ${JSON.stringify({ v, raw, at })}`).toBeGreaterThanOrEqual(leadRange(raw).min);
+    expect(at.lead).toBeLessThanOrEqual(leadRange(raw).max);
+    expect(Math.abs(at.lost)).toBeLessThan(0.03);
     await page.locator('#doneHomeBtn').click();
     await expect(page.locator('#home')).toHaveClass(/active/);
     // 녹음실을 나오면 그 녹음실의 오디오 장치를 닫는다(닫기는 비동기라 잠깐 기다린다)

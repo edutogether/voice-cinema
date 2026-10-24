@@ -2,15 +2,26 @@
 
 export const CLIP_SECONDS = 10;
 
-// 장면 더빙 2.0 박자(대표님 10/11 확정): 영상이 5.0초 최고조에서 멈추고, 녹음이 그대로
-// 5.0~8.5초 목소리 칸에 들어가 완성본은 언제나 정확히 10.0초다. 합성(src/lib/ffmpeg.ts)과
-// 녹음실(src/hooks/useDubbing.ts)이 같은 값을 쓴다.
+// 지금 라이브 원판(장면 더빙 2.0, 대표님 10/11 확정)의 시간표: 영상이 5.0초 최고조에서 멈추고 목소리가 5.0~8.5초
+// 목소리 칸에 들어가 완성본은 언제나 정확히 10.0초다. 장르마다 다른 시간표는 src/genres.ts의 장면(scene)이 정한다 —
+// 새 8편(약 7.0초 정지)은 영상이 들어올 때 그 장면 값으로 바꾼다.
 export const PAUSE_SECONDS = 5;
-/** 목소리 칸의 길이 — 원판 소리를 5.0~8.5초에서 −8dB 낮춰 둔 자리다(tools/build-scene-audio.mjs의 VOICE, test/contract.test.js가 대조). */
+/** 지금 원판의 목소리 칸 — 원판 소리를 5.0~8.5초에서 −8dB 낮춰 둔 자리다(tools/build-scene-audio.mjs의 기본값, test/contract.test.js가 대조). */
 export const VOICE_WINDOW_SECONDS = 3.5;
-// 녹음은 기본 3.0초이고, 그때 말이 이어지고 있으면 목소리 칸 끝(3.5초)까지 늘린다(10/24 대표님 — 말끝 보호).
-export const RECORD_BASE_SECONDS = 3;
-export const RECORD_MAX_SECONDS = VOICE_WINDOW_SECONDS;
+
+// 녹음(10/25 대표님 확정 — «발화 최대 3초 + 말끝 감지로 일찍 끝냄»). 시간은 넷으로 나눠 잰다:
+//   기다림 — «지금 외쳐요 !» 뒤 말이 시작되기를 기다리는 시간(최대 VOICE_WAIT_SECONDS, 넘으면 «목소리가 들리지 않았어요»)
+//   발화 — 말이 시작된 때부터(최대 MAX_SPEECH_SECONDS, 목소리 칸이 그보다 짧으면 칸에 맞춰 줄어든다)
+//   말끝 — 마지막 말소리 뒤 이만큼 조용하면 끝으로 본다. 첫 말이 짧으면(«셋 !» 뒤 쉼) 더 기다린다
+//   저장 — 말 시작 PREROLL 앞부터 마지막 말소리 TAIL 뒤까지만 영화에 넣는다(말하기 전 긴 기다림은 넣지 않는다)
+export const VOICE_WAIT_SECONDS = 2.5;
+export const MAX_SPEECH_SECONDS = 3;
+export const END_SILENCE_SECONDS = 0.6;
+export const END_SILENCE_AFTER_SHORT_SECONDS = 0.9;
+/** 첫 말이 이보다 짧으면(감탄사 하나) 말끝을 더 오래 기다린다 */
+export const SHORT_FIRST_SPEECH_SECONDS = 0.8;
+export const PREROLL_SECONDS = 0.12;
+export const TAIL_SECONDS = 0.15;
 
 // 엔진 wasm(public/vendor/ffmpeg-core/ffmpeg-core.wasm)의 실제 크기 — «영상 저장 준비 중…» 진행률의 분모.
 // Hosting이 brotli로 압축해 보내 Content-Length(약 7.3MB)가 받는 바이트보다 작아서, 그것을 분모로 쓰면

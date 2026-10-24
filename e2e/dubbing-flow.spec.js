@@ -1,13 +1,14 @@
 // 실사용 흐름 E2E 테스트(2026-08-27 시작, 2026-10-16 장면 더빙 2.0 흐름으로 다시 씀).
-// 실제 Chromium(가짜 마이크 장치)으로 홈 화면→장면 시작→5.0초 멈춤→문구·3·2·1→녹음 3초(말이 이어지면 3.5초까지)→이어 재생
+// 실제 Chromium(가짜 마이크 장치)으로 홈 화면→장면 시작→5.0초 멈춤→문구·3·2·1→녹음(말을 마치면 끝, 말 시작 뒤 최대 3초)→이어 재생
 // →ffmpeg.wasm 섞기 합성→저장까지 진짜로 돌려서 검증한다. Cloud Functions 업로드만 page.route로 가로채
 // (a) 실제 프로덕션 Storage에 테스트 파일이 쌓이지 않게, (b) 네트워크 상태에 결과가 좌우되지 않게 한다.
 import { Buffer } from 'node:buffer';
 import { test, expect } from '@playwright/test';
+import { installSyntheticMic, takes } from './synthetic-mic.js';
 
 const UPLOAD_PATTERN = '**/voiceCinema/upload';
 const GENRE_NAMES = ['SF', '판타지', '애니메이션', '히어로', '스릴러', '드라마', '스포츠', '뮤지컬'];
-// 장면 5초 + 문구 0.6초 + 3·2·1 0.9초 + 녹음 3~3.5초 + 녹음 확인 + 이어 재생 5초 ≈ 15초. 느린 러너 여유를 둔다.
+// 장면 5초 + 문구 0.6초 + 3·2·1 0.9초 + 녹음(크롬 가짜 마이크는 0.5초마다 «삐»라 말 시작 뒤 3초까지 간다) + 녹음 확인 + 이어 재생 5초 ≈ 15초. 느린 러너 여유를 둔다.
 const TAKE_MS = 40000;
 
 /** mp4의 mvhd 상자에서 길이(초)를 읽는다 — 완성본이 정확히 10.0초인지 본다. */
@@ -46,7 +47,9 @@ test.describe('홈 화면', () => {
 });
 
 test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
-  test('5.0초에서 정확히 멈추고 문구 → 3·2·1 → 녹음 3초(말이 이어지면 3.5초까지) → 5.0초부터 이어 재생한다', async ({ page }) => {
+  test('5.0초에서 정확히 멈추고 문구 → 3·2·1 → 말을 마치면 0.6초 뒤 녹음이 끝나고 → 5.0초부터 이어 재생한다', async ({ page }) => {
+    // 녹음기가 켜진 뒤 0.3초부터 1.5초 말한다 — 말끝(1.8초) + 0.6초에 녹음이 끝난다
+    await installSyntheticMic(page, [{ delay: 0.3, dur: 1.5 }]);
     await openStudio(page, '판타지');
     const clip = page.locator('#clip');
     await expect(clip).toHaveJSProperty('paused', true);
@@ -65,13 +68,14 @@ test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
 
     await expect(page.locator('#count')).toContainText('지금 바로 당신의 목소리를 들려주세요 !');
     await expect(page.locator('#recpill')).toBeVisible({ timeout: 5000 });
-    const recordStart = Date.now();
     // 녹음 중에는 영상이 5.0초 정지 화면 그대로다.
     expect(await clip.evaluate(v => ({ p: v.paused, t: Math.round(v.currentTime * 10) / 10 }))).toEqual({ p: true, t: 5 });
     await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'continuing', { timeout: 6000 });
-    const recordMs = Date.now() - recordStart;
-    expect(recordMs).toBeGreaterThan(3000);
-    expect(recordMs).toBeLessThan(5000);
+    // 앱이 녹음기를 멈추기로 한 때(녹음기 start()부터) = 말끝 1.8초 + 0.6초 — 예전처럼 3초를 다 채우지 않는다.
+    // 바깥에서 «녹음 중»을 알아챈 때부터 재면 그 알아채는 간격만큼 흔들려(병렬 부하 1.95초) 시계로 재지 않는다
+    const { stopAt } = (await takes(page))[0];
+    expect(stopAt).toBeGreaterThanOrEqual(1.8 + 0.6 - 0.02);
+    expect(stopAt).toBeLessThan(1.8 + 0.6 + 0.35);
     // 이어 재생은 5.0초부터다.
     await expect.poll(() => clip.evaluate(v => v.currentTime)).toBeGreaterThan(5.2);
     await expect(page.locator('#afterRow')).toBeVisible({ timeout: 10000 });
@@ -85,15 +89,16 @@ test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
     // 자막이 붙고 떨어지는 순간의 영상 시각을 페이지 안에서 기록한다 — 바깥에서 폴링하면 그 지연만큼 늦게 잰다.
     // 시각은 화면에 나가는 프레임의 시각(mediaTime)으로 잰다. currentTime은 소리 시계라 프레임보다 수십 ms 늦게 읽혀
     // 제때 붙은 자막도 «일찍 붙었다»로 보인다(10/16 실측 1.556초).
+    // 프레임 목록을 남겨, 자막이 붙고 떨어질 때 화면에 몇 번째 프레임까지 나갔는지로 잰다(10/25) — 부하로 프레임이 떨어지면
+    // 1.6초 그림 자체가 화면에 나가지 않아, 제때 붙어도 시각만으로는 «늦었다»가 된다(병렬 부하에서 한 번 1.6667초).
     await page.evaluate(() => {
       const video = document.querySelector('#clip');
-      const log = (window.__captionLog = []);
-      let frameTime = 0;
-      const onFrame = (_, meta) => { frameTime = meta.mediaTime; video.requestVideoFrameCallback(onFrame); };
+      const log = (window.__captionLog = { frames: [], marks: [] });
+      const onFrame = (_, meta) => { log.frames.push(meta.mediaTime); video.requestVideoFrameCallback(onFrame); };
       video.requestVideoFrameCallback(onFrame);
       new MutationObserver(() => {
         const shown = !!document.querySelector('[data-testid="scene-caption"]');
-        if (log.length % 2 === (shown ? 0 : 1)) log.push(frameTime);
+        if (log.marks.length % 2 === (shown ? 0 : 1)) log.marks.push(log.frames.length - 1);
       }).observe(document.querySelector('.studio-video-frame'), { childList: true, subtree: true });
     });
     await page.locator('#recBtn').click();
@@ -108,12 +113,16 @@ test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
     expect(style.background).toBe('rgba(0, 0, 0, 0)');
     expect(style.lines).toBeLessThanOrEqual(2);
     await expect(caption).toBeHidden({ timeout: 4000 });
-    const [shownAt, hiddenAt] = await page.evaluate(() => window.__captionLog);
-    // 한 화면 갱신(약 1/30초)만큼의 여유만 둔다.
-    expect(shownAt).toBeGreaterThanOrEqual(1.6 - 1 / 30);
-    expect(shownAt).toBeLessThan(1.6 + 2 / 30);
-    expect(hiddenAt).toBeGreaterThanOrEqual(3.4 - 1 / 30);
-    expect(hiddenAt).toBeLessThan(3.4 + 2 / 30);
+    const { frames, marks } = await page.evaluate(() => window.__captionLog);
+    // 붙는 것은 1.6초 이상인 첫 프레임에, 떨어지는 것은 3.4초 이상인 첫 프레임에 — 그리기가 한 프레임 늦는 것까지만 둔다(프레임이 안 떨어지면
+    // 예전 기준 «1.6초 + 2프레임 미만»과 같다). 그 전 프레임에서 붙거나 떨어지면(일찍) 실패한다.
+    for (const [mark, at] of [[marks[0], 1.6], [marks[1], 3.4]]) {
+      const first = frames.findIndex((f) => f >= at - 1e-6);
+      const around = frames.slice(Math.max(0, first - 2), mark + 2).map((f) => Math.round(f * 30));
+      expect(first, `${at}초 이상 프레임이 화면에 나갔다`).toBeGreaterThanOrEqual(0);
+      expect(mark - first, `${at}초: 바뀐 프레임 ${Math.round(frames[mark] * 30)} · 그 앞뒤 프레임 ${around}`).toBeGreaterThanOrEqual(0);
+      expect(mark - first, `${at}초: 바뀐 프레임 ${Math.round(frames[mark] * 30)} · 그 앞뒤 프레임 ${around}`).toBeLessThanOrEqual(1);
+    }
   });
 
   test('처음으로 버튼을 누르면 홈으로 돌아간다', async ({ page }) => {

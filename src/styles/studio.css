@@ -48,15 +48,25 @@ body:has(#studio.active) { background:#fff; }
 @media (orientation:portrait) {
  .scene-caption { bottom:calc((100cqh - 56.25cqw) / 2 + 4.5cqw); font-size:max(14px,2.8cqw); }
 }
-/* 5.0초에서 멈춘 직후 «이제 당신의 차례입니다 !» — 앱 글씨라 영상·완성본에 굽지 않는다. */
-.studio-cue { position:absolute; inset:0; z-index:3; display:grid; place-items:center; padding:24px; background:#0007; pointer-events:none; animation:countIn .25s ease-out; }
+/* 정지 동안(문구·3·2·1·«지금 외쳐요 !») 화면을 살짝 누르는 막 — 멈춘 그림은 그대로 보이게 22%만(10/25 대표님 «사진 찍기 직전처럼»).
+   말을 마치면 바로 걷힌다(녹음 검사·이어 재생 때는 없음). 앱 글씨·막은 영상·완성본에 굽지 않는다. 전에는 문구 칸 44%·숫자 칸 50%였다. */
+.studio-hold-shade { position:absolute; inset:0; z-index:1; pointer-events:none; background:#000; opacity:0; transition:opacity .18s ease-out; }
+#studio:is([data-phase="cue"],[data-phase="countdown"],[data-phase="recording"]) .studio-hold-shade { opacity:.22; }
+/* 멈춘 직후 «이제 당신의 차례입니다 !»(대사가 있으면 그 아래 크게) */
+.studio-cue { position:absolute; inset:0; z-index:3; display:grid; place-content:center; justify-items:center; gap:12px; padding:24px; pointer-events:none; animation:countIn .25s ease-out; }
 .studio-cue strong { color:#fff; font-size:clamp(1.75rem,calc(4.2 * var(--vw)),3.5rem); font-weight:700; letter-spacing:-.02em; line-height:1.3; text-align:center; word-break:keep-all; text-shadow:0 4px 24px #0009; }
-/* 녹음 3.5초 중 남은 시간 */
+/* 녹음기가 켜진 뒤 «지금 외쳐요 !» — 문구 칸과 같은 글씨 */
+.studio-shout { position:absolute; inset:0; z-index:3; display:grid; place-content:center; justify-items:center; gap:12px; padding:24px; pointer-events:none; animation:countIn .25s ease-out; }
+.studio-shout strong { color:#fff; font-size:clamp(1.75rem,calc(4.2 * var(--vw)),3.5rem); font-weight:700; letter-spacing:-.02em; line-height:1.3; text-align:center; word-break:keep-all; text-shadow:0 4px 24px #0009; }
+/* 아이 대사 — 막이 옅어 밝은 장면에서도 읽히게 글씨 그림자를 겹으로 둔다 */
+.studio-line { display:block; color:#fff; font-size:clamp(1.375rem,calc(3.2 * var(--vw)),2.75rem); font-weight:800; line-height:1.3; letter-spacing:-.02em; text-align:center; word-break:keep-all; text-shadow:0 2px 4px #000c,0 4px 24px #0009; }
+/* 말이 시작된 뒤 발화 상한 중 남은 시간 */
 .record-left { position:absolute; z-index:2; left:0; right:0; bottom:0; height:8px; background:#ffffff40; }
 .record-left > i { display:block; height:100%; background:#df291f; transform-origin:left center; }
-.overlay { position:absolute; inset:0; z-index:3; display:grid; place-items:center; background:#0008; }
+.overlay { position:absolute; inset:0; z-index:3; display:grid; place-items:center; }
 .count { color:#fff; font-size:clamp(6rem,calc(14 * var(--vw)),12rem); font-weight:600; line-height:1; text-align:center; font-variant-numeric:tabular-nums; text-shadow:0 4px 32px #0008; animation:countIn .25s ease-out; }
 .count span { display:block; margin-top:24px; padding-inline:24px; font-size:clamp(1.125rem,calc(2.4 * var(--vw)),2rem); font-weight:700; line-height:1.4; letter-spacing:-.02em; word-break:keep-all; }
+.count span[data-testid="child-line"] { font-size:clamp(1.375rem,calc(3.2 * var(--vw)),2.75rem); font-weight:800; line-height:1.3; text-shadow:0 2px 4px #000c,0 4px 24px #0009; }
 @keyframes countIn { from { opacity:.3; transform:scale(.9); } to { opacity:1; transform:none; } }
 .recpill { display:flex; align-items:center; gap:8px; position:absolute; z-index:2; top:20px; left:28px; color:#fff; background:#d52620; border:1px solid #ee655e; border-radius:999px; padding:8px 14px; font-size:.875rem; font-weight:600; }
 .recpill .d { width:8px; height:8px; border-radius:50%; background:white; }
@@ -153,7 +163,7 @@ body:has(#studio.active) { background:#fff; }
  .controls-copy { flex-basis:220px; }
  .controls h2 { font-size:1.125rem; }
 }
-@media (prefers-reduced-motion:reduce) { .count,.studio-cue { animation:none; } :is(.btn,.back) { transition:none; } }
+@media (prefers-reduced-motion:reduce) { .count,.studio-cue,.studio-shout { animation:none; } .studio-hold-shade { transition:none; } :is(.btn,.back) { transition:none; } }
 
 /* 짧은 로딩에는 번쩍이지 않고, 실제 대기만 알린다. */
 .studio-buffering { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); padding:12px 18px; border-radius:999px; background:#171717cc; color:#fff; font-size:.875rem; pointer-events:none; animation:bufferNotice .2s .3s both; }

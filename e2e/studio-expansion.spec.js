@@ -10,6 +10,16 @@ for (const origin of ['중앙 카드', '아래 썸네일']) {
     const button = origin === '중앙 카드' ? page.locator('.scene-shell.is-current .tile') : page.locator('.scene-choice').filter({ hasText: '드라마' }).first();
     const media = button.locator(origin === '중앙 카드' ? '.tile-media' : 'img');
     const source = await media.boundingBox();
+    // 확대 애니메이션(Web Animations, 360ms — 끝나면 앱이 cancel해 목록에서 사라진다)을 만드는 순간 멈춰 둔다.
+    // 그러지 않으면 기계가 바쁠 때 클릭 뒤 검사가 읽기 전에 끝나 버려 getAnimations()가 비었다(10/25 전체 E2E 한 번).
+    await page.evaluate(() => {
+      const animate = window.Element.prototype.animate;
+      window.Element.prototype.animate = function (...args) {
+        const animation = animate.apply(this, args);
+        if (this.classList.contains('studio-video-frame')) animation.pause();
+        return animation;
+      };
+    });
     await button.click();
     const frame = page.locator('.studio-video-frame');
     const start = await frame.evaluate(el => {
