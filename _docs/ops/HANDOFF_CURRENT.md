@@ -47,7 +47,9 @@
   - 함수는 «바뀐 것 없음»으로 건너뜀, Hosting 표시 `0573f98`·번들 `main-BUnBViBv.js`·서비스워커·엔진·원판 해시가 로컬과 같음. 키 큰 휴대폰 녹음실의 남는 높이는 Bumm님 결정 대기(세 모습 캡처).
   - 🔴 10/20 23:33 `ab5eae0`·10/21 01:09 `17e3344`는 팀장 확인 없이 배포했다 — 앞으로 «한 줄 → 확인 → 배포»(`app.md` «자주 틀리는 것»).
 - 🟢 **해상도별 화면 맞춤**(10/23 21시 팀장 지시, 대표님 «조직 표준 방식») — **10/23 23:10 라이브 배포 `ad8d6e9`**(가지 `feat/vc2-responsive` = `b9554f8` + 이 작업,
-  배포 직전 한 줄 → 팀장 확인 → 배포, 이 PC에서 Hosting만). **라이브 줄은 이제 `feat/vc2-responsive`다**(GitHub이 풀리면 이 가지를 합친다).
+  배포 직전 한 줄 → 팀장 확인 → 배포, 이 PC에서 Hosting만).
+- 🟢 **녹음·합성 보강 + 와이파이 최적화** — **10/25 00:45 라이브 배포 `2751ae6`**(가지 `feat/vc2-release` = `feat/vc2-perf` + `feat/vc2-audio`, 승인 Bumm 10/25, 팀장 확인 뒤, 이 PC에서 Hosting만).
+  **라이브 줄은 이제 `feat/vc2-release`다**(GitHub이 풀리면 이 가지를 master에 합친다). 되돌림: 태그 `rollback-20261025-live-ad8d6e9`, `_docs/ops/rollback-20261025.md`. 자세한 것은 CHANGELOG 맨 위.
   - Hosting 표시 `ad8d6e9`(정본 · 옛 주소 둘 다)·번들 `main-B8wYoNj4.js`·서비스워커·`fit.js`가 로컬과 같음. 클립 40개는 배포 전·후 라이브 해시가 같다(영상 바뀐 것 없음).
   - 기준 화면 PC 1366 · 태블릿 1024/768 · 휴대폰 390을 통째로 맞춘다. 규칙은 `app.md` «해상도별 화면 맞춤», 근거는 `_docs/intents/2026-10-23-responsive-fit/intent.md`.
   - 화면 편집판(Git 밖): `C:\Users\817be\Documents\vc-editor\`(바탕화면 «Voice Cinema 화면 편집판», `http://127.0.0.1:5490/__editor/`). 앱 사본 `app\`은 라이브와 같은 빌드다 — 새 배포 뒤에는 `dist\`를 다시 복사한다.
