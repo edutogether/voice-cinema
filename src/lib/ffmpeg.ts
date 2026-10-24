@@ -129,7 +129,7 @@ export function prefetchFinalClip(genreId: string): void {
 // 엔진 안 임시 파일 이름을 작업마다 다르게 한다 — 녹음실의 목소리 처리와 완성 화면의 합성이 겹쳐도 서로의 파일을 지우지 않는다.
 let jobSeq = 0;
 
-async function run(args: string[], inputs: [string, Uint8Array][], output: string, what: string): Promise<{ buffer: ArrayBuffer }>
+async function run(args: string[], inputs: [string, Uint8Array][], output: string, what: string): Promise<{ buffer: ArrayBuffer }> {
   const ff = await loadEngine();
   const files = [...inputs.map(([name]) => name), output];
   const log: string[] = [];
