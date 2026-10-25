@@ -73,11 +73,12 @@ export async function installSyntheticMic(page, takes) {
       const take = { plan, calledAt: performance.now(), recorder: this };
       mic.takes.push(take);
       mic.earlySpoken = false;
-      // 녹음 파일은 start()를 부른 순간부터 담긴다(크롬은 첫 소리 조각이 나온 뒤에야 start 이벤트를 낸다 — 약 50ms 뒤)
-      if (!plan.early) speak(plan, ctx.currentTime + (plan.delay ?? 0.3));
-      for (const extra of plan.more ?? []) speak({ ...plan, ...extra }, ctx.currentTime + extra.delay);
       this.addEventListener('start', () => {
         take.startedAt = performance.now();
+        // 말소리는 녹음기가 켜진 뒤(start 이벤트 — 앱이 «지금 외쳐요 !»를 띄우고 말 시간을 세기 시작하는 때)부터 예약한다 — 아이는 그 신호를 보고 말한다.
+        // 전에는 start()를 부른 때부터 예약했는데, 기계가 바쁘면 녹음이 0.3초 넘게 늦게 시작해 말소리가 파일 맨 앞에 담겨 «먼저 말함»이 됐다(10/26 전체 E2E)
+        if (!plan.early) speak(plan, ctx.currentTime + (plan.delay ?? 0.3));
+        for (const extra of plan.more ?? []) speak({ ...plan, ...extra }, ctx.currentTime + extra.delay);
         // 장치가 빠지면 트랙이 끝나고 ended 이벤트가 온다. 페이지에서 stop()을 부르면 이벤트가 오지 않으므로(표준) 직접 낸다.
         // unplugQuiet면 이벤트 없이 끊기기만 한다 — 이벤트가 오지 않는 기기 흉내.
         if (plan.unplug) window.setTimeout(() => mic.dest.stream.getAudioTracks().forEach((track) => {
@@ -117,8 +118,8 @@ export const takes = (page) => page.evaluate(() => window.__mic.takes.map((t) =>
   seconds: t.startedAt && t.stoppedAt ? (t.stoppedAt - t.startedAt) / 1000 : null, state: t.recorder.state, error: t.error ?? null,
   track: t.recorder.stream.getAudioTracks().map((x) => `${x.readyState}${x.muted ? ' muted' : ''}`).join(), stopStack: t.stopStack,
   micContext: window.__mic.ctx.state, startDelay: t.startedAt ? +(t.startedAt - t.calledAt).toFixed(1) : null,
-  // 앱이 멈추기로 한 때 — 녹음기 start()를 부른 때부터(시험용 말소리도 그때부터 예약한다)
-  stopAt: t.stopCalledAt ? +((t.stopCalledAt - t.calledAt) / 1000).toFixed(3) : null,
+  // 앱이 멈추기로 한 때 — 녹음기가 켜진 때(start 이벤트)부터. 앱도 말 시간을 그때부터 세고, 시험용 말소리도 그때부터 예약한다
+  stopAt: t.stopCalledAt && t.startedAt ? +((t.stopCalledAt - t.startedAt) / 1000).toFixed(3) : null,
 })));
 export const previews = (page) => page.evaluate(() => window.__mic.previews);
 

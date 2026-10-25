@@ -38,14 +38,19 @@ body:has(#studio.active) { background:#0b0b0d; }
 .record-actions,#afterRow { display:flex; flex-wrap:wrap; gap:12px; align-items:center; width:auto; margin-left:auto; pointer-events:auto; }
 /* 3단계 안내 · «말을 마치면…»은 세로 화면의 안내 칸에만(가로 화면은 영상을 가리지 않게 글을 줄인다) */
 .studio-steps,.studio-shout-note { display:none; }
-.studio-line-preview { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; margin:2px 0 10px; }
-.studio-line-preview small { color:var(--ink-3); font-size:.8125rem; font-weight:600; }
-.studio-line-preview span { color:var(--ink); font-size:1.25rem; font-weight:800; letter-spacing:-.02em; word-break:keep-all; }
+/* 준비 화면의 자유 발화 안내(새 장면) — 안내 칸 안이라 글씨 그림자를 걷고 작게 */
+.studio-guide-preview { margin:2px 0 12px; }
+.studio-guide-preview .scene-guide { justify-items:start; gap:4px; text-align:left; }
+.studio-guide-preview :is(.scene-guide-situation,.scene-guide-example,.scene-guide-free) { text-shadow:none; }
+.studio-guide-preview .scene-guide-situation { color:var(--ink); font-size:1.375rem; }
+.studio-guide-preview .scene-guide-example { color:var(--ink-2); font-size:1rem; }
+.studio-guide-preview .scene-guide-example small { border-color:#ffffff59; color:var(--ink-2); }
+.studio-guide-preview .scene-guide-free { color:var(--ink-3); font-size:.875rem; }
 /* 영화가 도는 동안(미리보기 · 재생 · 정지 · 녹음 · 확인 · 이어 보기)은 머리줄 · 안내 · 어둠을 걷는다 — 영화만 보이게.
    미리보기 중에는 «미리보기 멈춤» · «장면 시작» 단추만 남는다 */
 #studio:not([data-phase="idle"]):not([data-phase="recorded"]) .studio-heading { opacity:0; pointer-events:none; }
 #studio:not([data-phase="idle"]):not([data-phase="recorded"]) .studio-player-dock::before { opacity:0; }
-#studio:not([data-phase="idle"]):not([data-phase="recorded"]) :is(.controls h2,.hint,.studio-line-preview) { display:none; }
+#studio:not([data-phase="idle"]):not([data-phase="recorded"]) :is(.controls h2,.hint,.studio-guide-preview) { display:none; }
 #studio:not([data-phase="idle"]):not([data-phase="recorded"]):not([data-phase="previewing"]) .record-actions { visibility:hidden; }
 
 /* 진행 막대 — 장면이 멈추는 자리를 미리 표시한다 */
@@ -81,9 +86,15 @@ body:has(#studio.active) { background:#0b0b0d; }
 @keyframes promptIn { from { opacity:0; transform:translate(-50%, 8px); } to { opacity:1; transform:translateX(-50%); } }
 .studio-cue strong { color:#fff; font-size:2.375rem; font-weight:700; letter-spacing:-.02em; line-height:1.3; word-break:keep-all; text-shadow:0 2px 4px #000c,0 4px 24px #0009; }
 .studio-ready-copy { color:#fff; font-size:1.75rem; font-weight:700; line-height:1.35; letter-spacing:-.02em; word-break:keep-all; text-shadow:0 2px 4px #000c,0 4px 24px #0009; }
-/* 아이 대사 — 막이 옅어 밝은 장면에서도 읽히게 글씨 그림자를 겹으로 둔다 */
-.studio-line { display:block; color:#fff; font-size:2.25rem; font-weight:800; line-height:1.3; letter-spacing:-.02em; word-break:keep-all;
+/* 자유 발화 안내(새 장면, 10/26 대표님) — 상황 안내(크게) → 예시(작게, «예시» 표시, 상황보다 강조하지 않음) → «내 말로 외쳐도 좋아요 !».
+   막이 옅어 밝은 장면에서도 읽히게 글씨 그림자를 겹으로 둔다 */
+.scene-guide { display:grid; justify-items:center; gap:8px; }
+.scene-guide-situation { display:block; color:#fff; font-size:2.25rem; font-weight:800; line-height:1.3; letter-spacing:-.02em; word-break:keep-all;
   text-shadow:0 2px 4px #000c,0 4px 24px #0009; }
+.scene-guide-example { display:inline-flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:4px 10px; color:#fff; font-size:1.375rem; font-weight:600;
+  line-height:1.4; letter-spacing:-.01em; word-break:keep-all; text-shadow:0 2px 4px #000c,0 4px 16px #0009; }
+.scene-guide-example small { flex:none; padding:1px 10px; border:1px solid #ffffffb3; border-radius:999px; font-size:.75em; font-weight:700; line-height:1.5; letter-spacing:.02em; }
+.scene-guide-free { color:#ffffffd9; font-size:1.0625rem; font-weight:500; line-height:1.4; word-break:keep-all; text-shadow:0 2px 4px #000c,0 4px 16px #0009; }
 /* «지금 외쳐요 !» — 녹음기가 실제로 켜진 뒤. 빨간 띠와 마이크 반응을 한 줄에 */
 .studio-shout-row { display:inline-flex; align-items:center; gap:14px; padding:8px 18px 8px 20px; border-radius:999px; background:var(--red); box-shadow:0 6px 24px #0007; }
 .studio-shout strong { color:#fff; font-size:1.75rem; font-weight:800; letter-spacing:-.02em; line-height:1.25; white-space:nowrap; }
@@ -128,7 +139,9 @@ body:has(#studio.active) { background:#0b0b0d; }
  .controls h2 { font-size:1.5rem; }
  .hint { font-size:.9375rem; }
  .studio-cue strong { font-size:2rem; }
- .studio-line { font-size:1.875rem; }
+ .scene-guide-situation { font-size:1.875rem; }
+ .scene-guide-example { font-size:1.25rem; }
+ .scene-guide-free { font-size:1rem; }
 }
 /* 낮은 가로 화면(눕힌 휴대폰) */
 @container app (max-height:500px) and (orientation:landscape) {
@@ -142,7 +155,10 @@ body:has(#studio.active) { background:#0b0b0d; }
  .studio-timeline { padding:2px 16px 10px; }
  .studio-cue,.studio-ready,.studio-shout { bottom:max(44px, 10%); gap:6px; }
  .studio-cue strong,.studio-shout strong,.studio-ready-copy { font-size:1.25rem; }
- .studio-line { font-size:1.25rem; }
+ .scene-guide { gap:4px; }
+ .scene-guide-situation { font-size:1.25rem; }
+ .scene-guide-example { font-size:.9375rem; }
+ .scene-guide-free { font-size:.8125rem; }
  .studio-shout-row { padding:4px 12px 4px 14px; gap:10px; }
  .mic-meter { height:20px; }
  .mic-meter i { height:calc(20px * (.18 + .82 * var(--level) * var(--k, 1))); }
@@ -167,7 +183,8 @@ body:has(#studio.active) { background:#0b0b0d; }
  .controls { order:1; flex:1 1 auto; min-height:0; flex-direction:column; align-items:stretch; justify-content:flex-start; gap:14px; padding:14px 16px max(16px, env(safe-area-inset-bottom)); }
  .controls-copy { flex:1 1 auto; max-width:none; min-height:180px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;
    padding:22px 18px; border:1px solid var(--edge); border-radius:20px; background:var(--panel); text-shadow:none; }
- .studio-line-preview { justify-content:center; margin:6px 0 12px; }
+ .studio-guide-preview { margin:6px 0 12px; }
+ .studio-guide-preview .scene-guide { justify-items:center; text-align:center; }
  /* 세로 화면은 안내 칸이 영상 아래에 있어 영화가 도는 동안에도 상태 글을 보인다(영상을 가리지 않는다) — 멈춘 동안은 차례 문구 · 대사가 대신한다 */
  #studio:not([data-phase="idle"]):not([data-phase="recorded"]):not([data-phase="cue"]):not([data-phase="countdown"]):not([data-phase="recording"]) :is(.controls h2,.hint) { display:block; }
  .studio-cue,.studio-ready,.studio-shout { position:static; transform:none; width:100%; gap:14px; animation:promptInPortrait .25s ease-out; }
@@ -202,8 +219,13 @@ body:has(#studio.active) { background:#0b0b0d; }
  .hint { font-size:1.25rem; }
  .studio-cue strong { font-size:3rem; }
  .studio-ready-copy { font-size:2.25rem; }
- .studio-line { font-size:3rem; }
- .studio-line-preview span { font-size:1.75rem; }
+ .scene-guide { gap:12px; }
+ .scene-guide-situation { font-size:3rem; }
+ .scene-guide-example { font-size:1.75rem; }
+ .scene-guide-free { font-size:1.375rem; }
+ .studio-guide-preview .scene-guide-situation { font-size:1.875rem; }
+ .studio-guide-preview .scene-guide-example { font-size:1.3125rem; }
+ .studio-guide-preview .scene-guide-free { font-size:1.125rem; }
  .studio-shout strong { font-size:2.5rem; padding:14px 36px; }
  .studio-shout .mic-meter { height:110px; gap:10px; }
  .studio-shout .mic-meter i { width:14px; height:calc(110px * (.12 + .88 * var(--level) * var(--k, 1))); border-radius:7px; }
@@ -222,8 +244,12 @@ body:has(#studio.active) { background:#0b0b0d; }
  .hint { font-size:.9375rem; }
  .studio-cue strong { font-size:1.75rem; }
  .studio-ready-copy { font-size:1.375rem; }
- .studio-line { font-size:1.625rem; }
- .studio-line-preview span { font-size:1.125rem; }
+ .scene-guide-situation { font-size:1.625rem; }
+ .scene-guide-example { font-size:1.125rem; }
+ .scene-guide-free { font-size:.9375rem; }
+ .studio-guide-preview .scene-guide-situation { font-size:1.25rem; }
+ .studio-guide-preview .scene-guide-example { font-size:.9375rem; }
+ .studio-guide-preview .scene-guide-free { font-size:.8125rem; }
  .studio-shout strong { font-size:1.375rem; }
  .record-actions { flex-direction:column-reverse; gap:10px; }
  .record-actions .btn { flex:none; width:100%; }
@@ -235,7 +261,9 @@ body:has(#studio.active) { background:#0b0b0d; }
 @container app (max-width:600px) and (orientation:portrait) and (min-height:780px) {
  .controls h2 { font-size:1.75rem; margin-bottom:10px; }
  .hint { font-size:1.0625rem; }
- .studio-line { font-size:1.875rem; }
+ .scene-guide-situation { font-size:1.875rem; }
+ .scene-guide-example { font-size:1.25rem; }
+ .scene-guide-free { font-size:1rem; }
  .studio-cue strong { font-size:2rem; }
  #studio .btn { min-height:62px; font-size:1.125rem; }
 }

@@ -48,6 +48,9 @@ test('마우스 없이 첫 장면을 재생하고 여덟 장면을 순서대로 
     await expect(current).not.toHaveAttribute('data-index', String(index));
     await page.clock.runFor(600);
     await expect(current).toHaveAttribute('data-index', String(index));
+    // 떠난 장면의 재생 효과가 정리된 뒤(영상 멈춤 — 그때 160ms 뒤 해제 타이머가 걸린다) 시계를 돌린다. 가운데가 바뀐 것(커밋)과 효과 정리는
+    // 따로 일어나 기계가 바쁘면 정리가 늦다 — 그 전에 돌리면 해제 타이머를 지나쳐 영상 두 개가 남았다(10/26 전체 E2E)
+    await expect.poll(() => page.locator(`.scene-shell[data-index="${showing}"] video`).evaluate((v) => v.paused)).toBe(true);
     await page.clock.runFor(160);
     await expect(page.locator('.tile video[src]')).toHaveCount(1);
     await expect(current.locator('video')).toHaveAttribute('src', /\/clips\/previews\/.+\.mp4/);

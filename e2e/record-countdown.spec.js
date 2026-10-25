@@ -33,10 +33,10 @@ for (const [label, viewport] of [
       expect(entry.ready).toContain('지금 바로 당신의 목소리를 들려주세요 !');
       expect(entry.uncovered, entry.key).toBe(true);
     }
-    // 막: 문구가 뜨는 순간 어두워지기 시작해(0.18초 전환) 숫자·녹음 동안 22% — 지금 장면에는 아이 대사가 없다
+    // 막: 문구가 뜨는 순간 어두워지기 시작해(0.18초 전환) 숫자·녹음 동안 22% — 지금 장면에는 자유 발화 안내(상황 · 예시 · 보조)가 없다
     expect(log[0].shade).toBeLessThanOrEqual(0.22);
     for (const entry of log.slice(1)) expect(entry.shade, entry.key).toBeCloseTo(0.22, 2);
-    for (const entry of log) expect(entry.line, entry.key).toBeNull();
+    for (const entry of log) expect([entry.situation, entry.example, entry.free], entry.key).toEqual([null, null, null]);
     expect(log[4].shout).toBe('지금 외쳐요 !');
     // 멈춤 문구 0.6초 + 숫자 0.3초 × 3 = 1.5초, 그 뒤 녹음기가 켜지기까지(첫 소리 조각, 수십 ms).
     // 위 끝은 예전 3.9초가 아님을 보는 자리다 — 병렬 검사 부하에서는 타이머가 밀려 1.97초까지 나왔다(단독 1.5초 안팎)

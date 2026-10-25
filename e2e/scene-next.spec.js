@@ -1,7 +1,8 @@
-// 새 장면(30fps 210번째 프레임 7.000초 정지 · 목소리 칸 3.000초 · 아이 대사) — 대표님이 만드실 새 영상이 오기 전에 시간표가 맞게 도는지 본다(10/25, 정지는 10/26 대표님 FINAL 7.0S).
+// 새 장면(30fps 210번째 프레임 7.000초 정지 · 목소리 칸 3.000초 · 자유 발화 안내) — 대표님이 만드실 새 영상이 오기 전에 시간표가 맞게 도는지 본다(10/25, 정지는 10/26 대표님 FINAL 7.0S).
 // 원판 대신 시험용 합성 영상(tools/make-test-scene.mjs → e2e/fixtures/scene-next, 위 1/4에 프레임 번호를 2진수로 새김)을 넘기고,
 // 새 시간표는 개발 주소와 미리보기 채널의 ?scenes=next에서만 켜진다(src/lib/sceneMode.ts — 라이브 주소에서는 켜지지 않는다).
-//   정지: 정확히 프레임 210(7.000초) 그림에 선다 · 막 22% · 멈춘 순간부터 대사 · 숫자에도 대사 · 녹음기가 켜진 뒤 «지금 외쳐요 !»
+//   정지: 정확히 프레임 210(7.000초) 그림에 선다 · 막 22% · 멈춘 순간부터 안내(상황 · 예시 · 보조) · 숫자에도 안내 · 녹음기가 켜진 뒤 «지금 외쳐요 !»
+//   예시는 정답이 아니다 — 시험용 마이크의 소리(예시와 전혀 다른 «말»)도 정상으로 녹음 · 합성 · 저장된다(10/26 대표님 자유 발화)
 //   완성본: 10초 · 영상은 합성용 원판 그대로(막·글씨가 구워지지 않는다) · 말소리는 정지 + 0.12초 안팎(말이 길면 정지 시각) · 10초 안에서 끝난다
 //   3초: 1.0 · 2.5 · 2.9초는 그대로, 정확히 3.0초는 말끝까지 10.0초 안(«들어 보고 정함»), 3초를 넘어 이어지면 저장하지 않고 다시 녹음
 import { Buffer } from 'node:buffer';
@@ -15,7 +16,7 @@ const PAUSE_FRAME = 210;
 const SCENE = { pause: PAUSE_FRAME / 30, window: 10 - PAUSE_FRAME / 30 };
 // 발화 상한: 실제로 말할 수 있는 시간 3.000초(칸이 그보다 짧으면 칸) — src/lib/voiceCheck.ts의 maxSpeechFor
 const MAX_SPEECH = Math.min(3, SCENE.window);
-const LINE = '안녕 ! 우린 지구에서 왔어 !';
+const GUIDE = { situation: '첫인사를 건네 봐 !', example: '예시안녕 ! 우린 지구에서 왔어 !', free: '내 말로 외쳐도 좋아요 !' };
 const fixture = (name) => readFileSync(`e2e/fixtures/scene-next/${name}`);
 
 // 서비스워커가 원판을 가로채면 아래 바꿔치기가 닿지 않는다
@@ -90,9 +91,9 @@ test('프레임 210(7.000초) 그림에 정확히 서고, 막 22%·대사·«지
   expect(log.map((e) => e.key)).toEqual(['cue', '3초 뒤 녹음 시작', '2초 뒤 녹음 시작', '1초 뒤 녹음 시작', 'recording']);
   expect(log[0].text).toContain('이제 당신의 차례입니다 !');
   for (const entry of log) {
-    expect(entry, entry.key).toMatchObject({ paused: true, time: Math.round(SCENE.pause * 10) / 10, inViewport: true, line: LINE });
+    expect(entry, entry.key).toMatchObject({ paused: true, time: Math.round(SCENE.pause * 10) / 10, inViewport: true, ...GUIDE });
   }
-  for (const entry of log.slice(1, 4)) expect(entry.ready, entry.key).toContain(LINE);
+  for (const entry of log.slice(1, 4)) expect(entry.ready, entry.key).toContain(GUIDE.situation);
   for (const entry of log.slice(1)) expect(entry.shade, entry.key).toBeCloseTo(0.22, 2);
   expect(log[4].shout).toBe('지금 외쳐요 !');
 

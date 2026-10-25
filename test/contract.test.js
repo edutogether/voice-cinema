@@ -95,7 +95,7 @@ test('엔진 크기: src/config.ts의 ENGINE_WASM_BYTES가 실제 ffmpeg-core.wa
 // 2026-10-24: 녹음은 원판이 −8dB 낮춰 둔 목소리 칸(지금 장면 5.0~8.5초)에 들어간다. 원판을 만든 도구의 칸과 앱의 칸이 어긋나면
 // 목소리가 낮추지 않은 배경음 위에 얹히거나, 아무도 말하지 않는 자리의 음악만 작아진다.
 // 2026-10-25: 시간표가 장면마다 생겼다(src/genres.ts의 scene) — 도구의 기본값은 지금 장면이고, 새 장면(프레임 경계 정지)은 큐 목록의 voice와
-// --pause로 만든다. 새 장면은 정지 + 칸이 10초에서 끝나야 하고(해소 장면 없이 목소리로 끝난다), 8장르 모두 아이 대사가 있다.
+// --pause로 만든다. 새 장면은 정지 + 칸이 10초에서 끝나야 하고(해소 장면 없이 목소리로 끝난다), 8장르 모두 자유 발화 안내(상황 · 예시)가 있다.
 test('목소리 칸: 장면 도구의 기본값이 앱의 지금 장면 시간표와 같고, 새 장면 시간표는 8장르 모두 10초에서 끝난다', () => {
   const config = read('src/config.ts');
   const pause = Number(extract(config, /export const PAUSE_SECONDS = ([\d.]+);/, 'PAUSE_SECONDS'));
@@ -108,13 +108,14 @@ test('목소리 칸: 장면 도구의 기본값이 앱의 지금 장면 시간�
   const frame = Number(extract(genres, /const NEXT_PAUSE = (\d+) \/ 30;/, '새 장면 정지 프레임(NEXT_PAUSE)'));
   expect(frame).toBeGreaterThan(0);
   expect(frame).toBeLessThan(300);
-  expect(genres).toContain('const next = (childLine: string): Scene => ({ pause: NEXT_PAUSE, voiceWindow: 10 - NEXT_PAUSE, childLine });');
+  expect(genres).toContain('const next = (situation: string, example: string): Scene => ({ pause: NEXT_PAUSE, voiceWindow: 10 - NEXT_PAUSE, guide: { situation, example } });');
   const ids = [...genres.matchAll(/^ {2}\{ id: '([a-z]+)'/gm)].map((m) => m[1]);
-  const lines = Object.fromEntries([...genres.matchAll(/^ {2}([a-z]+): next\('([^']+)'\),\r?$/gm)].map((m) => [m[1], m[2]]));
+  // 자유 발화 안내(10/26 대표님) — 8장르 모두 상황 안내와 예시 대사가 있다
+  const guides = Object.fromEntries([...genres.matchAll(/^ {2}([a-z]+): next\('([^']+)', '([^']+)'\),\r?$/gm)].map((m) => [m[1], [m[2], m[3]]]));
   expect(ids).toHaveLength(8);
-  expect(Object.keys(lines).sort()).toEqual([...ids].sort());
+  expect(Object.keys(guides).sort()).toEqual([...ids].sort());
   // 느낌표·물음표 앞은 한 칸 띈다(COMMON_STANDARDS §32)
-  for (const line of Object.values(lines)) expect(line, line).not.toMatch(/\S[!?]/);
+  for (const line of Object.values(guides).flat()) expect(line, line).not.toMatch(/\S[!?]/);
 });
 
 // 2026-10-24: FFmpeg의 alimiter는 자동 레벨(level)이 기본으로 켜져 있어 눌러 둔 소리를 다시 0dB 쪽으로 끌어올리고,

@@ -13,13 +13,24 @@ import { nextScenesOn } from './lib/sceneMode';
  * 장면 하나의 시간표 — 영상마다 다르다. 영상을 바꾸면 이 값도 함께 바꾸고 `node tools/check-scene.mjs <장르> <정지 초> <목소리 칸 초> --cue <큐 목록>`으로
  * 영상과 맞는지 확인한다(10.000초, 정지 시각의 키프레임, 두 원판의 소리, 소리 트랙을 만든 큐 목록의 목소리 칸).
  */
+/**
+ * 자유 발화 안내(10/26 대표님) — 화면의 대사는 따라 읽는 정답이 아니라 예시다. 아이는 자기 말로 외치고, 말이 안 떠오르는 아이만 예시를 본다.
+ * 위계: 상황 안내(크게) → 예시 대사(작게, «예시» 표시) → «내 말로 외쳐도 좋아요 !»(src/components/SceneGuide.tsx). 느낌표 앞은 한 칸 띈다.
+ */
+export interface SceneGuide {
+  /** 상황 안내 — 크고 선명하게 */
+  situation: string;
+  /** 예시 대사 — 작게, 상황 안내보다 강조하지 않는다 */
+  example: string;
+}
+
 export interface Scene {
   /** 앱이 영상을 멈추는 시각(초) — 영상의 키프레임이어야 정확히 그 그림에 선다 */
   pause: number;
   /** 아이 목소리가 들어가는 칸(초) — pause부터 이만큼, 원판 소리를 −8dB 낮춰 둔 자리. pause + voiceWindow ≤ 10 */
   voiceWindow: number;
-  /** 멈춘 화면에 크게 보여 줄 아이 대사. 없으면 안내 문구만 보인다(그대로 외치지 않아도 녹음된다) */
-  childLine?: string;
+  /** 새 장면(FINAL_7S)의 자유 발화 안내 — 없으면(지금 원판) 안내 문구만 보인다. 예시는 정답이 아니다(무엇을 말해도 녹음 · 저장된다) */
+  guide?: SceneGuide;
   /** 상대 대사 — 앱이 영상 위에 띄우는 넷플릭스식 자막. 영상·완성본에는 굽지 않는다 */
   partnerLine?: { text: string; start: number; end: number };
 }
@@ -45,19 +56,20 @@ const live = (partner: string): Scene => ({
  * 이 값으로 바꾼다 — `scene: NEXT_SCENES.sf`(그래서 GENRES보다 위에 둔다). 영상마다 정지 시각을 맞춰 고친다.
  * 정지는 30fps 210번째 프레임(7.000초) — 10/26 대표님 FINAL 7.0S(10/25의 202번째 프레임 6.7333초는 버렸다). 남은 영상 3.000초가
  * 목소리 칸이고 실제로 말할 수 있는 시간도 3.000초다(src/lib/voiceCheck.ts의 maxSpeechFor — 앞 여백은 정지 시각 앞에 놓는다).
- * 상대 대사 자막(시각·글)은 영상이 오면 정한다. 대사의 느낌표·물음표 앞에는 한 칸을 띄운다(전 앱 규칙).
+ * 상대 대사 자막(시각·글)은 영상이 오면 정한다. 화면에는 상황 안내와 예시 대사를 보인다(자유 발화, 10/26 대표님 — 예시는 정답이 아니다).
+ * 느낌표·물음표 앞에는 한 칸을 띄운다(전 앱 규칙).
  */
 const NEXT_PAUSE = 210 / 30;
-const next = (childLine: string): Scene => ({ pause: NEXT_PAUSE, voiceWindow: 10 - NEXT_PAUSE, childLine });
+const next = (situation: string, example: string): Scene => ({ pause: NEXT_PAUSE, voiceWindow: 10 - NEXT_PAUSE, guide: { situation, example } });
 export const NEXT_SCENES: Record<string, Scene> = {
-  sf: next('안녕 ! 우린 지구에서 왔어 !'),
-  fantasy: next('그래 ! 내가 이긴다 !'),
-  animation: next('셋 ! 날아라, 미르 !'),
-  hero: next('멈춰라 ! 멈춰 !'),
-  thriller: next('싫어 ! 저리 가 !'),
-  drama: next('설이야 ! 꼭 다시 올게 !'),
-  sports: next('간다 ! 내가 끝낸다 !'),
-  musical: next('하나, 둘, 셋, 넷 !'),
+  sf: next('첫인사를 건네 봐 !', '안녕 ! 우린 지구에서 왔어 !'),
+  fantasy: next('지금이야, 외쳐 !', '그래 ! 내가 이긴다 !'),
+  animation: next('미르에게 용기를 줘 !', '할 수 있어, 미르 ! 날아 !'),
+  hero: next('기차를 멈춰 주세요 !', '멈춰라 ! 멈춰 !'),
+  thriller: next('귀신을 물리쳐 !', '싫어 ! 저리 가 !'),
+  drama: next('설이에게 약속해 줘 !', '설이야 ! 꼭 다시 올게 !'),
+  sports: next('승부를 끝내 !', '간다 ! 내가 끝낸다 !'),
+  musical: next('무대를 열어 !', '자, 다 같이 춤추자 !'),
 };
 
 export const GENRES: Genre[] = [

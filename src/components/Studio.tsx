@@ -8,6 +8,7 @@ import { prefetchFinalClip } from '../lib/ffmpeg';
 
 import { ActionIcon } from './ActionIcon';
 import { ClipTimeline } from './ClipTimeline';
+import { SceneGuide } from './SceneGuide';
 import { MicMeter } from './MicMeter';
 import { SceneCaption } from './SceneCaption';
 import { StudioEntrance } from './StudioEntrance';
@@ -68,7 +69,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
   const startButtonRef = useRef<HTMLButtonElement>(null);
   const previousPhaseRef = useRef<Phase>('idle');
   const scene = sceneFor(genre);
-  const childLine = scene.childLine;
+  const guide = scene.guide;
   const dub = useDubbing(genre.id, scene, videoRef, sampleMode);
   const { phase } = dub;
   const inTake = TAKE_PHASES.includes(phase);
@@ -173,19 +174,20 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
               </div>
               <div className={`controls${inTake ? ' is-recording' : ''}${done ? ' is-recorded' : ''}`}>
                 <div className="controls-copy">
-                  {/* 아이 대사(장면에 있을 때)는 멈춘 순간부터 보인다 — 숫자가 끝난 뒤에야 처음 보면 읽느라 머뭇거린다(10/25 대표님) */}
-                  {phase === 'cue' && <div className="studio-cue" role="status" id="cue"><strong>{STUDIO_COPY.yourTurn}</strong>{childLine && <span className="studio-line" data-testid="child-line">{childLine}</span>}</div>}
-                  {phase === 'countdown' && <div className="studio-ready" role="status">{childLine
-                    ? <span className="studio-line" data-testid="child-line">{childLine}</span>
+                  {/* 자유 발화 안내(새 장면에 있을 때)는 멈춘 순간부터 보인다 — 숫자가 끝난 뒤에야 처음 보면 읽느라 머뭇거린다(10/25 대표님).
+                      예시는 정답이 아니다(10/26 대표님) — 상황 안내가 크고, 예시는 작게 «예시»로, 그 아래 «내 말로 외쳐도 좋아요 !» */}
+                  {phase === 'cue' && <div className="studio-cue" role="status" id="cue"><strong>{STUDIO_COPY.yourTurn}</strong>{guide && <SceneGuide guide={guide} />}</div>}
+                  {phase === 'countdown' && <div className="studio-ready" role="status">{guide
+                    ? <SceneGuide guide={guide} />
                     : <span className="studio-ready-copy">{STUDIO_COPY.speakNow}</span>}</div>}
                   {phase === 'recording' && <div className="studio-shout" role="status" id="shout">
                     <span className="studio-shout-row"><strong>{STUDIO_COPY.shoutNow}</strong><MicMeter level={dub.micLevel} /></span>
-                    {childLine && <span className="studio-line" data-testid="child-line">{childLine}</span>}
+                    {guide && <SceneGuide guide={guide} />}
                     <small className="studio-shout-note">말을 마치면 영화가 바로 이어져요</small>
                   </div>}
                   {!holding && <h2>{sampleMode && done ? '샘플 체험을 마쳤어요' : HEADLINE[phase]}</h2>}
-                  {/* 새 장면은 외칠 대사를 준비 화면에서 미리 보여 준다 */}
-                  {phase === 'idle' && childLine && <p className="studio-line-preview"><small>외칠 대사</small><span>{childLine}</span></p>}
+                  {/* 새 장면은 자유 발화 안내를 준비 화면에서 미리 보여 준다 — «외칠 대사»(정답처럼 읽힘)는 10/26 대표님 지시로 뺐다 */}
+                  {phase === 'idle' && guide && <div className="studio-guide-preview"><SceneGuide guide={guide} /></div>}
                   <div className={`hint${defaultHint ? ' is-default' : ''}`} id="hint" role="status" data-mic-error={dub.micError ?? undefined} data-take-check={dub.takeCheck ?? undefined}>{dub.hint}</div>
                   <ol className="studio-steps" aria-label="더빙 순서">
                     <li data-state={stepState(1)}><b>{stepState(1) === 'done' ? '✓' : 1}</b><span>«장면 시작»을 눌러요</span></li>

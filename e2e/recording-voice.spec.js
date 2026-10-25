@@ -50,7 +50,7 @@ function expectPreviewInSync(preview, raw, pause = LIVE_SCENE.pause) {
 }
 
 /**
- * 앱이 녹음기를 멈추기로 한 때(녹음기 start()를 부른 때부터 초) — 말끝 + 0.6초. 말이 3초를 넘어 이어지면 말 시작 + 3.08초(잘림으로 멈춤).
+ * 앱이 녹음기를 멈추기로 한 때(녹음기가 켜진 때 — start 이벤트 — 부터 초) — 말끝 + 0.6초. 말이 3초를 넘어 이어지면 말 시작 + 3.08초(잘림으로 멈춤).
  * 부하로 늦을 수는 있어도 이를 수는 없다
  */
 function expectStop(take, { speechStart, speechEnd, hang = 0.6 }) {
