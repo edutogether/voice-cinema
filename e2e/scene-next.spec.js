@@ -192,5 +192,8 @@ for (const [dur, check] of [[1, 'ok'], [2.5, 'ok'], [2.9, 'ok'], [3, 'edge']]) {
     expect(v.voiceEnd).toBeLessThanOrEqual(10);
     expect(v.outsideVoice).toBeLessThan(0.003);
     expect(Math.abs(duration(Buffer.from(movie, 'base64')) - 10)).toBeLessThanOrEqual(0.001);
+    // 소리 트랙 자체가 10.000초(480,000표본)여야 한다 — 파일 머리(mvhd)는 영상 트랙을 따라 10.000초여도, 목소리가 원판 끝 21ms 안에서 끝나면
+    // 엔진의 섞기가 소리를 목소리 끝에서 끊어 9.995~9.999초가 됐다(10/26 미리보기 3.0초 녹음)
+    expect(v.seconds, '완성본 소리 트랙 길이').toBe(10);
   });
 }

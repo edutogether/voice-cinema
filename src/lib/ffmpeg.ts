@@ -112,9 +112,11 @@ export const voiceFilter = ({ gainDb, start, end, channels, fadeOut }: VoicePlan
  * 여기서 더 낮추지 않는다. 섞은 뒤 −1dBFS에서 한 번 더 막아 찢어지지 않게 한다(자동 레벨 끔·지연 보정 — 위와 같은 까닭).
  * 한 채널 목소리는 두 채널로 그대로 복사해 섞는다 — amix에 맡기면 −3dB로 나눠 펼쳐, 한 채널을 양쪽에 그대로 내는 브라우저의
  * 미리 듣기보다 완성본 목소리가 3dB 작아진다(엔진에서 확인).
+ * 목소리 뒤를 무음으로 늘린다(apad) — 엔진의 amix(duration=first)는 목소리가 원판의 마지막 프레임(약 21ms) 안에서 끝나면 출력을 목소리 끝에서
+ * 끊었다(10/26 엔진 실측: 목소리 끝 9.995초 → 소리 트랙 9.995초). 늘려 두면 출력은 언제나 원판 길이(48kHz 480,000표본)다.
  */
 export const mixFilter = (at: number) =>
-  `[1:a]pan=stereo|c0=c0|c1=c0,adelay=${Math.round(at * 1000)}:all=1[voice];` +
+  `[1:a]pan=stereo|c0=c0|c1=c0,adelay=${Math.round(at * 1000)}:all=1,apad[voice];` +
   '[0:a][voice]amix=inputs=2:duration=first:dropout_transition=0:normalize=0,' +
   'alimiter=limit=0.891:level=false:latency=true[a]';
 
