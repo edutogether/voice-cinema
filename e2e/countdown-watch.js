@@ -1,6 +1,6 @@
 // 3·2·1은 숫자 하나가 0.3초다(10/24 대표님 — 절정에서 녹음까지 1.5초). 검사가 숫자를 하나씩 기다리면 놓치므로,
 // 페이지 안에서 문구·숫자·«녹음 중»이 나타나는 순간마다 그 자리(화면 안·가려지지 않음)와 영상 상태를 기록해 둔다.
-// 함께 적는 것: 정지 동안 막의 어두움(0.18초 전환 중이면 그 사이 값), 아이 대사, «지금 외쳐요 !» 문구.
+// 함께 적는 것: 정지 동안 막의 어두움(0.18초 전환 중이면 그 사이 값), 아이 대사, «지금 외쳐요 !» 문구, 숫자와 함께 보이는 문구(.studio-ready — 10/25부터 숫자는 영상 가운데, 문구는 아래 안내 자리).
 export async function watchCountdown(page) {
   await page.addInitScript(() => {
     const log = [];
@@ -18,6 +18,7 @@ export async function watchCountdown(page) {
         shade: shade ? Number(getComputedStyle(shade).getPropertyValue('opacity')) : null,
         line: document.querySelector('[data-testid="child-line"]')?.textContent ?? null,
         shout: document.querySelector('#shout strong')?.textContent ?? null,
+        ready: document.querySelector('.studio-ready')?.textContent ?? null,
         inViewport: r.top >= 0 && r.left >= 0 && r.bottom <= window.innerHeight && r.right <= window.innerWidth,
         uncovered: el === hit || el.contains(hit), paused: video?.paused, time: video ? Math.round(video.currentTime * 10) / 10 : null });
     };

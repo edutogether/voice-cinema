@@ -51,7 +51,7 @@ for (const origin of ['중앙 카드', '아래 썸네일']) {
     await expect(page.locator('.studio-entrance')).toHaveCount(0);
     await expect(page.locator('#clip')).toHaveJSProperty('paused', true);
     await expect(page.locator('#clip')).toHaveJSProperty('currentTime', 0);
-    await expect(page.locator('#screenPlaybackBtn span')).toBeVisible();
+    await expect(page.locator('#previewBtn')).toBeVisible();
   });
 }
 
@@ -62,7 +62,7 @@ test('움직임 줄이기는 즉시 정지 화면을 표시하고 진입 중 뒤
   await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();
   await expect(page.locator('.studio-video-frame')).toHaveCSS('transform', 'none');
   await expect(page.locator('#clip')).toHaveJSProperty('paused', true);
-  await expect(page.locator('#screenPlaybackBtn span')).toBeVisible();
+  await expect(page.locator('#previewBtn')).toBeVisible();
   await page.goBack();
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();
@@ -71,24 +71,22 @@ test('움직임 줄이기는 즉시 정지 화면을 표시하고 진입 중 뒤
   await expect(page.locator('#studio')).toHaveCount(0);
 });
 
-test('처음엔 대기하고 화면 가운데 버튼은 녹음 없이 장면을 미리 본다(10/20)', async ({ page }) => {
+test('처음엔 대기하고 «녹음 없이 미리보기»는 녹음 없이 장면을 미리 본다(10/20 · 10/25 가운데 단추 없앰)', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();
   const clip = page.locator('#clip');
-  const screen = page.locator('#screenPlaybackBtn');
+  const preview = page.locator('#previewBtn');
   await expect(page.locator('.studio-video-frame')).not.toHaveClass(/is-entering/);
   await page.waitForTimeout(600);
   await expect(clip).toHaveJSProperty('currentTime', 0);
   await expect(clip).toHaveJSProperty('paused', true);
   await expect(page.locator('.clip-time')).toHaveText('10:00');
-  await expect(screen.locator('span')).toBeVisible();
-  await expect(screen.locator('span')).toHaveCSS('border-radius', '50%');
-  await expect(screen).toHaveAccessibleName('장면 미리보기');
-  await screen.click();
+  await expect(preview).toHaveText('녹음 없이 미리보기');
+  await preview.click();
   await expect.poll(() => clip.evaluate(v => !v.paused && !v.muted && v.currentTime > .2)).toBe(true);
-  // 미리보기가 시작되면 가운데 버튼은 사라지고, 5.0초에서 멈추지 않고 녹음도 하지 않는다(녹음은 «장면 시작»으로만).
-  await expect(screen).toHaveCount(0);
+  // 미리보기는 5.0초에서 멈추지 않고 녹음도 하지 않는다(녹음은 «장면 시작»으로만) — 단추는 «미리보기 멈춤»이 된다.
+  await expect(preview).toHaveText('미리보기 멈춤');
   await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'previewing');
   await expect.poll(() => clip.evaluate(v => v.currentTime), { timeout: 8000 }).toBeGreaterThan(5.5);
   await expect(page.locator('#cue')).toHaveCount(0);

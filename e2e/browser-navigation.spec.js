@@ -28,7 +28,7 @@ test('브라우저 뒤로가기는 재생을 멈추고 홈으로, 앞으로가�
   await expect(page.locator('#recBtn')).toBeVisible();
   await expect(page.locator('#afterRow')).toBeHidden();
   await expect(page.locator('#clip')).toHaveJSProperty('paused', true);
-  await expect(page.locator('#screenPlaybackBtn span')).toBeVisible();
+  await expect(page.locator('#previewBtn')).toBeVisible();
 });
 
 test('앱의 다른 영화 고르기도 같은 기록으로 돌아가며 홈에서는 이전 웹페이지로 나갈 수 있다', async ({ page }) => {

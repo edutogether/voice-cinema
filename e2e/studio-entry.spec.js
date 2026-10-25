@@ -27,15 +27,15 @@ for (const [genre, name] of GENRES) {
       expect(before.width).toBe(1920);
       expect(await clip.evaluate(video => video.readyState)).toBe(0);
       await expect(clip).toHaveJSProperty('paused', true);
-      await expect(page.locator('#screenPlaybackBtn span')).toBeVisible();
+      await expect(page.locator('#previewBtn')).toBeVisible();
       releaseVideo();
       await expect.poll(() => clip.evaluate(video => video.readyState)).toBeGreaterThanOrEqual(2);
       await page.waitForTimeout(300);
       expect(await clip.boundingBox()).toEqual(before);
       await expect(clip).toHaveJSProperty('paused', true);
       await expect(clip).toHaveJSProperty('currentTime', 0);
-      // 화면을 누르면 장면이 소리와 함께 시작된다.
-      await page.locator('#screenPlaybackBtn').click();
+      // «녹음 없이 미리보기»를 누르면 장면이 소리와 함께 시작된다.
+      await page.locator('#previewBtn').click();
       await expect.poll(() => clip.evaluate(video => !video.paused && !video.muted && video.currentTime > 0)).toBe(true);
     } finally {
       releaseVideo();

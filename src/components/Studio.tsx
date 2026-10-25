@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { clipUrl, sceneFor, stillUrl, type Genre } from '../genres';
-import { useDubbing, type Phase } from '../hooks/useDubbing';
+import { idleHint, useDubbing, type Phase } from '../hooks/useDubbing';
 import { STUDIO_COPY } from '../copy';
 import { lastInputWasKeyboard } from '../lib/inputModality';
-import { maxSpeechFor } from '../lib/voiceCheck';
 import { holdBackground } from '../lib/backgroundLoad';
 import { prefetchFinalClip } from '../lib/ffmpeg';
 
 import { ActionIcon } from './ActionIcon';
 import { ClipTimeline } from './ClipTimeline';
+import { MicMeter } from './MicMeter';
 import { SceneCaption } from './SceneCaption';
 import { StudioEntrance } from './StudioEntrance';
 import type { SceneEntrance } from '../lib/sceneEntrance';
@@ -27,6 +27,12 @@ interface Props {
 const CLIP_FIRST_MAX_MS = 60000;
 
 const TAKE_PHASES: readonly Phase[] = ['requesting', 'watching', 'cue', 'countdown', 'recording', 'checking', 'continuing'];
+/** 영화가 멈춘 동안 — 안내 칸 대신 «차례» 문구 · 대사 · «지금 외쳐요 !» · 마이크 반응을 보인다 */
+const HOLD_PHASES: readonly Phase[] = ['cue', 'countdown', 'recording'];
+/** 3단계 중 지금 단계(1 «장면 시작» · 2 N초에 멈춤 · 3 3·2·1 뒤 외치기, 4는 모두 끝남) */
+const STEP_AT: Record<Phase, number> = {
+  idle: 1, previewing: 1, requesting: 1, watching: 2, cue: 3, countdown: 3, recording: 3, checking: 4, continuing: 4, recorded: 4,
+};
 
 const TIMELINE_STATE: Record<Phase, string> = {
   idle: '장면 대기',
@@ -43,7 +49,7 @@ const TIMELINE_STATE: Record<Phase, string> = {
 
 const HEADLINE: Record<Phase, string> = {
   idle: '준비됐나요 ?',
-  previewing: '장면을 미리 보고 있어요',
+  previewing: '녹음 없이 미리 보고 있어요',
   requesting: '마이크를 연결하고 있어요',
   watching: '장면을 보세요, 곧 내 차례예요',
   cue: '이제 내 차례 !',
@@ -66,6 +72,11 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
   const dub = useDubbing(genre.id, scene, videoRef, sampleMode);
   const { phase } = dub;
   const inTake = TAKE_PHASES.includes(phase);
+  const holding = HOLD_PHASES.includes(phase);
+  const step = STEP_AT[phase];
+  const stepState = (n: number) => (n < step ? 'done' : n === step ? 'current' : 'next');
+  // 오류 · 판정 알림이 아닌 기본 준비 안내 — 세로 화면에서는 같은 내용을 3단계로 보인다
+  const defaultHint = dub.hint === idleHint(scene.pause);
   const done = phase === 'recorded';
   const previewing = phase === 'previewing';
   const playing = phase === 'watching' || phase === 'continuing' || previewing;
@@ -143,47 +154,48 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
               </div>
               <span className="studio-brand"><img src="/icons/studio-microphone.png" width="34" height="34" alt="" /><span>Voice <em>Cinema</em></span></span>
             </div>
-            <div className={`studio-video-frame${phase === 'idle' ? ' is-paused' : ''}`}>
+            {/* 영상이 화면의 주인공 — 16:9 전체 구도를 자르지 않는다. 가로 화면은 영상이 화면을 채우고 머리줄·조작부가 그 위에 얹히며,
+                세로 화면은 머리줄 → 영상 → 진행 막대 → 안내 칸 → 단추 순서로 붙는다(10/25 대표님 녹음실 재구성) */}
+            <div className="studio-video-frame">
               <video id="clip" ref={videoRef} poster={stillUrl(genre.id)} playsInline muted preload="auto"
                 onWaiting={() => setBuffering(true)} onPlaying={() => setBuffering(false)} onError={() => setBuffering(false)} />
-              <div className="studio-pause-shade" aria-hidden="true" />
               {/* 정지 동안만 화면을 살짝(22%) 누른다 — 멈춘 그림은 그대로 보이고, 영상·완성본에는 굽지 않는다(10/25 대표님) */}
               <div className="studio-hold-shade" aria-hidden="true" />
-              <div className="studio-pause-title" aria-hidden="true">
-                <small>장면 더빙</small>
-                <strong>{genre.summary}</strong>
-                <p>{genre.name}<span>10초</span></p>
-              </div>
-              {/* 화면 가운데 재생 단추는 녹음 없이 장면을 미리 본다(10/20 대표님) — 녹음은 아래 «장면 시작»으로만 시작한다 */}
-              {phase === 'idle' && <button type="button" className="studio-screen-playback" id="screenPlaybackBtn"
-                aria-label="장면 미리보기" onClick={dub.preview}>
-                <span aria-hidden="true"><ActionIcon name="play" /></span>
-              </button>}
               {playing && buffering && <div className="studio-buffering" role="status">영상을 불러오고 있어요</div>}
               <SceneCaption scene={scene} videoRef={videoRef} enabled={phase === 'watching' || previewing} />
-              {/* 아이 대사(장면에 있을 때)는 멈춘 순간부터 보인다 — 숫자가 끝난 뒤에야 처음 보면 읽느라 머뭇거린다(10/25 대표님) */}
-              {phase === 'cue' && <div className="studio-cue" role="status" id="cue"><strong>{STUDIO_COPY.yourTurn}</strong>{childLine && <span className="studio-line" data-testid="child-line">{childLine}</span>}</div>}
-              {dub.countdown > 0 && <div className="overlay show" id="overlay"><div className="count" id="count" key={dub.countdown} aria-label={`${dub.countdown}초 뒤 녹음 시작`}>{dub.countdown}<span data-testid={childLine ? 'child-line' : undefined}>{childLine ?? STUDIO_COPY.speakNow}</span></div></div>}
-              {phase === 'recording' && <>
-                <div className="studio-shout" role="status" id="shout"><strong>{STUDIO_COPY.shoutNow}</strong>{childLine && <span className="studio-line" data-testid="child-line">{childLine}</span>}</div>
-                <div className="recpill show" id="recpill"><span className="d" /> {sampleMode ? '샘플 녹음 체험 중' : '녹음 중'}</div>
-                <div className="record-left" role="progressbar" aria-label={`말하기 ${maxSpeechFor(scene.voiceWindow)}초 중 남은 시간`} aria-valuemin={0} aria-valuemax={100}
-                  aria-valuenow={Math.round(dub.recordLeft * 100)}><i style={{ transform: `scaleX(${dub.recordLeft})` }} /></div>
-              </>}
+              {/* 3·2·1은 영상 한가운데에 크게 — 대사는 아래 안내 칸(가로 화면은 영상 아래쪽)에 둔다 */}
+              {dub.countdown > 0 && <div className="overlay show" id="overlay"><div className="count" id="count" key={dub.countdown} aria-label={`${dub.countdown}초 뒤 녹음 시작`}>{dub.countdown}</div></div>}
+              {phase === 'recording' && <div className="recpill show" id="recpill"><span className="d" /> {sampleMode ? '샘플 녹음 체험 중' : '녹음 중'}</div>}
             </div>
             <div className="studio-player-dock">
               <div className="studio-timeline">
-                <span className="timeline-state">{TIMELINE_STATE[phase]}</span>
-                <ClipTimeline phase={phase} videoRef={videoRef} />
+                <ClipTimeline phase={phase} pause={scene.pause} videoRef={videoRef} />
               </div>
               <div className={`controls${inTake ? ' is-recording' : ''}${done ? ' is-recorded' : ''}`}>
                 <div className="controls-copy">
-                  <h2>{sampleMode && done ? '샘플 체험을 마쳤어요' : HEADLINE[phase]}</h2>
-                  <div className="hint" id="hint" role="status" data-mic-error={dub.micError ?? undefined} data-take-check={dub.takeCheck ?? undefined}>{dub.hint}</div>
+                  {/* 아이 대사(장면에 있을 때)는 멈춘 순간부터 보인다 — 숫자가 끝난 뒤에야 처음 보면 읽느라 머뭇거린다(10/25 대표님) */}
+                  {phase === 'cue' && <div className="studio-cue" role="status" id="cue"><strong>{STUDIO_COPY.yourTurn}</strong>{childLine && <span className="studio-line" data-testid="child-line">{childLine}</span>}</div>}
+                  {phase === 'countdown' && <div className="studio-ready" role="status">{childLine
+                    ? <span className="studio-line" data-testid="child-line">{childLine}</span>
+                    : <span className="studio-ready-copy">{STUDIO_COPY.speakNow}</span>}</div>}
+                  {phase === 'recording' && <div className="studio-shout" role="status" id="shout">
+                    <span className="studio-shout-row"><strong>{STUDIO_COPY.shoutNow}</strong><MicMeter level={dub.micLevel} /></span>
+                    {childLine && <span className="studio-line" data-testid="child-line">{childLine}</span>}
+                    <small className="studio-shout-note">말을 마치면 영화가 바로 이어져요</small>
+                  </div>}
+                  {!holding && <h2>{sampleMode && done ? '샘플 체험을 마쳤어요' : HEADLINE[phase]}</h2>}
+                  {/* 새 장면은 외칠 대사를 준비 화면에서 미리 보여 준다 */}
+                  {phase === 'idle' && childLine && <p className="studio-line-preview"><small>외칠 대사</small><span>{childLine}</span></p>}
+                  <div className={`hint${defaultHint ? ' is-default' : ''}`} id="hint" role="status" data-mic-error={dub.micError ?? undefined} data-take-check={dub.takeCheck ?? undefined}>{dub.hint}</div>
+                  <ol className="studio-steps" aria-label="더빙 순서">
+                    <li data-state={stepState(1)}><b>{stepState(1) === 'done' ? '✓' : 1}</b><span>«장면 시작»을 눌러요</span></li>
+                    <li data-state={stepState(2)}><b>{stepState(2) === 'done' ? '✓' : 2}</b><span>{Math.floor(scene.pause * 10) / 10}초에 영화가 멈춰요</span></li>
+                    <li data-state={stepState(3)}><b>{stepState(3) === 'done' ? '✓' : 3}</b><span>3·2·1 뒤에 크게 외쳐요</span></li>
+                  </ol>
                 </div>
                 {!done && <div className="record-actions">
                   {(phase === 'idle' || previewing) && <button className="btn btn-ghost" id="previewBtn" type="button" onClick={previewing ? dub.reset : dub.preview}>
-                    <ActionIcon name={previewing ? 'stop' : 'play'} /> {previewing ? '미리보기 멈춤' : '미리보기'}
+                    <ActionIcon name={previewing ? 'stop' : 'play'} /> {previewing ? '미리보기 멈춤' : '녹음 없이 미리보기'}
                   </button>}
                   <button className="btn btn-rec" id="recBtn" ref={startButtonRef} disabled={inTake} onClick={dub.startTake}>
                     <span className="record-dot" aria-hidden="true" /><span>{inTake ? TIMELINE_STATE[phase] : '장면 시작'}</span>

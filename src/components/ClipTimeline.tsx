@@ -13,7 +13,7 @@ const total = formatTime(CLIP_SECONDS);
 // 그래서 진행바는 탐색 막대가 아니라 영상 시계를 보여 주기만 한다.
 const SHOWN: readonly Phase[] = ['previewing', 'watching', 'cue', 'countdown', 'recording', 'checking', 'continuing', 'recorded'];
 
-export function ClipTimeline({ phase, videoRef }: { phase: Phase; videoRef: React.RefObject<HTMLVideoElement | null> }) {
+export function ClipTimeline({ phase, pause, videoRef }: { phase: Phase; pause: number; videoRef: React.RefObject<HTMLVideoElement | null> }) {
   const textRef = useRef<HTMLSpanElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLElement>(null);
@@ -54,7 +54,9 @@ export function ClipTimeline({ phase, videoRef }: { phase: Phase; videoRef: Reac
   return <>
     <div className={`progress${shown ? ' show' : ''}`} id="progress" ref={trackRef}
       role="progressbar" aria-label="영상 진행"
-      aria-valuemin={0} aria-valuemax={100} aria-valuenow={phase === 'recorded' ? 100 : 0}><i id="bar" ref={barRef} /></div>
+      aria-valuemin={0} aria-valuemax={100} aria-valuenow={phase === 'recorded' ? 100 : 0}><i id="bar" ref={barRef} />
+      {/* 장면이 멈추는 자리 — 미리 보이게 막대 위에 표시한다(10/25 대표님 «멈추지도 않는데») */}
+      <b className="progress-pause" data-testid="pause-mark" aria-hidden="true" style={{ left: `${(pause / CLIP_SECONDS) * 100}%` }} /></div>
     <span className="clip-time" aria-hidden="true" ref={textRef}>{initialText}</span>
   </>;
 }

@@ -66,7 +66,9 @@ test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
     expect(paused.paused).toBe(true);
     expect(Math.abs(paused.time - 5)).toBeLessThanOrEqual(1 / 30);
 
-    await expect(page.locator('#count')).toContainText('지금 바로 당신의 목소리를 들려주세요 !');
+    // 숫자는 영상 가운데, 문구는 아래 안내 자리(10/25 녹음실 재구성)
+    await expect(page.locator('#count')).toBeVisible();
+    await expect(page.locator('.studio-ready')).toContainText('지금 바로 당신의 목소리를 들려주세요 !');
     await expect(page.locator('#recpill')).toBeVisible({ timeout: 5000 });
     // 녹음 중에는 영상이 5.0초 정지 화면 그대로다.
     expect(await clip.evaluate(v => ({ p: v.paused, t: Math.round(v.currentTime * 10) / 10 }))).toEqual({ p: true, t: 5 });

@@ -28,9 +28,11 @@ const PROCESS_WAIT_MS = 2500;
 /** 브라우저가 녹음을 풀지 못해 엔진으로 풀 때 엔진(31MB)을 기다리는 상한 */
 const ENGINE_DECODE_WAIT_MS = 20000;
 
+/** 준비 화면 안내 — 이 장면이 멈추는 시각을 그대로 알린다(지금 원판 5초, 새 장면 6.7초) */
+export const idleHint = (pause: number) => `'장면 시작'을 누르면 장면이 흐르다 ${Math.floor(pause * 10) / 10}초에 멈춰요. 3·2·1 뒤에 내 목소리로 외쳐 주세요 !`;
+
 // 권한 대기·실패 원인을 해당 전환 시점의 안내로 보여준다.
 const HINT = {
-  idle: "'장면 시작'을 누르면 장면이 흐르다 가장 긴박한 순간에 멈춰요. 그때 내 목소리로 외쳐 주세요 !",
   previewing: '녹음 없이 장면을 처음부터 끝까지 보여 줘요. 다 보면 다시 준비 화면으로 돌아와요.',
   requesting: '마이크를 준비하고 있어요. 권한 요청이 뜨면 허용해 주세요.',
   watching: '장면을 보세요. 곧 내 차례가 와요 !',
@@ -127,8 +129,8 @@ interface Take {
   recorder: MediaRecorder;
   /** 녹음기를 켠다. 실제로 켜지면(start 이벤트) true — 그 뒤에야 «지금 외쳐요 !»를 보인다 */
   start(): Promise<boolean>;
-  /** 말이 시작된 때(performance.now 기준, 아직이면 null) — 남은 발화 시간 막대가 쓴다 */
-  speechStartedAt(): number | null;
+  /** 가장 최근 측정 칸의 음량(RMS) — 녹음 중 화면의 마이크 반응이 쓴다 */
+  level(): number;
   done: Promise<TakeResult>;
   /** 녹음을 멈추고 음량 측정을 떼어 낸다(화면을 떠날 때·실패할 때) */
   discard(): void;
@@ -146,7 +148,7 @@ function prepareTake(stream: MediaStream, ctx: AudioContext, maxSpeech: number):
   const chunks: Blob[] = [];
   let problem: TakeResult['problem'] = null;
   let liveCut = false;
-  let speechAt: number | null = null;
+  let lastLevel = 0;
   let closed = false;
   let timer = 0;
   const tracker = createVoiceTracker(maxSpeech);
@@ -211,9 +213,8 @@ function prepareTake(stream: MediaStream, ctx: AudioContext, maxSpeech: number):
       track?.addEventListener('mute', lost);
       timer = window.setInterval(() => {
         analyser.getFloatTimeDomainData(frame);
-        const now = performance.now();
-        const step = tracker.push(rms(frame), (now - startedAt) / 1000);
-        if (speechAt === null && tracker.onset >= 0) speechAt = now;
+        lastLevel = rms(frame);
+        const step = tracker.push(lastLevel, (performance.now() - startedAt) / 1000);
         if (step === 'continue') return;
         liveCut = step === 'stop-cut';
         stop();
@@ -231,7 +232,7 @@ function prepareTake(stream: MediaStream, ctx: AudioContext, maxSpeech: number):
   return {
     recorder,
     start,
-    speechStartedAt: () => speechAt,
+    level: () => lastLevel,
     done,
     discard() {
       closed = true;
@@ -263,8 +264,8 @@ export interface Dubbing {
   phase: Phase;
   hint: string;
   countdown: number;
-  /** 발화 상한 중 남은 몫(1 → 0) — 말이 시작되기 전에는 1. 녹음 중에만 의미가 있다. */
-  recordLeft: number;
+  /** 녹음 중 마이크 음량(RMS) — 화면의 마이크 반응이 프레임마다 읽는다. 녹음 중이 아니면 0 */
+  micLevel: () => number;
   recording: Recording | null;
   /** 마지막 녹음의 판정 — 저장할 수 없는 것(silent·short)은 준비 상태로 돌아가며 남는다 */
   takeCheck: Verdict | null;
@@ -279,9 +280,8 @@ type PreviewVoice = { buffer: AudioBuffer; gain: number; offset: number; duratio
 
 export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObject<HTMLVideoElement | null>, sampleMode = false): Dubbing {
   const [phase, setPhase] = useState<Phase>('idle');
-  const [hint, setHint] = useState<string>(HINT.idle);
+  const [hint, setHint] = useState<string>(() => idleHint(scene.pause));
   const [countdown, setCountdown] = useState(0);
-  const [recordLeft, setRecordLeft] = useState(1);
   const [micError, setMicError] = useState<MicFailure | null>(null);
   const [recorded, setRecorded] = useState<Recording | null>(null);
   const [takeCheck, setTakeCheck] = useState<Verdict | null>(null);
@@ -321,11 +321,10 @@ export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObj
     setRecorded(null);
     setTakeCheck(null);
     setCountdown(0);
-    setRecordLeft(1);
     setMicError(null);
-    setHint(HINT.idle);
+    setHint(idleHint(scene.pause));
     setPhase('idle');
-  }, [stopClock, discardTake, stopVoice, videoRef]);
+  }, [stopClock, discardTake, stopVoice, videoRef, scene.pause]);
 
   // 장르가 바뀌거나 화면을 벗어나면 무조건 초기화된다.
   useEffect(() => reset, [genreId, reset]);
@@ -441,7 +440,6 @@ export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObj
       if (options.mic) dropMic();
       resetVideo(v);
       setCountdown(0);
-      setRecordLeft(1);
       setTakeCheck(options.verdict ?? null);
       setHint(message);
       setPhase('idle');
@@ -509,37 +507,22 @@ export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObj
 
       // 3) 녹음 — 영상은 정지 화면 그대로, 소리 없음(스피커 소리가 마이크로 들어가 겹치지 않게).
       //    «지금 외쳐요 !»는 녹음기가 실제로 켜진 뒤에 보인다 — 신호를 보고 바로 외친 첫 음절이 빠지지 않게.
-      //    남은 시간 막대는 말이 시작된 뒤부터 발화 상한을 센다(말하기 전 기다림은 세지 않는다).
       const take = takeRef.current;
       if (take && !(await take.start())) {
         if (!stale()) fail(HINT.recordFailed, { mic: true });
         return;
       }
       if (stale()) return;
-      setRecordLeft(1);
       setHint(sampleMode ? '샘플 체험이라 목소리는 녹음하지 않아요.' : HINT.recording);
       setPhase('recording');
-      const sampleStart = performance.now();
-      let frame = 0;
-      const tickLeft = () => {
-        if (stale()) return;
-        const from = take ? take.speechStartedAt() : sampleStart;
-        setRecordLeft(from === null ? 1 : Math.max(0, 1 - (performance.now() - from) / (maxSpeech * 1000)));
-        frame = requestAnimationFrame(tickLeft);
-      };
-      frame = requestAnimationFrame(tickLeft);
-
       if (!take || !ctx) {
         await wait(maxSpeech * 1000);
-        cancelAnimationFrame(frame);
         if (stale()) return;
-        setRecordLeft(0);
         finishTake(null, 'ok', myRun);
         return;
       }
 
       const result = await take.done;
-      cancelAnimationFrame(frame);
       if (stale()) return;
       takeRef.current = null;
       if (result.problem) {
@@ -549,7 +532,6 @@ export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObj
 
       // 4) 녹음 검사 — 어두움을 먼저 걷고(정지 화면을 어둡게 둔 채 기다리게 하지 않는다), 실제로 담긴 소리를 풀어
       //    무음·잘림·작은 목소리를 보고 영화에 넣을 구간과 보정 음량을 정한다.
-      setRecordLeft(0);
       setHint(HINT.checking);
       setPhase('checking');
       // 브라우저가 자기 녹음을 풀지 못하면(사파리 mp4 녹음이 그런 판이 있다) 엔진으로 풀어 본다 — 그것까지 안 되면 녹음이 깨진 것이다.
@@ -628,11 +610,13 @@ export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObj
     audioRef.current = null;
   }, [stopClock, stopVoice, discardTake]);
 
+  const micLevel = useCallback(() => takeRef.current?.level() ?? 0, []);
+
   return {
     phase,
     hint: sampleMode ? `샘플 체험 · 마이크 녹음 없음. ${hint}` : hint,
     countdown,
-    recordLeft,
+    micLevel,
     recording: recorded,
     takeCheck,
     micError,

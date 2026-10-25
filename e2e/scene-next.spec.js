@@ -91,7 +91,7 @@ test('프레임 202(6.7333초) 그림에 정확히 서고, 막 22%·대사·«�
   for (const entry of log) {
     expect(entry, entry.key).toMatchObject({ paused: true, time: Math.round(SCENE.pause * 10) / 10, inViewport: true, line: LINE });
   }
-  for (const entry of log.slice(1, 4)) expect(entry.text, entry.key).toContain(LINE);
+  for (const entry of log.slice(1, 4)) expect(entry.ready, entry.key).toContain(LINE);
   for (const entry of log.slice(1)) expect(entry.shade, entry.key).toBeCloseTo(0.22, 2);
   expect(log[4].shout).toBe('지금 외쳐요 !');
 
