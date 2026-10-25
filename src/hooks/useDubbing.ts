@@ -349,7 +349,7 @@ export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObj
   }, []);
 
   /**
-   * 영상을 정지 시각부터 끝까지 재생하며, 다듬은 목소리를 영상이 실제로 정지 시각을 내보내는 그 프레임에 맞춰 함께 튼다(합성 전 미리 듣기).
+   * 영상을 정지 시각부터 끝까지 재생하며, 다듬은 목소리를 영상의 첫 프레임이 나갈 때 원판 소리의 시계에 맞춰 함께 튼다(합성 전 미리 듣기).
    * 목소리는 완성본과 같은 파일이고 같은 자리(정지 시각)에서 시작한다. 목소리는 목소리 칸 안에서 끝나고, 그 뒤는 원판의 해소 장면 소리만 남는다.
    * 끝나거나 브라우저가 멈추면(백그라운드 등) 녹음 뒤 화면으로 넘어간다.
    */
@@ -384,7 +384,9 @@ export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObj
         if (started || v.paused || time < pause - 0.05) return;
         started = true;
         stopWatch();
-        const late = Math.max(0, time - pause);
+        // 얼마나 늦었는지는 원판 소리의 시계(currentTime)로 잰다 — 화면에 나간 그림의 시각(time)은 그 순간 소리보다 8~21ms 앞서거나
+        // 뒤져, 그것으로 맞추면 미리 듣기가 완성본(원판 소리 위 정지 시각)과 그만큼 어긋났다(10/25)
+        const late = Math.max(0, v.currentTime - pause);
         if (late < voice.duration) source.start(0, voice.offset + late, voice.duration - late);
       });
       voiceRef.current = () => {

@@ -4,7 +4,7 @@ export const CLIP_SECONDS = 10;
 
 // 지금 라이브 원판(장면 더빙 2.0, 대표님 10/11 확정)의 시간표: 영상이 5.0초 최고조에서 멈추고 목소리가 5.0~8.5초
 // 목소리 칸에 들어가 완성본은 언제나 정확히 10.0초다. 장르마다 다른 시간표는 src/genres.ts의 장면(scene)이 정한다 —
-// 새 8편(약 7.0초 정지)은 영상이 들어올 때 그 장면 값으로 바꾼다.
+// 새 8편(30fps 202번째 프레임 6.7333초 정지)은 영상이 들어올 때 그 장면 값으로 바꾼다.
 export const PAUSE_SECONDS = 5;
 /** 지금 원판의 목소리 칸 — 원판 소리를 5.0~8.5초에서 −8dB 낮춰 둔 자리다(tools/build-scene-audio.mjs의 기본값, test/contract.test.js가 대조). */
 export const VOICE_WINDOW_SECONDS = 3.5;

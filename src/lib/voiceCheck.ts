@@ -21,6 +21,7 @@ const ONSET_FRAMES = 2;
 const MIN_FLOOR_FRAMES = 5;
 /** 발화 상한에 닿았을 때 이 안에 말소리가 있으면 끝이 잘렸을 수 있다 */
 const CUT_SECONDS = 0.15;
+const EPS = 1e-9;
 const SILENT_PEAK = 0.001; // −60dBFS — 마이크에서 아무것도 안 들어왔다
 const MIN_SPEECH_SECONDS = 0.1;
 const QUIET_SPEECH = 0.0056; // −45dBFS
@@ -34,7 +35,7 @@ export type LiveStep = 'continue' | 'stop' | 'stop-cut' | 'stop-silent';
 /** ok 그대로 · quiet·cut·early 들어 보고 판단(저장 가능) · silent·short 다시 녹음(저장 못 함) */
 export type Verdict = 'ok' | 'quiet' | 'cut' | 'early' | 'silent' | 'short';
 
-/** 발화 상한 — 3초, 목소리 칸이 짧으면 앞뒤 여백을 뺀 만큼(7.0초 정지 · 칸 3.0초면 2.73초) */
+/** 발화 상한 — 3초, 목소리 칸이 짧으면 앞뒤 여백을 뺀 만큼(새 장면 202번째 프레임 정지 · 칸 3.2667초면 2.997초) */
 export const maxSpeechFor = (voiceWindow: number) =>
   Math.min(MAX_SPEECH_SECONDS, Math.round((voiceWindow - PREROLL_SECONDS - TAIL_SECONDS) * 1000) / 1000);
 
@@ -81,7 +82,9 @@ export function createVoiceTracker(maxSpeech: number): VoiceTracker {
   let frames = 0;
   let onset = -1;
   let onsetElapsed = 0;
+  let aboveElapsed = 0; // 문턱을 넘은 칸이 이어지기 시작한 칸의 뒤 끝
   let lastActive = -1;
+  let lastActiveElapsed = 0;
   let threshold = ABS_SPEECH;
   let pending = 0; // 문턱을 넘은 칸이 이어진 수(말 시작 전)
   let heard = false;
@@ -103,12 +106,14 @@ export function createVoiceTracker(maxSpeech: number): VoiceTracker {
       if (onset < 0) {
         const floor = pre.length >= MIN_FLOOR_FRAMES ? pre[Math.floor((pre.length - 1) * 0.1)] : 0;
         const thr = Math.max(ABS_SPEECH, Math.min(MAX_THRESHOLD, floor * SNR));
-        pending = level >= thr ? pending + 1 : 0;
+        if (level < thr) pending = 0;
+        else if (pending++ === 0) aboveElapsed = elapsed;
         if (pending >= ONSET_FRAMES) {
           onset = i - ONSET_FRAMES + 1;
-          onsetElapsed = elapsed - ONSET_FRAMES * FRAME_SECONDS; // 말 시작 칸의 앞 끝(elapsed는 지금 칸의 뒤 끝)
+          onsetElapsed = aboveElapsed - FRAME_SECONDS; // 말 시작 칸의 앞 끝(elapsed는 칸의 뒤 끝)
           threshold = thr;
           lastActive = i;
+          lastActiveElapsed = elapsed;
         } else {
           if (pending === 0) insert(level);
           if (!heard) return elapsed >= VOICE_WAIT_SECONDS + maxSpeech ? 'stop' : 'continue';
@@ -117,12 +122,16 @@ export function createVoiceTracker(maxSpeech: number): VoiceTracker {
         }
       } else if (level >= threshold) {
         lastActive = i;
+        lastActiveElapsed = elapsed;
       }
-      const speaking = (i - lastActive) * FRAME_SECONDS < CUT_SECONDS;
-      if (elapsed - onsetElapsed >= maxSpeech) return speaking ? 'stop-cut' : 'stop';
-      const spoken = (lastActive - onset + 1) * FRAME_SECONDS;
-      const hang = spoken < SHORT_FIRST_SPEECH_SECONDS ? END_SILENCE_AFTER_SHORT_SECONDS : END_SILENCE_SECONDS;
-      return (i - lastActive) * FRAME_SECONDS >= hang ? 'stop' : 'continue';
+      // 조용한 시간 · 첫 말 길이는 칸 수가 아니라 실제 시간으로 잰다 — 화면이 바빠 20ms 측정이 늦게 돌면 칸 수로 센 0.6초가
+      // 그만큼 길어진다(10/25 전체 E2E에서 0.47 · 0.55초 늦게 멈춤). EPS는 칸 경계(0.6 · 0.8 · 0.9초)에서 소수 오차로 한 칸 늦지 않게
+      const quiet = elapsed - lastActiveElapsed;
+      const speaking = quiet < CUT_SECONDS;
+      if (elapsed - onsetElapsed >= maxSpeech - EPS) return speaking ? 'stop-cut' : 'stop';
+      const spoken = lastActiveElapsed - onsetElapsed;
+      const hang = spoken < SHORT_FIRST_SPEECH_SECONDS - EPS ? END_SILENCE_AFTER_SHORT_SECONDS : END_SILENCE_SECONDS;
+      return quiet >= hang - EPS ? 'stop' : 'continue';
     },
   };
 }

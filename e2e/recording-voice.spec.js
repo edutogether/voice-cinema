@@ -295,6 +295,37 @@ test('완성본: 목소리는 5.0초 + 0.12초 안팎에 앞·끝을 잃지 않�
   expectMovieFile(movie, originalClip('sf'));
 });
 
+// 2026-10-25: 미리 듣기 목소리를 «화면에 나간 첫 그림의 시각»(프레임 콜백)에 맞춰 틀었더니, 그 순간 원판 소리의 시계(currentTime)와 8~21ms 달라
+// 미리 듣기가 완성본과 그만큼 어긋났다(위 «완성본 …» 검사의 0.02초를 가끔 넘음). 다듬은 목소리는 구간을 잘라 둔 파일이라 시작 위치 = 영상이 정지 시각을 지나 간 만큼이다.
+test('미리 듣기는 원판 소리의 시계(영상 currentTime)에 맞춰 튼다 — 화면 그림 시각이 아니라 · 완성본과 같은 자리', async ({ page }) => {
+  const uploads = await captureUpload(page);
+  await installSyntheticMic(page, [{ delay: 0.3, dur: 1.5, f0: 300 }]);
+  // 엔진을 다 받아 둔 뒤 녹음한다 — 미리 듣기가 다듬은 목소리(처음부터 트는 파일)가 되게
+  const engine = page.waitForResponse(/ffmpeg-core\.wasm/).then((r) => r.finished());
+  await page.goto('/');
+  await page.locator('#splash').waitFor({ state: 'detached' });
+  await engine;
+  await expect(page.locator('#enginebar')).not.toHaveClass(/show/, { timeout: 30000 });
+  await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();
+  await expect(page.locator('#clip')).toHaveJSProperty('readyState', 4, { timeout: 20000 });
+  const starts = [];
+  for (let n = 0; n < 3; n++) {
+    if (n) {
+      await page.locator('#resetBtn').click();
+      await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'idle');
+    }
+    expect(await recordOnce(page)).toMatchObject({ phase: 'recorded', check: 'ok' });
+    const preview = (await previews(page)).at(-1);
+    starts.push({ offset: preview.offset, soundtrack: +(preview.videoTime - LIVE_SCENE.pause).toFixed(6) });
+    expect(Math.abs(preview.offset - (preview.videoTime - LIVE_SCENE.pause)), JSON.stringify(preview)).toBeLessThan(0.002);
+  }
+  const preview = (await previews(page)).at(-1);
+  const movie = await saveAndGetMovie(page, uploads);
+  const v = await voiceInMovie(page, movie, 'sf');
+  console.log(JSON.stringify({ starts, heardAt: heardAt(preview), movieVoiceStart: v.voiceStart }));
+  expect(Math.abs(heardAt(preview) - v.voiceStart)).toBeLessThan(0.02);
+});
+
 test('완성본: 신호 뒤 1.6초에 말해도 그 기다림은 영화에 들어가지 않는다 — 말소리는 정지 시각 + 0.12초 안팎', async ({ page }) => {
   const uploads = await captureUpload(page);
   await installSyntheticMic(page, [{ delay: 1.6, dur: 1.5, f0: 300 }]);

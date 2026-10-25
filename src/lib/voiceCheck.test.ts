@@ -4,7 +4,7 @@ import { checkTake, createVoiceTracker, frameLevels, maxSpeechFor } from './voic
 
 const RATE = 48000;
 const LIVE = 3.5; // 지금 장면(5.0초 정지)의 목소리 칸
-const NEXT = 3.0; // 새 장면(7.0초 정지)의 목소리 칸
+const NEXT = 10 - 202 / 30; // 새 장면(30fps 202번째 프레임 6.7333초 정지)의 목소리 칸 3.2667초
 
 type Part = { at: number; dur: number; amp?: number; fadeIn?: number };
 
@@ -50,10 +50,27 @@ function liveStop(samples: Float32Array, window = LIVE, noise = 0) {
   return { at: levels.length * 0.02, step: 'continue' as const };
 }
 
+/**
+ * 녹음 중 판단이 tick초마다만 불리는 기기 흉내 — 앱은 20ms마다 부르지만 화면이 바쁘면 그보다 늦게 돈다(10/25 전체 E2E에서 0.47 · 0.55초 늦게 멈춤).
+ * 그때 들어오는 음량은 그 순간 바로 앞 20ms(분석기가 담고 있는 가장 최근 소리)다.
+ */
+function liveStopEvery(samples: Float32Array, tick: number, window = LIVE) {
+  const levels = frameLevels(samples, RATE);
+  const tracker = createVoiceTracker(maxSpeechFor(window));
+  for (const level of frameLevels(voice(3, { amp: 0 }), RATE)) tracker.prime(level);
+  for (let n = 1; Math.round(n * tick * 1000) <= levels.length * 20; n++) {
+    const at = Math.round(n * tick * 1000) / 1000;
+    const step = tracker.push(levels[Math.round(at / 0.02) - 1], at);
+    if (step !== 'continue') return { at, step };
+  }
+  return { at: levels.length * 0.02, step: 'continue' as const };
+}
+
 describe('발화 상한 — 3초, 목소리 칸이 짧으면 앞뒤 여백(0.12 + 0.15초)을 뺀 만큼', () => {
-  test('지금 장면(칸 3.5초)은 3초, 새 장면(칸 3.0초)은 2.73초', () => {
+  test('지금 장면(칸 3.5초)은 3초, 새 장면(칸 3.2667초)은 2.997초 — 칸 3.0초(7.0초 정지)였다면 2.73초', () => {
     expect(maxSpeechFor(LIVE)).toBe(3);
-    expect(maxSpeechFor(NEXT)).toBe(2.73);
+    expect(maxSpeechFor(NEXT)).toBe(2.997);
+    expect(maxSpeechFor(3)).toBe(2.73);
   });
 });
 
@@ -110,6 +127,37 @@ describe('말끝 감지 — 말을 마치면 바로 끝난다', () => {
   });
 });
 
+describe('측정이 늦게 돌아도 말끝 · 첫 말 길이 · 상한은 실제 시간으로 잰다', () => {
+  for (const tick of [0.03, 0.04]) {
+    const ms = Math.round(tick * 1000);
+    test(`${ms}ms마다 재도 1.0초 발화는 말끝 0.6초 뒤에 멈춘다`, () => {
+      const r = liveStopEvery(voice(6, { dur: 1 }), tick);
+      expect(r.step).toBe('stop');
+      expect(r.at).toBeGreaterThanOrEqual(0.3 + 1 + 0.6 - tick - 1e-9);
+      expect(r.at).toBeLessThan(0.3 + 1 + 0.6 + tick + 1e-9);
+    });
+    test(`${ms}ms마다 재도 짧은 첫 말(0.5초) 뒤에는 0.9초를 기다린다`, () => {
+      const r = liveStopEvery(voice(6, { dur: 0.5 }), tick);
+      expect(r.step).toBe('stop');
+      expect(r.at).toBeGreaterThanOrEqual(0.3 + 0.5 + 0.9 - tick - 1e-9);
+      expect(r.at).toBeLessThan(0.3 + 0.5 + 0.9 + tick + 1e-9);
+    });
+    test(`${ms}ms마다 재도 0.9초 첫 말은 짧은 말이 아니다 — 0.6초 뒤에 멈춘다`, () => {
+      const r = liveStopEvery(voice(6, { dur: 0.9 }), tick);
+      expect(r.step).toBe('stop');
+      expect(r.at).toBeGreaterThanOrEqual(0.3 + 0.9 + 0.6 - tick - 1e-9);
+      expect(r.at).toBeLessThan(0.3 + 0.9 + 0.6 + tick + 1e-9);
+    });
+    test(`${ms}ms마다 재도 «셋 !» 뒤 0.7초 쉬고 이어 말하면 끝나지 않는다`, () => {
+      const r = liveStopEvery(voice(6, { parts: [{ at: 0.3, dur: 0.35 }, { at: 1.35, dur: 1.4 }] }), tick);
+      expect(r.at).toBeGreaterThan(2.75);
+    });
+    test(`${ms}ms마다 재도 상한은 말 시작 뒤 3초`, () => {
+      expect(liveStopEvery(voice(6, { delay: 0.2, dur: 4 }), tick)).toEqual({ at: expect.closeTo(0.2 + 3, 1), step: 'stop-cut' });
+    });
+  }
+});
+
 describe('발화 상한과 잘림', () => {
   test('2.7초 발화는 상한(3초) 전에 끝나 잘림이 아니다', () => {
     const samples = voice(6, { dur: 2.7 });
@@ -134,10 +182,10 @@ describe('발화 상한과 잘림', () => {
     const c = checkTake(samples.subarray(0, Math.round(r.at * RATE)), RATE, LIVE, true);
     expect(c.verdict).toBe('cut');
   });
-  test('새 장면(칸 3.0초)은 2.73초에 멈추고, 넣을 구간은 칸을 넘지 않는다', () => {
+  test('새 장면(칸 3.2667초)은 2.997초에 멈추고, 넣을 구간은 칸을 넘지 않는다', () => {
     const samples = voice(6, { delay: 0.2, dur: 4 });
     const r = liveStop(samples, NEXT);
-    expect(r).toEqual({ at: expect.closeTo(0.2 + 2.73, 1), step: 'stop-cut' });
+    expect(r).toEqual({ at: expect.closeTo(0.2 + 2.997, 1), step: 'stop-cut' });
     const c = checkTake(samples.subarray(0, Math.round(r.at * RATE)), RATE, NEXT, true);
     expect(c.verdict).toBe('cut');
     expect(c.end - c.start).toBeLessThanOrEqual(NEXT);
