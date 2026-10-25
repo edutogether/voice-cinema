@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { installSyntheticMic } from './synthetic-mic.js';
 
 // 완성 화면(10/20 대표님 PC 시사): 왼쪽 그림은 QR이 생기기 전·후 같은 크기이고 오른쪽 높이에 맞춘다. 그림 위에는
 // 왼쪽 InKY Film Festival·오른쪽 인천광역시교육청 로고, 큰 글자는 영화 제목·그 아래는 장르. QR 위 두 줄과 «내 영화 받기»는
@@ -8,6 +9,8 @@ const UPLOAD_PATTERN = '**/voiceCinema/upload';
 for (const [width, height] of [[1440, 900], [390, 664]]) {
   test(`${width}×${height}: 완성 화면 그림·로고·제목·단추`, async ({ page }) => {
     await page.setViewportSize({ width, height });
+    // 저장할 수 있는 녹음 — 크롬 내장 가짜 마이크의 «삐»는 3초를 넘어 이어지는 말로 보여 다시 녹음이 된다(10/26)
+    await installSyntheticMic(page, [{ delay: 0.3, dur: 1.5 }]);
     let release;
     const gate = new Promise((resolve) => { release = resolve; });
     await page.route(UPLOAD_PATTERN, async (route) => {

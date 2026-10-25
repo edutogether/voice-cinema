@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { countdownLog, watchCountdown } from './countdown-watch.js';
+import { openScene } from './pause-scenes.js';
 
 test.use({ serviceWorkers: 'block' });
 
@@ -16,7 +17,7 @@ async function openSample(page) {
   });
   await page.goto('/?preview=home-design');
   await page.locator('#splash').waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
+  await openScene(page, '판타지');
 }
 
 test('마이크 없이 장면·5.0초 멈춤·321·3초·이어 재생·원본 다운로드를 체험한다', async ({ page }) => {
@@ -61,7 +62,7 @@ test('카운트다운 도중 뒤로가면 남은 체험이 취소된다', async 
   await expect(page.locator('#count')).toBeVisible({ timeout: 10000 });
   await page.goBack();
   await expect(page.locator('#home.active')).toBeVisible();
-  await page.getByRole('button', { name: '스릴러 더빙 시작', exact: true }).click();
+  await openScene(page, '스릴러');
   await page.waitForTimeout(4000);
   await expect(page.locator('#recBtn')).toBeEnabled();
   await expect(page.locator('#count')).toHaveCount(0);

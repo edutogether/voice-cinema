@@ -1,4 +1,4 @@
-// 새 8편 시간표(30fps 202번째 프레임 정지)는 영상이 들어오기 전까지 쓰지 않는다(src/genres.ts의 NEXT_SCENES).
+// 새 8편 시간표(30fps 210번째 프레임 7.000초 정지)는 영상이 들어오기 전까지 쓰지 않는다(src/genres.ts의 NEXT_SCENES).
 // `?scenes=next`로 열 때 그 시간표로 트는 주소는 둘뿐이다 — 이 기기 개발 주소(localhost 등, 시험 e2e/scene-next.spec.js)와
 // 이 앱의 Hosting 미리보기 채널(`voice-cinema--<채널>-<해시>.web.app`, 10/25 대표님 실기기 확인용).
 // 정식 주소 · 옛 주소 · Portal(edutogether.kr)에서는 무엇을 붙여도 지금 시간표다 — 허용 목록 밖은 전부 지금 시간표라서다.

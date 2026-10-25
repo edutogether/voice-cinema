@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { openScene } from './pause-scenes.js';
 
 // 녹음실 배치(10/25 대표님 녹음실 재구성 — «16:9 영상이 가장 크고 중요한 영역, PC는 극장처럼 넓고 몰입감 있게»):
 // 영상은 16:9 전체 구도를 자르지 않는다(contain). 가로 화면은 영상이 화면을 채우고(어두운 극장) 머리줄 · 조작부가 그 위에 얹히며,
@@ -9,7 +10,7 @@ for (const [width, height] of [[1440, 900], [1920, 1080], [1366, 768], [390, 844
     await page.setViewportSize({ width, height });
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
-    await page.getByRole('button', { name: '히어로 더빙 시작', exact: true }).click();
+    await openScene(page, '히어로');
     // 화면 진입 애니메이션의 소수점 이동이 끝난 최종 배치를 비교한다.
     await expect(page.locator('.studio-video-frame')).not.toHaveClass(/is-entering/);
     await expect(page.locator('.controls h2')).toHaveText('준비됐나요 ?');

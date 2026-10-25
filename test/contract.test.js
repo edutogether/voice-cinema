@@ -104,7 +104,7 @@ test('목소리 칸: 장면 도구의 기본값이 앱의 지금 장면 시간�
   expect(voice).toBe(`from: ${pause}, to: ${pause + window}`);
   expect(Number(extract(read('tools/build-scene.mjs'), /const LIVE_PAUSE = ([\d.]+);/, 'LIVE_PAUSE'))).toBe(pause);
   const genres = read('src/genres.ts');
-  // 새 장면은 30fps 프레임 경계에서 멈추고(10/25 대표님 «정확한 프레임 경계», 지금 202번째), 남은 영상 전체가 목소리 칸이다
+  // 새 장면은 30fps 프레임 경계에서 멈추고(10/26 대표님 FINAL 7.0S — 210번째, 7.000초), 남은 영상 전체가 목소리 칸이다
   const frame = Number(extract(genres, /const NEXT_PAUSE = (\d+) \/ 30;/, '새 장면 정지 프레임(NEXT_PAUSE)'));
   expect(frame).toBeGreaterThan(0);
   expect(frame).toBeLessThan(300);
@@ -125,7 +125,7 @@ test('합성: 리미터는 자동 레벨을 끄고 지연을 보정하며, 원�
   const limiters = source.match(/alimiter=[^'`,[]*/g) ?? [];
   expect(limiters).toHaveLength(2);
   for (const limiter of limiters) expect(limiter).toMatch(/level=false:latency=true$/);
-  const mix = extract(source, /export const mixFilter = \(pause: number\) =>([\s\S]*?);\r?\n/, 'mixFilter');
+  const mix = extract(source, /export const mixFilter = \(at: number\) =>([\s\S]*?);\r?\n/, 'mixFilter');
   expect(mix).not.toMatch(/volume|sidechaincompress|acompressor/);
   expect(source).toMatch(/'-c:v', 'copy'/);
 });

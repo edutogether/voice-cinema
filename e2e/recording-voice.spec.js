@@ -1,6 +1,6 @@
 // 녹음·합성 품질(10/24 대표님 지시, 10/25 말끝 감지) — 시험용 마이크로 아이가 말하는 때와 길이를 정해 놓고, 녹음 길이·판정·미리 듣기·완성본을 잰다.
-//   녹음: 말이 끝나고 0.6초(첫 말이 0.8초보다 짧으면 0.9초) 조용하면 바로 끝난다. 말 시작 뒤 3초(발화 상한)에도 이어지면 거기서 멈추고
-//         «말끝이 잘렸을 수 있어요». 신호 뒤 2.5초 안에 말이 시작되지 않으면 무음으로 멈춘다.
+//   녹음: 말이 끝나고 0.6초(첫 말이 0.8초보다 짧으면 0.9초) 조용하면 바로 끝난다. 말이 3초(발화 상한)를 넘어 이어지면 그 자리에서 멈추고
+//         저장하지 않고 다시 녹음한다(10/26 대표님 FINAL 7.0S). 신호 뒤 2.5초 안에 말이 시작되지 않으면 무음으로 멈춘다.
 //   무음·녹음기 오류·마이크 뽑힘은 저장으로 넘어가지 않고 준비 화면으로 돌아간다. 속삭임은 무음으로 버리지 않는다.
 //   합성: 영화에는 말 시작 0.12초 앞부터 끝 0.15초 뒤까지만 들어가 정지 시각(5.0초)에 놓인다 — 말하기 전 기다림은 버리고 첫소리는 지킨다.
 //         목소리는 8.5초를 넘지 않으며, 원판 소리는 목소리 칸 밖에서 그대로다.
@@ -49,14 +49,17 @@ function expectPreviewInSync(preview, raw, pause = LIVE_SCENE.pause) {
   expect(lead).toBeLessThanOrEqual(range.max + 0.01);
 }
 
-/** 앱이 녹음기를 멈추기로 한 때(녹음기 start()를 부른 때부터 초) — 말끝 + 0.6초, 발화 상한(말 시작 + 3초)을 넘지 않는다. 부하로 늦을 수는 있어도 이를 수는 없다 */
+/**
+ * 앱이 녹음기를 멈추기로 한 때(녹음기 start()를 부른 때부터 초) — 말끝 + 0.6초. 말이 3초를 넘어 이어지면 말 시작 + 3.08초(잘림으로 멈춤).
+ * 부하로 늦을 수는 있어도 이를 수는 없다
+ */
 function expectStop(take, { speechStart, speechEnd, hang = 0.6 }) {
-  const expected = Math.min(speechEnd + hang, speechStart + 3);
+  const expected = speechEnd - speechStart > 3 ? speechStart + 3.08 : speechEnd + hang;
   expect(take.stopAt, `멈춘 때 ${JSON.stringify(take)} — 기대 ${expected}`).toBeGreaterThanOrEqual(expected - 0.02);
   expect(take.stopAt).toBeLessThan(expected + 0.35);
 }
 
-test('발화 1·1.5·2·2.7초 — 말이 끝나고 0.6초 뒤 바로 멈추고(2.7초는 발화 상한에서), 다시 녹음을 거듭해도 매번 새 녹음', async ({ page }) => {
+test('발화 1·1.5·2·2.7초 — 말이 끝나고 0.6초 뒤 바로 멈추고(2.7초도 상한 3초 안이라 말끝에서), 다시 녹음을 거듭해도 매번 새 녹음', async ({ page }) => {
   const plans = [{ delay: 0.3, dur: 1 }, { delay: 0.3, dur: 1.5 }, { delay: 0.3, dur: 2 }, { delay: 0.3, dur: 2.7 }];
   await installSyntheticMic(page, plans);
   await openSf(page);
@@ -70,7 +73,7 @@ test('발화 1·1.5·2·2.7초 — 말이 끝나고 0.6초 뒤 바로 멈추고(
     results.push({ plan, ...r, raw, preview, stopAt: take.stopAt });
     expect(r.phase, `${i + 1}번째 녹음은 저장할 수 있어야 한다 — ${JSON.stringify({ ...r, take })}`).toBe('recorded');
     expect(r.check).toBe('ok');
-    // 말끝 0.6초 뒤에 멈춘다 — 발화 상한(말 시작 + 3초)을 넘지 않는다(2.7초 발화는 상한에서)
+    // 말끝 0.6초 뒤에 멈춘다 — 3초 안에 끝난 말은 상한에 걸리지 않는다
     expectStop(take, { speechStart: plan.delay, speechEnd: plan.delay + plan.dur });
     expectPreviewInSync(preview, raw);
     await page.locator('#resetBtn').click();
@@ -91,13 +94,16 @@ test('«셋 !» 뒤 0.7초 쉬고 이어 말해도 쉬는 동안 끝나지 않�
   expectStop((await takes(page))[0], { speechStart: 0.3, speechEnd: 1.35 + 1.4 });
 });
 
-test('말 시작 뒤 3초에도 말이 이어지면 거기서 멈추고 «말끝이 잘렸을 수 있어요» — 들어 보고 저장하거나 다시 녹음할 수 있다', async ({ page }) => {
-  await installSyntheticMic(page, [{ delay: 0.2, dur: 4 }]);
+test('말이 3초를 넘어 이어지면 그 자리에서 멈추고 저장으로 넘어가지 않는다 — «다시 외쳐 주세요», 다음 녹음은 그대로 저장할 수 있다', async ({ page }) => {
+  await installSyntheticMic(page, [{ delay: 0.2, dur: 4 }, { delay: 0.3, dur: 1.5 }]);
   await openSf(page);
   const r = await recordOnce(page);
-  expect(r).toMatchObject({ phase: 'recorded', check: 'cut' });
-  expect(r.hint).toContain('말끝이 잘렸을 수 있어요');
+  expect(r).toMatchObject({ phase: 'idle', check: 'cut' });
+  expect(r.hint).toContain('말이 3초를 넘어 끝이 잘렸어요');
   expectStop((await takes(page))[0], { speechStart: 0.2, speechEnd: 0.2 + 4 });
+  await expect(page.locator('#saveBtn')).toHaveCount(0);
+  await expect(page.locator('#recBtn')).toBeEnabled();
+  expect(await recordOnce(page)).toMatchObject({ phase: 'recorded', check: 'ok' });
   await expect(page.locator('#afterRow button')).toHaveText([/다시 녹음/, /저장하기/]);
 });
 
@@ -117,7 +123,7 @@ test('신호(«지금 외쳐요 !»)보다 먼저 말하면 «앞부분이 빠�
 
 // 안내 글 칸은 두 줄 몫이다 — 알림 문구가 넘치면 휴대폰에서 영상·단추가 움직인다(e2e/studio-phone-fill.spec.js의 규칙)
 // 알림마다 새 페이지에서 본다 — 한 페이지에서 시험용 마이크 계획을 잇달아 바꾸면 병렬 부하에서 다른 계획의 소리가 담긴 적이 있다(앱은 받은 소리대로 판정했다)
-for (const [expected, plan] of [['cut', { delay: 0.2, dur: 4 }], ['quiet', { delay: 0.3, dur: 1.5, amp: 0.006 }], ['early', { early: true, dur: 2 }]]) {
+for (const [expected, plan, phase] of [['cut', { delay: 0.2, dur: 4 }, 'idle'], ['quiet', { delay: 0.3, dur: 1.5, amp: 0.006 }, 'recorded'], ['early', { early: true, dur: 2 }, 'recorded']]) {
   test(`휴대폰 360×640: «${expected}» 알림도 안내 칸 두 줄 안이라 영상·단추가 움직이지 않는다`, async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 640 });
     await installSyntheticMic(page, [plan]);
@@ -129,7 +135,7 @@ for (const [expected, plan] of [['cut', { delay: 0.2, dur: 4 }], ['quiet', { del
     }));
     await expect(page.locator('.studio-video-frame')).not.toHaveClass(/is-entering/);
     const idle = await layout();
-    expect(await recordOnce(page)).toMatchObject({ phase: 'recorded', check: expected });
+    expect(await recordOnce(page)).toMatchObject({ phase, check: expected });
     const now = await layout();
     expect(now.hint).toBeLessThanOrEqual(Math.ceil(now.lineHeight * 2) + 1);
     expect(now.frame).toBe(idle.frame);
@@ -260,7 +266,7 @@ test('«장면 시작»을 연달아 눌러도 녹음은 하나다', async ({ pa
 /** 완성본 공통 검사: 10초 · 영상은 원판 그대로(표본 크기가 하나도 다르지 않다 — 화면의 막·글씨가 구워지지 않았다) · 소리 AAC 48kHz 2채널 */
 function expectMovieFile(movie, reference) {
   const bytes = Buffer.from(movie, 'base64');
-  expect(Math.abs(duration(bytes) - 10)).toBeLessThanOrEqual(0.01);
+  expect(Math.abs(duration(bytes) - 10)).toBeLessThanOrEqual(0.001); // 10.000초 — 10초를 넘지 않는다(10/26, 전에는 소리 트랙이 10.005초)
   const [out, ref] = [tracks(bytes), tracks(reference)];
   const video = out.find((t) => t.handler === 'vide');
   expect(video.codec).toBe('avc1');

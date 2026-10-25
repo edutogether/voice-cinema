@@ -1,12 +1,16 @@
 import { test, expect } from '@playwright/test';
+import { openScene } from './pause-scenes.js';
+import { installSyntheticMic } from './synthetic-mic.js';
 
 // 장면 더빙 2.0의 소리: 장면은 원판 소리(상대 대사·BGM·효과음)와 함께 재생되고, 녹음 중에는 영상이 5.0초에
 // 멈춰 스피커가 조용하다(스피커 소리가 마이크로 들어가 겹치지 않게). 이어 재생은 원판 소리가 다시 난다.
 // 녹음 전 «미리보기»도 원판 소리와 함께 재생한다(10/20 대표님).
 test('미리보기와 장면은 원판 소리를 내고, 녹음 중에는 조용하며, 이어 재생에서 원판 소리가 다시 난다', async ({ page }) => {
+  // 저장할 수 있는 녹음 — 크롬 내장 가짜 마이크의 «삐»는 3초를 넘어 이어지는 말로 보여 다시 녹음이 된다(10/26)
+  await installSyntheticMic(page, [{ delay: 0.3, dur: 1.5 }]);
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: '드라마 더빙 시작', exact: true }).click();
+  await openScene(page, '드라마');
   await page.locator('#clip').evaluate(video => {
     const context = new window.AudioContext();
     const analyser = context.createAnalyser();

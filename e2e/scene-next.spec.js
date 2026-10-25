@@ -1,8 +1,9 @@
-// 새 장면(30fps 202번째 프레임 6.7333…초 정지 · 목소리 칸 3.2667초 · 아이 대사) — 대표님이 만드실 새 영상이 오기 전에 시간표가 맞게 도는지 본다(10/25, 정지 프레임은 10/25 대표님 결정 1나).
+// 새 장면(30fps 210번째 프레임 7.000초 정지 · 목소리 칸 3.000초 · 아이 대사) — 대표님이 만드실 새 영상이 오기 전에 시간표가 맞게 도는지 본다(10/25, 정지는 10/26 대표님 FINAL 7.0S).
 // 원판 대신 시험용 합성 영상(tools/make-test-scene.mjs → e2e/fixtures/scene-next, 위 1/4에 프레임 번호를 2진수로 새김)을 넘기고,
 // 새 시간표는 개발 주소와 미리보기 채널의 ?scenes=next에서만 켜진다(src/lib/sceneMode.ts — 라이브 주소에서는 켜지지 않는다).
-//   정지: 정확히 프레임 202(6.7333초) 그림에 선다 · 막 22% · 멈춘 순간부터 대사 · 숫자에도 대사 · 녹음기가 켜진 뒤 «지금 외쳐요 !»
-//   완성본: 10초 · 영상은 합성용 원판 그대로(막·글씨가 구워지지 않는다) · 말소리는 정지 + 0.12초 안팎 · 10초 안에서 끝난다
+//   정지: 정확히 프레임 210(7.000초) 그림에 선다 · 막 22% · 멈춘 순간부터 대사 · 숫자에도 대사 · 녹음기가 켜진 뒤 «지금 외쳐요 !»
+//   완성본: 10초 · 영상은 합성용 원판 그대로(막·글씨가 구워지지 않는다) · 말소리는 정지 + 0.12초 안팎(말이 길면 정지 시각) · 10초 안에서 끝난다
+//   3초: 1.0 · 2.5 · 2.9초는 그대로, 정확히 3.0초는 말끝까지 10.0초 안(«들어 보고 정함»), 3초를 넘어 이어지면 저장하지 않고 다시 녹음
 import { Buffer } from 'node:buffer';
 import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
@@ -10,10 +11,10 @@ import { installSyntheticMic, previews, rawTake, recordOnce, takes } from './syn
 import { duration, leadRange, placement, tracks, voiceInMovie } from './movie-check.js';
 import { countdownLog, phaseLog, watchCountdown } from './countdown-watch.js';
 
-const PAUSE_FRAME = 202;
+const PAUSE_FRAME = 210;
 const SCENE = { pause: PAUSE_FRAME / 30, window: 10 - PAUSE_FRAME / 30 };
-// 발화 상한: 칸 − 앞뒤 여백 0.27초(ms 반올림) — src/lib/voiceCheck.ts의 maxSpeechFor
-const MAX_SPEECH = Math.round((SCENE.window - 0.27) * 1000) / 1000;
+// 발화 상한: 실제로 말할 수 있는 시간 3.000초(칸이 그보다 짧으면 칸) — src/lib/voiceCheck.ts의 maxSpeechFor
+const MAX_SPEECH = Math.min(3, SCENE.window);
 const LINE = '안녕 ! 우린 지구에서 왔어 !';
 const fixture = (name) => readFileSync(`e2e/fixtures/scene-next/${name}`);
 
@@ -67,7 +68,7 @@ const frameOf = (page, selector = '#clip') => page.evaluate((selector) => {
   return { n, gray: g.getImageData(120, 50, 1, 1).data[0], time: v.currentTime, paused: v.paused };
 }, selector);
 
-test('프레임 202(6.7333초) 그림에 정확히 서고, 막 22%·대사·«지금 외쳐요 !» 뒤 말을 마치면 그 자리부터 이어지며 완성본에는 막이 없다', async ({ page }) => {
+test('프레임 210(7.000초) 그림에 정확히 서고, 막 22%·대사·«지금 외쳐요 !» 뒤 말을 마치면 그 자리부터 이어지며 완성본에는 막이 없다', async ({ page }) => {
   const uploads = await openNextSf(page, [{ delay: 0.3, dur: 1.8, f0: 300 }]);
   // 정지 전: 새 장면에는 상대 대사 자막이 없다
   const reference = await frameOf(page);
@@ -75,7 +76,7 @@ test('프레임 202(6.7333초) 그림에 정확히 서고, 막 22%·대사·«�
   await expect.poll(() => page.locator('#clip').evaluate((v) => v.currentTime), { timeout: 10000 }).toBeGreaterThan(2);
   await expect(page.locator('[data-testid="scene-caption"]')).toHaveCount(0);
 
-  // 정지: 숫자가 도는 동안 영상은 정확히 프레임 202(6.7333초)에 서 있다
+  // 정지: 숫자가 도는 동안 영상은 정확히 프레임 210(7.000초)에 서 있다
   await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'countdown', { timeout: 15000 });
   const still = await frameOf(page);
   console.log(JSON.stringify({ reference, still }));
@@ -126,7 +127,7 @@ test('프레임 202(6.7333초) 그림에 정확히 서고, 막 22%·대사·«�
   expect(v.voiceEnd).toBeLessThanOrEqual(10);
   expect(v.outsideVoice).toBeLessThan(0.003);
   const bytes = Buffer.from(movie, 'base64');
-  expect(Math.abs(duration(bytes) - 10)).toBeLessThanOrEqual(0.01);
+  expect(Math.abs(duration(bytes) - 10)).toBeLessThanOrEqual(0.001); // 10.000초 — 10초를 넘지 않는다(10/26, 전에는 소리 트랙이 10.005초)
   const out = tracks(bytes);
   expect(out.find((t) => t.handler === 'vide').codec).toBe('avc1');
   expect(out.find((t) => t.handler === 'vide').sizes).toEqual(tracks(fixture('final.mp4')).find((t) => t.handler === 'vide').sizes);
@@ -148,22 +149,48 @@ test('프레임 202(6.7333초) 그림에 정확히 서고, 막 22%·대사·«�
   expect(Math.abs(baked.gray - reference.gray)).toBeLessThanOrEqual(3);
 });
 
-test('새 장면은 말 시작 뒤 2.997초에 멈추고(앞뒤 여백까지 목소리 칸 3.2667초 안), 영화는 10초에서 끝난다', async ({ page }) => {
-  const uploads = await openNextSf(page, [{ delay: 0.2, dur: 4 }]);
+test('새 장면: 말이 3초를 넘어 이어지면 말 시작 뒤 3.08초 남짓에 멈추고 저장하지 않는다 — 다시 녹음', async ({ page }) => {
+  await openNextSf(page, [{ delay: 0.2, dur: 4 }]);
   const r = await recordOnce(page);
-  expect(r).toMatchObject({ phase: 'recorded', check: 'cut' });
+  expect(r).toMatchObject({ phase: 'idle', check: 'cut' });
+  expect(r.hint).toContain('말이 3초를 넘어 끝이 잘렸어요');
   const raw = await rawTake(page, 0);
-  // 앱이 멈추기로 한 때: 말 시작(예약 0.2초) + 발화 상한 2.997초
+  // 앱이 멈추기로 한 때: 말 시작(예약 0.2초) + 발화 상한 3.000초 + 측정 여유 0.08초
   const { stopAt } = (await takes(page))[0];
-  expect(MAX_SPEECH).toBe(2.997);
-  expect(stopAt, JSON.stringify(raw)).toBeGreaterThanOrEqual(0.2 + MAX_SPEECH - 0.02);
-  expect(stopAt).toBeLessThan(0.2 + MAX_SPEECH + 0.35);
-  await page.locator('#saveBtn').click();
-  await expect(page.locator('#qrbox')).toBeVisible({ timeout: 90000 });
-  const movie = uploads.at(-1).dataBase64;
-  const v = await voiceInMovie(page, movie, 'sf', [], SCENE);
-  console.log(JSON.stringify({ raw, movie: v }));
-  expect(v.voiceStart - SCENE.pause).toBeGreaterThanOrEqual(leadRange(raw).min);
-  expect(v.voiceEnd).toBeLessThanOrEqual(10);
-  expect(Math.abs(duration(Buffer.from(movie, 'base64')) - 10)).toBeLessThanOrEqual(0.01);
+  expect(MAX_SPEECH).toBe(3);
+  expect(stopAt, JSON.stringify(raw)).toBeGreaterThanOrEqual(0.2 + MAX_SPEECH + 0.08 - 0.02);
+  expect(stopAt).toBeLessThan(0.2 + MAX_SPEECH + 0.08 + 0.35);
+  await expect(page.locator('#saveBtn')).toHaveCount(0);
+  await expect(page.locator('#clip')).toHaveJSProperty('paused', true);
 });
+
+// 3초 경계(10/26 대표님 «1.0 · 1.8 · 2.5 · 2.9초와 3초 경계를 시험») — 1.8초는 위 첫 시험이 본다. 잰 값은 로그(JSON)로 남긴다.
+for (const [dur, check] of [[1, 'ok'], [2.5, 'ok'], [2.9, 'ok'], [3, 'edge']]) {
+  test(`새 장면 ${dur}초 발화: 말끝 0.6초 뒤에 멈추고 «${check}», 완성본에 마지막 말소리까지 10.0초 안에 다 들어간다`, async ({ page }) => {
+    const uploads = await openNextSf(page, [{ delay: 0.3, dur }]);
+    const r = await recordOnce(page);
+    expect(r, JSON.stringify(r)).toMatchObject({ phase: 'recorded', check });
+    const { stopAt } = (await takes(page))[0];
+    expect(stopAt).toBeGreaterThanOrEqual(0.3 + dur + 0.6 - 0.02);
+    expect(stopAt).toBeLessThan(0.3 + dur + 0.6 + 0.35);
+    const raw = await rawTake(page, 0);
+    const preview = (await previews(page)).at(-1);
+    const heard = preview.videoTime + preview.onset - preview.offset - SCENE.pause;
+    await page.locator('#saveBtn').click();
+    await expect(page.locator('#qrbox')).toBeVisible({ timeout: 90000 });
+    const movie = uploads.at(-1).dataBase64;
+    const v = await voiceInMovie(page, movie, 'sf', [], SCENE);
+    const at = placement(v, raw, SCENE);
+    console.log(JSON.stringify({ dur, check: r.check, stopAt, speech: +(raw.end - raw.start).toFixed(3), previewLead: +heard.toFixed(3),
+      lead: at.lead, lost: at.lost, voiceEnd: v.voiceEnd, movieSeconds: duration(Buffer.from(movie, 'base64')) }));
+    // 말소리는 정지 시각 + 0.12초 안팎(말이 길면 정지 시각 — 정확히 3초면 칸 경계만큼 앞), 미리 듣기와 완성본이 같은 자리
+    expect(at.lead).toBeGreaterThanOrEqual(-0.045);
+    expect(at.lead).toBeLessThanOrEqual(leadRange(raw).max);
+    expect(Math.abs(heard - at.lead), JSON.stringify({ preview, raw, at })).toBeLessThan(0.02);
+    // 마지막 말소리를 잃지 않았고(앞·끝을 잃었으면 lost가 커진다) 10.0초 안에서 끝난다
+    expect(Math.abs(at.lost)).toBeLessThan(0.03);
+    expect(v.voiceEnd).toBeLessThanOrEqual(10);
+    expect(v.outsideVoice).toBeLessThan(0.003);
+    expect(Math.abs(duration(Buffer.from(movie, 'base64')) - 10)).toBeLessThanOrEqual(0.001);
+  });
+}

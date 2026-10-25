@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { installSyntheticMic } from './synthetic-mic.js';
 
 // 장면 더빙 2.0 상대 대사 자막(app-plan §2-3): 넷플릭스식 — 영상 안 아래 가운데, 영상 폭 80% 안, 두 줄 이내,
 // 영상 높이의 약 5%(최소 14px). 멈춤 뒤 문구·카운트다운·녹음 중에는 없고, 미리보기에서는 1.6~3.4초에 나온다(10/20 «다시 듣기» 없앰).
@@ -40,6 +41,8 @@ for (const [width, height] of [[1440, 900], [390, 844], [360, 640], [844, 390]])
 }
 
 test('자막은 멈춘 뒤 문구·카운트다운·녹음 중에는 없고, 미리보기의 1.6~3.4초에 나온다', async ({ page }) => {
+  // 저장할 수 있는 녹음 — 크롬 내장 가짜 마이크의 «삐»는 3초를 넘어 이어지는 말로 보여 다시 녹음이 된다(10/26)
+  await installSyntheticMic(page, [{ delay: 0.3, dur: 1.5 }]);
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();

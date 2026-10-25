@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { openScene } from './pause-scenes.js';
 
 test.use({ serviceWorkers: 'block' });
 
@@ -9,7 +10,7 @@ for (const width of [1440, 390]) {
       await page.goto('/?preview=home-design');
       await page.locator('#splash').waitFor({ state: 'detached' });
       const before = await page.evaluate(() => window.history.state.voiceCinema.pageId);
-      await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
+      await openScene(page, '판타지');
       await expect(page.locator('#studio.active')).toBeVisible();
       await page.goBack();
       await expect(page.locator('#home.active')).toBeVisible();

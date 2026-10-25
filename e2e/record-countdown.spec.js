@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { countdownLog, watchCountdown } from './countdown-watch.js';
 import { installSyntheticMic } from './synthetic-mic.js';
+import { openScene } from './pause-scenes.js';
 
 // 5.0초 멈춤 뒤 «이제 당신의 차례입니다 !» → 3·2·1(영상 가운데) · «지금 바로 당신의 목소리를 들려주세요 !»(아래 안내 자리)가 보이고
 // 숫자는 다른 요소에 가려지지 않는다. 그동안 영상은 5.0초 정지 화면 그대로다. 녹음기가 실제로 켜진 뒤에 «녹음 중»과 «지금 외쳐요 !»가 보인다.
@@ -16,7 +17,7 @@ for (const [label, viewport] of [
     await watchCountdown(page);
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
-    await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
+    await openScene(page, '판타지');
     await page.locator('#recBtn').click();
 
     await expect(page.locator('#recpill')).toBeVisible({ timeout: 12000 });

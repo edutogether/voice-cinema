@@ -8,7 +8,8 @@ import { checkTake, createVoiceTracker, maxSpeechFor, rms, type Verdict } from '
 // 장면 더빙 흐름(대표님 10/11 확정, app-plan §1 — 녹음·안내 박자는 10/24, 말끝 감지·정지 연출은 10/25 대표님 지시로 고침):
 //   장면 시작 → 0~정지 시각 재생(상대 대사 자막) → 장면의 정지 시각에 멈춤 + 화면이 살짝 어두워짐(대사가 있으면 바로 크게)
 //   → «이제 당신의 차례입니다 !» → 3·2·1 → 녹음기가 실제로 켜진 뒤 «지금 외쳐요 !» → 말이 시작되기를 기다림(최대 2.5초)
-//   → 말끝을 알아보면(마지막 말소리 뒤 0.6초 조용, 첫 말이 짧으면 0.9초) 바로 멈춤(발화 최대 3초) → 어두움을 걷고 녹음 검사
+//   → 말끝을 알아보면(마지막 말소리 뒤 0.6초 조용, 첫 말이 짧으면 0.9초) 바로 멈춤(실제 발화 최대 3.000초 — 넘어 이어지면 멈추고 다시 녹음,
+//     10/26 대표님 FINAL 7.0S) → 어두움을 걷고 녹음 검사
 //   → 같은 영상을 정지 시각부터 이어 재생하며 다듬은 목소리를 그 자리에 맞춰 들려줌 → 다시 녹음·저장.
 // 녹음 전에는 «미리보기»로 장면 전체를 소리와 함께 볼 수 있다(10/20 대표님 — 녹음·합성 없이 보기만, 끝나거나 멈추면 준비 상태로).
 // «다시 듣기»는 10/20 대표님 지시로 없앴다(이어 재생이 이미 내 목소리가 들어간 장면을 들려준다).
@@ -28,7 +29,7 @@ const PROCESS_WAIT_MS = 2500;
 /** 브라우저가 녹음을 풀지 못해 엔진으로 풀 때 엔진(31MB)을 기다리는 상한 */
 const ENGINE_DECODE_WAIT_MS = 20000;
 
-/** 준비 화면 안내 — 이 장면이 멈추는 시각을 그대로 알린다(지금 원판 5초, 새 장면 6.7초) */
+/** 준비 화면 안내 — 이 장면이 멈추는 시각을 그대로 알린다(지금 원판 5초, 새 장면 7초) */
 export const idleHint = (pause: number) => `'장면 시작'을 누르면 장면이 흐르다 ${Math.floor(pause * 10) / 10}초에 멈춰요. 3·2·1 뒤에 내 목소리로 외쳐 주세요 !`;
 
 // 권한 대기·실패 원인을 해당 전환 시점의 안내로 보여준다.
@@ -44,9 +45,11 @@ const HINT = {
   recorded: '잘했어요 ! 마음에 들면 저장하세요',
   // 아래 셋은 저장할 수 있는 녹음의 알림이다 — 휴대폰에서도 안내 칸 두 줄 안에 들게 짧게 둔다(넘치면 영상·단추가 움직인다)
   takeQuiet: '목소리가 아주 작게 담겼어요. 들어 보고 마음에 들면 저장하세요.',
-  takeCut: '말끝이 잘렸을 수 있어요. 들어 보고 마음에 들면 저장하세요.',
+  takeEdge: '말끝이 영화 끝에 붙었어요. 들어 보고 마음에 들면 저장하세요.',
   takeEarly: '앞부분이 빠졌을 수 있어요. 들어 보고 마음에 들면 저장하세요.',
   takeSilent: '목소리가 들리지 않았어요. 마이크 가까이에서 크게 외쳐 주세요.',
+  // 3초를 넘어 말이 이어진 녹음 — 끝이 영화 밖으로 잘리므로 저장하지 않고 다시 녹음한다(10/26 대표님 FINAL 7.0S)
+  takeCut: '말이 3초를 넘어 끝이 잘렸어요. 조금 짧게 다시 외쳐 주세요.',
   takeBroken: '녹음이 제대로 담기지 않았어요. 다시 눌러 주세요.',
   hidden: '화면을 벗어나서 녹음을 멈췄어요. 다시 눌러 주세요.',
   micDenied: '마이크 접근이 차단됐어요. 브라우저의 사이트 권한과 기기의 마이크 권한을 허용한 뒤 다시 눌러 주세요.',
@@ -61,9 +64,13 @@ const HINT = {
   previewFailed: '영상을 재생하지 못했어요. 미리보기를 다시 눌러 주세요.',
 } as const;
 
-/** 저장할 수 있는 녹음의 판정별 안내 — 작음·잘림·일찍 말함은 들어 보고 아이·선생님이 정한다 */
+/** 저장할 수 있는 녹음의 판정별 안내 — 작음·상한 경계·일찍 말함은 들어 보고 아이·선생님이 정한다 */
 const RECORDED_HINT: Partial<Record<Verdict, string>> = {
-  quiet: HINT.takeQuiet, cut: HINT.takeCut, early: HINT.takeEarly,
+  quiet: HINT.takeQuiet, edge: HINT.takeEdge, early: HINT.takeEarly,
+};
+/** 저장할 수 없는 녹음의 판정별 안내 — 준비 상태로 돌아가 다시 녹음한다 */
+const RETRY_HINT: Partial<Record<Verdict, string>> = {
+  silent: HINT.takeSilent, short: HINT.takeBroken, cut: HINT.takeCut,
 };
 
 const MIME_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
@@ -119,7 +126,7 @@ async function ensureMic(): Promise<MicResult> {
 interface TakeResult {
   blob: Blob;
   mime: string;
-  /** 발화 상한에 닿았는데 아직 말하고 있었는가(말끝이 잘렸을 수 있다) */
+  /** 말이 발화 상한을 넘어 이어져 녹음을 멈췄는가 — 그 녹음은 끝이 잘렸다(판정이 다시 녹음으로 돌린다) */
   liveCut: boolean;
   /** 녹음 도중 마이크가 끊기거나(micLost) 녹음기가 오류를 냈다(failed) — 그 녹음은 쓰지 않는다 */
   problem: 'micLost' | 'failed' | null;
@@ -138,7 +145,7 @@ interface Take {
 
 /**
  * 녹음기와 음량 측정을 미리 만든다(숫자가 끝나자마자 켜도록). 말소리 추적기(src/lib/voiceCheck.ts)가 말끝을 알아보면 바로 멈추고,
- * 말이 시작되지 않으면 기다림 상한(2.5초)에, 길면 발화 상한(maxSpeech)에 멈춘다.
+ * 말이 시작되지 않으면 기다림 상한(2.5초)에, 말이 발화 상한(maxSpeech)을 넘어 이어지면 그 자리에서 멈춘다(그 녹음은 판정이 다시 녹음으로 돌린다).
  * 음량 측정은 녹음 중에만 하고 아무것도 저장하지 않는다 — 녹음 파일은 MediaRecorder 하나뿐이다.
  */
 function prepareTake(stream: MediaStream, ctx: AudioContext, maxSpeech: number): Take {
@@ -267,7 +274,7 @@ export interface Dubbing {
   /** 녹음 중 마이크 음량(RMS) — 화면의 마이크 반응이 프레임마다 읽는다. 녹음 중이 아니면 0 */
   micLevel: () => number;
   recording: Recording | null;
-  /** 마지막 녹음의 판정 — 저장할 수 없는 것(silent·short)은 준비 상태로 돌아가며 남는다 */
+  /** 마지막 녹음의 판정 — 저장할 수 없는 것(silent·short·cut)은 준비 상태로 돌아가며 남는다 */
   takeCheck: Verdict | null;
   micError: MicFailure | null;
   startTake: () => void;
@@ -275,8 +282,12 @@ export interface Dubbing {
   reset: () => void;
 }
 
-/** 미리 듣기로 틀 목소리 — offset·duration은 처리 전 녹음을 대신 틀 때 그 안에서 영화에 넣을 구간이다 */
-type PreviewVoice = { buffer: AudioBuffer; gain: number; offset: number; duration: number };
+/**
+ * 미리 듣기로 틀 목소리 — offset·duration은 처리 전 녹음을 대신 틀 때 그 안에서 영화에 넣을 구간이다.
+ * at은 그 구간을 놓는 자리(정지 시각 기준, 0 이하 — 완성본과 같다), from은 이어 재생을 시작할 영상 시각이다 — 정지 시각,
+ * 말 시작이 정지 시각 앞에 놓인 녹음(상한 경계)만 그만큼 앞에서 시작한다(한 프레임 남짓).
+ */
+type PreviewVoice = { buffer: AudioBuffer; gain: number; offset: number; duration: number; at: number; from: number };
 
 export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObject<HTMLVideoElement | null>, sampleMode = false): Dubbing {
   const [phase, setPhase] = useState<Phase>('idle');
@@ -349,15 +360,16 @@ export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObj
 
   /**
    * 영상을 정지 시각부터 끝까지 재생하며, 다듬은 목소리를 영상의 첫 프레임이 나갈 때 원판 소리의 시계에 맞춰 함께 튼다(합성 전 미리 듣기).
-   * 목소리는 완성본과 같은 파일이고 같은 자리(정지 시각)에서 시작한다. 목소리는 목소리 칸 안에서 끝나고, 그 뒤는 원판의 해소 장면 소리만 남는다.
+   * 목소리는 완성본과 같은 파일이고 같은 자리(정지 시각 + at)에 놓인다. 목소리는 목소리 칸 안에서 끝나고, 그 뒤는 원판의 해소 장면 소리만 남는다.
    * 끝나거나 브라우저가 멈추면(백그라운드 등) 녹음 뒤 화면으로 넘어간다.
    */
   const playFromPause = useCallback((v: HTMLVideoElement, voice: PreviewVoice | null, myRun: number, onEnd: () => void) => {
     stopVoice();
     const ctx = audioRef.current;
     const pause = scene.pause;
+    const at = pause + (voice?.at ?? 0);
     v.muted = false;
-    v.currentTime = pause;
+    v.currentTime = voice?.from ?? pause;
     let finished = false;
     const end = () => {
       if (finished) return;
@@ -380,12 +392,12 @@ export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObj
       source.connect(level).connect(ctx.destination);
       let started = false;
       const stopWatch = watchVideoTime(v, (time) => {
-        if (started || v.paused || time < pause - 0.05) return;
+        if (started || v.paused || time < at - 0.05) return;
         started = true;
         stopWatch();
         // 얼마나 늦었는지는 원판 소리의 시계(currentTime)로 잰다 — 화면에 나간 그림의 시각(time)은 그 순간 소리보다 8~21ms 앞서거나
         // 뒤져, 그것으로 맞추면 미리 듣기가 완성본(원판 소리 위 정지 시각)과 그만큼 어긋났다(10/25)
-        const late = Math.max(0, v.currentTime - pause);
+        const late = Math.max(0, v.currentTime - at);
         if (late < voice.duration) source.start(0, voice.offset + late, voice.duration - late);
       });
       voiceRef.current = () => {
@@ -546,11 +558,16 @@ export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObj
         return;
       }
       const check = checkTake(mono(decoded), decoded.sampleRate, scene.voiceWindow, result.liveCut);
-      if (check.verdict === 'silent' || check.verdict === 'short') {
-        fail(check.verdict === 'silent' ? HINT.takeSilent : HINT.takeBroken, { verdict: check.verdict });
+      const retry = RETRY_HINT[check.verdict];
+      if (retry) {
+        fail(retry, { verdict: check.verdict });
         return;
       }
-      const plan: VoicePlan = { gainDb: check.gainDb, start: check.start, end: check.end, channels: decoded.numberOfChannels };
+      const plan: VoicePlan = {
+        gainDb: check.gainDb, start: check.start, end: check.end, at: check.at, fadeOut: check.fadeOut, channels: decoded.numberOfChannels,
+      };
+      // 이어 재생은 정지 시각부터 — 말 시작이 정지 시각 앞에 놓인 녹음(상한 경계)만 그만큼 앞에서 시작해 미리 듣기와 완성본이 같게 한다
+      const from = scene.pause + Math.min(0, check.at + (check.firstSpeech - check.start));
       // 다듬은 목소리를 미리 듣기와 완성본이 같이 쓴다. 엔진을 아직 받는 중이면 기다리지 않고 저장할 때 다듬는다.
       const voice = engineReady() ? processVoice(result.blob, result.mime, plan) : null;
       voice?.catch(() => {});
@@ -563,8 +580,8 @@ export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObj
       setTakeCheck(check.verdict);
       // 다듬은 목소리가 아직 없으면 처리 전 녹음의 같은 구간에 같은 보정 음량만 걸어 들려준다(완성본은 저장할 때 다듬은 소리다).
       finishTake(preview
-        ? { buffer: preview, gain: 1, offset: 0, duration: preview.duration }
-        : { buffer: decoded, gain: 10 ** (plan.gainDb / 20), offset: plan.start, duration: plan.end - plan.start }, check.verdict, myRun);
+        ? { buffer: preview, gain: 1, offset: 0, duration: preview.duration, at: plan.at, from }
+        : { buffer: decoded, gain: 10 ** (plan.gainDb / 20), offset: plan.start, duration: plan.end - plan.start, at: plan.at, from }, check.verdict, myRun);
     })();
   }, [phase, videoRef, sampleMode, scene, audioContext, stopClock, finishTake]);
 

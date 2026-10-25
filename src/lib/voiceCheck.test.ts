@@ -1,10 +1,10 @@
-// 녹음 판단 유닛테스트 — 아이 목소리를 흉내 낸 소리(280Hz 배음 + 음절 떨림)로 말끝 감지·발화 상한·무음·잘림·넣을 구간·보정 음량을 본다.
+// 녹음 판단 유닛테스트 — 아이 목소리를 흉내 낸 소리(280Hz 배음 + 음절 떨림)로 말끝 감지·발화 상한·무음·잘림·넣을 구간·배치·보정 음량을 본다.
 import { describe, expect, test } from 'vitest';
 import { checkTake, createVoiceTracker, frameLevels, maxSpeechFor } from './voiceCheck';
 
 const RATE = 48000;
 const LIVE = 3.5; // 지금 장면(5.0초 정지)의 목소리 칸
-const NEXT = 10 - 202 / 30; // 새 장면(30fps 202번째 프레임 6.7333초 정지)의 목소리 칸 3.2667초
+const NEXT = 10 - 210 / 30; // 새 장면(30fps 210번째 프레임 7.000초 정지)의 목소리 칸 3.000초 — 10/26 대표님 FINAL 7.0S
 
 type Part = { at: number; dur: number; amp?: number; fadeIn?: number };
 
@@ -66,11 +66,12 @@ function liveStopEvery(samples: Float32Array, tick: number, window = LIVE) {
   return { at: levels.length * 0.02, step: 'continue' as const };
 }
 
-describe('발화 상한 — 3초, 목소리 칸이 짧으면 앞뒤 여백(0.12 + 0.15초)을 뺀 만큼', () => {
-  test('지금 장면(칸 3.5초)은 3초, 새 장면(칸 3.2667초)은 2.997초 — 칸 3.0초(7.0초 정지)였다면 2.73초', () => {
+describe('발화 상한 — 실제로 말할 수 있는 시간 3.000초(앞뒤 여백을 빼지 않는다), 칸이 그보다 짧으면 칸 길이', () => {
+  test('지금 장면(칸 3.5초)도 새 장면(칸 3.000초)도 3.000초 — 전에는 칸 3.0초에서 2.73초였다', () => {
+    expect(NEXT).toBe(3);
     expect(maxSpeechFor(LIVE)).toBe(3);
-    expect(maxSpeechFor(NEXT)).toBe(2.997);
-    expect(maxSpeechFor(3)).toBe(2.73);
+    expect(maxSpeechFor(NEXT)).toBe(3);
+    expect(maxSpeechFor(2.5)).toBe(2.5);
   });
 });
 
@@ -152,46 +153,116 @@ describe('측정이 늦게 돌아도 말끝 · 첫 말 길이 · 상한은 실�
       const r = liveStopEvery(voice(6, { parts: [{ at: 0.3, dur: 0.35 }, { at: 1.35, dur: 1.4 }] }), tick);
       expect(r.at).toBeGreaterThan(2.75);
     });
-    test(`${ms}ms마다 재도 상한은 말 시작 뒤 3초`, () => {
-      expect(liveStopEvery(voice(6, { delay: 0.2, dur: 4 }), tick)).toEqual({ at: expect.closeTo(0.2 + 3, 1), step: 'stop-cut' });
+    test(`${ms}ms마다 재도 3초를 넘어 말이 이어지면 말 시작 뒤 3.08초 남짓에 잘림으로 멈춘다`, () => {
+      const r = liveStopEvery(voice(6, { delay: 0.2, dur: 4 }), tick);
+      expect(r.step).toBe('stop-cut');
+      expect(r.at).toBeGreaterThan(0.2 + 3.08);
+      expect(r.at).toBeLessThanOrEqual(0.2 + 3.08 + tick + 0.02 + 1e-9);
     });
   }
 });
 
-describe('발화 상한과 잘림', () => {
-  test('2.7초 발화는 상한(3초) 전에 끝나 잘림이 아니다', () => {
+/**
+ * 완성본에서 목소리 구간이 놓이는 자리(정지 시각 기준, 초) — 구간은 정지 + at에서 시작하고, 말소리는 그 안 (firstSpeech − start)에서 시작한다.
+ * 앱의 합성(src/lib/ffmpeg.ts의 mixFilter(정지 + at))과 미리 듣기(useDubbing의 이어 재생)가 같은 값을 쓴다.
+ */
+function placed(c: ReturnType<typeof checkTake>) {
+  return { speechAt: c.at + (c.firstSpeech - c.start), speechEnd: c.at + (c.lastSpeech - c.start), clipEnd: c.at + (c.end - c.start) };
+}
+
+describe('3초 발화 — 상한 안에서 끝난 말은 다 담고, 넘어 이어진 말은 다시 녹음(새 장면 칸 3.000초)', () => {
+  for (const dur of [1, 1.8, 2.5, 2.9]) {
+    test(`${dur}초 발화는 말끝 0.6초 뒤에 멈추고, 마지막 말소리까지 칸 안(정지 + 3.000초)에 든다`, () => {
+      const samples = voice(6, { dur });
+      const r = liveStop(samples, NEXT);
+      expect(r.step).toBe('stop');
+      expect(r.at).toBeGreaterThanOrEqual(0.3 + dur + 0.6 - 1e-9);
+      expect(r.at).toBeLessThan(0.3 + dur + 0.66);
+      const c = checkTake(samples.subarray(0, Math.round(r.at * RATE)), RATE, NEXT);
+      expect(c.verdict).toBe('ok');
+      expect(c.lastSpeech).toBeCloseTo(0.3 + dur, 1);
+      expect(c.end).toBeGreaterThanOrEqual(c.lastSpeech); // 마지막 말소리를 자르지 않는다
+      const p = placed(c);
+      expect(p.speechAt).toBeGreaterThanOrEqual(-1e-9); // 말소리는 정지 시각 뒤에 들린다
+      expect(p.clipEnd).toBeLessThanOrEqual(NEXT + 1e-9); // 10.0초 안에서 끝난다
+      expect(c.fadeOut).toBeLessThanOrEqual(c.end - c.lastSpeech + 1e-9); // 끝 페이드는 말소리 뒤 여백 안
+    });
+  }
+  test('정확히 3.000초 말하면 잘림이 아니다 — 말소리가 정지 시각부터 10.0초까지 다 들어가고, 말끝이 영화 끝에 붙어 «들어 보고 정함»', () => {
+    const samples = voice(6, { dur: 3 });
+    const r = liveStop(samples, NEXT);
+    expect(r.step).toBe('stop');
+    const c = checkTake(samples.subarray(0, Math.round(r.at * RATE)), RATE, NEXT);
+    expect(c.verdict).toBe('edge');
+    expect(c.lastSpeech - c.firstSpeech).toBeCloseTo(3, 6);
+    expect(c.end).toBeCloseTo(c.lastSpeech, 6);
+    const p = placed(c);
+    expect(p.speechAt).toBeCloseTo(0, 6);
+    expect(p.speechEnd).toBeCloseTo(NEXT, 6);
+    expect(c.fadeOut).toBe(0.005);
+  });
+  test('3.02초(잰 길이가 칸 경계 때문에 조금 넘친 것)도 저장할 수 있고, 마지막 말소리를 지키려 말 시작을 정지 시각 앞으로 0.02초 당긴다', () => {
+    const c = checkTake(voice(6, { dur: 3.02 }), RATE, NEXT);
+    expect(c.verdict).toBe('edge');
+    const p = placed(c);
+    expect(p.speechAt).toBeCloseTo(-0.02, 6);
+    expect(p.speechEnd).toBeCloseTo(NEXT, 6);
+    expect(c.end).toBeCloseTo(c.lastSpeech, 6);
+  });
+  test('3.2초 말하면 녹음 중 3.08초 남짓에 멈추고 잘림 — 저장하지 않고 다시 녹음', () => {
+    const samples = voice(6, { dur: 3.2 });
+    const r = liveStop(samples, NEXT);
+    expect(r.step).toBe('stop-cut');
+    expect(r.at).toBeGreaterThan(0.3 + 3.08);
+    expect(r.at).toBeLessThanOrEqual(0.3 + 3.1 + 1e-9);
+    expect(checkTake(samples.subarray(0, Math.round(r.at * RATE)), RATE, NEXT, true).verdict).toBe('cut');
+  });
+  test('녹음 뒤 판정만으로도(녹음 중 표시가 없어도) 3초를 넘어 이어진 말은 잘림이다', () => {
+    expect(checkTake(voice(6, { dur: 3.2 }), RATE, NEXT).verdict).toBe('cut');
+    expect(checkTake(voice(4, { delay: 0.2, dur: 4 }), RATE, LIVE).verdict).toBe('cut');
+  });
+  test('말 시작 뒤 3초를 넘어도 말하고 있으면 그때 멈추고 잘림 — 넣을 구간은 그래도 칸을 넘지 않는다', () => {
+    const samples = voice(6, { delay: 0.2, dur: 4 });
+    const r = liveStop(samples, NEXT);
+    expect(r.step).toBe('stop-cut');
+    const c = checkTake(samples.subarray(0, Math.round(r.at * RATE)), RATE, NEXT, true);
+    expect(c.verdict).toBe('cut');
+    expect(placed(c).clipEnd).toBeLessThanOrEqual(NEXT + 1e-9);
+  });
+  test('짧은 외침(0.5초)은 0.9초 뒤에 끝난다 — 3초를 채우지 않는다', () => {
+    const r = liveStop(voice(6, { dur: 0.5 }), NEXT);
+    expect(r.step).toBe('stop');
+    expect(r.at).toBeLessThan(0.3 + 0.5 + 0.96);
+  });
+  for (const dur of [2.85, 2.9, 2.95, 2.99]) {
+    test(`${dur}초 발화: 앞 여백은 정지 시각 앞, 끝 여백은 칸에 맞춰 줄이고 말소리는 정지 시각부터 들린다`, () => {
+      const c = checkTake(voice(6, { dur }), RATE, NEXT);
+      const p = placed(c);
+      expect(c.end - c.lastSpeech).toBeCloseTo(Math.min(0.15, NEXT - (c.lastSpeech - c.firstSpeech)), 6);
+      expect(p.speechAt).toBeCloseTo(0, 6);
+      expect(p.clipEnd).toBeCloseTo(NEXT, 6);
+    });
+  }
+});
+
+describe('지금 장면(칸 3.5초)은 배치가 그대로다 — 말소리가 정지 + 0.12초에 들린다', () => {
+  test('2.7초 발화는 상한 전에 끝나 정상', () => {
     const samples = voice(6, { dur: 2.7 });
     const r = liveStop(samples);
     expect(r.step).toBe('stop');
-    expect(r.at).toBeLessThanOrEqual(0.3 + 3 + 0.02);
-    expect(checkTake(samples.subarray(0, Math.round(r.at * RATE)), RATE, LIVE).verdict).toBe('ok');
+    const c = checkTake(samples.subarray(0, Math.round(r.at * RATE)), RATE, LIVE);
+    expect(c.verdict).toBe('ok');
+    expect(c.at).toBe(0);
   });
-  test('상한 0.2초 전(2.8초 발화)에 끝나도 잘림이 아니다', () => {
-    const samples = voice(6, { dur: 2.8 });
+  test('3.0초 발화도 칸(3.5초)에 여유가 있어 정상이고 앞 여백·끝 여백이 다 들어간다', () => {
+    const samples = voice(6, { dur: 3 });
     const r = liveStop(samples);
     expect(r.step).toBe('stop');
-    expect(checkTake(samples.subarray(0, Math.round(r.at * RATE)), RATE, LIVE).verdict).toBe('ok');
-  });
-  test('3.0초 발화(상한을 꽉 채움)는 끝이 이어졌는지 알 수 없어 잘림으로 알린다', () => {
-    expect(liveStop(voice(6, { dur: 3 })).step).toBe('stop-cut');
-  });
-  test('말 시작 뒤 3초에도 말하고 있으면 그때 멈추고 잘림으로 알린다', () => {
-    const samples = voice(6, { delay: 0.2, dur: 4 });
-    const r = liveStop(samples);
-    expect(r).toEqual({ at: expect.closeTo(0.2 + 3, 1), step: 'stop-cut' });
-    const c = checkTake(samples.subarray(0, Math.round(r.at * RATE)), RATE, LIVE, true);
-    expect(c.verdict).toBe('cut');
-  });
-  test('새 장면(칸 3.2667초)은 2.997초에 멈추고, 넣을 구간은 칸을 넘지 않는다', () => {
-    const samples = voice(6, { delay: 0.2, dur: 4 });
-    const r = liveStop(samples, NEXT);
-    expect(r).toEqual({ at: expect.closeTo(0.2 + 2.997, 1), step: 'stop-cut' });
-    const c = checkTake(samples.subarray(0, Math.round(r.at * RATE)), RATE, NEXT, true);
-    expect(c.verdict).toBe('cut');
-    expect(c.end - c.start).toBeLessThanOrEqual(NEXT);
-  });
-  test('녹음 뒤 판정만으로도(녹음 중 표시가 없어도) 상한까지 이어진 말은 잘림이다', () => {
-    expect(checkTake(voice(4, { delay: 0.2, dur: 4 }), RATE, LIVE).verdict).toBe('cut');
+    const c = checkTake(samples.subarray(0, Math.round(r.at * RATE)), RATE, LIVE);
+    expect(c.verdict).toBe('ok');
+    expect(c.at).toBe(0);
+    expect(c.end - c.lastSpeech).toBeCloseTo(0.15, 6);
+    expect(c.fadeOut).toBe(0.03);
   });
 });
 
@@ -227,6 +298,8 @@ describe('넣을 구간 — 첫소리를 지키고 앞의 기다림은 버린다
       expect(c.start).toBeGreaterThanOrEqual(0.6 - 0.12 - 0.001);
       expect(c.start).toBeLessThanOrEqual(0.6 - 0.1);
       expect(Math.abs(c.end - c.start - (dur + 0.27))).toBeLessThan(0.05);
+      expect(c.at).toBe(0);
+      expect(c.fadeOut).toBe(0.03);
     });
   }
   test('서서히 커지는 첫소리(80ms)도 넣을 구간 안에서 시작한다', () => {

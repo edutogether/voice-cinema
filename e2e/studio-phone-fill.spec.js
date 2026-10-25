@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { pauseScenes } from './pause-scenes.js';
+import { installSyntheticMic } from './synthetic-mic.js';
 
 // 세로 휴대폰 녹음실(10/25 대표님 녹음실 재구성 — «영화가 화면의 주인공 · 텅 빈 느낌 없이 · 영상 · 안내 · 단추가 떠 있지 않게»):
 // 머리줄 바로 아래 영상(화면 폭 16:9, 자르지도 위아래 띠도 없이) → 진행 막대 → 안내 칸(대본 화면) → 단추가 위에서부터 붙고, 안내 칸이 남는 높이를 채운다.
@@ -30,6 +31,8 @@ for (const [width, height] of [[360, 640], [390, 844], [430, 932]]) {
   test(`휴대폰 ${width}×${height}: 녹음실은 머리줄 아래 16:9 영상 → 안내 칸 → 단추가 붙어 화면을 채우고, 단계가 바뀌어도 영상이 움직이지 않는다`, async ({ page }) => {
     test.setTimeout(60000);
     await page.setViewportSize({ width, height });
+    // 저장할 수 있는 녹음 — 크롬 내장 가짜 마이크의 «삐»는 3초를 넘어 이어지는 말로 보여 다시 녹음이 된다(10/26)
+    await installSyntheticMic(page, [{ delay: 0.3, dur: 1.5 }]);
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
     // 아래 그림 띠에서 바로 고른다 — 가운데 장면은 계속 넘어가 뮤지컬이 가운데 올 때까지 기다리게 된다

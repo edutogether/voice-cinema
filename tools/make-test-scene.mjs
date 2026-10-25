@@ -1,4 +1,4 @@
-// 새 장면(30fps 202번째 프레임 6.7333…초 정지 · 목소리 칸 3.2667초 — src/genres.ts의 NEXT_PAUSE) 시험용 원판을 만든다(ffmpeg 필요) — 원본 영상을 복사하지 않은 합성 영상이다(10/25 팀장 조건 4).
+// 새 장면(30fps 210번째 프레임 7.000초 정지 · 목소리 칸 3.000초 — src/genres.ts의 NEXT_PAUSE) 시험용 원판을 만든다(ffmpeg 필요) — 원본 영상을 복사하지 않은 합성 영상이다(10/25 팀장 조건 4).
 //
 //   node tools/make-test-scene.mjs [내보낼 폴더 — 기본 e2e/fixtures/scene-next]
 //
@@ -15,7 +15,7 @@ import console from 'node:console';
 import process from 'node:process';
 
 const SECONDS = 10;
-const PAUSE_FRAME = 202;
+const PAUSE_FRAME = 210;
 const PAUSE = PAUSE_FRAME / 30;
 const root = fileURLToPath(new URL('../', import.meta.url));
 const out = process.argv[2] ?? join(root, 'e2e', 'fixtures', 'scene-next');

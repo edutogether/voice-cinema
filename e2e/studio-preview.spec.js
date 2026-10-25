@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { installSyntheticMic } from './synthetic-mic.js';
 
 // 녹음실 미리보기(10/20 대표님): «장면 시작» 옆 «녹음 없이 미리보기»를 누르면 녹음·합성 없이 장면 영상을
 // 소리와 함께 처음부터 보여 주고, 끝나거나 멈추면 «준비됐나요 ?»로 돌아간다. 위 가운데는 장르 이름만(«목소리 녹음» 뺌).
@@ -9,7 +10,9 @@ const clip = (page) => page.locator('#clip');
 const state = (page) => clip(page).evaluate((v) => ({ paused: v.paused, muted: v.muted, time: v.currentTime }));
 
 test.beforeEach(async ({ page }) => {
-  // 미리보기는 마이크를 열지 않는다 — 마이크 요청을 센다
+  // 저장할 수 있는 녹음(아래 키보드 녹음 검사) — 크롬 내장 가짜 마이크의 «삐»는 3초를 넘어 이어지는 말로 보여 다시 녹음이 된다(10/26)
+  await installSyntheticMic(page, [{ delay: 0.3, dur: 1.5 }]);
+  // 미리보기는 마이크를 열지 않는다 — 마이크 요청을 센다(시험용 마이크를 감싸 센다)
   await page.addInitScript(() => {
     window.micRequests = 0;
     const original = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);

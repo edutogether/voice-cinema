@@ -136,6 +136,11 @@ test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
 });
 
 test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
+  test.beforeEach(async ({ page }) => {
+    // 저장할 수 있는 녹음 — 크롬 내장 가짜 마이크의 «삐»는 3초를 넘어 이어지는 말로 보여 다시 녹음이 된다(10/26)
+    await installSyntheticMic(page, [{ delay: 0.3, dur: 1.5 }]);
+  });
+
   test('정상 흐름: 섞기 합성 결과는 정확히 10.0초이고, 업로드 성공 시 QR이 표시된다', async ({ page }) => {
     let uploaded = null;
     await page.route(UPLOAD_PATTERN, (route) => {
@@ -167,7 +172,7 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     expect(uploaded.filename).toMatch(/^dub_sf_\d+_[0-9a-f]+\.mp4$/);
     const mp4 = Buffer.from(uploaded.dataBase64, 'base64');
     expect(mp4.length).toBeLessThan(20 * 1024 * 1024);
-    expect(Math.abs(mp4Duration(mp4) - 10)).toBeLessThanOrEqual(.05);
+    expect(Math.abs(mp4Duration(mp4) - 10)).toBeLessThanOrEqual(.001); // 10.000초 — 10초를 넘지 않는다(10/26)
   });
 
   test('실패 경로: 클라우드 업로드가 실패하면 기기 저장 버튼으로 폴백한다', async ({ page }) => {
@@ -247,6 +252,10 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
 // 10/17: 휴대폰에서 직접 체험하면 자기 화면의 QR을 찍을 수 없다 — QR 아래 «내 영화 열기»가 같은 공개 주소를 연다.
 test.describe('휴대폰에서 직접 체험', () => {
   test.use({ viewport: { width: 390, height: 664 }, hasTouch: true, isMobile: true });
+  test.beforeEach(async ({ page }) => {
+    // 저장할 수 있는 녹음 — 크롬 내장 가짜 마이크의 «삐»는 3초를 넘어 이어지는 말로 보여 다시 녹음이 된다(10/26)
+    await installSyntheticMic(page, [{ delay: 0.3, dur: 1.5 }]);
+  });
 
   test('저장되면 QR 아래 «내 영화 열기» 단추가 보이고 같은 공개 주소를 가리킨다', async ({ page }) => {
     const url = 'https://storage.googleapis.com/fake/dub_phone.mp4';

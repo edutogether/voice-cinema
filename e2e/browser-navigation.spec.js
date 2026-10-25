@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { openScene } from './pause-scenes.js';
+import { installSyntheticMic } from './synthetic-mic.js';
 
 async function openHome(page) {
   await page.route('**/sw.js', route => route.abort());
@@ -8,7 +10,7 @@ async function openHome(page) {
 }
 
 async function openStudio(page) {
-  await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
+  await openScene(page, '판타지');
   await expect(page.locator('#studio')).toHaveClass(/active/);
 }
 
@@ -66,6 +68,8 @@ test('녹음 중 뒤로가면 녹음을 중단하고 이전 목소리를 앞으�
 });
 
 test('결과에서 뒤로가면 녹음이 남고 앞으로가기로 중복 저장하지 않는다', async ({ page }) => {
+  // 저장할 수 있는 녹음 — 크롬 내장 가짜 마이크의 «삐»는 3초를 넘어 이어지는 말로 보여 다시 녹음이 된다(10/26)
+  await installSyntheticMic(page, [{ delay: 0.3, dur: 1.5 }]);
   let uploads = 0;
   await page.route('**/voiceCinema/upload', route => {
     uploads++;

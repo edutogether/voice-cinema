@@ -1,9 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { openScene } from './pause-scenes.js';
+import { installSyntheticMic } from './synthetic-mic.js';
 
 test('대기는 전체 길이, 장면·이어 재생·미리보기는 영상 시계를 표시하고 5.0초 멈춤에서는 05:00에 선다', async ({ page }) => {
+  // 저장할 수 있는 녹음 — 크롬 내장 가짜 마이크의 «삐»는 3초를 넘어 이어지는 말로 보여 다시 녹음이 된다(10/26)
+  await installSyntheticMic(page, [{ delay: 0.3, dur: 1.5 }]);
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
+  await openScene(page, '판타지');
   const clock = page.locator('.clip-time');
   await expect(clock).toHaveText('10:00');
   await page.locator('#recBtn').click();
@@ -34,7 +38,7 @@ for (const [width, height] of [[1440, 900], [390, 844]]) {
     await page.setViewportSize({ width, height });
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
-    await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
+    await openScene(page, '판타지');
     await page.locator('#recBtn').click();
     await expect.poll(() => page.locator('#clip').evaluate(video => video.currentTime)).toBeGreaterThan(.5);
     // 막대는 앱이 프레임마다 읽은 영상 시계(currentTime)다. 그 값은 «이 검사가 앞 프레임에 읽은 시계»와 «지금 읽은 시계» 사이에 있어야 한다 —

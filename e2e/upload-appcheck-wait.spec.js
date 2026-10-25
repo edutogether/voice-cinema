@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { installSyntheticMic } from './synthetic-mic.js';
 
 // App Check 토큰이 끝내 오지 않아도 업로드는 시작한다(10/24 느린 회선 측정에서 발견).
 // reCAPTCHA가 준비되지 않으면(학교 망이 구글을 막거나 느린 와이파이에서 스크립트가 안 오면) 토큰 약속이 끝나지 않아, 요청 하나 없이
@@ -9,6 +10,8 @@ test('App Check 토큰이 끝내 안 와도 20초 뒤에는 토큰 없이 업로
   // 서비스워커를 막아야 가짜 App Check 모듈이 서비스워커 캐시를 거치지 않고 그대로 들어간다
   const context = await browser.newContext({ serviceWorkers: 'block', permissions: ['microphone'] });
   const page = await context.newPage();
+  // 저장할 수 있는 녹음 — 크롬 내장 가짜 마이크의 «삐»는 3초를 넘어 이어지는 말로 보여 다시 녹음이 된다(10/26)
+  await installSyntheticMic(page, [{ delay: 0.3, dur: 1.5 }]);
   await page.route('**/vendor/firebase/firebase-app-check.js', (route) => route.fulfill({
     status: 200,
     contentType: 'text/javascript',

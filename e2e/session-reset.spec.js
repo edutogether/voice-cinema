@@ -8,6 +8,7 @@
 // 그게 실제로 지켜지는지 여기서 확인한다.
 import { test, expect } from '@playwright/test';
 import { pauseScenes } from './pause-scenes.js';
+import { installSyntheticMic } from './synthetic-mic.js';
 
 // 이 두 테스트는 장면·녹음·이어 재생을 포함해 상호작용이 길다. 그 사이 서비스워커가 설치를
 // 마치며 캐시·제어권을 가져가면 조작 중이던 화면이 흔들릴 수 있다. 여기서 볼 것은
@@ -15,6 +16,8 @@ import { pauseScenes } from './pause-scenes.js';
 // (서비스워커는 offline-boot.spec.js가 따로 검증한다).
 test.beforeEach(async ({ page }) => {
   await page.route('**/sw.js', (route) => route.abort());
+  // 저장할 수 있는 녹음 — 크롬 내장 가짜 마이크의 «삐»는 3초를 넘어 이어지는 말로 보여 다시 녹음이 된다(10/26)
+  await installSyntheticMic(page, [{ delay: 0.3, dur: 1.5 }]);
 });
 
 test('홈에 나갔다 같은 장르로 다시 들어오면 이전 녹음이 남아있지 않다', async ({ page }) => {

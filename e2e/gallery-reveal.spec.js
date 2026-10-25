@@ -1,4 +1,8 @@
 import { test, expect } from '@playwright/test';
+import { pauseScenes } from './pause-scenes.js';
+
+// 장면을 고른 뒤 확인하고 누르는 검사는 고르기 전에 자동 넘김을 멈춘다(pauseScenes — 손가락 누르기, 10/26) — 그 사이에 가운데 미리보기 재생 6초가
+// 지나면 가운데 장면이 바뀌어 다른 녹음실이 열리거나 고른 장면을 찾지 못했다(기계가 바쁠 때만 흔들림). 자동 넘김 자체는 e2e/scene-autoplay.spec.js가 본다.
 
 // 흐르는 카드의 정지를 기다리는 locator.hover/click 대신 사용자가 보는 현재 위치를 가리킨다.
 async function pointChoice(page, name, area = '사진', click = false) {
@@ -24,6 +28,7 @@ test('PC: 여덟 바로가기로 고른 중앙 장면에서 각각 더빙을 시
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
+  await pauseScenes(page);
   for (const name of ['SF', '판타지', '애니메이션', '히어로', '스릴러', '드라마', '스포츠', '뮤지컬']) {
     await pointChoice(page, name);
     const tile = page.getByRole('button', { name: `${name} 더빙 시작`, exact: true });
@@ -96,6 +101,7 @@ test('PC: 화살표 키로 마지막 장면을 고른 뒤 녹음실에서 돌아
 test('PC: 다음·이전·드래그로 넘기며 이전 장면의 재생 자원을 놓는다', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
+  await pauseScenes(page);
   const first = page.getByRole('button', { name: 'SF 더빙 시작', exact: true });
   await first.hover();
   await expect.poll(() => first.locator('video').evaluate(v => v.currentTime)).toBeGreaterThan(.1);
@@ -120,6 +126,7 @@ test('PC: 영상과 화살표 호버는 선택을 유지하고 화살표 클릭�
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
+  await pauseScenes(page);
   // 겹친 카드의 중심은 중앙 카드에 가려져 있다. 실제로 노출된 오른쪽 영상 위에 올린다.
   const point = await page.evaluate(() => {
     const stage = document.querySelector('.scene-stage').getBoundingClientRect();
@@ -172,6 +179,7 @@ test('PC: 썸네일 호버 즉시 재생을 요청하고 빠르게 훑은 뒤 �
   });
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
+  await pauseScenes(page);
   for (const name of ['판타지', '애니메이션', '히어로', '스릴러', '드라마', '스포츠', '뮤지컬']) {
     await pointChoice(page, name);
     await expect(page.getByRole('button', { name: `${name} 미리보기 선택` })).toHaveAttribute('aria-pressed', 'true');
@@ -196,6 +204,7 @@ for (const area of ['사진', '제목', '소개', '빈 영역', '아래 사진',
   test(`PC: 호버로 위아래 선택을 맞추고 ${area} 클릭으로 같은 녹음실에 들어간다`, async ({ page }) => {
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
+    await pauseScenes(page);
     const names = ['SF', '판타지', '애니메이션', '히어로', '스릴러', '드라마', '스포츠', '뮤지컬'];
     for (const [index, name] of names.entries()) {
       const choice = page.getByRole('button', { name: `${name} 미리보기 선택`, exact: true });
@@ -234,6 +243,7 @@ test('PC: 아래 썸네일을 키보드로 고르면 위아래가 맞춰지고 �
 test('PC: 순환 카드는 보이지 않는 뒤편에서 이동하고 연속 호버 뒤 마지막 장면에 안착한다', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
+  await pauseScenes(page);
   await page.evaluate(() => {
     window.__motion = { frames: [], done: false };
     const sample = () => {
@@ -287,6 +297,7 @@ test('PC: 움직임 줄이기 설정에서는 입체 전환 없이 즉시 고른
 test('PC: 썸네일에서 이동 중인 중앙으로 마우스를 옮겨도 선택이 되돌아가지 않는다', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
+  await pauseScenes(page);
   const stage = await page.locator('.scene-stage').boundingBox();
   const choice = page.getByRole('button', { name: '히어로 미리보기 선택' });
   await pointChoice(page, '히어로');
