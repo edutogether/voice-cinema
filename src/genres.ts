@@ -7,7 +7,7 @@
 
 import clipVersions from 'virtual:clip-versions';
 import { PAUSE_SECONDS, VOICE_WINDOW_SECONDS } from './config';
-import { nextScenesOn } from './lib/sceneMode';
+import { sceneMode, type SceneMode } from './lib/sceneMode';
 
 /**
  * 장면 하나의 시간표 — 영상마다 다르다. 영상을 바꾸면 이 값도 함께 바꾸고 `node tools/check-scene.mjs <장르> <정지 초> <목소리 칸 초> --cue <큐 목록>`으로
@@ -41,7 +41,7 @@ export interface Genre {
   color: string;
   /** 우리 장면 이름 — 카드와 녹음실 제목에 쓴다. */
   summary: string;
-  /** 지금 원판의 시간표 */
+  /** 이 장르 원판의 시간표 — 지금 원판은 live(…), 새 영상이 들어오면 NEXT_SCENES.<장르>(그러면 자유 발화 안내까지 저절로 붙는다) */
   scene: Scene;
 }
 
@@ -53,7 +53,8 @@ const live = (partner: string): Scene => ({
 
 /**
  * 새 8편(대표님이 만드는 영상, 10/25 지시)의 시간표 — **준비만 해 두고 아직 쓰지 않는다.** 새 영상이 들어오면 그 장르의 `scene`을
- * 이 값으로 바꾼다 — `scene: NEXT_SCENES.sf`(그래서 GENRES보다 위에 둔다). 영상마다 정지 시각을 맞춰 고친다.
+ * 이 값으로 바꾼다 — `scene: NEXT_SCENES.sf`(그래서 GENRES보다 위에 둔다). 그 한 줄로 7초 시간표와 자유 발화 안내가 함께 켜진다(sceneOf).
+ * 영상마다 정지 시각을 맞춰 고친다.
  * 정지는 30fps 210번째 프레임(7.000초) — 10/26 대표님 FINAL 7.0S(10/25의 202번째 프레임 6.7333초는 버렸다). 남은 영상 3.000초가
  * 목소리 칸이고 실제로 말할 수 있는 시간도 3.000초다(src/lib/voiceCheck.ts의 maxSpeechFor — 앞 여백은 정지 시각 앞에 놓는다).
  * 상대 대사 자막(시각·글)은 영상이 오면 정한다. 화면에는 상황 안내와 예시 대사를 보인다(자유 발화, 10/26 대표님 — 예시는 정답이 아니다).
@@ -83,8 +84,21 @@ export const GENRES: Genre[] = [
   { id: 'musical', name: '뮤지컬', color: '#c4559e', summary: '서커스 첫 무대', scene: live('쇼는 계속되어야 해 !') },
 ];
 
-/** 이 장르를 지금 어떤 시간표로 트는가 — 개발 주소와 미리보기 채널의 `?scenes=next`에서만 새 시간표를 시험한다(src/lib/sceneMode.ts) */
-export const sceneFor = (genre: Genre): Scene => (nextScenesOn ? NEXT_SCENES[genre.id] : genre.scene);
+/**
+ * 이 장르를 어떤 장면으로 트는가(모드는 src/lib/sceneMode.ts).
+ *   새 영상이 들어와 켠 장르(`scene`이 NEXT_SCENES의 그 장면) — 어느 모드든 새 시간표 + 자유 발화 안내
+ *   live — 장르에 적힌 장면 그대로 · final — 모든 장르를 새 영상이 들어온 것으로(시험용 합성 영상으로 안내 위계를 볼 때, 개발 주소만)
+ *   next — 새 시간표만 빌린다. 아직 옛 영상인 장르에는 그 영상의 상황과 맞지 않는 새 안내를 띄우지 않는다
+ *          (10/26 대표님 «아직 기존 영상이 사용되는 경우에는 … 신규 대사를 강제 표시하지 않는다») — 멈춘 동안은 «지금 바로 당신의 목소리를 들려주세요 !»
+ */
+export function sceneOf(genre: Pick<Genre, 'id' | 'scene'>, mode: SceneMode): Scene {
+  const next = NEXT_SCENES[genre.id];
+  if (mode === 'final' || genre.scene === next) return next;
+  if (mode === 'live') return genre.scene;
+  return { pause: next.pause, voiceWindow: next.voiceWindow };
+}
+
+export const sceneFor = (genre: Genre): Scene => sceneOf(genre, sceneMode);
 
 /**
  * 장르마다 10초 원판(1920×1080 H.264/AAC, 키프레임 1초 간격 + 5.0초). 녹음실 재생·5.0초 멈춤이 이 파일을 쓴다.

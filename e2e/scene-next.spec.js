@@ -6,35 +6,27 @@
 //   완성본: 10초 · 영상은 합성용 원판 그대로(막·글씨가 구워지지 않는다) · 말소리는 정지 + 0.12초 안팎(말이 길면 정지 시각) · 10초 안에서 끝난다
 //   3초: 1.0 · 2.5 · 2.9초는 그대로, 정확히 3.0초는 말끝까지 10.0초 안(«들어 보고 정함»), 3초를 넘어 이어지면 저장하지 않고 다시 녹음
 import { Buffer } from 'node:buffer';
-import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 import { installSyntheticMic, previews, rawTake, recordOnce, takes } from './synthetic-mic.js';
 import { duration, leadRange, placement, tracks, voiceInMovie } from './movie-check.js';
 import { countdownLog, phaseLog, watchCountdown } from './countdown-watch.js';
+import { fixture, serve } from './scene-fixture.js';
 
 const PAUSE_FRAME = 210;
 const SCENE = { pause: PAUSE_FRAME / 30, window: 10 - PAUSE_FRAME / 30 };
 // 발화 상한: 실제로 말할 수 있는 시간 3.000초(칸이 그보다 짧으면 칸) — src/lib/voiceCheck.ts의 maxSpeechFor
 const MAX_SPEECH = Math.min(3, SCENE.window);
 const GUIDE = { situation: '첫인사를 건네 봐 !', example: '예시안녕 ! 우린 지구에서 왔어 !', free: '내 말로 외쳐도 좋아요 !' };
-const fixture = (name) => readFileSync(`e2e/fixtures/scene-next/${name}`);
 
 // 서비스워커가 원판을 가로채면 아래 바꿔치기가 닿지 않는다
 test.use({ serviceWorkers: 'block' });
 test.describe.configure({ timeout: 240000 });
 
-/** Hosting처럼 구간 요청(Range)에 206으로 답한다 — 통째로만 주면 브라우저가 정지 시각으로 찾아가지 못하고 0초로 돌아간다 */
-const serve = (name) => (route) => {
-  const body = fixture(name);
-  const headers = { 'content-type': 'video/mp4', 'accept-ranges': 'bytes' };
-  const range = /bytes=(\d*)-(\d*)/.exec(route.request().headers().range ?? '');
-  if (!range) return route.fulfill({ status: 200, body, headers });
-  const start = range[1] ? Number(range[1]) : 0;
-  const end = range[2] ? Math.min(Number(range[2]), body.length - 1) : body.length - 1;
-  return route.fulfill({ status: 206, body: body.subarray(start, end + 1), headers: { ...headers, 'content-range': `bytes ${start}-${end}/${body.length}` } });
-};
-
-async function openNextSf(page, plans) {
+/**
+ * 시험용 새 장면을 SF 원판 자리에 넘겨 녹음실을 연다. query: `?scenes=next`(새 시간표 — 옛 영상 자리라 새 안내 없음)이나
+ * `?scenes=final`(개발 주소만 — 새 영상이 들어온 장면으로 보고 자유 발화 안내까지, 10/26)
+ */
+async function openNextSf(page, plans, query = '?scenes=next') {
   await page.route(/\/clips\/sf\.mp4(\?|$)/, serve('clip.mp4'));
   await page.route(/\/clips\/final\/sf\.mp4(\?|$)/, serve('final.mp4'));
   const uploads = [];
@@ -46,7 +38,7 @@ async function openNextSf(page, plans) {
   await watchCountdown(page);
   // 부스처럼 엔진을 다 받아 둔 뒤에 녹음한다 — 말을 마친 뒤 다듬기(엔진)까지 포함한 시간을 잰다
   const engine = page.waitForResponse(/ffmpeg-core\.wasm/).then((r) => r.finished());
-  await page.goto('/?scenes=next');
+  await page.goto(`/${query}`);
   await page.locator('#splash').waitFor({ state: 'detached' });
   await engine;
   await expect(page.locator('#enginebar')).not.toHaveClass(/show/, { timeout: 30000 });
@@ -69,8 +61,9 @@ const frameOf = (page, selector = '#clip') => page.evaluate((selector) => {
   return { n, gray: g.getImageData(120, 50, 1, 1).data[0], time: v.currentTime, paused: v.paused };
 }, selector);
 
-test('프레임 210(7.000초) 그림에 정확히 서고, 막 22%·대사·«지금 외쳐요 !» 뒤 말을 마치면 그 자리부터 이어지며 완성본에는 막이 없다', async ({ page }) => {
-  const uploads = await openNextSf(page, [{ delay: 0.3, dur: 1.8, f0: 300 }]);
+test('프레임 210(7.000초) 그림에 정확히 서고, 막 22%·자유 발화 안내·«지금 외쳐요 !» 뒤 말을 마치면 그 자리부터 이어지며 완성본에는 막이 없다', async ({ page }) => {
+  // 새 영상이 들어온 장면(?scenes=final)으로 본다 — 안내는 새 영상에만 붙는다(옛 영상 위 ?scenes=next에는 없다, e2e/scene-guide.spec.js)
+  const uploads = await openNextSf(page, [{ delay: 0.3, dur: 1.8, f0: 300 }], '?scenes=final');
   // 정지 전: 새 장면에는 상대 대사 자막이 없다
   const reference = await frameOf(page);
   await page.locator('#recBtn').click();
