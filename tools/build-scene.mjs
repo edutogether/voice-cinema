@@ -2,8 +2,9 @@
 //
 //   node tools/build-scene.mjs <장르> --parts <A토막.mp4> <B토막.mp4> [--audio <소리.wav>] [--pause <초>]
 //     진짜 원판: 두 토막(0~정지, 정지~10.0초)을 이어 정확히 10.0초로 만들고 소리 트랙을 입힌다.
-//   --pause  장면이 멈추는 시각(기본 5 — 지금 장면). 새 장면은 7 — src/genres.ts의 scene.pause와 같아야 하고,
-//            소리 트랙도 같은 칸으로 만든다(build-scene-audio.mjs의 voice). 다 만든 뒤 node tools/check-scene.mjs로 확인한다.
+//   --pause  장면이 멈추는 시각(기본 5 — 지금 장면). 새 장면은 6.7333333(30fps 202번째 프레임, src/genres.ts의 NEXT_PAUSE)
+//            — 앱의 scene.pause와 같아야 하고, 소리 트랙도 같은 칸으로 만든다(build-scene-audio.mjs의 voice).
+//            다 만든 뒤 node tools/check-scene.mjs로 확인한다.
 //   node tools/build-scene.mjs <장르> --slides <그림 폴더> [--audio <소리.wav>]
 //     시험용 원판: 그린 키프레임(vc2_<장르>_K###.png)을 그 시각에 맞춰 넘기는 10초 슬라이드. 앱 개발·시사 준비용.
 //

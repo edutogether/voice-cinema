@@ -5,7 +5,7 @@
 //
 // 큐 목록: { "genre": "sf", "voice"?: { "from", "to" }, "tracks": [{ "file", "at", "from"?, "dur", "gain"?, "fadeIn"?, "fadeOut"?, "source", "license" }] }
 //   voice   목소리 칸(초) — 장면의 정지 시각부터 정지 + 목소리 칸까지(src/genres.ts의 scene과 같아야 한다).
-//           빠지면 지금 장면의 5.0~8.5초. 새 장면(7.0초 정지 · 칸 3.0초)은 { "from": 7, "to": 10 }
+//           빠지면 지금 장면의 5.0~8.5초. 새 장면(202번째 프레임 정지 · 칸 3.2667초)은 { "from": 6.7333333, "to": 10 }
 //   file    소리 파일(큐 목록 파일 기준 상대 경로 또는 절대 경로)   at  장면에서 시작할 초
 //   from    파일 안에서 시작할 초(기본 0)                         dur 쓸 길이(초) — at + dur는 10초를 넘을 수 없다
 //   gain    dB(기본 0)   fadeIn·fadeOut  초(기본 0)

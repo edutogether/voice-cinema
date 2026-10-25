@@ -42,11 +42,13 @@ const live = (partner: string): Scene => ({
 
 /**
  * 새 8편(대표님이 만드는 영상, 10/25 지시)의 시간표 — **준비만 해 두고 아직 쓰지 않는다.** 새 영상이 들어오면 그 장르의 `scene`을
- * 이 값으로 바꾼다 — `scene: NEXT_SCENES.sf`(그래서 GENRES보다 위에 둔다). 영상마다 정지 시각을 맞춰 고친다(7.0초 전후).
- * 7.0초에 멈추면 남은 영상이 3.0초라 목소리 칸도 3.0초다.
+ * 이 값으로 바꾼다 — `scene: NEXT_SCENES.sf`(그래서 GENRES보다 위에 둔다). 영상마다 정지 시각을 맞춰 고친다.
+ * 정지는 30fps 202번째 프레임(6.7333…초) — 10/25 대표님 «6.73초 전후, 정확한 프레임 경계». 남은 영상이 목소리 칸이고(3.2667초),
+ * 앞뒤 여백(0.27초)을 빼면 발화 상한이 2.997초다(src/lib/voiceCheck.ts의 maxSpeechFor). 프레임 201(6.700초)이면 3.000초.
  * 상대 대사 자막(시각·글)은 영상이 오면 정한다. 대사의 느낌표·물음표 앞에는 한 칸을 띄운다(전 앱 규칙).
  */
-const next = (childLine: string): Scene => ({ pause: 7, voiceWindow: 3, childLine });
+const NEXT_PAUSE = 202 / 30;
+const next = (childLine: string): Scene => ({ pause: NEXT_PAUSE, voiceWindow: 10 - NEXT_PAUSE, childLine });
 export const NEXT_SCENES: Record<string, Scene> = {
   sf: next('안녕 ! 우린 지구에서 왔어 !'),
   fantasy: next('그래 ! 내가 이긴다 !'),
@@ -69,7 +71,7 @@ export const GENRES: Genre[] = [
   { id: 'musical', name: '뮤지컬', color: '#c4559e', summary: '서커스 첫 무대', scene: live('쇼는 계속되어야 해 !') },
 ];
 
-/** 이 장르를 지금 어떤 시간표로 트는가 — 이 기기 개발 주소의 `?scenes=next`에서만 새 시간표를 시험한다(src/lib/sceneMode.ts) */
+/** 이 장르를 지금 어떤 시간표로 트는가 — 개발 주소와 미리보기 채널의 `?scenes=next`에서만 새 시간표를 시험한다(src/lib/sceneMode.ts) */
 export const sceneFor = (genre: Genre): Scene => (nextScenesOn ? NEXT_SCENES[genre.id] : genre.scene);
 
 /**
