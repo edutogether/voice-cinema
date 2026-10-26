@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
-import { installServiceWorker } from './sw';
+import { installServiceWorker, serviceWorkerRegistering } from './sw';
 
 class PageScript { src = 'https://voice.example/assets/main-current.js'; }
 
@@ -77,5 +77,28 @@ describe('실제로 열린 화면을 기준으로 업데이트 안내', () => {
     app.change();
     vi.runAllTimers();
     expect(app.notify).not.toHaveBeenCalled();
+  });
+});
+
+describe('등록 결과', () => {
+  function install(register: () => Promise<unknown>) {
+    vi.stubEnv('PROD', true);
+    vi.stubGlobal('navigator', { serviceWorker: Object.assign(new EventTarget(), { controller: null, register: vi.fn(register) }) });
+    vi.stubGlobal('window', Object.assign(new EventTarget(), { setTimeout }));
+    vi.stubGlobal('document', { readyState: 'complete' });
+    return installServiceWorker(() => {})!;
+  }
+  it('등록이 실패하면 false로 끝난다 — 엔진 받기가 서비스워커를 기다리지 않는다(Windows 설치판은 /sw.js가 404)', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const cleanup = install(() => Promise.reject(new Error('404')));
+    await expect(serviceWorkerRegistering()).resolves.toBe(false);
+    expect(warn).toHaveBeenCalledOnce();
+    warn.mockRestore();
+    cleanup();
+  });
+  it('등록되면 true로 끝난다', async () => {
+    const cleanup = install(() => Promise.resolve({}));
+    await expect(serviceWorkerRegistering()).resolves.toBe(true);
+    cleanup();
   });
 });

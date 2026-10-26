@@ -37,3 +37,6 @@ _backups/
 test-results/
 playwright-report/
 blob-report/
+
+# Windows 설치판 빌드 결과(desktop/에서 npm run dist) — 설치 프로그램은 저장소에 올리지 않는다
+desktop/release/

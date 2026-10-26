@@ -1,0 +1,23 @@
+{
+  "name": "voice-cinema-desktop",
+  "productName": "Voice Cinema",
+  "version": "2.0.0",
+  "description": "Voice Cinema Windows 설치판 — 제4회 인천어린이청소년영화제 InKY 놀이터 더빙 부스",
+  "author": "같이교육",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.js",
+    "dist": "npm --prefix .. run build && node --test test/*.test.js && electron-builder --win nsis --x64",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "electron": "44.9.3",
+    "electron-builder": "26.17.0"
+  },
+  "allowScripts": {
+    "electron-winstaller": false
+  }
+}

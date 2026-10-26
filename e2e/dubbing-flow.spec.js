@@ -188,6 +188,32 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     expect(download.suggestedFilename()).toBe('Voice Cinema_히어로.mp4');
   });
 
+  // 와이파이 없이 쓰는 설치판(10/27) — 인터넷이 아예 없으면 App Check를 20초씩 세 번 기다리지 않고 바로 이 기기에 저장으로 가며,
+  // «잠깐 불안해서»가 아니라 인터넷이 없어 QR을 못 만든다고 알린다. 원판은 이미 받아 두었으므로 navigator.onLine만 끈다.
+  test('인터넷이 없으면 올리지 않고 곧바로 기기 저장으로 가며 그 까닭을 알린다', async ({ page }) => {
+    let callCount = 0;
+    await page.route(UPLOAD_PATTERN, (route) => {
+      callCount++;
+      return route.fulfill({ status: 500, contentType: 'application/json', body: '{"ok":false}' });
+    });
+
+    await openStudio(page, '스포츠');
+    await page.locator('#recBtn').click();
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
+    await page.evaluate(() => {
+      Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false });
+      window.dispatchEvent(new Event('offline'));
+    });
+    await page.locator('button', { hasText: '저장하기' }).click();
+
+    await expect(page.locator('#downloadRow')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('#doneMsg')).toHaveText('인터넷에 연결되어 있지 않아 QR을 만들 수 없어요. 아래 단추를 눌러 이 기기에 저장한 뒤 선생님께 알려 주세요.');
+    await expect(page.locator('#savemode')).toContainText('자동으로 지워지지 않아요');
+    expect(callCount).toBe(0);
+    const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#downloadBtn').click()]);
+    expect(download.suggestedFilename()).toBe('Voice Cinema_스포츠.mp4');
+  });
+
   // mergeClip()은 원판을 불러오지 못하면 예외를 던지고 Result.tsx가 에러 화면(errbox)을 보여준다.
   // 합성은 fetchFile()이 window.fetch()로 로고를 구운 합성용 원판(final/)을 읽으므로
   // fetch만 그 시점에 실패하도록 패치한다(page.route는 <video src> 요청을 가로채지 못한다).

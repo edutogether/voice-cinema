@@ -34,6 +34,7 @@
 | 2026-10-23 | [responsive-fit](2026-10-23-responsive-fit/intent.md) | 2 | in-progress | 해상도별 화면 맞춤 — 기준 화면(PC 1366 · 태블릿 1024/768 · 휴대폰 390)을 통째로 비율 조정, 자동 조사 150화면 0건 (**작업 시작 뒤 작성**) |
 | 2026-10-24 | [wifi-speed](2026-10-24-wifi-speed/intent.md) | 2 | in-progress | 와이파이에서 느림 — 화질 그대로, 엔진 두 번 받기 없애고 화면에 필요한 것 먼저(엔진 · 원판은 뒤에서), App Check 상한 |
 | 2026-10-24 | [recording-hardening](2026-10-24-recording-hardening/intent.md) | 2 | in-progress | 녹음·합성 품질 보강 — 녹음 3초(말이 이어지면 3.5초)·녹음기 켜진 뒤 신호·무음/끊김 감지·섞은 뒤 리미터·미리 듣기 = 완성본 소리 (**작업 전 의도는 Bumm님 지시문, 이 문서는 작업 중 작성**) |
+| 2026-10-27 | [desktop-installer](2026-10-27-desktop-installer/intent.md) | 2 | in-progress | Windows 설치판 시안(Electron · NSIS, 정본 주소 그대로 · 파일만 설치판 안) — **⏸ 보류(10/27 Bumm님 A: Voice Cinema 완성 뒤)**, 다시 시작할 때의 기준 5가지 기록 (가지 `feat/vc-desktop`) |
 
 ## 폴더 규칙
 

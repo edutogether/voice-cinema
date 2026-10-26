@@ -16,7 +16,7 @@ type Stage =
   | { kind: 'merging' }
   | { kind: 'uploading' }
   | { kind: 'cloud'; qr: string; url: string }
-  | { kind: 'fallback'; blob: Blob }
+  | { kind: 'fallback'; blob: Blob; offline?: boolean }
   | { kind: 'error'; message: string };
 
 interface Props {
@@ -67,6 +67,12 @@ export function Result({ active, job, onHome, onBack }: Props) {
         return;
       }
       if (cancelled) return;
+      // 인터넷이 아예 없으면(와이파이 없이 쓰는 설치판 등) 올리지 않는다 — App Check 대기(20초)를 세 번 «저장하고 있어요»로 보내지 않고
+      // 바로 이 기기에 저장으로 간다(10/27 설치판, 오프라인일 때는 정직하게 안내).
+      if (!navigator.onLine) {
+        setStage({ kind: 'fallback', blob: merged, offline: true });
+        return;
+      }
       setStage({ kind: 'uploading' });
 
       try {
@@ -140,9 +146,11 @@ export function Result({ active, job, onHome, onBack }: Props) {
             <p id="doneMsg">
               {stage.kind === 'cloud'
                 ? 'QR을 찍으면 내 영화를 받을 수 있어요'
-                : isPreviewChannel(window.location.hostname)
-                  ? '미리보기 주소에서는 QR을 만들 수 없어요 — 서버 저장은 실제 주소(voice.edutogether.kr)에서만 돼요. 아래 단추로 이 기기에 저장해 확인해 주세요.'
-                  : '인터넷이 잠깐 불안해서 QR을 만들지 못했어요. 아래 단추를 눌러 이 기기에 저장한 뒤 선생님께 알려 주세요.'}
+                : stage.offline
+                  ? '인터넷에 연결되어 있지 않아 QR을 만들 수 없어요. 아래 단추를 눌러 이 기기에 저장한 뒤 선생님께 알려 주세요.'
+                  : isPreviewChannel(window.location.hostname)
+                    ? '미리보기 주소에서는 QR을 만들 수 없어요 — 서버 저장은 실제 주소(voice.edutogether.kr)에서만 돼요. 아래 단추로 이 기기에 저장해 확인해 주세요.'
+                    : '인터넷이 잠깐 불안해서 QR을 만들지 못했어요. 아래 단추를 눌러 이 기기에 저장한 뒤 선생님께 알려 주세요.'}
             </p>
 
             {/* 휴대폰에서 직접 체험하면 자기 화면의 QR을 찍을 수 없다 — 같은 공개 주소를 바로 여는 단추(휴대폰에서만 보임, result.css). 휴대폰 한 화면에 들어오게 QR보다 위에 둔다. 10/17 팀장 임시 진행, 대표님 일요일 확인 */}

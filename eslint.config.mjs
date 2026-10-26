@@ -18,6 +18,9 @@ export default [
       '_media/**',
       'test-results/**',
       'playwright-report/**',
+      'desktop/node_modules/**',
+      'desktop/release/**', // 설치판 빌드 결과
+      'desktop/test-results/**',
     ],
   },
   {
@@ -99,7 +102,31 @@ export default [
         // page.evaluate() 안에서 실행돼 브라우저 컨텍스트를 쓰는 코드가 있다.
         navigator: 'readonly', caches: 'readonly', document: 'readonly', window: 'readonly',
         performance: 'readonly', getComputedStyle: 'readonly', MutationObserver: 'readonly',
-        requestAnimationFrame: 'readonly',
+        requestAnimationFrame: 'readonly', Event: 'readonly',
+      },
+    },
+  },
+  {
+    // Windows 설치판(Electron 주 프로세스 + node:test 유닛테스트) — CommonJS
+    files: ['desktop/*.js', 'desktop/test/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'commonjs',
+      globals: {
+        require: 'readonly', module: 'writable', __dirname: 'readonly', process: 'readonly', console: 'readonly',
+        Buffer: 'readonly', URL: 'readonly', Request: 'readonly', Response: 'readonly',
+      },
+    },
+  },
+  {
+    // 설치판 E2E(Playwright로 exe를 띄운다) + 설정. app.evaluate()는 주 프로세스, page.evaluate()는 화면 안에서 돈다.
+    files: ['desktop/e2e/**/*.mjs', 'desktop/playwright.config.mjs'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: {
+        process: 'readonly', console: 'readonly', Buffer: 'readonly', globalThis: 'readonly', Response: 'readonly',
+        window: 'readonly', document: 'readonly', navigator: 'readonly', fetch: 'readonly', Event: 'readonly',
       },
     },
   },
