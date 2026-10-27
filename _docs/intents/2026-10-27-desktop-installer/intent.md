@@ -17,17 +17,27 @@ status: in-progress
 
 ## 다시 시작할 때의 기준 (10/27 Bumm님이 시험 설치 화면을 직접 보고 정한 것, 팀장 전달)
 
-1. **아이콘의 «VC»는 작고 선명하게** — 지금 시안은 글자가 너무 커서 화질이 떨어져 보인다. 작은 검은 이름표에 흰 «VC», 크기마다 따로 선명하게 그린다
-   (시안: `desktop/tools/make-icons.py`의 `BADGES` 표 — 이 표의 이름표 · 글자를 줄인다).
-2. **글자는 앱 아이콘에만** — 설치 화면 그림(머리 그림 `installerHeader.bmp` · 옆 그림 `installerSidebar.bmp`)에는 «VC»를 넣지 않는다.
+1. **아이콘은 원래 마이크 그림이다** (10/27 Bumm님 결정, 팀장 전달 — 원문 «보이스 시네마도 원래 마이크 있잖아 그걸로 하자»).
+   - 그림: `public/icons/studio-microphone.png`(160×160, SHA-256 `1a8e9751…add8728f`)를 원본 그대로 쓴다. 다시 그리거나 고치지 않는다.
+   - 쓰는 자리: 앱 아이콘 · 설치 파일 아이콘 · 제거 프로그램 아이콘 · 설치 창 머리 로고(electron-builder `icon` · `installerIcon` ·
+     `uninstallerIcon` · `installerHeaderIcon` · 머리 그림 `installerHeader.bmp`의 로고).
+   - «VC» 이름표는 뺀다. 원본이 160px이라 ico의 256px 칸만 키우고, 나머지 크기는 원본을 줄인다.
+   - 이 결정으로 아래가 바뀐다.
+     - 처음 기준 «VC는 작고 선명하게»와 시안의 노란 InKY 카메라 + «VC» 이름표(`desktop/tools/make-icons.py`의 `BADGES` 표)는 쓰지 않는다.
+     - Poster Studio와 «VC/PS» 글자 크기 · 위치를 한 표로 맞추던 일도 없어졌다(PS 아이콘은 그 전에 취소).
+2. **설치 화면 그림에는 글자를 넣지 않는다** — 머리 그림 `installerHeader.bmp` · 옆 그림 `installerSidebar.bmp`에 «VC»를 넣지 않는다(10/27 Bumm님 기준).
 3. **«나만 / 모든 사용자» 고르는 화면은 그대로 둔다.** «모든 사용자»를 고르면 기본 위치는 `C:\Program Files\InKY Film Festival\Voice Cinema`다.
    (시안은 사용자별 기본 위치가 `%LOCALAPPDATA%\Programs\Voice Cinema`였다.)
 4. **시작 메뉴 `InKY Film Festival` 폴더 안에 `Voice Cinema`와 `Uninstall Voice Cinema`를 둘 다 둔다.** 바탕화면 바로가기도 만든다.
    (시안은 시작 메뉴 맨 위에 `Voice Cinema` 하나뿐이었다 — electron-builder의 `menuCategory`와 제거 바로가기는 따로 넣어야 한다.)
 5. **«설치된 앱»과 제어판 «프로그램 추가/제거»에서 제거된다.**
-- 이 기준은 Poster Studio 설치판과 같은 줄이다(같은 날 같은 지시). 두 앱의 아이콘 글자 크기 · 위치는 한 표로 맞춘다.
-- 다시 빌드하는 법: 루트 `npm ci` → `python desktop/tools/make-icons.py`(아이콘 · 설치 화면 그림 → `desktop/build/`, 루트 `.gitignore`의 `build/`에 걸려
-  커밋되지 않는다) → `cd desktop && npm ci && npm run dist`(→ `desktop/release/VoiceCinema-Setup.exe`) → `npm test` · `npm run test:e2e`.
+- 기준 3~5는 Poster Studio 설치판과 같은 줄이다(같은 날 같은 지시).
+- 다시 빌드하는 법:
+  1. 루트에서 `npm ci`를 돌린다.
+  2. 아이콘 · 설치 화면 그림을 `desktop/build/`에 만든다. 루트 `.gitignore`의 `build/`에 걸려 커밋되지 않는다.
+     🟠 지금 `desktop/tools/make-icons.py`는 노란 카메라에 «VC» 이름표를 그리는 시안이다. 위 1번(마이크 그림)대로 고친 뒤 돌린다.
+  3. `cd desktop && npm ci && npm run dist`로 만든다(→ `desktop/release/VoiceCinema-Setup.exe`).
+  4. `npm test` · `npm run test:e2e`로 확인한다.
 
 ## 문제
 
