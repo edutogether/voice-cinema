@@ -88,7 +88,7 @@ export default [
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'script',
-      globals: { window: 'readonly', document: 'readonly', navigator: 'readonly', matchMedia: 'readonly' },
+      globals: { window: 'readonly', document: 'readonly', navigator: 'readonly', matchMedia: 'readonly', ResizeObserver: 'readonly' },
     },
   },
   {
@@ -128,6 +128,28 @@ export default [
         process: 'readonly', console: 'readonly', Buffer: 'readonly', globalThis: 'readonly', Response: 'readonly',
         window: 'readonly', document: 'readonly', navigator: 'readonly', fetch: 'readonly', Event: 'readonly',
       },
+    },
+  },
+  {
+    // 설치판 확인 도구(화면 비교 · 창 크기 — Playwright로 앱과 웹을 띄운다). page.evaluate()로 화면 안에서 도는 코드를 함께 담는다.
+    files: ['desktop/tools/**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: {
+        process: 'readonly', console: 'readonly', Buffer: 'readonly', setTimeout: 'readonly', Response: 'readonly',
+        window: 'readonly', document: 'readonly', getComputedStyle: 'readonly', matchMedia: 'readonly', requestAnimationFrame: 'readonly',
+        innerWidth: 'readonly', innerHeight: 'readonly', devicePixelRatio: 'readonly', CSSTransition: 'readonly',
+      },
+    },
+  },
+  {
+    // 설치판 확인 도구가 Electron에 먼저 읽히는 파일(electron -r) · 같은 엔진 브라우저 창 — CommonJS
+    files: ['desktop/tools/**/*.cjs'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'commonjs',
+      globals: { require: 'readonly', process: 'readonly', console: 'readonly' },
     },
   },
   {

@@ -39,4 +39,13 @@
   };
   fit();
   window.addEventListener('resize', fit);
+  // 창을 줄이는 순간에는 앞 크기의 화면이 넘쳐 세로 스크롤 막대가 잠깐 생기고, 그 폭(15px)을 뺀 너비로 비율을 정한다. 막대는 맞춘 뒤 사라지지만
+  // 창 크기는 그대로라 resize가 다시 오지 않아, 그 크기를 새로 연 것보다 작은 비율 · 오른쪽 빈 띠로 남았다(10/28 설치판 기준 16에서 발견 — 웹에도 있다).
+  // 화면 폭이 바뀌었는데(막대가 사라짐) 넘치는 내용이 없으면 다시 맞춘다. 내용이 정말 넘쳐 막대가 남아 있는 화면(작은 창의 휴대폰 화면)에서는
+  // 다시 맞추지 않는다 — 맞출 때마다 막대가 생겼다 사라졌다 하며 되풀이될 수 있어서다(그 화면은 예전 그대로).
+  if (window.ResizeObserver) {
+    new ResizeObserver(function () {
+      if (root.scrollHeight <= root.clientHeight) fit();
+    }).observe(root);
+  }
 })();
