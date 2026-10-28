@@ -16,8 +16,8 @@
 ;   - 원래처럼 지킨 것: 패키지 고르기 · 넣기(identify_package · compute_files_for_current_arch, 압축 끄기 포함), customFiles 훅, 제거 프로그램 넣기.
 ;   - 바로가기 두 개(addStartMenuLink · addDesktopLink)는 템플릿 원래 내용 끝에 막대 한 걸음씩만 더했다(아래).
 ;
-; 막대 나눔(0~1000, 이 PC에서 잰 단계별 시간에 맞춤): 앞 단계 0~40, 압축 풀기 40~460(푼 바이트), 옮기기 460~840(파일 크기 + 파일 하나당 몫),
-; 제거 프로그램 860, 시작 메뉴 바로가기 905, 바탕화면 바로가기 950, 마무리(customInstall) 1000.
+; 막대 나눔(0~1000, 이 PC에서 잰 단계별 시간에 맞춤): 앞 단계 · 제거 프로그램 0~40, 압축 풀기 40~460(푼 바이트), 옮기기 460~840(파일 크기 +
+; 파일 하나당 몫), 설치한 파일 확인 860, 시작 메뉴 바로가기 905, 바탕화면 바로가기 950, 마무리(customInstall) 1000.
 ; 예전 판을 먼저 지우면 그 제거가 막대 앞 몫(0~250)을 쓰고, 위 나눔은 남은 몫(250~1000)에 줄여 담긴다(installer.nsh vcSetBar).
 
 !ifndef VC_INSTALL_FILES_INCLUDED
@@ -49,8 +49,15 @@
   ${If} ${UAC_IsInnerInstance}
     !insertmacro vcCloseRunningAppOrQuit
   ${EndIf}
+  !insertmacro vcT "install-start"
   !insertmacro vcSetBar 20
-  !insertmacro vcStage "프로그램 파일을 설치하는 중입니다 …"
+  ; 단계 문장은 지금 하는 일과 같게(10/28 팀장 검토 — 예전 판 «삭제:» 줄 아래에 «설치하는 중»이 먼저 떠 있었다): 압축을 푸는 동안은 «준비»,
+  ; 파일을 옮기기 시작하면 «설치», 다 옮긴 뒤 Windows가 새 파일을 검사하는 동안은 «확인», 바로가기를 만들 때는 «바로가기».
+  !insertmacro vcStage "설치할 파일을 준비하는 중입니다 …"
+  ; 제거 프로그램은 맨 먼저 쓴다(줄은 프로그램 파일과 함께 적는다). 템플릿처럼 앱 파일 뒤에 쓰면 Windows가 막 쓴 앱 파일을 검사하는 동안
+  ; 기다려 막대가 84%에서 섰다 — 지금 내용 0.4초, 영상을 키운 내용 2.0초(10/28 녹화). 맨 먼저 쓰면 0.1초다.
+  File "/oname=${UNINSTALL_FILENAME}" "${UNINSTALLER_OUT_FILE}"
+  !insertmacro vcT "uninstaller-written"
 
   !ifdef COMPRESS
     SetCompress off
@@ -62,6 +69,7 @@
     SetCompress "${COMPRESS}"
   !endif
   !insertmacro vcSetBar ${VC_BAR_EXTRACT_FROM}
+  !insertmacro vcT "package-ready"
 
   CreateDirectory "$PLUGINSDIR\7z-out"
   SetOutPath "$PLUGINSDIR\7z-out"
@@ -69,11 +77,14 @@
   Nsis7z::ExtractWithCallback "$PLUGINSDIR\app-$packageArch.7z" $R9
   SetOutPath $INSTDIR
   !insertmacro vcSetBar ${VC_BAR_EXTRACT_TO}
+  !insertmacro vcT "extracted"
   ${IfNot} ${FileExists} "$PLUGINSDIR\7z-out\${APP_EXECUTABLE_FILENAME}"
     MessageBox MB_OK|MB_ICONEXCLAMATION "$(decompressionFailed)" /SD IDOK
     SetErrorLevel 2
     Quit
   ${EndIf}
+  !insertmacro vcStage "프로그램 파일을 설치하는 중입니다 …"
+  StrCpy $vcBase $INSTDIR
   StrCpy $vcCopyTotal 0
   StrCpy $vcCopyDone 0
   Push ""
@@ -83,30 +94,48 @@
   ; 먼저 복사하면 나머지 160여 개 파일을 옮기는 동안 검사가 끝난다.
   Push "\${APP_EXECUTABLE_FILENAME}"
   Call vcCopyOne
+  !insertmacro vcFileLine "설치: " "$INSTDIR\${UNINSTALL_FILENAME}"
   Push ""
   Call vcCopyTree
+  !insertmacro vcT "tree-done"
   !insertmacro custom_files_post_decompression
+  !insertmacro vcT "copied"
 
-  File "/oname=${UNINSTALL_FILENAME}" "${UNINSTALLER_OUT_FILE}"
-  !insertmacro vcFileLine "설치: " "$INSTDIR\${UNINSTALL_FILENAME}"
+  ; 다 옮긴 뒤: Windows(백신)가 막 쓴 앱 실행 파일을 처음 검사하는 동안 다음 일이 기다린다 — 그 기다림을 이름 붙인 단계로 먼저 치른다.
+  ; 단계 문장은 마지막 파일을 옮긴 순간 이미 바뀌었다(installer.nsh vcCopyOne → vcCheckStage). 여기서는 그때를 못 만났을 때만 적는다.
+  ; 바로가기를 만들 때 Windows가 아이콘을 읽으려고 실행 파일을 그림 묶음으로 열면서 그 검사를 기다려 시작 메뉴 바로가기 하나가 0.9초 걸렸다
+  ; (10/28 측정 — 같은 파일로 두 번째 바로가기는 0.03초, 그냥 읽기로 여는 것으로는 기다리지 않았다). 같은 방식으로 한 번 열어 둔다.
+  Call vcCheckStage
+  !insertmacro vcT "check-staged"
+  System::Call "kernel32::LoadLibraryExW(w '$INSTDIR\${APP_EXECUTABLE_FILENAME}', p 0, i 0x22) p .R9"   ; LOAD_LIBRARY_AS_IMAGE_RESOURCE | AS_DATAFILE
+  ${If} $R9 != 0
+    System::Call "kernel32::FreeLibrary(p R9)"
+  ${EndIf}
+  !insertmacro vcT "checked"
   !insertmacro vcSetBar 860
+  !insertmacro vcStage "바로가기를 만드는 중입니다 …"
 !macroend
 
 ; 바로가기 두 개(시작 메뉴 · 바탕화면)는 하나에 0.3초쯤 걸린다(10/28 실측 — 그동안 막대가 멈췄다). 템플릿 원래 내용(include/installer.nsh)
 ; 그대로 두고 끝에 막대 한 걸음씩만 더한다. 원래 내용이 그대로인지는 desktop/test/nsis-template.test.js가 본다.
 !macroundef addStartMenuLink
 !macro addStartMenuLink keepShortcuts
+  !insertmacro vcT "startmenu-start"
   !ifndef DO_NOT_CREATE_START_MENU_SHORTCUT
     # The keepShortcuts mechanism is NOT enabled.
     # Menu shortcut will be recreated.
     ${if} $keepShortcuts  == "false"
       !insertmacro cleanupOldMenuDirectory
+      !insertmacro vcT "startmenu-cleaned"
       !insertmacro createMenuDirectory
+      !insertmacro vcT "startmenu-dir"
 
       CreateShortCut "$newStartMenuLink" "$appExe" "" "$appExe" 0 "" "" "${APP_DESCRIPTION}"
+      !insertmacro vcT "startmenu-link"
       # clear error (if shortcut already exists)
       ClearErrors
       WinShell::SetLnkAUMI "$newStartMenuLink" "${APP_ID}"
+      !insertmacro vcT "startmenu-aumi"
     # The keepShortcuts mechanism IS enabled.
     # The menu shortcut could either not exist (it shouldn't be recreated) or exist in an obsolete location.
     ${elseif} $oldStartMenuLink != $newStartMenuLink
@@ -120,6 +149,7 @@
       !insertmacro cleanupOldMenuDirectory
     ${endIf}
   !endif
+  !insertmacro vcT "startmenu-done"
   !insertmacro vcSetBar 905
 !macroend
 
@@ -155,6 +185,7 @@
       System::Call 'Shell32::SHChangeNotify(i 0x8000000, i 0, i 0, i 0)'
     ${endIf}
   !endif
+  !insertmacro vcT "desktop-done"
   !insertmacro vcSetBar 950
 !macroend
 

@@ -44,7 +44,8 @@
 ; 여러 줄 안내문은 줄 사이에 빈 줄을 둔다 — 설치 창 글꼴(굴림 9pt)은 줄 간격이 글자 높이와 같아 위아래 줄의 글자가 맞닿았다(10/28 팀장 검토).
 ; 묻는 창(MessageBox)은 Windows 글꼴이라 줄 간격이 있어 빈 줄을 두지 않는다.
 !ifndef BUILD_UNINSTALLER
-  !define MUI_DIRECTORYPAGE_TEXT_TOP "${PRODUCT_NAME}를 아래 폴더에 설치합니다.$\r$\n$\r$\n다른 폴더에 설치하려면 '찾아보기'를 눌러 폴더를 골라 주세요.$\r$\n$\r$\n$_CLICK"
+  ; 위치 화면은 in-pages.nsh가 MUI 위치 화면과 같은 모양으로 그린다 — 이 안내문을 그 화면 맨 위 칸에 쓴다
+  !define MUI_DIRECTORYPAGE_TEXT_TOP "${PRODUCT_NAME}를 아래 폴더에 설치합니다.$\r$\n$\r$\n다른 폴더에 설치하려면 '찾아보기'를 눌러 폴더를 골라 주세요.$\r$\n$\r$\n$(^ClickInstall)"
   !define MUI_FINISHPAGE_TITLE "${PRODUCT_NAME} 설치 완료"
   !define MUI_FINISHPAGE_TEXT "${PRODUCT_NAME}를 설치했습니다.$\r$\n$\r$\n'마침'을 누르면 설치 프로그램이 닫힙니다."
 !else
@@ -70,6 +71,7 @@
     LangString perUserInstallExists ${LANG_KOREAN} "나만 쓰는 ${PRODUCT_NAME}가 이미 설치되어 있습니다.$\r$\n$\r$\n"
     LangString perMachineInstallExists ${LANG_KOREAN} "모든 사용자용 ${PRODUCT_NAME}가 이미 설치되어 있습니다.$\r$\n$\r$\n"
     LangString reinstallUpgrade ${LANG_KOREAN} "$\r$\n예전 것을 지우고 새로 설치합니다."
+    LangString vcDirTitle ${LANG_KOREAN} "설치 위치 선택"
     LangString MUI_TEXT_DIRECTORY_SUBTITLE ${LANG_KOREAN} "${PRODUCT_NAME}를 설치할 폴더를 골라 주세요."
     LangString MUI_TEXT_INSTALLING_TITLE ${LANG_KOREAN} "설치 중"
     LangString MUI_TEXT_INSTALLING_SUBTITLE ${LANG_KOREAN} "${PRODUCT_NAME}를 설치하는 동안 잠시 기다려 주세요."
@@ -299,6 +301,7 @@ Var vcBar
   StrCpy $vcBar $0
   ; 경로 칸 폭 = 상자 줄 폭 − 앞말(«설치: » · «삭제: » — 굴림에서 같은 폭) − 줄 앞뒤 여백
   StrCpy $vcLog $mui.InstFilesPage.Log
+  StrCpy $vcMeasure $vcLog
   SendMessage $vcLog ${VC_LVM_GETCOLUMNWIDTH} 0 0 $1
   SendMessage $vcLog ${VC_WM_GETFONT} 0 0 $2
   System::Call "user32::GetDC(p $vcLog) p .r3"
@@ -311,7 +314,7 @@ Var vcBar
   System::Call "user32::ReleaseDC(p $vcLog, p r3)"
   IntOp $vcPathWidth $1 - $6
   IntOp $vcPathWidth $vcPathWidth - 16
-  SendMessage $vcBar ${VC_PBM_SETRANGE32} 0 1000
+  SendMessage $vcBar ${VC_PBM_SETRANGE32} 0 1001   ; 끝 1000에도 «한 칸 앞»이 있게(vcSetBarRaw)
   SendMessage $vcBar ${VC_PBM_SETPOS} 0 0
   StrCpy $vcBarBase 0
   StrCpy $vcBarSpan 1000
@@ -331,11 +334,20 @@ Var vcBarPos
 Var vcBarBase
 Var vcBarSpan
 Var vcBarRaw
+Var vcBarNext
+; Windows 막대는 앞으로 갈 때 새 자리까지 미끄러지듯 따라가 늦게 보인다. 뒤로 갈 때는 바로 그리므로, 한 칸 앞에 놓았다가 제자리로 되돌려
+; 그 자리를 바로 그리게 한다. 그래서 막대 범위는 0~1001이다 — 끝 1000에서도 «한 칸 앞»(1001)이 있다. 마지막에 1001로 한 칸(1화소 안) 더 채운다.
+; 처음에는 끝에서만 범위를 늘렸다 되돌렸는데, 범위가 바뀌면 막대 칸을 지웠다 다시 그려 100%에서 막대가 한 장(0.03초) 사라졌다(10/28 녹화 05회차).
 !macro vcSetBarRaw POS
   ${If} ${POS} > $vcBarPos
     StrCpy $vcBarPos ${POS}
     ${If} $vcBar != ""
+      IntOp $vcBarNext $vcBarPos + 1
+      SendMessage $vcBar ${VC_PBM_SETPOS} $vcBarNext 0
       SendMessage $vcBar ${VC_PBM_SETPOS} $vcBarPos 0
+      ${If} $vcBarPos >= 1000
+        SendMessage $vcBar ${VC_PBM_SETPOS} 1001 0
+      ${EndIf}
     ${EndIf}
   ${EndIf}
 !macroend
@@ -347,12 +359,131 @@ Var vcBarRaw
 !macroend
 
 ; 상자에 한 줄 — 단계 문장은 막대 위 글줄과 상자에 함께, 파일 줄은 상자에만(막대 위 글줄은 단계 문장으로 남는다)
-; 파일 줄은 «설치: <경로>» · «삭제: <경로>»다. «나만» 위치(%LOCALAPPDATA%\Programs\InKY Film Festival\Voice Cinema\…)는 길어서 상자 끝에서 잘려
-; 모든 줄이 «…\Voice Cine…»로 똑같이 보였다(10/28). 경로가 칸보다 길면 가운데를 «...»로 줄여(Windows PathCompactPath — 복사 창과 같은 방식)
-; 앞(설치 위치)과 끝(파일 이름)이 함께 보이게 한다. 칸 폭은 진행 화면이 뜰 때 잰다(vcMakeBar).
+; 파일 줄은 «설치: <경로>» · «삭제: <경로>»다. 칸보다 긴 경로는 폴더 이름 단위로만 줄여 가운데 폴더들을 «…» 하나로 바꾼다 — 낱말 중간에서
+; 끊지 않는다(기준 6). 처음에는 Windows PathCompactPath로 줄였는데 글자 단위로 잘라 줄마다 «InK…» · «InKY Fil…» · «Microsof…»처럼
+; 다른 곳이 잘렸다(10/28 팀장 검토). 칸 폭은 진행 화면이 뜰 때 잰다(vcMakeBar).
+;   - 지금 설치하거나 지우는 위치($vcBase) 아래 파일: 줄마다 같은 모양이 되게, 위치가 칸의 45%보다 길면 그 위치를 한 번 줄여(앞 폴더들 + «…» +
+;     마지막 폴더) 모든 줄에 같이 쓴다 — 예: «C:\Users\817be\AppData\Local\…\Voice Cinema\vulkan-1.dll».
+;   - 그 밖의 경로(바로가기 · 앱 데이터): 끝(상위 폴더\파일 이름)을 남기고 앞 폴더를 칸에 드는 만큼 남긴다.
 Var vcLog
 Var vcPathWidth
+Var vcMeasure    ; 글 폭을 잴 칸(그 칸의 글꼴로 잰다) — 진행 화면은 상자(vcMakeBar), 위치 화면은 폴더 칸(in-pages.nsh)
+Var vcBase      ; 지금 줄을 적는 위치(설치 · 제거하는 폴더) — 비어 있으면 «그 밖의 경로» 규칙만 쓴다
+Var vcBaseFor    ; $vcBaseShow를 계산한 위치
+Var vcBaseShow   ; 줄에 쓸 위치의 모양
 !macro vcFitPathFunction UN
+  ; 글 폭($vcMeasure 칸의 글꼴, 화소) — 스택: 글 → 폭
+  Function ${UN}vcTextWidth
+    Exch $R0
+    Push $R1
+    Push $R2
+    Push $R3
+    Push $R4
+    System::Call "user32::GetDC(p $vcMeasure) p .R1"
+    SendMessage $vcMeasure ${VC_WM_GETFONT} 0 0 $R2
+    System::Call "gdi32::SelectObject(p R1, p R2) p .R3"
+    StrLen $R4 $R0
+    System::Call "*(i 0, i 0) p .R2"
+    System::Call "gdi32::GetTextExtentPoint32W(p R1, w R0, i R4, p R2)"
+    System::Call "*$R2(i .R4, i)"
+    System::Free $R2
+    System::Call "gdi32::SelectObject(p R1, p R3)"
+    System::Call "user32::ReleaseDC(p $vcMeasure, p R1)"
+    StrCpy $R0 $R4
+    Pop $R4
+    Pop $R3
+    Pop $R2
+    Pop $R1
+    Exch $R0
+  FunctionEnd
+
+  ; 앞 폴더들 + «\…» + 끝 TAIL개(폴더 · 파일 이름)로 줄인다 — 스택: 경로, 끝 개수, 폭 → 줄인 경로.
+  ; 앞은 드라이브(«C:»)부터 폴더 하나씩 늘려 폭 안에 드는 데까지. 끝 TAIL개로도 넘치면 끝을 하나로 줄여 본다.
+  Function ${UN}vcShortenPath
+    Exch $R2   ; 폭
+    Exch
+    Exch $R1   ; 끝 개수
+    Exch 2
+    Exch $R0   ; 경로
+    Push $R3
+    Push $R4
+    Push $R5
+    Push $R6
+    Push $R7
+    Push $R8
+    ${Do}
+      ; 끝 $R1개가 시작하는 «\»의 자리 → $R4(없으면 줄일 수 없어 그대로)
+      StrLen $R3 $R0
+      StrCpy $R5 0
+      StrCpy $R4 -1
+      ${Do}
+        IntOp $R3 $R3 - 1
+        ${If} $R3 < 0
+          ${ExitDo}
+        ${EndIf}
+        StrCpy $R6 $R0 1 $R3
+        ${If} $R6 == "\"
+          IntOp $R5 $R5 + 1
+          ${If} $R5 == $R1
+            StrCpy $R4 $R3
+            ${ExitDo}
+          ${EndIf}
+        ${EndIf}
+      ${Loop}
+      ${If} $R4 < 0
+        ${ExitDo}
+      ${EndIf}
+      StrCpy $R7 $R0 "" $R4   ; 끝(«\»부터)
+      ; 앞: 첫 «\» 앞(드라이브)부터, 끝이 시작하기 전까지 폴더를 하나씩 늘린다
+      StrCpy $R3 0
+      StrCpy $R8 ""
+      ${Do}
+        StrCpy $R6 $R0 1 $R3
+        ${If} $R3 >= $R4
+          ${ExitDo}
+        ${EndIf}
+        ${If} $R6 == "\"
+          StrCpy $R5 $R0 $R3
+          Push "$R5\…$R7"
+          Call ${UN}vcTextWidth
+          Pop $R6
+          ${If} $R8 == ""
+          ${OrIf} $R6 <= $R2
+            StrCpy $R8 "$R5\…$R7"
+          ${EndIf}
+          ${If} $R6 > $R2
+            ${ExitDo}
+          ${EndIf}
+        ${EndIf}
+        IntOp $R3 $R3 + 1
+      ${Loop}
+      ${If} $R8 == ""
+        ${ExitDo}
+      ${EndIf}
+      Push $R8
+      Call ${UN}vcTextWidth
+      Pop $R6
+      ${If} $R6 <= $R2
+      ${OrIf} $R1 <= 1
+        StrCpy $R0 $R8
+        ${ExitDo}
+      ${EndIf}
+      IntOp $R1 $R1 - 1
+    ${Loop}
+    Pop $R8
+    Pop $R7
+    Pop $R6
+    Pop $R5
+    Pop $R4
+    Pop $R3
+    ; 스택: 원래 $R0, 원래 $R2, 원래 $R1 → 둘을 되돌리고 결과를 남긴다
+    Exch
+    Pop $R2
+    Exch
+    Pop $R1
+    Exch $R0
+  FunctionEnd
+
   Function ${UN}vcFitPath
     Exch $R0
     Push $R1
@@ -360,12 +491,46 @@ Var vcPathWidth
     Push $R3
     ${If} $vcLog != ""
     ${AndIf} $vcPathWidth > 0
-      System::Call "user32::GetDC(p $vcLog) p .R1"
-      SendMessage $vcLog ${VC_WM_GETFONT} 0 0 $R2
-      System::Call "gdi32::SelectObject(p R1, p R2) p .R3"
-      System::Call "shlwapi::PathCompactPathW(p R1, w R0R0, i $vcPathWidth)"
-      System::Call "gdi32::SelectObject(p R1, p R3)"
-      System::Call "user32::ReleaseDC(p $vcLog, p R1)"
+      ; 줄을 적는 위치의 모양을 한 번 정한다(위치가 바뀔 때만)
+      ${If} $vcBase != $vcBaseFor
+        StrCpy $vcBaseFor $vcBase
+        StrCpy $vcBaseShow $vcBase
+        ${If} $vcBase != ""
+          IntOp $R2 $vcPathWidth * 45
+          IntOp $R2 $R2 / 100
+          Push $vcBase
+          Call ${UN}vcTextWidth
+          Pop $R1
+          ${If} $R1 > $R2
+            Push $vcBase
+            Push 1
+            Push $R2
+            Call ${UN}vcShortenPath
+            Pop $vcBaseShow
+          ${EndIf}
+        ${EndIf}
+      ${EndIf}
+      StrCpy $R3 $R0
+      ${If} $vcBase != ""
+        StrLen $R1 "$vcBase\"
+        StrCpy $R2 $R0 $R1
+        ${If} $R2 == "$vcBase\"
+          StrCpy $R2 $R0 "" $R1
+          StrCpy $R3 "$vcBaseShow\$R2"
+        ${EndIf}
+      ${EndIf}
+      Push $R3
+      Call ${UN}vcTextWidth
+      Pop $R1
+      ${If} $R1 <= $vcPathWidth
+        StrCpy $R0 $R3
+      ${Else}
+        Push $R0
+        Push 2
+        Push $vcPathWidth
+        Call ${UN}vcShortenPath
+        Pop $R0
+      ${EndIf}
     ${EndIf}
     Pop $R3
     Pop $R2
@@ -389,6 +554,22 @@ Var vcPathWidth
   Pop $R0
 !macroend
 
+; 측정용 — VC_TIMING을 정의한 시험 빌드에서만 단계마다 시각(ms)을 임시 폴더의 vc-timing.txt에 적는다. 화면에는 아무것도 나오지 않고,
+; 배포 판에는 들어가지 않는다(막대 몫을 단계 시간에 맞출 때 쓴다).
+!macro vcT LABEL
+  !ifdef VC_TIMING
+    Push $9
+    Push $8
+    System::Call "kernel32::GetTickCount() i .r9"
+    FileOpen $8 "$TEMP\vc-timing.txt" a
+    FileSeek $8 0 END
+    FileWrite $8 "$9 ${LABEL}$\r$\n"
+    FileClose $8
+    Pop $8
+    Pop $9
+  !endif
+!macroend
+
 !macro vcStage TEXT
   SetDetailsPrint both
   DetailPrint "${TEXT}"
@@ -400,14 +581,13 @@ Var vcPathWidth
   SetDetailsPrint none
 !macroend
 
-; 끝: 마지막 줄을 적고 막대를 100%로 채운 뒤 1초쯤 보여 준다. 그다음 진행 화면은 저절로 완료 화면으로 넘어간다.
-; Windows 막대는 새 위치까지 0.3초쯤 미끄러지듯 차서, 1초만 기다리면 100%가 0.67초만 보였다(10/28 녹화) — 그 몫까지 1.3초 기다린다.
+; 끝: 마지막 줄을 적고 막대를 100%로 채운 뒤 1초 보여 준다(막대는 바로 그린다 — vcSetBarRaw). 그다음 진행 화면은 저절로 완료 화면으로 넘어간다.
 ; NSIS가 끝에 붙이는 «완료» 줄은 이 뒤 «SetDetailsPrint none» 상태라 찍히지 않는다.
 !macro vcFinishProgress TEXT
   !insertmacro vcSetBar 1000
   !insertmacro vcStage "${TEXT}"
   ${IfNot} ${Silent}
-    Sleep 1300
+    Sleep 1000
   ${EndIf}
 !macroend
 
@@ -514,6 +694,7 @@ Var vcAppAnswer
       !insertmacro vcModeLabel
     FunctionEnd
     Function vcInstFilesShow
+      !insertmacro vcT "page-show"
       !insertmacro vcMakeBar
     FunctionEnd
     Function vcInstFilesLeave
@@ -727,6 +908,7 @@ Var vcAppAnswer
       Sleep 1000
     ${Loop}
     !insertmacro vcFileLine "설치: " "$INSTDIR$R0"
+    !insertmacro vcT "copy $R0"
     Push "$INSTDIR$R0"
     Call vcCopyWeight
     Pop $R3
@@ -739,9 +921,23 @@ Var vcAppAnswer
     IntOp $R3 $R3 / 1000
     IntOp $R3 $R3 + ${VC_BAR_EXTRACT_TO}
     !insertmacro vcSetBar $R3
+    ; 마지막 파일을 옮긴 그 순간 «확인» 단계로 — 복사가 끝난 직후 첫 파일 작업이 Windows(백신)의 새 파일 검사를 기다려 지금 내용 0.34초,
+    ; 영상을 키운 내용 1.8초 동안 막대가 섰는데, 그동안 단계 문장이 아직 «설치하는 중»이었다(10/28 측정). 기다림이 시작되기 전에 문장을 바꾼다.
+    ${If} $vcCopyDone >= $vcCopyTotal
+      Call vcCheckStage
+    ${EndIf}
     Pop $R4
     Pop $R3
     Pop $R0
+  FunctionEnd
+
+  ; «설치한 파일을 확인하는 중입니다 …» 단계 문장을 한 번만 적는다(마지막 파일을 옮긴 때 — 그때를 못 만나면 복사를 다 마친 뒤 install-files.nsh에서)
+  Var vcChecking
+  Function vcCheckStage
+    ${If} $vcChecking != "1"
+      StrCpy $vcChecking "1"
+      !insertmacro vcStage "설치한 파일을 확인하는 중입니다 …"
+    ${EndIf}
   FunctionEnd
 
   ; 임시 폴더에 푼 것을 설치 위치로 하나씩 복사한다 — 스택: 상대 경로(""부터).
@@ -773,6 +969,7 @@ Var vcAppAnswer
 
   ; 파일 · 등록 · 바로가기를 마친 뒤: 시작 메뉴에 «Uninstall Voice Cinema»를 더하고, 만든 바로가기를 상자에 적고 끝낸다
   !macro customInstall
+    !insertmacro vcT "custom-install"
     CreateShortCut "$SMPROGRAMS\${MENU_FILENAME}\Uninstall ${PRODUCT_NAME}.lnk" "$INSTDIR\${UNINSTALL_FILENAME}"
     ${If} $installMode == "all"
       DeleteRegValue HKCU "${INSTALL_REGISTRY_KEY}" InstallLocation
@@ -787,6 +984,7 @@ Var vcAppAnswer
     ${If} ${FileExists} "$newDesktopLink"
       !insertmacro vcFileLine "설치: " "$newDesktopLink"
     ${EndIf}
+    !insertmacro vcT "install-finish"
     !insertmacro vcFinishProgress "설치가 끝났습니다."
   !macroend
 
@@ -908,13 +1106,17 @@ Var vcAppAnswer
     !insertmacro vcCompositedOff
     SetDetailsPrint none
     ${IfNot} ${isUpdated}
+      !insertmacro vcT "un-start"
       !insertmacro vcStage "프로그램 파일을 제거하는 중입니다 …"
+      StrCpy $vcBase $INSTDIR
       StrCpy $vcFileCount 0
       StrCpy $vcFileDone 0
       Push ""
       Call un.vcCountTree
+      !insertmacro vcT "un-counted"
       Push ""
       Call un.vcDeleteTree
+      !insertmacro vcT "un-deleted"
 
       ${IfNot} ${isKeepShortcuts}
         ; 템플릿과 같은 순서(바로가기 연결 정보를 지운 뒤 파일)로 지우고 줄을 적는다
@@ -935,6 +1137,7 @@ Var vcAppAnswer
           !insertmacro vcFileLine "삭제: " "$SMPROGRAMS\$R1\Uninstall ${PRODUCT_NAME}.lnk"
         ${EndIf}
       ${EndIf}
+      !insertmacro vcT "un-shortcuts"
       !insertmacro vcSetBar 950
 
       ; 앱 데이터(%APPDATA%\Voice Cinema — 창 상태 · 캐시. 학생 녹음은 여기 남지 않는다)는 사용자별이다. 지우는 판단은 템플릿과 같다
@@ -983,6 +1186,7 @@ Var vcAppAnswer
           SetShellVarContext all
         ${EndIf}
       !endif
+      !insertmacro vcT "un-finish"
       !insertmacro vcFinishProgress "제거가 끝났습니다."
     ${Else}
       ; 새 설치기가 이 판을 지울 때(--updated, 화면 없음): 파일 · 바로가기 · 등록은 템플릿이 지운다. 시작 메뉴의 «Uninstall Voice Cinema»는

@@ -68,6 +68,7 @@
   !verbose pop
 
   Function un.vcInstFilesShow
+    !insertmacro vcT "un-page-show"
     !insertmacro vcMakeBar
   FunctionEnd
   Function un.vcInstFilesLeave

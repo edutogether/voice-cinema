@@ -17,8 +17,12 @@
 !ifndef VC_OLD_VERSION_INCLUDED
 !define VC_OLD_VERSION_INCLUDED
 
-!define VC_BAR_OLD 250       ; 예전 판 지우기가 쓰는 막대 몫(0~1000 가운데) — 이 PC에서 지우기 1.5초 · 설치 6초쯤(10/28)
+!define VC_BAR_OLD 250       ; 예전 판 지우기가 쓰는 막대 몫(0~1000 가운데) — 이 PC에서 준비 0.8초 · 지우기 1.5초 · 설치 8초쯤(10/28)
 !define VC_BAR_OLD_STEP 10   ; 0.05초마다 막대가 따라갈 수 있는 최대 걸음 — 파일이 한꺼번에 사라져도 막대는 고르게 찬다
+; 준비(지울 파일 적기 · 제거기 복사 · 띄우기 — 0.8초쯤)와 첫 파일이 지워지기 전까지는 시간으로 민다: VC_OLD_CREEP_MS마다 1씩, 그 판 몫의
+; VC_OLD_PREP_PERCENT까지. 처음에는 제거기가 뜬 뒤에만 밀어 진행 화면 처음 0.8초 동안 막대가 0에 서 있었다(10/28 녹화 — 팀장 검토).
+!define VC_OLD_CREEP_MS 25
+!define VC_OLD_PREP_PERCENT 20
 
 Var vcOldRoots      ; 지울 판 수(0 · 1 · 2)
 Var vcOldIndex      ; 지금 지우는 판의 차례
@@ -37,6 +41,45 @@ Var vcOldFrom
 Var vcOldTo
 Var vcOldShown
 Var vcOldTarget
+Var vcOldT0         ; 이 판의 준비를 시작한 시각(ms)
+Var vcOldLineFrom   ; 첫 «삭제:» 줄이 나왔을 때의 막대 — 줄 비율은 여기서부터 몫의 90%까지 채운다
+
+; 준비 · 첫 파일을 기다리는 동안 시간으로 막대를 민다(위 VC_OLD_CREEP_MS · VC_OLD_PREP_PERCENT)
+Function vcOldCreep
+  Push $R1
+  Push $R2
+  System::Call "kernel32::GetTickCount() i .R1"
+  IntOp $R1 $R1 - $vcOldT0
+  IntOp $R1 $R1 / ${VC_OLD_CREEP_MS}
+  IntOp $R1 $R1 + $vcOldFrom
+  IntOp $R2 $vcOldTo - $vcOldFrom
+  IntOp $R2 $R2 * ${VC_OLD_PREP_PERCENT}
+  IntOp $R2 $R2 / 100
+  IntOp $R2 $R2 + $vcOldFrom
+  ${If} $R1 > $R2
+    StrCpy $R1 $R2
+  ${EndIf}
+  ${If} $R1 > $vcOldShown
+    StrCpy $vcOldShown $R1
+    !insertmacro vcSetBarRaw $vcOldShown
+  ${EndIf}
+  Pop $R2
+  Pop $R1
+FunctionEnd
+
+; 지운 줄 비율의 막대 목표 → $vcOldTarget: 첫 줄이 나온 자리부터 그 판 몫의 90%까지(나머지는 제거기가 끝난 뒤)
+Function vcOldLineTarget
+  IntOp $vcOldTarget $vcOldTo - $vcOldFrom
+  IntOp $vcOldTarget $vcOldTarget * 9
+  IntOp $vcOldTarget $vcOldTarget / 10
+  IntOp $vcOldTarget $vcOldTarget + $vcOldFrom
+  IntOp $vcOldTarget $vcOldTarget - $vcOldLineFrom
+  ${If} $vcOldTotal > 0
+    IntOp $vcOldTarget $vcOldTarget * $vcOldDone
+    IntOp $vcOldTarget $vcOldTarget / $vcOldTotal
+  ${EndIf}
+  IntOp $vcOldTarget $vcOldTarget + $vcOldLineFrom
+FunctionEnd
 
 ; $vcOldRoot의 등록에서 제거기 경로($vcOldUninstaller)와 설치 위치($vcOldDir)를 읽는다 — 없으면 $vcOldUninstaller = ""
 ; (읽는 법은 템플릿 uninstallOldVersion과 같다: 제거 명령의 따옴표 안, 설치 위치가 없으면 제거기가 있는 폴더)
@@ -87,6 +130,7 @@ Function vcListTree
       ${Else}
         FileWriteUTF16LE $vcOldList "$R0\$R2$\r$\n"
         IntOp $vcOldTotal $vcOldTotal + 1
+        Call vcOldCreep
       ${EndIf}
     ${EndIf}
     FindNext $R1 $R2
@@ -170,20 +214,17 @@ Function vcOldReport
       ${EndIf}
     ${Else}
       !insertmacro vcFileLine "삭제: " "$vcOldPending"
+      ${If} $vcOldDone == 0
+        StrCpy $vcOldLineFrom $vcOldShown
+        !insertmacro vcT "old-first-deleted"
+      ${EndIf}
       IntOp $vcOldDone $vcOldDone + 1
       ; 줄을 하나 적을 때마다 막대도 함께 간다(몫의 90%까지 — 나머지는 제거기가 끝난 뒤). 예전 제거기는 1초도 안 돼 끝나고 줄 적기가 3초쯤 걸려
       ; (한 줄 17ms쯤 — 상자를 다시 그린다), 줄을 다 적은 뒤에만 막대를 옮기면 그동안 막대가 멈춰 있었다(10/28 녹화).
-      ${If} $vcOldTotal > 0
-        IntOp $R1 $vcOldTo - $vcOldFrom
-        IntOp $R1 $R1 * 9
-        IntOp $R1 $R1 / 10
-        IntOp $R1 $R1 * $vcOldDone
-        IntOp $R1 $R1 / $vcOldTotal
-        IntOp $R1 $R1 + $vcOldFrom
-        ${If} $R1 > $vcOldShown
-          StrCpy $vcOldShown $R1
-          !insertmacro vcSetBarRaw $vcOldShown
-        ${EndIf}
+      Call vcOldLineTarget
+      ${If} $vcOldTarget > $vcOldShown
+        StrCpy $vcOldShown $vcOldTarget
+        !insertmacro vcSetBarRaw $vcOldShown
       ${EndIf}
     ${EndIf}
     StrCpy $vcOldPending ""
@@ -204,17 +245,36 @@ Function vcStartOld
   ${Else}
     StrCpy $R3 "open"
   ${EndIf}
-  ; SHELLEXECUTEINFOW: 크기, SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NOASYNC(설치 단계는 따로 도는 스레드다), 창, 동작, 파일, 인자,
-  ; 작업 폴더(설치 폴더를 붙잡지 않게 임시 폴더), SW_HIDE, … , hProcess
-  System::Call '*(&l4, i 0x140, p $HWNDPARENT, w R3, w R0, w "/S /KEEP_APP_DATA $vcOldArgs _?=$vcOldDir", w "$TEMP", i 0, p 0, p 0, p 0, p 0, i 0, p 0, p 0) p .R4'
-  System::Call 'shell32::ShellExecuteExW(p R4) i .R5 ?e'
-  Pop $R6
   StrCpy $vcOldProc 0
-  ${If} $R5 != 0
-    System::Call '*$R4(i, i, p, p, p, p, p, i, p, p, p, p, i, p, p .R5)'
-    StrCpy $vcOldProc $R5
+  ${If} $R3 == "runas"
+    ; 관리자 권한을 받는 동안(이 PC 0.6초 — 다른 PC에서는 승인 창을 누를 때까지)은 막대가 설 수밖에 없다 — 기다림 단계 문장을 띄운다(10/28 측정)
+    !insertmacro vcStage "관리자 허락을 기다리는 중입니다 …"
+    ; SHELLEXECUTEINFOW: 크기, SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NOASYNC(설치 단계는 따로 도는 스레드다), 창, 동작, 파일, 인자,
+    ; 작업 폴더(설치 폴더를 붙잡지 않게 임시 폴더), SW_HIDE, … , hProcess
+    System::Call '*(&l4, i 0x140, p $HWNDPARENT, w R3, w R0, w "/S /KEEP_APP_DATA $vcOldArgs _?=$vcOldDir", w "$TEMP", i 0, p 0, p 0, p 0, p 0, i 0, p 0, p 0) p .R4'
+    System::Call 'shell32::ShellExecuteExW(p R4) i .R5 ?e'
+    Pop $R6
+    !insertmacro vcStage "예전 ${PRODUCT_NAME}를 지우는 중입니다 …"
+    ${If} $R5 != 0
+      System::Call '*$R4(i, i, p, p, p, p, p, i, p, p, p, p, i, p, p .R5)'
+      StrCpy $vcOldProc $R5
+    ${EndIf}
+    System::Free $R4
+  ${Else}
+    ; 관리자 권한이 필요 없으면 셸을 거치지 않고 바로 띄운다 — 셸 실행(ShellExecuteEx)은 설치기에서 처음 쓸 때 0.53초 걸려 그동안 막대가 섰다(10/28 측정)
+    StrCpy $R5 '"$R0" /S /KEEP_APP_DATA $vcOldArgs _?=$vcOldDir'
+    System::Call '*(i 68, i 0, i 0, i 0, i 0, i 0, i 0, i 0, i 0, i 0, i 0, i 0, &i2 0, &i2 0, p 0, p 0, p 0, p 0) p .R4'   ; STARTUPINFOW
+    System::Call '*(p 0, p 0, i 0, i 0) p .R3'   ; PROCESS_INFORMATION
+    System::Call 'kernel32::CreateProcessW(w R0, w R5, p 0, p 0, i 0, i 0, p 0, w "$TEMP", p R4, p R3) i .R5 ?e'
+    Pop $R6
+    ${If} $R5 != 0
+      System::Call '*$R3(p .R5, p .s)'
+      System::Call 'kernel32::CloseHandle(p s)'   ; 스레드 손잡이는 쓰지 않는다
+      StrCpy $vcOldProc $R5
+    ${EndIf}
+    System::Free $R3
+    System::Free $R4
   ${EndIf}
-  System::Free $R4
   Pop $R5
   Pop $R4
   Pop $R3
@@ -238,25 +298,41 @@ Function vcRemoveOne
     ${Else}
       StrCpy $vcOldArgs "/currentuser"
     ${EndIf}
+    ; 이 판의 줄은 그 판의 설치 위치를 한 모양으로 줄여 적는다(installer.nsh vcFitPath)
+    StrCpy $vcBase $vcOldDir
     ${Do}
+      StrCpy $vcOldShown $vcOldFrom
+      System::Call "kernel32::GetTickCount() i .s"
+      Pop $vcOldT0
+      !insertmacro vcT "old-prepare"
       Call vcListOld
-      ; 제거기는 설치 폴더와 함께 지워지므로 임시 폴더로 옮겨 돌리고, 막히면(그룹 정책 등) 제자리의 것을 돌린다 — 템플릿과 같다
+      !insertmacro vcT "old-listed"
+      ; 제거기는 설치 폴더와 함께 지워지므로 임시 폴더로 옮겨 돌리고, 막히면(그룹 정책 등) 제자리의 것을 돌린다 — 템플릿과 같다.
+      ; 복사는 파일 하나라 셸 복사(CopyFiles — 셸을 준비하느라 느리다) 대신 CopyFileW로 한다.
       Delete "$PLUGINSDIR\old-uninstaller.exe"
-      CopyFiles /SILENT "$vcOldUninstaller" "$PLUGINSDIR\old-uninstaller.exe"
-      Push "$PLUGINSDIR\old-uninstaller.exe"
-      Call vcStartOld
+      System::Call "kernel32::CopyFileW(w '$vcOldUninstaller', w '$PLUGINSDIR\old-uninstaller.exe', i 0) i .R1"
+      Call vcOldCreep
+      !insertmacro vcT "old-copied"
+      StrCpy $vcOldProc 0
+      StrCpy $R6 0
+      ${If} $R1 != 0
+        Push "$PLUGINSDIR\old-uninstaller.exe"
+        Call vcStartOld
+      ${EndIf}
       ${If} $vcOldProc == 0
       ${AndIf} $R6 != 1223
         Push $vcOldUninstaller
         Call vcStartOld
       ${EndIf}
+      Call vcOldCreep
+      !insertmacro vcT "old-started"
 
       ${If} $vcOldProc != 0
         FileOpen $vcOldList "$PLUGINSDIR\vc-old.txt" r
         StrCpy $vcOldPending ""
         StrCpy $vcOldDone 0
         StrCpy $vcOldExited 0
-        StrCpy $vcOldShown $vcOldFrom
+        StrCpy $vcOldLineFrom $vcOldShown
         ${Do}
           ${If} $vcOldExited == 0
             System::Call 'kernel32::WaitForSingleObject(p $vcOldProc, i 50) i .R1'
@@ -268,29 +344,15 @@ Function vcRemoveOne
             Sleep 50
           ${EndIf}
           Call vcOldReport
-          ; 막대 목표: 사라진 파일 비율로 몫의 90%까지, 제거기가 끝나면 몫 끝까지. 보이는 막대는 한 번에 VC_BAR_OLD_STEP씩만 따라간다.
+          ; 막대 목표: 첫 파일이 지워지기 전에는 시간으로(vcOldCreep), 그 뒤로는 사라진 파일 비율로 몫의 90%까지, 제거기가 끝나면 몫 끝까지.
+          ; 보이는 막대는 한 번에 VC_BAR_OLD_STEP씩만 따라간다.
           ${If} $vcOldExited == 1
             StrCpy $vcOldTarget $vcOldTo
+          ${ElseIf} $vcOldDone == 0
+            Call vcOldCreep
+            StrCpy $vcOldTarget $vcOldShown
           ${Else}
-            IntOp $vcOldTarget $vcOldTo - $vcOldFrom
-            IntOp $vcOldTarget $vcOldTarget * 9
-            IntOp $vcOldTarget $vcOldTarget / 10
-            IntOp $vcOldTarget $vcOldTarget * $vcOldDone
-            ${If} $vcOldTotal > 0
-              IntOp $vcOldTarget $vcOldTarget / $vcOldTotal
-            ${EndIf}
-            IntOp $vcOldTarget $vcOldTarget + $vcOldFrom
-            ; 첫 파일이 지워지기 전(제거기가 뜨는 동안 1~2초 — 관리자 권한이면 더)에는 0.05초마다 1씩, 몫의 10%까지만 민다.
-            ; 그동안 막대가 0에 서 있었다(10/28 녹화 1.7초). 지운 줄이 나오면 줄 비율이 이 값을 넘을 때부터 그대로 따라간다.
-            ${If} $vcOldDone == 0
-              IntOp $vcOldTarget $vcOldTo - $vcOldFrom
-              IntOp $vcOldTarget $vcOldTarget / 10
-              IntOp $vcOldTarget $vcOldTarget + $vcOldFrom
-              IntOp $R1 $vcOldShown + 1
-              ${If} $R1 < $vcOldTarget
-                StrCpy $vcOldTarget $R1
-              ${EndIf}
-            ${EndIf}
+            Call vcOldLineTarget
           ${EndIf}
           IntOp $R1 $vcOldShown + ${VC_BAR_OLD_STEP}
           ${If} $R1 > $vcOldTarget
@@ -306,6 +368,7 @@ Function vcRemoveOne
           ${EndIf}
         ${Loop}
         FileClose $vcOldList
+        !insertmacro vcT "old-removed"
       ${EndIf}
 
       ; 지웠는지는 등록이 사라졌는지로 본다
@@ -339,6 +402,7 @@ Function vcRemoveOldVersions
     IntOp $vcOldRoots $vcOldRoots + 1
   ${EndIf}
   ${If} $vcOldRoots > 0
+    !insertmacro vcT "old-stage"
     !insertmacro vcStage "예전 ${PRODUCT_NAME}를 지우는 중입니다 …"
     StrCpy $vcOldIndex 0
     StrCpy $vcOldRoot "HKLM"

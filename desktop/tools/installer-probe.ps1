@@ -32,6 +32,7 @@ param(
   [ValidateSet('', 'ok', 'cancel')][string]$OnInstalled = '',
   [switch]$AfterCancel,
   [string]$StartApp = '',   # 설치 · 제거기를 띄우기 전에 이 앱을 켜 둔다(기준 9 시험)
+  [switch]$RevealDir,       # 위치 화면에서 줄인 경로(«…»)를 눌러 전체 경로가 되는지 찍고 적는다
   [int]$Minutes = 8
 )
 # 시험 창을 둘 모니터: 가장 작은 화면(이 PC는 아래 1760×990 · 125% — 위 두 큰 모니터는 사람이 쓴다). 바꿀 때는 여기만 고친다.
@@ -525,6 +526,19 @@ while ((Get-Date) -lt $until) {
     if ($k.Text -match '실행하기' -and $NoRun -and $checked) { [W]::SendMessage($k.H, 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero) | Out-Null; Say "  uncheck: $($k.Text)" }
   }
   if ($Dir) { foreach ($e in ($innerCtls | Where-Object { $_.Cls -eq 'Edit' -and $_.Visible })) { [W]::SendText($e.H, 0x000C, [IntPtr]::Zero, $Dir) | Out-Null; Say "  dir: $([W]::Text($e.H))" } }
+  # 위치 화면의 줄인 경로 칸(«…»가 든 글 칸)을 눌러 사라지고 폴더 칸의 전체 경로가 보이는지 찍는다
+  if ($RevealDir -and ($innerCtls | Where-Object { $_.Cls -eq 'Edit' -and $_.Visible })) {
+    $short = $innerCtls | Where-Object { $_.Cls -eq 'Static' -and $_.Visible -and $_.Text -match '…' } | Select-Object -First 1
+    if ($short) {
+      Say "  dir short: $($short.Text)"
+      [W]::PostMessage($short.H, 0x0201, [IntPtr]1, [IntPtr]0x00050005) | Out-Null   # WM_LBUTTONDOWN (5,5)
+      [W]::PostMessage($short.H, 0x0202, [IntPtr]::Zero, [IntPtr]0x00050005) | Out-Null   # WM_LBUTTONUP
+      Start-Sleep -Milliseconds 600
+      Capture $h ("{0:D2}-dir-reveal.png" -f $step)
+      $edit = $innerCtls | Where-Object { $_.Cls -eq 'Edit' } | Select-Object -First 1
+      Say "  dir reveal: 줄인 칸 보임=$([W]::IsWindowVisible($short.H)) · 폴더 칸=$([W]::Text($edit.H))"
+    } else { Say "  dir short: (없음 — 칸에 다 든다)" }
+  }
   # 설치 완료 화면: «실행하기» 상자를 창 전체에서 다시 찾아 -NoRun이면 끄고 꺼졌는지 확인한다 — 화면이 바뀌는 순간 안쪽 화면을 잘못 잡아 상자를 못 보고
   # «마침»을 누른 일이 있다(10/28 08회차 — 앱이 떴다). 2초 안에 못 찾으면 알린다.
   if ($Kind -eq 'install' -and $next.Text -match '마침') {

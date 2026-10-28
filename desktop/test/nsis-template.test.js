@@ -17,6 +17,8 @@ const macroBody = (text, name) => {
 };
 const templateInstaller = read(path.join(TEMPLATES, 'include', 'installer.nsh'));
 const ours = read(path.join(HERE, 'nsis', 'install-files.nsh'));
+// 측정용 줄(vcT — VC_TIMING을 정의한 시험 빌드에서만 임시 파일에 시각을 적는다, 배포 판에는 없다)은 원래 내용과 견줄 때 뺀다
+const withoutTiming = (text) => text.replace(/^\s*!insertmacro vcT "[^"]*"\n/gm, '');
 
 test('electron-builder는 26.17.0으로 고정이다(템플릿을 바꿔 끼운 판)', () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(HERE, 'package.json'), 'utf8'));
@@ -30,7 +32,7 @@ test('바꿔 끼운 installApplicationFiles의 원래 내용이 그대로다', (
 
 test('바로가기 두 매크로는 템플릿 원래 내용 끝에 막대 한 걸음만 더한 것이다', () => {
   for (const [name, step] of [['addStartMenuLink', 905], ['addDesktopLink', 950]]) {
-    assert.equal(macroBody(ours, name), `${macroBody(templateInstaller, name)}  !insertmacro vcSetBar ${step}\n`, name);
+    assert.equal(withoutTiming(macroBody(ours, name)), `${macroBody(templateInstaller, name)}  !insertmacro vcSetBar ${step}\n`, name);
   }
 });
 
@@ -64,9 +66,14 @@ test('설치기에는 첫 화면(환영)이 없고, 위치 화면을 떠날 때 
   const installer = read(path.join(HERE, 'nsis', 'installer.nsh'));
   assert.doesNotMatch(macroBody(installer.replace(/^ {2}/gm, ''), 'customWelcomePage'), /MUI_PAGE_WELCOME/);
   const dir = read(path.join(HERE, 'nsis', 'in-pages.nsh'));
-  assert.match(dir, /!define MUI_PAGE_CUSTOMFUNCTION_LEAVE vcDirectoryLeave\n\s+!insertmacro MUI_PAGEDECLARATION_DIRECTORY/);
-  const leave = dir.match(/Function vcDirectoryLeave\n([\s\S]*?)FunctionEnd/)[1];
-  // 이미 설치(두 범위) → 켜진 앱 순서, «취소»는 그 화면에 남는다(Abort)
+  // 위치 화면은 nsDialogs로 MUI 위치 화면과 같은 자리에 그린다 — 템플릿의 «업데이트면 건너뛰기»(PRE)를 넘겨받아 그대로 부른다
+  const page = macroBody(dir, 'MUI_PAGE_DIRECTORY');
+  assert.match(page, /!define VC_DIR_PRE "\$\{MUI_PAGE_CUSTOMFUNCTION_PRE\}"\n\s+!undef MUI_PAGE_CUSTOMFUNCTION_PRE/);
+  assert.match(page, /Page custom vcDirShow vcDirLeave/);
+  assert.match(page.match(/Function vcDirShow\n([\s\S]*?)FunctionEnd/)[1], /^\s+Call \$\{VC_DIR_PRE\}/m);
+  const leave = page.match(/Function vcDirLeave\n([\s\S]*?)FunctionEnd/)[1];
+  // 설치 위치는 폴더 칸의 전체 경로 → 이미 설치(두 범위) → 켜진 앱 순서, «취소»는 그 화면에 남는다(Abort)
+  assert.ok(leave.indexOf('StrCpy $INSTDIR') < leave.indexOf('vcAlreadyInstalled'));
   assert.ok(leave.indexOf('HKCU') < leave.indexOf('vcAlreadyInstalled') && leave.indexOf('HKLM') < leave.indexOf('vcAlreadyInstalled'));
   assert.ok(leave.indexOf('vcAlreadyInstalled') < leave.indexOf('vcCloseRunningApp'));
   assert.equal((leave.match(/Abort/g) ?? []).length, 2);
@@ -110,9 +117,15 @@ test('설치기 화면 글은 한국어 문장과 «설치: / 삭제: » 줄뿐�
           });
         }
       }
-      assert.doesNotMatch(line, /GetTickCount|\[t\]/, `${file}: 시간 재기 기록 — ${line.trim()}`);
+      assert.doesNotMatch(line, /\[t\]/, `${file}: 시간 재기 기록 — ${line.trim()}`);
+    }
+    // 시각(GetTickCount)은 막대를 시간으로 밀 때와 측정용 vcT(VC_TIMING 빌드에서 임시 파일에만)에서만 읽는다 — 화면 글에 붙이지 않는다
+    for (const m of text.matchAll(/GetTickCount\(\) i \.(\w+)"\n((?:.*\n){0,3})/g)) {
+      assert.doesNotMatch(m[2], /DetailPrint|vcStage|vcLine|NSD_SetText|SendMessage/, `${file}: 시각을 화면에 적음`);
     }
   }
+  const timing = read(path.join(dir, 'installer.nsh')).match(/!macro vcT LABEL\n([\s\S]*?)!macroend/)[1];
+  assert.match(timing, /^\s*!ifdef VC_TIMING\n[\s\S]*FileWrite \$8[\s\S]*!endif\n$/);
 });
 
 test('바꿔 끼운 매크로가 부르는 템플릿 매크로가 있다', () => {
