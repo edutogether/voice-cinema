@@ -1,4 +1,5 @@
-# Voice Cinema Windows 설치판 — desktop/에서 `npm run dist`가 웹을 빌드한 뒤 이 설정으로 release/VoiceCinema-Setup.exe를 만든다.
+# Voice Cinema Windows 설치판 — desktop/에서 `npm run dist`가 웹을 빌드한 뒤 이 설정으로 «release/Voice Cinema Setup.exe»를 만든다.
+# 아이콘 · 설치 화면 그림(build/)은 먼저 `py -3 tools/make-icons.py`로 만든다(build/는 커밋하지 않는다).
 appId: kr.edutogether.voicecinema
 productName: Voice Cinema
 copyright: © 2026 같이교육
@@ -22,14 +23,18 @@ win:
     - target: nsis
       arch: [x64]
   icon: build/icon.ico
-# 일반 설치 프로그램: 사용자별 설치(관리자 권한 없이)가 기본이고 위치를 고를 수 있다. 시작 메뉴 · 바탕화면 바로가기, 설치 뒤 바로 실행,
-# «앱 및 기능»에서 제거. 제거하면 앱 데이터(%APPDATA%\Voice Cinema)도 지운다 — 학생 녹음은 거기 남지 않지만 기기에 흔적을 두지 않는다.
+# 일반 설치 프로그램(10/27 · 10/28 Bumm님 기준 — Poster Studio 설치판과 같다): «나만 / 모든 사용자»(모든 사용자가 먼저 골라져 있다) → 위치 → 진행 → 완료(첫 화면은 없다 — Poster Studio와 같은 차례).
+# 위치는 «InKY Film Festival\Voice Cinema»(모든 사용자는 C:\Program Files 아래 — menuCategory가 붙인다, 나만은 nsis/installer.nsh가 정한다).
+# 바탕화면 · 시작 메뉴 «InKY Film Festival»(Voice Cinema · Uninstall Voice Cinema) 바로가기, 설치 뒤 바로 실행, «설치된 앱» · 제어판에서 제거.
+# 제거하면 앱 데이터(%APPDATA%\Voice Cinema)도 지운다 — 학생 녹음은 거기 남지 않지만 기기에 흔적을 두지 않는다.
 nsis:
   oneClick: false
   perMachine: false
+  selectPerMachineByDefault: true
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: always
   createStartMenuShortcut: true
+  menuCategory: InKY Film Festival
   shortcutName: Voice Cinema
   uninstallDisplayName: Voice Cinema
   runAfterFinish: true
@@ -37,11 +42,13 @@ nsis:
   installerIcon: build/icon.ico
   uninstallerIcon: build/icon.ico
   installerHeaderIcon: build/icon.ico
+  # 설치 완료 화면, 제거 첫 · 완료 화면 왼쪽은 같은 그림이다. 설치기는 화면 배율에 맞는 판(build/installer-art)으로 바꿔 끼운다(nsis/installer.nsh).
   installerSidebar: build/installerSidebar.bmp
   uninstallerSidebar: build/installerSidebar.bmp
   installerHeader: build/installerHeader.bmp
+  include: nsis/installer.nsh
   # 한국어 하나만 싣는다. multiLanguageInstaller를 끄면 electron-builder가 language 값과 상관없이 영어(en_US)만 넣는다(10/27 실제로 영어 화면이 나왔다).
   multiLanguageInstaller: true
   installerLanguages: [ko_KR]
   language: '1042'
-  artifactName: VoiceCinema-Setup.${ext}
+  artifactName: Voice Cinema Setup.${ext}

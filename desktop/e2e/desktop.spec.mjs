@@ -20,11 +20,12 @@ function mp4Duration(buffer) {
   return buffer.readUInt32BE(at + 20) / buffer.readUInt32BE(at + 16);
 }
 
-/** 검사마다 새 프로필로 띄운다(가짜 마이크 장치 · 소리 끔). */
+/** 검사마다 새 프로필로 띄운다(가짜 마이크 장치 · 소리 끔). 창은 가장 작은 모니터에 뜬다(시험 전용 VC_TEST_SMALLEST_DISPLAY — main.js). */
 async function launch(args = []) {
   const app = await _electron.launch({
     executablePath: EXE,
     args: [`--user-data-dir=${test.info().outputPath('profile')}`, '--mute-audio', '--use-fake-device-for-media-stream', ...args],
+    env: { ...process.env, VC_TEST_SMALLEST_DISPLAY: '1' },
   });
   const page = await app.firstWindow();
   await page.locator('#splash').waitFor({ state: 'detached', timeout: 60000 });

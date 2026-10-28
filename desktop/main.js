@@ -1,6 +1,6 @@
 'use strict';
 // Voice Cinema Windows 설치판의 시작점. 화면은 웹과 같은 dist를 그대로 쓰고(bundle.js), 여기서는 창 · 마이크 권한 · 저장만 정한다.
-const { app, BrowserWindow, Menu, dialog, session, shell } = require('electron');
+const { app, BrowserWindow, Menu, dialog, screen, session, shell } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { ORIGIN, isBundleUrl, hostingHeaders, serveBundle } = require('./bundle');
@@ -54,23 +54,50 @@ function setUpSession() {
 }
 
 function createWindow() {
+  // 시험 전용 VC_TEST_SMALLEST_DISPLAY=1(desktop/e2e · tools의 검사만 넣는다): 처음부터 가장 작은 모니터에 창을 만든다 — 사람이 쓰는 큰 모니터에
+  // 시험 창이 한순간도 뜨지 않게(10/28 기준 12). 빌드한 앱은 Node의 «-r» 사전 로드를 무시해 바깥에서 자리를 옮길 수 없었다. 만든 뒤 다른 배율의
+  // 모니터로 옮기면 크기가 그 배율만큼 한 번 더 커져(1408×744 → 1760×931) 만들 때부터 그 모니터 좌표를 준다.
+  const testDisplay = process.env.VC_TEST_SMALLEST_DISPLAY === '1'
+    ? screen.getAllDisplays().sort((a, b) => a.size.width * a.size.height - b.size.width * b.size.height)[0]
+    : null;
   mainWindow = new BrowserWindow({
+    ...(testDisplay && { x: testDisplay.workArea.x, y: testDisplay.workArea.y }),
     title: APP_NAME,
     width: 1366,
     height: 860,
-    minWidth: 800,
-    minHeight: 600,
+    // 창 안쪽 최소 크기(10/28 기준 16): 웹이 PC 화면으로 맞춰지는 가장 작은 크기다 — 폭 1024 이상(public/fit.js가 그보다 좁으면 태블릿 · 휴대폰
+    // 화면으로 바꾸고, 높이도 600보다 낮으면 맞춤을 끈다)에 세로 스크롤 막대 몫 16, 높이는 글자가 기준(720)의 75% 아래로 줄지 않는 540.
+    // 예전 값(창 800×600 — 안쪽 784×561)은 웹이 맞춤을 끄는 크기라 화면이 깨졌다.
+    useContentSize: true,
+    minWidth: 1040,
+    minHeight: 540,
     show: false,
-    backgroundColor: '#111510', // 웹의 --bg — 첫 화면이 그려지기 전 흰 화면이 번쩍이지 않게
+    backgroundColor: '#ffffff', // 첫 화면(스플래시)의 바탕 — 화면이 그려지기 전에 다른 색이 번쩍이지 않게
     webPreferences: { partition: PARTITION, contextIsolation: true, sandbox: true, nodeIntegration: false, spellcheck: false },
   });
   // 창 제목은 앱 이름으로 둔다(웹 탭 제목은 «InKY Voice Cinema»).
   mainWindow.on('page-title-updated', (event) => event.preventDefault());
+  mainWindow.on('closed', () => { mainWindow = null; });
+  // 숨긴 창을 그 모니터의 작업 영역 크기로 맞춘 뒤 화면을 불러오고, 첫 그림이 끝나면 최대화해 띄운다.
+  // 예전에는 1366×860으로 먼저 그린 뒤 최대화했다. 세로가 줄어드는 화면(1366×768 등)에서는 바뀌는 도중에 잠깐 생긴 세로 스크롤 막대 폭만큼
+  // 화면 맞춤(public/fit.js)이 비율을 작게 잡은 채 남아, 웹과 달리 화면 양옆에 흰 띠가 생겼다(10/28 기준 15, desktop/tools/layout-compare.mjs).
+  // 작업 영역 크기 창의 안쪽은 최대화한 창보다 테두리 · 제목줄만큼 작아, 최대화하면 넓어지기만 한다 — 넓어질 때는 그 막대가 생기지 않는다.
+  // 첫 그림 전까지는 창이 보이지 않는다(그사이 창을 다른 모니터로 옮기면 거기서 최대화된다).
+  mainWindow.setBounds((testDisplay ?? screen.getDisplayMatching(mainWindow.getBounds())).workArea);
   mainWindow.once('ready-to-show', () => {
+    // 시험 전용: 숨긴 창의 실제 자리가 그 모니터 안인지 본 뒤에만 보인다 — 아니면 보이지 않은 채 끝낸다(10/28 팀장 지시).
+    if (testDisplay) {
+      const b = mainWindow.getBounds();
+      const d = testDisplay.bounds;
+      if (b.x < d.x || b.y < d.y || b.x + b.width > d.x + d.width || b.y + b.height > d.y + d.height) {
+        console.error(`VC_TEST_SMALLEST_DISPLAY: 창 자리 ${JSON.stringify(b)}가 시험 모니터 ${JSON.stringify(d)} 밖이라 띄우지 않고 끝낸다`);
+        app.exit(3);
+        return;
+      }
+    }
     mainWindow.maximize();
     mainWindow.show();
   });
-  mainWindow.on('closed', () => { mainWindow = null; });
   mainWindow.loadURL(`${ORIGIN}/`);
 }
 

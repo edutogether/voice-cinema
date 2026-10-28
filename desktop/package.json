@@ -10,7 +10,7 @@
   "scripts": {
     "start": "electron .",
     "test": "node --test test/*.test.js",
-    "dist": "npm --prefix .. run build && node --test test/*.test.js && electron-builder --win nsis --x64",
+    "dist": "py -3 tools/make-icons.py && npm --prefix .. run build && node --test test/*.test.js && electron-builder --win nsis --x64",
     "test:e2e": "playwright test"
   },
   "devDependencies": {
