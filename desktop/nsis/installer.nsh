@@ -45,12 +45,13 @@
 ; 묻는 창(MessageBox)은 Windows 글꼴이라 줄 간격이 있어 빈 줄을 두지 않는다.
 !ifndef BUILD_UNINSTALLER
   ; 위치 화면은 in-pages.nsh가 MUI 위치 화면과 같은 모양으로 그린다 — 이 안내문을 그 화면 맨 위 칸에 쓴다
-  !define MUI_DIRECTORYPAGE_TEXT_TOP "${PRODUCT_NAME}를 아래 폴더에 설치합니다.$\r$\n$\r$\n다른 폴더에 설치하려면 '찾아보기'를 눌러 폴더를 골라 주세요.$\r$\n$\r$\n$(^ClickInstall)"
+  ; 화면 문구는 Poster Studio 설치판과 같다(10/28 팀장 전달 — 앱 이름만 다르다). 단추는 «버튼»이 아니라 «단추»로 쓴다.
+  !define MUI_DIRECTORYPAGE_TEXT_TOP "${PRODUCT_NAME}를 아래 폴더에 설치합니다.$\r$\n$\r$\n다른 폴더에 설치하려면 '찾아보기' 단추를 눌러 폴더를 골라 주세요.$\r$\n$\r$\n설치를 시작하려면 '설치' 단추를 눌러 주세요."
   !define MUI_FINISHPAGE_TITLE "${PRODUCT_NAME} 설치 완료"
-  !define MUI_FINISHPAGE_TEXT "${PRODUCT_NAME}를 설치했습니다.$\r$\n$\r$\n'마침'을 누르면 설치 프로그램이 닫힙니다."
+  !define MUI_FINISHPAGE_TEXT "${PRODUCT_NAME}를 설치했습니다.$\r$\n$\r$\n마치려면 '마침' 단추를 눌러 주세요."
 !else
   !define MUI_FINISHPAGE_TITLE "${PRODUCT_NAME} 제거 완료"
-  !define MUI_FINISHPAGE_TEXT "이 컴퓨터에서 ${PRODUCT_NAME}를 제거했습니다.$\r$\n$\r$\n'마침'을 누르면 창이 닫힙니다."
+  !define MUI_FINISHPAGE_TEXT "${PRODUCT_NAME}를 지웠습니다.$\r$\n$\r$\n마치려면 '마침' 단추를 눌러 주세요."
 !endif
 ; 같은 이름을 두 번 정하면 NSIS가 «자리 낭비» 경고(6030)를 내고 electron-builder는 경고를 오류로 다룬다(-WX) — 이 몇 줄에서만 그 경고를 끈다.
 ; «설치 범위» 아래 안내는 설치기가 «$(…Exists)(경로)$\r$\n$(reinstallUpgrade)»로 잇는다 — 앞 문장 끝에 줄바꿈을 넣어 경로가 제 줄에 오게 한다.
@@ -63,9 +64,9 @@
   !pragma warning disable 6030
   !ifndef BUILD_UNINSTALLER
     ; 설치 범위 화면은 쉬운 말로(10/28 팀장 검토 — Poster Studio와 같은 문구)
-    LangString whoShouldThisApplicationBeInstalledFor ${LANG_KOREAN} "${PRODUCT_NAME}를 쓸 사람을 골라 주세요."
+    LangString whoShouldThisApplicationBeInstalledFor ${LANG_KOREAN} "이 프로그램의 사용자는 누구인가요?"
     LangString selectUserMode ${LANG_KOREAN} "이 컴퓨터에서 누가 ${PRODUCT_NAME}를 쓸지 골라 주세요."
-    LangString freshInstallForAll ${LANG_KOREAN} "모든 사용자가 쓸 수 있게 설치합니다.$\r$\n$\r$\n다음 단계에서 관리자 허락을 묻는 창이 뜹니다."
+    LangString freshInstallForAll ${LANG_KOREAN} "모든 사용자가 쓸 수 있게 설치합니다.$\r$\n$\r$\n'다음' 단추를 누르면 관리자 허락을 묻는 창이 뜹니다."
     LangString freshInstallForCurrent ${LANG_KOREAN} "나만 쓸 수 있게 설치합니다."
     ; 템플릿이 «$(…Exists)(설치 위치)$\r$\n$(reinstallUpgrade)»로 잇는다 — 세 줄 사이에 빈 줄이 오게 앞뒤 문구에 줄바꿈을 하나씩 더 둔다
     LangString perUserInstallExists ${LANG_KOREAN} "나만 쓰는 ${PRODUCT_NAME}가 이미 설치되어 있습니다.$\r$\n$\r$\n"
@@ -97,7 +98,7 @@
   ; 설치 범위 단추 — 기본 번역 «&me 전용» · «이 컴퓨터를 사용하는 모든 사람(&모든 사용자)»은 단축키 글자가 그대로 보였다(«me 전용»).
   ; 기준 1의 말 그대로 «모든 사용자» · «나만»으로 쓰고 단축키는 두지 않는다(화살표 키로 고른다). «나만» 뒤에는 템플릿이 «(사용자 이름)»을 붙인다.
   LangString onlyForMe ${LANG_KOREAN} "나만"
-  LangString forAll ${LANG_KOREAN} "모든 사용자"
+  LangString forAll ${LANG_KOREAN} "모든 사용자 (이 컴퓨터를 쓰는 모든 사람)"
   LangString loginWithAdminAccount ${LANG_KOREAN} "계속하려면 관리자 계정으로 로그인해 주세요."
   ; 앱이 켜져 있을 때 뜨는 알림(기준 9 — 팀장 전달 문구 그대로) — 한국어 Windows에서 단추 이름은 «확인» · «취소» · «다시 시도»다
   LangString appRunning ${LANG_KOREAN} "${PRODUCT_NAME}가 켜져 있습니다.$\r$\n끄고 계속할까요?"
@@ -992,8 +993,8 @@ Var vcAppAnswer
   ; ── 제거기: 첫 화면 · 진행 화면 · 완료 화면 ──
   !define MUI_CUSTOMFUNCTION_UNGUIINIT un.vcGuiInit
   !macro customUnWelcomePage
-    !define MUI_WELCOMEPAGE_TITLE "${PRODUCT_NAME} 제거를 시작합니다"
-    !define MUI_WELCOMEPAGE_TEXT "이 컴퓨터에서 ${PRODUCT_NAME}를 제거합니다.$\r$\n$\r$\n$_CLICK"
+    !define MUI_WELCOMEPAGE_TITLE "${PRODUCT_NAME} 제거를 시작합니다."
+    !define MUI_WELCOMEPAGE_TEXT "이 컴퓨터에서 ${PRODUCT_NAME}를 지웁니다.$\r$\n$\r$\n${PRODUCT_NAME}가 켜져 있으면 먼저 꺼 주세요.$\r$\n$\r$\n계속하려면 '다음' 단추를 눌러 주세요."
     ; «모든 사용자» 설치를 지울 때 템플릿 제거기는 화면을 띄우기 전(un.onInit — multiUser.nsh setInstallModePerAllUsers)에 관리자 권한으로
     ; 다시 뜨므로, 첫 화면은 다시 뜬 제거기가 보인다 — 설치기와 달리 다시 뜬 쪽에서 첫 화면을 건너뛰지 않는다(10/28: 건너뛰었더니 첫 화면이 아예 안 보였다).
     !define MUI_PAGE_CUSTOMFUNCTION_SHOW un.vcWelcomeShow
@@ -1107,7 +1108,7 @@ Var vcAppAnswer
     SetDetailsPrint none
     ${IfNot} ${isUpdated}
       !insertmacro vcT "un-start"
-      !insertmacro vcStage "프로그램 파일을 제거하는 중입니다 …"
+      !insertmacro vcStage "프로그램 파일을 지우는 중입니다 …"
       StrCpy $vcBase $INSTDIR
       StrCpy $vcFileCount 0
       StrCpy $vcFileDone 0

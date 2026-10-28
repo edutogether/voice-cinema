@@ -109,6 +109,8 @@ test('설치기 화면 글은 한국어 문장과 «설치: / 삭제: » 줄뿐�
         assert.doesNotMatch(text, /(?<!\$)\\n/, `${file}: 글자 그대로 찍히는 \\n — ${line.trim()}`);
         // 번역투(10/28 팀장 검토): «~주시기 바랍니다 · 성공적으로 · ~하였습니다 · ~하십시오 · ~됨»
         assert.doesNotMatch(text, /주시기 바랍니다|성공적으로|하였습니다|하십시오|됨(\.|$)/, `${file}: 번역투 — ${line.trim()}`);
+        // 단추는 «단추»로(Poster Studio 설치판과 같은 말 — 10/28 팀장 전달)
+        assert.doesNotMatch(text, /버튼/, `${file}: «버튼» — ${line.trim()}`);
         // 설치 창 안내문(굴림 9pt)은 줄 사이에 빈 줄을 둔다 — 글자가 맞닿는다. 묻는 창(MessageBox) 문구는 Windows 글꼴이라 뺀다.
         if (!BOXES.has(name)) {
           const parts = text.split('$\\r$\\n');
@@ -118,6 +120,8 @@ test('설치기 화면 글은 한국어 문장과 «설치: / 삭제: » 줄뿐�
         }
       }
       assert.doesNotMatch(line, /\[t\]/, `${file}: 시간 재기 기록 — ${line.trim()}`);
+      // NSIS 기본 «누르세요» 문구($_CLICK · $(^Click…))는 «'다음' 버튼을 눌러»라 쓰지 않는다 — 문장을 직접 적는다
+      assert.doesNotMatch(line, /\$_CLICK|\$\(\^Click/, `${file}: NSIS 기본 «누르세요» 문구 — ${line.trim()}`);
     }
     // 시각(GetTickCount)은 막대를 시간으로 밀 때와 측정용 vcT(VC_TIMING 빌드에서 임시 파일에만)에서만 읽는다 — 화면 글에 붙이지 않는다
     for (const m of text.matchAll(/GetTickCount\(\) i \.(\w+)"\n((?:.*\n){0,3})/g)) {
