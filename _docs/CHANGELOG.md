@@ -8,6 +8,14 @@ Hosting·Functions에 둘 다 배포했다 — 라이브 줄(10/25 `2751ae6`)은
 3. 배포 뒤 스모크 검사가 «sw.js 설치 목록에 엔진이 없음»으로 떨어졌다(배포 자체는 끝남) — 10/24에 엔진을 설치 목록에서 일부러 뺀 것을 검사가 몰랐다.
    «서비스워커가 엔진 경로를 맡는가 · 엔진 파일이 200인가»로 바꿨다(`deploy.yml`).
 4. GitHub: 고유 커밋 가지 5개(`feat/vc2-release` · `feat/vc2-ux` · `feat/vc2-v3` · `feat/vc2-live5` · `feat/vc-desktop`)와 로컬 태그 2개(`rollback-20261016-night` · `rollback-20261025-live-ad8d6e9`)를 push.
+   master에 다 들어간 로컬 가지 4개(`feat/vc2-audio` · `perf` · `responsive` · `scenes`)는 `git branch -d`로 정리.
+5. Dependabot: 새 master 위로 다시 맞춘 뒤 CI가 통과한 것만 머지했다. 머지마다 배포 · 스모크 통과, 라이브 표시 두 곳 · 영상 24개 해시 확인.
+   - #14 vite 8.2.2 → 8.3.5 + #17 functions vitest 5.0.5(`fbf5148`, 배포 41156312000) — 번들 `main-D_WBbenb.js` → `main-BzKTWlbF.js`.
+     다시 맞추며 rolldown 1.2.15 → 1.2.16도 함께 올랐다. 2fb73a8 빌드와 달라진 파일은 번들 · index.html · privacy.html(인라인 스타일 압축) · sw.js뿐이고(인라인 스크립트 0, CSS 같음),
+     같은 잠금 파일로 이 PC에서 만든 번들과 이름까지 같다.
+   - #16 vitest 5.0.5(`5f837ae`, 배포 41158298686) — 번들 · 서비스워커 캐시 이름 그대로.
+   - #18 undici 6.29.1 · 8.12.3(`76409fc`, 배포 41160232587 — 새 undici로 돈 첫 배포) — firebase-tools 안쪽 의존성이라 머지 전에 이 PC에서 firebase 15.32.1로 인증 · 프로젝트 목록 · Hosting API를 돌려 봤다.
+   - #15 functions vite 8.3.5 — #17이 같은 판으로 올려 Dependabot이 «이미 최신»으로 닫았다. 그 전 CI의 E2E 1개 실패는 무관한 시간 측정 흔들림(`app.md` «흔들린 검사 기록»).
 ## 녹음·합성 품질 보강 — 녹음 3초(말이 이어지면 3.5초), 미리 듣기 = 완성본 소리 (2026-10-24, 지시 팀장 — 대표님 지시문 — 승인 Bumm 10/25 «지금 배포해» — 10/25 00:45 라이브 배포 `2751ae6`, 팀장 확인 뒤, 이 PC에서 Hosting만)
 
 라이브 확인: 정본 · 옛 주소 모두 배포 표시 `2751ae6`, 번들 `main-D_WBbenb.js` · 서비스워커 · 엔진 · 원판 해시가 로컬과 같다, Hosting 판 `04c051ad83cd7cfa`, 첫 화면 콘솔 오류 0. 가지 `feat/vc2-release` = `feat/vc2-perf`(와이파이 최적화, `feat/vc2-responsive` 포함) + `feat/vc2-audio`. 합친 결과 E2E 188개 중 182 통과 · 6 건너뜀 · 실패 0, 유닛 146개. 되돌림: 태그 `rollback-20261025-live-ad8d6e9`(Hosting 판 `881765ed308dc16c`), 절차 `_docs/ops/rollback-20261025.md`.

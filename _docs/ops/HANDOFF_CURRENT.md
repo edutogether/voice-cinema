@@ -6,6 +6,17 @@
 
 ## 0. 지금 담당
 
+### 2026-10-31 GitHub 복구 — master = 라이브 줄, 배포는 다시 master push → CI로
+
+- 🟢 **라이브 = master 끝**(CI 배포, 표시 `76409fc`, 번들 `main-BzKTWlbF.js`). 이 PC에서 직접 배포하지 않는다 — master에 push하면 CI가 배포한다.
+- 🔴 **풀린 뒤 push보다 예약 «배포 대조»가 먼저 돌았다** — 41108974767(10/30 18:41Z)이 master `510228c`(1.0)를 배포해 라이브가
+  **10/31 03:43~09:42(KST) 1.0**이었다. 09:17 master를 `feat/vc2-release` 끝 `2fb73a8`로 빨리감기 push → CI 배포로 복구. 경위 · 재발 방지는 `app.md` «배포 대조».
+- 배포 뒤 스모크의 엔진 항목을 10/24 설계(엔진은 앱이 받을 때 캐시)에 맞췄다(`bf81bfd`) — 로컬로만 나간 줄이라 CI 검사를 처음 거치며 걸렸다.
+- Dependabot: #14(vite 8.3.5) · #17(functions vitest) · #16(vitest) · #18(undici) 머지, #15는 Dependabot이 «이미 최신»으로 닫음. 머지마다 배포 · 스모크 · 표시 · 영상 해시 확인.
+- 영상: 라이브는 «예전 영상»(10/25 판 — `0573f98`과 같은 mp4). FINAL_7S는 `feat/vc2-ux` · 미리보기 vc2-ux에만 — Bumm님이 새 영상을 만든 뒤 들어간다(10/31 지시).
+- 가지: `feat/vc2-release` · `feat/vc2-ux` · `feat/vc2-v3` · `feat/vc2-live5` · `feat/vc-desktop`과 태그 `rollback-20261016-night` · `rollback-20261025-live-ad8d6e9`를 push.
+  master에 다 들어간 `feat/vc2-audio` · `perf` · `responsive` · `scenes`는 로컬에서 지웠다(`git branch -d`).
+
 ### 2026-10-16 장면 더빙 2.0 앱 반영 — 가지 `feat/vc2-scenes`, 10/19 이 PC에서 라이브 배포(GitHub 정지로 push 전)
 
 - 🟢 **롤백 지점**(10/16 밤, Bumm님 지시): 태그 `rollback-20261016-night` + Git 밖 그림·도구 사본 `_backups/rollback-20261016-night/`
@@ -49,18 +60,14 @@
 - 🟢 **해상도별 화면 맞춤**(10/23 21시 팀장 지시, 대표님 «조직 표준 방식») — **10/23 23:10 라이브 배포 `ad8d6e9`**(가지 `feat/vc2-responsive` = `b9554f8` + 이 작업,
   배포 직전 한 줄 → 팀장 확인 → 배포, 이 PC에서 Hosting만).
 - 🟢 **녹음·합성 보강 + 와이파이 최적화** — **10/25 00:45 라이브 배포 `2751ae6`**(가지 `feat/vc2-release` = `feat/vc2-perf` + `feat/vc2-audio`, 승인 Bumm 10/25, 팀장 확인 뒤, 이 PC에서 Hosting만).
-  **라이브 줄은 이제 `feat/vc2-release`다**(GitHub이 풀리면 이 가지를 master에 합친다). 되돌림: 태그 `rollback-20261025-live-ad8d6e9`, `_docs/ops/rollback-20261025.md`. 자세한 것은 CHANGELOG 맨 위.
+  라이브 줄이던 `feat/vc2-release`는 10/31 master에 빨리감기로 합쳤다(위 10/31 절). 되돌림: 태그 `rollback-20261025-live-ad8d6e9`, `_docs/ops/rollback-20261025.md`. 자세한 것은 CHANGELOG 맨 위.
   - Hosting 표시 `ad8d6e9`(정본 · 옛 주소 둘 다)·번들 `main-B8wYoNj4.js`·서비스워커·`fit.js`가 로컬과 같음. 클립 40개는 배포 전·후 라이브 해시가 같다(영상 바뀐 것 없음).
   - 기준 화면 PC 1366 · 태블릿 1024/768 · 휴대폰 390을 통째로 맞춘다. 규칙은 `app.md` «해상도별 화면 맞춤», 근거는 `_docs/intents/2026-10-23-responsive-fit/intent.md`.
   - 화면 편집판(Git 밖): `C:\Users\817be\Documents\vc-editor\`(바탕화면 «Voice Cinema 화면 편집판», `http://127.0.0.1:5490/__editor/`). 앱 사본 `app\`은 라이브와 같은 빌드다 — 새 배포 뒤에는 `dist\`를 다시 복사한다.
   - `feat/vc2-v3`(거절된 Higgsfield 원판 + 히어로 · 드라마 새 장면)는 이 작업이 없다 — 나중에 그 가지를 쓰면 이 커밋을 합친다.
-- 🔴 **GitHub이 풀리면 곧바로 이 가지를 master에 squash로 합쳐 push한다**(허락 받음).
-  - 이유: GitHub의 master 끝은 아직 `510228c`(옛 1.0)다. 예약 «배포 대조»가 한 번이라도 돌면 라이브를 1.0으로 되돌린다(`tools/deploy-gate.js`: 라이브가 master 끝이 아니면 배포).
-  - 공개 기록상 마지막 실행은 10/13이다.
-  - 팀장도 GitHub 확인 크론에 같이 적어 두었다.
-- 🟠 **함수의 배포 커밋 표시는 옛 값(`3e5e8d2`)이다**(함수 코드는 `bb61bec` 때 갱신, `be7972e` 때는 바뀐 것이 없어 건너뜀).
-  - 이유: 표시를 넣는 `functions/.env`는 이 세션의 거부 규칙에 걸려 읽지도 쓰지도 않았다. Hosting 표시(`/version.json`)만 `be7972e`이다.
-  - push 뒤 CI 배포가 둘 다 master 끝으로 바로잡는다.
+- 🟢 (10/31 끝남) **GitHub이 풀리면 곧바로 이 가지를 master에 합쳐 push한다** — 걱정한 그대로 됐다. 풀린 뒤 push보다 예약 «배포 대조»가
+  먼저 돌아 라이브가 약 6시간 1.0이었고, 10/31 빨리감기 push(squash 아님 — 이력 그대로)와 CI 배포로 복구했다(위 10/31 절).
+- 🟢 (10/31 끝남) 함수의 배포 커밋 표시가 옛 값(`3e5e8d2`)이던 것 — CI 배포로 Hosting과 함께 master 끝을 가리킨다.
 - 🟢 확인: E2E 132개 중 126 통과·6 조건부 건너뜀·실패 0, 유닛 106개, 린트·타입 통과(10/19 로컬, 휴대폰 두 번째 다듬기 뒤 — 배포한 `be7972e`)
 - 🟢 **휴대폰도 2.0 캐러셀**(10/17, ⭐ 임시 결정 — Bumm님 일요일 확인): 터치 기기가 옛 격자를 보던 것을 없애고 PC와 같은 캐러셀로.
   휴대폰 폭은 실제 브라우저 높이(360×640·375×553·390×664·430×740)에서 한 화면에 든다. 10/19 대표님 시사로 첫 화면을 다듬었다:
