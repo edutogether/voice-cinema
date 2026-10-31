@@ -204,8 +204,12 @@ jobs:
           home=$(curl -s https://voice.edutogether.kr/)
           echo "$home" | grep -qE '/assets/main-[A-Za-z0-9_-]+\.js' || { echo "index.html에 빌드된 번들 참조가 없음"; exit 1; }
           sw=$(curl -s https://voice.edutogether.kr/sw.js)
-          echo "$sw" | grep -q '/vendor/ffmpeg-core/ffmpeg-core.wasm' || { echo "sw.js 프리캐시 목록에 엔진이 없음"; exit 1; }
           echo "$sw" | grep -q '/index.html' || { echo "sw.js 프리캐시 목록에 진입점이 없음"; exit 1; }
+          # 엔진(vendor/ffmpeg-core)은 2026-10-24부터 설치 목록에 없다 — 앱이 받을 때 서비스워커가 캐시에 넣는다
+          # (app.md «느린 와이파이»). 그래서 서비스워커가 그 경로를 맡는지와 엔진 파일이 실제로 서빙되는지를 본다.
+          echo "$sw" | grep -q '/vendor/ffmpeg-core/' || { echo "sw.js가 엔진 경로를 맡지 않음"; exit 1; }
+          engine_status=$(curl -sI -o /dev/null -w '%{http_code}' https://voice.edutogether.kr/vendor/ffmpeg-core/ffmpeg-core.wasm)
+          [ "$engine_status" = "200" ] || { echo "엔진 파일 응답이 200이 아님: $engine_status"; exit 1; }
           # 라이브 두 곳이 방금 배포한 커밋을 가리키는지 본다 — 매시 대조가 믿는 값이 실제로 바뀌었는지.
           # 새 함수 버전이 요청을 넘겨받기까지 잠깐 걸릴 수 있어 몇 번 다시 본다.
           for i in 1 2 3 4 5 6; do
