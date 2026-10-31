@@ -4,6 +4,7 @@
 // (a) 실제 프로덕션 Storage에 테스트 파일이 쌓이지 않게, (b) 네트워크 상태에 결과가 좌우되지 않게 한다.
 import { Buffer } from 'node:buffer';
 import { test, expect } from '@playwright/test';
+import { countdownLog, watchCountdown } from './countdown-watch.js';
 
 const UPLOAD_PATTERN = '**/voiceCinema/upload';
 const GENRE_NAMES = ['SF', '판타지', '애니메이션', '히어로', '스릴러', '드라마', '스포츠', '뮤지컬'];
@@ -47,6 +48,20 @@ test.describe('홈 화면', () => {
 
 test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
   test('5.0초에서 정확히 멈추고 문구 → 3·2·1 → 녹음 3초(말이 이어지면 3.5초까지) → 5.0초부터 이어 재생한다', async ({ page }) => {
+    // 녹음 길이는 페이지 안에서 녹음기의 start · stop 이벤트로 잰다. Node 쪽에서 «녹음 중»이 보인 때를 잡으면 재시도 간격만큼
+    // 늦게 찍혀 실제보다 짧게 잰다 — 10/31 동시 16개로 40번 돌렸을 때 최대 0.53초 늦어 4번이 3초 아래로 나왔다(녹음기 기준은 3.001~3.402초).
+    await page.addInitScript(() => {
+      const times = (window.__recorderTimes = {});
+      const Native = window.MediaRecorder;
+      window.MediaRecorder = class extends Native {
+        constructor(...args) {
+          super(...args);
+          this.addEventListener('start', () => { times.start ??= performance.now(); });
+          this.addEventListener('stop', () => { times.stop ??= performance.now(); });
+        }
+      };
+    });
+    await watchCountdown(page);
     await openStudio(page, '판타지');
     const clip = page.locator('#clip');
     await expect(clip).toHaveJSProperty('paused', true);
@@ -55,23 +70,21 @@ test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
 
     await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'watching');
     await expect.poll(() => clip.evaluate(v => v.currentTime)).toBeGreaterThan(.5);
-    // 멈춘 순간 영상 시각이 5.0초와 한 프레임(1/30초) 안이다.
-    // 문구는 0.6초뿐이다(10/24) — 페이지 안에서 매 화면 확인하는 waitFor로 기다린다
-    await page.locator('#cue').waitFor({ timeout: 10000 });
-    expect(await page.locator('#cue').textContent()).toBe('이제 당신의 차례입니다 !');
+    // 문구(0.6초)와 3·2·1(0.3초씩)은 짧아서, 나타난 뒤 검사가 글자를 따로 읽으러 가면 그 사이 사라질 수 있다 — 10/31 동시 16개로
+    // 100번 돌렸을 때 2번, waitFor 뒤 textContent가 사라진 문구를 기다리다 시간 초과. 페이지 안 기록(countdown-watch.js)으로 본다.
+    await expect(page.locator('#recpill')).toBeVisible({ timeout: 15000 });
+    const log = await countdownLog(page);
+    expect(log.find((e) => e.key === 'cue')?.text).toBe('이제 당신의 차례입니다 !');
+    expect(log.find((e) => e.key.endsWith('녹음 시작'))?.text).toContain('지금 바로 당신의 목소리를 들려주세요 !');
+    // 멈춘 영상 시각이 5.0초와 한 프레임(1/30초) 안이고, 녹음 중에도 그 정지 화면 그대로다.
     const paused = await clip.evaluate(v => ({ paused: v.paused, time: v.currentTime }));
     expect(paused.paused).toBe(true);
     expect(Math.abs(paused.time - 5)).toBeLessThanOrEqual(1 / 30);
-
-    await expect(page.locator('#count')).toContainText('지금 바로 당신의 목소리를 들려주세요 !');
-    await expect(page.locator('#recpill')).toBeVisible({ timeout: 5000 });
-    const recordStart = Date.now();
-    // 녹음 중에는 영상이 5.0초 정지 화면 그대로다.
-    expect(await clip.evaluate(v => ({ p: v.paused, t: Math.round(v.currentTime * 10) / 10 }))).toEqual({ p: true, t: 5 });
     await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'continuing', { timeout: 6000 });
-    const recordMs = Date.now() - recordStart;
-    expect(recordMs).toBeGreaterThan(3000);
-    expect(recordMs).toBeLessThan(5000);
+    const { start, stop } = await page.evaluate(() => window.__recorderTimes);
+    const recordMs = stop - start;
+    expect(recordMs).toBeGreaterThanOrEqual(3000);
+    expect(recordMs).toBeLessThan(4000);
     // 이어 재생은 5.0초부터다.
     await expect.poll(() => clip.evaluate(v => v.currentTime)).toBeGreaterThan(5.2);
     await expect(page.locator('#afterRow')).toBeVisible({ timeout: 10000 });
