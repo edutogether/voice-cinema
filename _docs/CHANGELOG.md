@@ -1,3 +1,18 @@
+## Dependabot 알림 정리 — #19 · #20 · #21 머지, functions의 glob 덮어쓰기 (2026-11-01, 지시 팀장 — 대표님 «열린 알림 10건» — 팀장 확인 뒤 배포 `aa48b5e`)
+
+10/31 11:02Z에 새로 열린 알림 10건(#29~#32 functions, #37~#41 · #43 루트)을 정리했다. 손으로 닫지 않는다.
+1. Dependabot이 고칠 수 있는 7건에는 이미 PR이 있었다(CI 통과) — #19 functions body-parser 2.4.0 · qs 6.17.1(알림 #29 · #30),
+   #20 fast-uri 3.1.9(#37~#40), #21 루트 qs 6.16.2(#41). 셋 다 머지(`11cb6dc` · `ca9481d` · `eed528c`).
+2. glob(#31) · minimatch(#32)는 고친 판이 glob 14.0.2 · minimatch 11.0.1(10/27 공개)뿐이고, rimraf 5 → google-gax 5 → firestore → firebase-admin이
+   옛 판만 받아 Dependabot이 PR을 못 만들었다. firebase-admin 14.5.0으로 올려도 빠지지 않아(firestore 9도 google-gax 5를 데려온다),
+   `functions/package.json`의 `overrides`에 `"rimraf": { "glob": "^14.0.3" }`을 넣었다(`aa48b5e`). google-gax 안에 rimraf를 부르는 파일이 없어
+   함수가 도는 동안 로드되지 않는다. functions 유닛 55 · `npm audit` 0건, rimraf 5 + glob 14 동작 확인. 규칙은 `app.md`.
+3. 루트 minimatch(#43)는 지금 닫을 수 없다 — eslint · firebase-tools가 옛 판(3 · 5 · 6 · 9 · 10)을 쓰고, 11판을 덮어쓰면 firebase-tools의
+   functions 배포 묶기가 깨진다(`app.md`).
+4. 배포 41258357492(CI 41256787823 — 유닛 91+55 · E2E 182 통과 · 6 건너뜀): 머지 셋의 배포 실행은 «master 끝이 아니다»로 건너뛰거나 취소됐다.
+   라이브 표시 정본 · 옛 주소 · 함수 모두 `aa48b5e`. 번들 `main-BzKTWlbF.js` · 서비스워커 캐시 이름 `e93dfd8848a8` · sw.js · index.html이 배포 전과
+   바이트까지 같고(부스 기기는 엔진을 다시 받지 않는다), 영상 24개도 저장소와 같다.
+
 ## GitHub 복구 뒤 정리 — 1.0으로 되돌아간 라이브를 라이브 줄로 복구, master = 라이브 줄 (2026-10-31, 지시 팀장 — 대표님 «GitHub 밀린 것 정리» · «보이스 영상은 예전 걸로»)
 
 라이브가 **10/31 03:43 ~ 09:42(KST) 약 6시간 1.0**이었다. GitHub 계정이 풀린 뒤 첫 예약 «배포 대조»(41108974767, 10/30 18:41Z)가 master 끝 `510228c`(10/11, 1.0 여섯 장르)를
