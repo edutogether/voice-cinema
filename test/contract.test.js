@@ -69,19 +69,27 @@ test('장르 목록: functions/validate.js와 src/genres.ts가 같은 장르를 
   expect(서버).toEqual(앱);
 });
 
-// 2026-10-09: 배포 도구는 package-lock으로 하위 의존성까지 잠근 로컬 바이너리만 쓴다. 배포 단계에서 npx로 받으면
-// 자격증명이 깔린 뒤에 잠기지 않은 하위 의존성을 내려받는다.
-test('배포 도구: firebase-tools를 정확한 버전으로 잠그고 배포는 로컬 바이너리로만 한다', () => {
-  const 버전 = JSON.parse(read('package.json')).devDependencies['firebase-tools'];
-  expect(버전, 'package.json에 범위(^·~)가 아닌 정확한 버전').toMatch(/^\d+\.\d+\.\d+$/);
-  const 잠금 = JSON.parse(read('package-lock.json')).packages['node_modules/firebase-tools'];
-  expect(잠금.version).toBe(버전);
-  expect(잠금.integrity).toMatch(/^sha512-/);
+// 2026-11-01(Bumm님 결정, _shared/CONVENTIONS.md §3.7): 배포 도구는 잠금 파일에 두지 않고 정확한 판을 박아 npx로 부른다 —
+// 고친 판이 없는 옛 minimatch를 끌고 와 Dependabot 경고가 닫히지 않아서다. 판은 자격증명을 깔기(auth) 전에 받아 두고,
+// 배포 두 줄이 그 같은 판을 다시 부른다. 판 범위·@latest를 쓰거나 한 줄만 올리면 여기서 떨어진다.
+test('배포 도구: firebase-tools는 잠금 파일 밖에서 정확한 같은 판으로, auth 전에 받아 npx로 부른다', () => {
+  const pkg = JSON.parse(read('package.json'));
+  expect({ ...pkg.dependencies, ...pkg.devDependencies }).not.toHaveProperty('firebase-tools');
+  expect(JSON.parse(read('package-lock.json')).packages).not.toHaveProperty('node_modules/firebase-tools');
   const 배포 = read('.github/workflows/deploy.yml');
-  const 명령 = [...배포.matchAll(/^\s+- run: (.*firebase.* deploy .*)$/gm)].map((m) => m[1]);
-  expect(명령.length, '배포 명령을 못 찾음').toBe(2); // storage,functions와 hosting
-  for (const c of 명령) expect(c).toMatch(/^node_modules\/\.bin\/firebase deploy /);
-  expect(배포).not.toMatch(/npx[^\n]*firebase-tools/);
+  expect(배포).not.toMatch(/node_modules\/\.bin\/firebase/);
+  const 부름 = [...배포.matchAll(/^\s+- run: (.*firebase-tools.*)$/gm)].map((m) => m[1]);
+  expect(부름.length, 'firebase-tools를 부르는 줄을 못 찾음').toBe(3); // auth 전 --version, storage,functions, hosting
+  const 판 = new Set(부름.map((c) => c.match(/^npx --yes firebase-tools@(\S+) /)?.[1]));
+  expect([...판], '세 줄 모두 `npx --yes firebase-tools@<판>`이고 판이 하나').toHaveLength(1);
+  expect([...판][0], '범위·태그가 아닌 정확한 판').toMatch(/^\d+\.\d+\.\d+$/);
+  const 받기 = 배포.indexOf(부름[0]);
+  expect(부름[0]).toMatch(/ --version$/);
+  expect(받기, 'auth 전에 받아 둔다').toBeLessThan(배포.indexOf('google-github-actions/auth'));
+  for (const c of 부름.slice(1)) {
+    expect(c).toMatch(/ deploy --only /);
+    expect(배포.indexOf(c), '배포는 auth 뒤').toBeGreaterThan(배포.indexOf('google-github-actions/auth'));
+  }
 });
 
 // 2026-10-20: 엔진 받기 진행률의 분모는 실제 wasm 크기다. Hosting이 brotli로 압축해 보내 Content-Length(약 7.3MB)가

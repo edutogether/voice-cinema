@@ -88,7 +88,7 @@
 - 🟠 **미리보기 채널 주소(`voice-cinema--<채널>.web.app`)에서는 업로드가 늘 막힌다** — 서버 허용 출처(`ALLOWED_ORIGINS`)에 없어서다.
   10/20 대표님 아이폰 시험의 «클라우드 업로드 실패»가 이것이었다(서버 기록: 미리보기 주소에서 OPTIONS 3번, POST 0번 — 같은 날 실제 주소의
   PC 업로드는 200). 그래서 그 주소의 실패 화면은 «미리보기 주소에서는 QR을 만들 수 없어요…»라고 알린다(`src/logic.ts`의 `isPreviewChannel`).
-  업로드를 확인하려면 실제 주소에서 한다. 서버 기록은 `node_modules/.bin/firebase functions:log --only voiceCinema --json`으로 본다
+  업로드를 확인하려면 실제 주소에서 한다. 서버 기록은 `npx firebase-tools@15.32.1 functions:log --only voiceCinema --json`으로 본다
 - 🟠 **휴대폰 화면은 «화면 크기»가 아니라 «실제 브라우저 높이»로 잰다**(2026-10-17) — 주소창 때문에 iPhone 13 사파리는 390×664,
   안드로이드는 360×640 안팎이다. 390×844(화면 전체)로만 재고 «한 화면에 든다»고 보고했다가, 팀장이 iPhone 13 흉내로 찍자
   가운데 카드가 폭의 43%로 쪼그라든 것이 드러났다(그때는 남는 높이에 맞춰 카드를 줄이는 방식이었다)
@@ -218,34 +218,29 @@
 - **`public/vendor/`의 ffmpeg를 번들러에 태우지 말 것** — Worker+WebAssembly+blob: URL로 코어를 스스로
   로드하므로, 번들러가 해시·재작성하면 경로 해석이 깨진다. `src/lib/vendor.ts`의 절대경로 동적 import를 유지한다
 - **`npm audit fix --force`를 실행하지 말 것** — `firebase-admin`을 10.3.0으로 다운그레이드해 지금 쓰는 모듈형
-  API가 사라지면서 코드가 깨진다. 남은 moderate 취약점은 Google 쪽 전이 의존성(`uuid<11.1.1`) 문제로 업스트림 대기 상태다
-- 🟠 **배포 단계에서 `npx`로 firebase-tools를 받지 말 것**(2026-10-09, 보안 지적 대응) — firebase-tools는 의존성 잠금
-  파일을 싣지 않아, 그때그때 받으면 하위 의존성이 매번 새로 풀린다. 그것도 자격증명을 깐 뒤에. 지금은 루트
-  `devDependencies`에 **정확한 버전**(지금 15.32.1, `^` 없음)으로 넣어 `package-lock.json`이 하위 의존성까지 무결성 해시로
-  잠그고, deploy 잡은 auth **전**의 `npm ci`로 받아 둔 `node_modules/.bin/firebase`만 실행한다.
-  `test/contract.test.js`가 버전 고정과 배포 명령 두 줄을 검사한다(npx로 되돌리면 빨간불을 확인했다).
-  올릴 때는 `npm install -D --save-exact firebase-tools@<버전>`으로 package.json과 잠금 파일을 함께 바꾼다
-- 🟠 **루트 `package.json`의 `overrides: { "gaxios": { "uuid": "^11.1.1" } }`을 지우지 말 것**(2026-10-10) — firebase-tools가 끌어오는
-  gaxios 6.7.1이 취약한 uuid 9를 요구한다(Dependabot medium). gaxios 6의 최신판도, firebase-tools 최신판(15.33.0)도 같아서
-  잠금 파일이나 상위 패키지로는 못 고친다. **firebase-tools 자신의 package.json에 같은 덮어쓰기가 들어 있다** — 의존성으로
-  설치되면 그 설정이 적용되지 않을 뿐이다. `universal-analytics`는 이미 uuid 14라 범위를 gaxios로 좁혔다(낮추지 않게).
-  확인한 것: gaxios가 uuid 11.1.1을 보고 `v4()`가 동작, `firebase projects:list`(인증 경로) 정상
-- 🟡 **루트 `npm audit`에 남는 9건(moderate 2·high 7)은 전부 firebase-tools 안쪽이고 지금 고칠 판이 없다**(2026-10-10,
-  **팀장 결정: 그대로 두고 12월 말 분기 감사나 firebase-tools 새 판 때 다시 본다**) —
-  `braces`는 최신 3.0.3이 곧 취약 범위, `basic-ftp`·`@opentelemetry/core`는 고친 판이 다음 주 버전에만 있는데 부모(get-uri
-  `^5`, pubsub `^1.30.1`)가 이전 주 버전을 요구한다. npm이 권하는 해결은 firebase-tools를 14.23.0으로 **내리는** 것이라
-  쓰지 않는다. GitHub Dependabot은 이 9건을 알림으로 올리지 않는다. 배포 잡에서만 도는 개발 도구이고, 셋 다 공격자가
-  넣은 입력(FTP 목록·글롭 패턴·추적 헤더)이 있어야 하는 서비스 거부 류다. **분기 감사 때 firebase-tools 새 판을 보고 다시 판단한다**
+  API가 사라지면서 코드가 깨진다. functions `npm audit`는 2026-11-01 기준 0건이다(uuid · glob 덮어쓰기, 아래 두 항목)
+- 🟠 **firebase-tools를 `package.json` · `package-lock.json`에 다시 넣지 말 것**(2026-11-01 Bumm님 결정, `_shared/CONVENTIONS.md` §3.7) —
+  쓰는 자리에서 정확한 판을 박아 `npx --yes firebase-tools@15.32.1`로 부른다(`@latest` · 범위 금지). 잠금 파일에 두면 firebase-tools가 끌고 오는
+  고친 판 없는 옛 minimatch(3 · 5 · 6 · 9) 때문에 Dependabot 경고가 닫히지 않는다(11판으로 덮어쓰면 배포가 깨진다). 빼자 루트 `npm audit`가 26건 → 5건이 됐다.
+  - deploy 잡은 auth **전**에 `npx --yes firebase-tools@<판> --version`으로 받아 두고, auth 뒤 배포 두 줄이 같은 판을 다시 부른다 — 두 번째 부름은
+    다시 설치하지 않는다(빈 캐시에서 첫 부름 29초 설치, 두 번째 4초 · 설치 없음 실측). `test/contract.test.js`가 세 줄이 같은 정확한 판인지,
+    받기가 auth 앞인지, 잠금 파일에 없는지를 검사한다(다섯 가지로 일부러 틀리게 해 빨간불 확인)
+  - **대가(알고 고른 것)**: CLI의 하위 의존성은 실행할 때마다 정해지고 Dependabot이 추적하지 않는다. 2026-10-09에 잠금 파일로 옮긴 이유(«자격증명을
+    깐 뒤 잠기지 않은 하위 의존성을 받는다»)는 받기를 auth 앞에 두는 것으로 절반만 남겼다. 판을 올릴 때는 `deploy.yml`의 세 줄을 함께 바꾼다
+  - 로컬에서도 같은 판으로 부른다: `npx firebase-tools@15.32.1 <명령>`(이 저장소 폴더 안에서 — `firebase.json`을 읽는다)
+- 🟢 **루트 `overrides`(gaxios → uuid `^11.1.1`)는 2026-11-01에 뺐다** — firebase-tools와 함께 gaxios가 루트 트리에서 사라졌다. npx로 받는 CLI 안의
+  uuid 9는 위 «대가»에 든다(그쪽에는 덮어쓰기가 닿지 않는다)
 - 🟠 **`functions/package.json`의 `overrides`에 있는 `"rimraf": { "glob": "^14.0.3" }`을 지우지 말 것**(2026-11-01) — 이것으로 Dependabot #31(glob)·
   #32(minimatch)가 닫힌다. glob 10.5.0 · minimatch 9.0.9는 firebase-admin 14.3.0 → firestore 8.7.1 → google-gax 5.0.8 → rimraf 5.0.10으로 딸려 오는데,
   고친 판이 glob 14.0.2 · minimatch 11.0.1(10/27 공개)뿐이고 rimraf 최신(6.1.3)도 glob `^13`이라 Dependabot이 PR을 만들지 못한다.
   firebase-admin을 14.5.0으로 올려도 firestore 9가 같은 google-gax 5를 데려와 빠지지 않는다(잠금 파일로 확인). google-gax 안에 rimraf를 부르는
   파일이 없어 **함수가 도는 동안 rimraf · glob은 로드되지 않는다.** 확인한 것: rimraf 5 + glob 14로 `glob()` · `globSync()`와 rimraf의 glob 경로(맞는 파일 0개),
-  functions 유닛 55개, functions `npm audit` 0건. 범위를 rimraf로 좁힌 것은 루트 gaxios 덮어쓰기와 같은 이유다(다른 곳이 glob을 새로 쓰면 그쪽은 건드리지 않게)
-- 🟡 **루트 Dependabot #43(minimatch, 개발 의존성)은 지금 닫을 수 없다**(2026-11-01) — 고친 판이 minimatch 11.0.1 이상뿐인데, 루트에서는 eslint가 10.2.6
-  (최신 eslint 10.14.0도 `^10.2.6`), firebase-tools가 3.1.5 · 5.1.9 · 6.2.3 · 9.0.9(최신 15.34.2도 `^3.0.4`)를 쓴다. 🔴 **덮어쓰기로 11판을 넣지 말 것** —
-  11판은 `require("minimatch")`가 함수가 아니라 객체라서, firebase-tools `lib/fsAsync.js`(functions 배포 묶기 `prepareFunctionsUpload`가 쓴다)와 superstatic이
-  `minimatch(...)`로 부르는 자리가 깨진다(배포가 죽는다). eslint나 firebase-tools 새 판이 11판으로 올라가면 다시 본다
+  functions 유닛 55개, functions `npm audit` 0건. 범위를 rimraf로 좁힌 것은 다른 곳이 glob을 새로 쓰면 그쪽은 건드리지 않게 하려는 것이다
+- 🟡 **루트 Dependabot #43(minimatch, 개발 의존성)은 eslint 때문에 남는다**(2026-11-01) — 고친 판이 minimatch 11.0.1 이상뿐인데, firebase-tools를 뺀 뒤
+  루트에 남은 것은 eslint 10.10.0이 쓰는 10.2.6 하나다(최신 eslint 10.14.0도 `^10.2.6`). 루트 `npm audit` 5건이 전부 이것 하나에서 나온다.
+  처리는 팀장이 Bumm님께 여쭌 상태다 — 그전에는 손대지 않는다. 🔴 **firebase-tools 쪽에는 11판을 덮어쓰지 말 것** — 11판은 `require("minimatch")`가
+  함수가 아니라 객체라서, firebase-tools `lib/fsAsync.js`(functions 배포 묶기 `prepareFunctionsUpload`가 쓴다)와 superstatic이 `minimatch(...)`로
+  부르는 자리가 깨진다(배포가 죽는다)
 - **동결 기간에는 배포하지 말 것** — 아래 "행사 직전 배포 동결" 절의 기준과 절차를 따른다
 
 ## 행사 직전 배포 동결 (2026-09-08 산정, 팀장 승인 — 날짜는 대표 확인 시 조정 가능)
