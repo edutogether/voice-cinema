@@ -130,7 +130,7 @@
   deploy 잡은 auth 전 `npm ci`로 받은 `node_modules/.bin/firebase`만 실행한다(`app.md` 절대 하면 안 되는 것).
   PR #12 병합 `dc9266668b0bb066e82c1ee6fffdbf6530cff1d5` → 배포 37822132820 성공(npx 0건, 캐시 이름 `80042aad331d` 그대로)
 - 🟢 **위 두 항목은 2026-11-01에 바뀌었다**(Bumm님 결정, `_shared/CONVENTIONS.md` §3.7): firebase-tools를 잠금 파일에서 빼고 `deploy.yml`이
-  `npx --yes firebase-tools@15.32.1`을 auth 전에 받아 부른다. gaxios가 루트에서 사라져 그 덮어쓰기도 뺐다. 루트 `npm audit`는 5건(eslint의 minimatch 하나) — `app.md`
+  `npx --yes firebase-tools@15.32.1`을 auth 전에 받아 부른다. gaxios가 루트에서 사라져 그 덮어쓰기도 뺐다. 남은 eslint의 minimatch는 `overrides`(eslint → minimatch `^11.0.1`)로 올려 루트 `npm audit` 0건 — `app.md`
 - 📋 행사 전 수동 배포 대조(10/8 팀장 결정, `app.md` 동결 절): ☐ **11-07 동결 시작 — 마지막 배포가 끝난 뒤** ☐ **11-14 행사 당일
   아침 — 부스를 열기 전**. 명령 `gh workflow run deploy.yml --ref master -f dry_run=false`, 판정이 "라이브가 이미 이 커밋"이면 끝
 - 화면 번들 `main-Dy5jp6f1.js`(파비콘 코드 제거로 바뀜 — 부스 기기는 다음에 열 때 엔진을 한 번 다시 받음, 동결 전이라 무방)

@@ -221,7 +221,8 @@
   API가 사라지면서 코드가 깨진다. functions `npm audit`는 2026-11-01 기준 0건이다(uuid · glob 덮어쓰기, 아래 두 항목)
 - 🟠 **firebase-tools를 `package.json` · `package-lock.json`에 다시 넣지 말 것**(2026-11-01 Bumm님 결정, `_shared/CONVENTIONS.md` §3.7) —
   쓰는 자리에서 정확한 판을 박아 `npx --yes firebase-tools@15.32.1`로 부른다(`@latest` · 범위 금지). 잠금 파일에 두면 firebase-tools가 끌고 오는
-  고친 판 없는 옛 minimatch(3 · 5 · 6 · 9) 때문에 Dependabot 경고가 닫히지 않는다(11판으로 덮어쓰면 배포가 깨진다). 빼자 루트 `npm audit`가 26건 → 5건이 됐다.
+  고친 판 없는 옛 minimatch(3 · 5 · 6 · 9) 때문에 Dependabot 경고가 닫히지 않는다(11판으로 덮어쓰면 배포가 깨진다). 빼자 루트 `npm audit`가 26건 → 5건이 됐다
+  (남은 5건은 eslint의 minimatch 하나 — 아래 eslint 덮어쓰기로 0건).
   - deploy 잡은 auth **전**에 `npx --yes firebase-tools@<판> --version`으로 받아 두고, auth 뒤 배포 두 줄이 같은 판을 다시 부른다 — 두 번째 부름은
     다시 설치하지 않는다(빈 캐시에서 첫 부름 29초 설치, 두 번째 4초 · 설치 없음 실측). `test/contract.test.js`가 세 줄이 같은 정확한 판인지,
     받기가 auth 앞인지, 잠금 파일에 없는지를 검사한다(다섯 가지로 일부러 틀리게 해 빨간불 확인)
@@ -236,11 +237,13 @@
   firebase-admin을 14.5.0으로 올려도 firestore 9가 같은 google-gax 5를 데려와 빠지지 않는다(잠금 파일로 확인). google-gax 안에 rimraf를 부르는
   파일이 없어 **함수가 도는 동안 rimraf · glob은 로드되지 않는다.** 확인한 것: rimraf 5 + glob 14로 `glob()` · `globSync()`와 rimraf의 glob 경로(맞는 파일 0개),
   functions 유닛 55개, functions `npm audit` 0건. 범위를 rimraf로 좁힌 것은 다른 곳이 glob을 새로 쓰면 그쪽은 건드리지 않게 하려는 것이다
-- 🟡 **루트 Dependabot #43(minimatch, 개발 의존성)은 eslint 때문에 남는다**(2026-11-01) — 고친 판이 minimatch 11.0.1 이상뿐인데, firebase-tools를 뺀 뒤
-  루트에 남은 것은 eslint 10.10.0이 쓰는 10.2.6 하나다(최신 eslint 10.14.0도 `^10.2.6`). 루트 `npm audit` 5건이 전부 이것 하나에서 나온다.
-  처리는 팀장이 Bumm님께 여쭌 상태다 — 그전에는 손대지 않는다. 🔴 **firebase-tools 쪽에는 11판을 덮어쓰지 말 것** — 11판은 `require("minimatch")`가
-  함수가 아니라 객체라서, firebase-tools `lib/fsAsync.js`(functions 배포 묶기 `prepareFunctionsUpload`가 쓴다)와 superstatic이 `minimatch(...)`로
-  부르는 자리가 깨진다(배포가 죽는다)
+- 🟠 **루트 `package.json`의 `overrides`에 있는 `"eslint": { "minimatch": "^11.0.1" }`을 지우지 말 것**(2026-11-01, 지시 팀장 — Codyssey PR #104 ·
+  CLASSCADE와 같은 방식) — 이것으로 Dependabot #43(minimatch)이 닫히고 루트 `npm audit`가 0건이 된다. firebase-tools를 뺀 뒤 루트의 minimatch는
+  eslint 10.10.0이 쓰는 10.2.6 하나였고, 고친 판은 11.0.1 이상뿐인데 최신 eslint 10.14.0도 `^10.2.6`이다. eslint와 `@eslint/config-array`는 이름으로
+  불러 쓰므로(`minimatch.Minimatch`) 11판에서도 그대로 돈다 — 10.2.6과 11.0.3에서 검사 대상 파일 78개 · 결과(메시지 0) · 파일별 규칙 64종 · 무시 경로 판정이
+  바이트까지 같았다. 범위를 eslint로 좁혔다(나중에 들어오는 다른 패키지가 옛 minimatch를 함수로 부르면 깨지지 않게).
+  🔴 **firebase-tools 같은 옛 소비자에는 11판을 덮어쓰지 말 것** — 11판은 `require("minimatch")`가 함수가 아니라 객체라서, firebase-tools `lib/fsAsync.js`
+  (functions 배포 묶기 `prepareFunctionsUpload`가 쓴다)와 superstatic이 `minimatch(...)`로 부르는 자리가 깨진다(배포가 죽는다)
 - **동결 기간에는 배포하지 말 것** — 아래 "행사 직전 배포 동결" 절의 기준과 절차를 따른다
 
 ## 행사 직전 배포 동결 (2026-09-08 산정, 팀장 승인 — 날짜는 대표 확인 시 조정 가능)
