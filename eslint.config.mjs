@@ -85,7 +85,7 @@ export default [
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'script',
-      globals: { window: 'readonly', document: 'readonly', navigator: 'readonly', matchMedia: 'readonly' },
+      globals: { window: 'readonly', document: 'readonly', navigator: 'readonly', matchMedia: 'readonly', ResizeObserver: 'readonly' },
     },
   },
   {
