@@ -236,6 +236,16 @@
   `^5`, pubsub `^1.30.1`)가 이전 주 버전을 요구한다. npm이 권하는 해결은 firebase-tools를 14.23.0으로 **내리는** 것이라
   쓰지 않는다. GitHub Dependabot은 이 9건을 알림으로 올리지 않는다. 배포 잡에서만 도는 개발 도구이고, 셋 다 공격자가
   넣은 입력(FTP 목록·글롭 패턴·추적 헤더)이 있어야 하는 서비스 거부 류다. **분기 감사 때 firebase-tools 새 판을 보고 다시 판단한다**
+- 🟠 **`functions/package.json`의 `overrides`에 있는 `"rimraf": { "glob": "^14.0.3" }`을 지우지 말 것**(2026-11-01) — 이것으로 Dependabot #31(glob)·
+  #32(minimatch)가 닫힌다. glob 10.5.0 · minimatch 9.0.9는 firebase-admin 14.3.0 → firestore 8.7.1 → google-gax 5.0.8 → rimraf 5.0.10으로 딸려 오는데,
+  고친 판이 glob 14.0.2 · minimatch 11.0.1(10/27 공개)뿐이고 rimraf 최신(6.1.3)도 glob `^13`이라 Dependabot이 PR을 만들지 못한다.
+  firebase-admin을 14.5.0으로 올려도 firestore 9가 같은 google-gax 5를 데려와 빠지지 않는다(잠금 파일로 확인). google-gax 안에 rimraf를 부르는
+  파일이 없어 **함수가 도는 동안 rimraf · glob은 로드되지 않는다.** 확인한 것: rimraf 5 + glob 14로 `glob()` · `globSync()`와 rimraf의 glob 경로(맞는 파일 0개),
+  functions 유닛 55개, functions `npm audit` 0건. 범위를 rimraf로 좁힌 것은 루트 gaxios 덮어쓰기와 같은 이유다(다른 곳이 glob을 새로 쓰면 그쪽은 건드리지 않게)
+- 🟡 **루트 Dependabot #43(minimatch, 개발 의존성)은 지금 닫을 수 없다**(2026-11-01) — 고친 판이 minimatch 11.0.1 이상뿐인데, 루트에서는 eslint가 10.2.6
+  (최신 eslint 10.14.0도 `^10.2.6`), firebase-tools가 3.1.5 · 5.1.9 · 6.2.3 · 9.0.9(최신 15.34.2도 `^3.0.4`)를 쓴다. 🔴 **덮어쓰기로 11판을 넣지 말 것** —
+  11판은 `require("minimatch")`가 함수가 아니라 객체라서, firebase-tools `lib/fsAsync.js`(functions 배포 묶기 `prepareFunctionsUpload`가 쓴다)와 superstatic이
+  `minimatch(...)`로 부르는 자리가 깨진다(배포가 죽는다). eslint나 firebase-tools 새 판이 11판으로 올라가면 다시 본다
 - **동결 기간에는 배포하지 말 것** — 아래 "행사 직전 배포 동결" 절의 기준과 절차를 따른다
 
 ## 행사 직전 배포 동결 (2026-09-08 산정, 팀장 승인 — 날짜는 대표 확인 시 조정 가능)
