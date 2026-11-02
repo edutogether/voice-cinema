@@ -127,6 +127,57 @@ Hosting 판 `f5c59ae0817df925`, 채널 파일 90개가 빌드와 바이트까지
 4. 정지 동안 화면 22% 막 하나(전에는 문구 칸 44% · 숫자 칸 50%), 녹음기가 켜진 뒤 «지금 외쳐요 !», 새 장면은 대사.
 5. 도구: `build-scene.mjs --pause`, 큐 목록 `voice`, 새 `check-scene.mjs`(원판 대조), 새 `make-test-scene.mjs`(시험용 7초 장면).
 6. 작업 중 발견: 부스 소음이 녹음 첫 칸부터 있으면 말로 보던 것 → 3·2·1 동안 소음 바닥을 미리 잰다. 기다림 끝 칸에 막 시작한 말을 놓치던 것.
+## firebase-tools를 잠금 파일 밖으로(npx 정확한 판), eslint 쪽 minimatch 11 — 루트 npm audit 0건 (2026-11-01, Bumm님 결정 `_shared/CONVENTIONS.md` §3.7 · 지시 팀장 — 팀장 확인 뒤 배포 `5d046b7` · `3ad2c94`)
+
+1. `5d046b7`: 루트 `package.json` · `package-lock.json`에서 firebase-tools 15.32.1과 그것만을 위한 `overrides`(gaxios → uuid)를 뺐다(잠금 파일은 패키지 661개 삭제뿐).
+   `deploy.yml`은 auth 전에 `npx --yes firebase-tools@15.32.1 --version`으로 받아 두고 배포 두 줄이 같은 판을 다시 부른다 — CI 로그에서도 설치는
+   auth 전 한 번뿐이었다. 계약 검사가 세 줄 같은 정확한 판 · 받기가 auth 앞 · 잠금 파일에 없음을 본다(틀린 판 다섯 가지에서 빨간불).
+   2026-10-09의 «배포 단계에서 npx 금지»를 대신한다(대가는 `app.md`). 문서 · 되돌리기 절차의 명령도 같은 판으로 맞췄다.
+   CI 41259487359(유닛 91+55 · E2E 182 통과 · 6 건너뜀) → 배포 41261032329. 루트 `npm audit` 26 → 5건(eslint의 minimatch 하나).
+2. `3ad2c94`: 루트 `overrides`에 `"eslint": { "minimatch": "^11.0.1" }`(Codyssey PR #104 · CLASSCADE와 같은 방식, 범위만 eslint로) — #43.
+   minimatch 10.2.6과 11.0.3에서 eslint 대상 파일 78개 · 결과(메시지 0) · 파일별 규칙 64종 · 무시 경로 판정이 바이트까지 같았다. 루트 `npm audit` 0건.
+   CI 41261350053(같은 수) → 배포 41262825337.
+3. 두 배포 모두 라이브 표시(정본 · 옛 주소 · 함수)가 그 커밋이고, dist 89개 · 영상 24개가 라이브와 바이트까지 같다(서비스워커 캐시 이름 `e93dfd8848a8` 그대로 —
+   부스 기기는 아무것도 다시 받지 않았다).
+4. 알림: 01:21Z GitHub 재검사에서 #29~#42 14건이 «fixed»로 닫혔고(열려 있던 9건 + 자동 무시였던 #33~#36 · #42), #43은 02:29Z에 닫혔다.
+   **열린 Dependabot 알림 0건.** 손으로 닫은 것은 없다.
+
+## Dependabot 알림 정리 — #19 · #20 · #21 머지, functions의 glob 덮어쓰기 (2026-11-01, 지시 팀장 — 대표님 «열린 알림 10건» — 팀장 확인 뒤 배포 `aa48b5e`)
+
+10/31 11:02Z에 새로 열린 알림 10건(#29~#32 functions, #37~#41 · #43 루트)을 정리했다. 손으로 닫지 않는다.
+1. Dependabot이 고칠 수 있는 7건에는 이미 PR이 있었다(CI 통과) — #19 functions body-parser 2.4.0 · qs 6.17.1(알림 #29 · #30),
+   #20 fast-uri 3.1.9(#37~#40), #21 루트 qs 6.16.2(#41). 셋 다 머지(`11cb6dc` · `ca9481d` · `eed528c`).
+2. glob(#31) · minimatch(#32)는 고친 판이 glob 14.0.2 · minimatch 11.0.1(10/27 공개)뿐이고, rimraf 5 → google-gax 5 → firestore → firebase-admin이
+   옛 판만 받아 Dependabot이 PR을 못 만들었다. firebase-admin 14.5.0으로 올려도 빠지지 않아(firestore 9도 google-gax 5를 데려온다),
+   `functions/package.json`의 `overrides`에 `"rimraf": { "glob": "^14.0.3" }`을 넣었다(`aa48b5e`). google-gax 안에 rimraf를 부르는 파일이 없어
+   함수가 도는 동안 로드되지 않는다. functions 유닛 55 · `npm audit` 0건, rimraf 5 + glob 14 동작 확인. 규칙은 `app.md`.
+3. 루트 minimatch(#43)는 지금 닫을 수 없다 — eslint · firebase-tools가 옛 판(3 · 5 · 6 · 9 · 10)을 쓰고, 11판을 덮어쓰면 firebase-tools의
+   functions 배포 묶기가 깨진다(`app.md`).
+4. 배포 41258357492(CI 41256787823 — 유닛 91+55 · E2E 182 통과 · 6 건너뜀): 머지 셋의 배포 실행은 «master 끝이 아니다»로 건너뛰거나 취소됐다.
+   라이브 표시 정본 · 옛 주소 · 함수 모두 `aa48b5e`. 번들 `main-BzKTWlbF.js` · 서비스워커 캐시 이름 `e93dfd8848a8` · sw.js · index.html이 배포 전과
+   바이트까지 같고(부스 기기는 엔진을 다시 받지 않는다), 영상 24개도 저장소와 같다.
+
+## GitHub 복구 뒤 정리 — 1.0으로 되돌아간 라이브를 라이브 줄로 복구, master = 라이브 줄 (2026-10-31, 지시 팀장 — 대표님 «GitHub 밀린 것 정리» · «보이스 영상은 예전 걸로»)
+
+라이브가 **10/31 03:43 ~ 09:42(KST) 약 6시간 1.0**이었다. GitHub 계정이 풀린 뒤 첫 예약 «배포 대조»(41108974767, 10/30 18:41Z)가 master 끝 `510228c`(10/11, 1.0 여섯 장르)를
+Hosting·Functions에 둘 다 배포했다 — 라이브 줄(10/25 `2751ae6`)은 정지 중 이 PC에서만 올려 master에 없었다. 경위와 함정은 `app.md` «배포 대조» 절.
+1. 복구: master를 `feat/vc2-release` 끝 `2fb73a8`로 빨리감기 push(강제 아님, 팀장 확인 뒤) → CI(유닛 91+55 · E2E 182 통과 · 6 건너뜀) → 배포 41151406106(10/31 00:42Z).
+   라이브 version.json · 함수 모두 `2fb73a8`, 번들 `main-D_WBbenb.js`(10/25 라이브와 같음), 장르 8개 영상(본편 · final · previews 24개)이 저장소와 해시가 같다. 홈 · 녹음실 화면 확인.
+2. 영상: «예전 영상» = 10/25 라이브의 mp4 — `0573f98`과 바이트까지 같다(그 뒤 바뀐 것은 AVIF 그림뿐). 최신 설치판(`feat/vc-desktop` `cf6e9ce`, 10/28 빌드)의 clips 56개도 같다. 파일은 바꾸지 않았다. FINAL_7S는 `feat/vc2-ux`와 미리보기 vc2-ux에만.
+3. 배포 뒤 스모크 검사가 «sw.js 설치 목록에 엔진이 없음»으로 떨어졌다(배포 자체는 끝남) — 10/24에 엔진을 설치 목록에서 일부러 뺀 것을 검사가 몰랐다.
+   «서비스워커가 엔진 경로를 맡는가 · 엔진 파일이 200인가»로 바꿨다(`deploy.yml`).
+4. GitHub: 고유 커밋 가지 5개(`feat/vc2-release` · `feat/vc2-ux` · `feat/vc2-v3` · `feat/vc2-live5` · `feat/vc-desktop`)와 로컬 태그 2개(`rollback-20261016-night` · `rollback-20261025-live-ad8d6e9`)를 push.
+   master에 다 들어간 로컬 가지 4개(`feat/vc2-audio` · `perf` · `responsive` · `scenes`)는 `git branch -d`로 정리.
+5. Dependabot: 새 master 위로 다시 맞춘 뒤 CI가 통과한 것만 머지했다. 머지마다 배포 · 스모크 통과, 라이브 표시 두 곳 · 영상 24개 해시 확인.
+   - #14 vite 8.2.2 → 8.3.5 + #17 functions vitest 5.0.5(`fbf5148`, 배포 41156312000) — 번들 `main-D_WBbenb.js` → `main-BzKTWlbF.js`.
+     다시 맞추며 rolldown 1.2.15 → 1.2.16도 함께 올랐다. 2fb73a8 빌드와 달라진 파일은 번들 · index.html · privacy.html(인라인 스타일 압축) · sw.js뿐이고(인라인 스크립트 0, CSS 같음),
+     같은 잠금 파일로 이 PC에서 만든 번들과 이름까지 같다.
+   - #16 vitest 5.0.5(`5f837ae`, 배포 41158298686) — 번들 · 서비스워커 캐시 이름 그대로.
+   - #18 undici 6.29.1 · 8.12.3(`76409fc`, 배포 41160232587 — 새 undici로 돈 첫 배포) — firebase-tools 안쪽 의존성이라 머지 전에 이 PC에서 firebase 15.32.1로 인증 · 프로젝트 목록 · Hosting API를 돌려 봤다.
+   - #15 functions vite 8.3.5 — #17이 같은 판으로 올려 Dependabot이 «이미 최신»으로 닫았다. 그 전 CI의 E2E 1개 실패는 무관한 시간 측정 흔들림(`app.md` «흔들린 검사 기록»).
+6. 그 흔들림을 고쳤다(지시 팀장): `e2e/dubbing-flow.spec.js`가 녹음 시작을 Node 쪽에서 잡아 최대 0.53초 늦게 찍었다(동시 16개 40번 중 4번 3초 아래, 녹음기 기준은 3.001~3.402초).
+   녹음 길이는 녹음기 start · stop 이벤트로, 0.6초 문구 · 3·2·1 글자는 페이지 안 기록(`countdown-watch.js`)으로 잰다. 동시 16개 100번 100 통과, 녹음을 2.5초로 줄인 판에서는 빨간불.
+   다 쓴 의존성 확인 작업본 `wt-deps`는 `git worktree remove`로 정리.
 ## 녹음·합성 품질 보강 — 녹음 3초(말이 이어지면 3.5초), 미리 듣기 = 완성본 소리 (2026-10-24, 지시 팀장 — 대표님 지시문 — 승인 Bumm 10/25 «지금 배포해» — 10/25 00:45 라이브 배포 `2751ae6`, 팀장 확인 뒤, 이 PC에서 Hosting만)
 
 라이브 확인: 정본 · 옛 주소 모두 배포 표시 `2751ae6`, 번들 `main-D_WBbenb.js` · 서비스워커 · 엔진 · 원판 해시가 로컬과 같다, Hosting 판 `04c051ad83cd7cfa`, 첫 화면 콘솔 오류 0. 가지 `feat/vc2-release` = `feat/vc2-perf`(와이파이 최적화, `feat/vc2-responsive` 포함) + `feat/vc2-audio`. 합친 결과 E2E 188개 중 182 통과 · 6 건너뜀 · 실패 0, 유닛 146개. 되돌림: 태그 `rollback-20261025-live-ad8d6e9`(Hosting 판 `881765ed308dc16c`), 절차 `_docs/ops/rollback-20261025.md`.

@@ -5,6 +5,7 @@
 import { Buffer } from 'node:buffer';
 import { test, expect } from '@playwright/test';
 import { installSyntheticMic, takes } from './synthetic-mic.js';
+import { countdownLog, watchCountdown } from './countdown-watch.js';
 
 const UPLOAD_PATTERN = '**/voiceCinema/upload';
 const GENRE_NAMES = ['SF', '판타지', '애니메이션', '히어로', '스릴러', '드라마', '스포츠', '뮤지컬'];
@@ -48,8 +49,10 @@ test.describe('홈 화면', () => {
 
 test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
   test('5.0초에서 정확히 멈추고 문구 → 3·2·1 → 말을 마치면 0.6초 뒤 녹음이 끝나고 → 5.0초부터 이어 재생한다', async ({ page }) => {
-    // 녹음기가 켜진 뒤 0.3초부터 1.5초 말한다 — 말끝(1.8초) + 0.6초에 녹음이 끝난다
+    // 녹음기가 켜진 뒤 0.3초부터 1.5초 말한다 — 말끝(1.8초) + 0.6초에 녹음이 끝난다(이 가지의 말끝 감지 — master는 3초 고정이라 녹음기 시간으로 잰다).
+    // 문구(0.6초)와 3·2·1(0.3초씩)은 짧아 페이지 안에서 기록한다(master 10/31 — 나타난 뒤 글자를 따로 읽으러 가면 그 사이 사라질 수 있다)
     await installSyntheticMic(page, [{ delay: 0.3, dur: 1.5 }]);
+    await watchCountdown(page);
     await openStudio(page, '판타지');
     const clip = page.locator('#clip');
     await expect(clip).toHaveJSProperty('paused', true);
@@ -58,23 +61,20 @@ test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
 
     await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'watching');
     await expect.poll(() => clip.evaluate(v => v.currentTime)).toBeGreaterThan(.5);
-    // 멈춘 순간 영상 시각이 5.0초와 한 프레임(1/30초) 안이다.
-    // 문구는 0.6초뿐이다(10/24) — 페이지 안에서 매 화면 확인하는 waitFor로 기다린다
-    await page.locator('#cue').waitFor({ timeout: 10000 });
-    expect(await page.locator('#cue').textContent()).toBe('이제 당신의 차례입니다 !');
+    // 문구(0.6초)와 3·2·1(0.3초씩)은 짧아서, 나타난 뒤 검사가 글자를 따로 읽으러 가면 그 사이 사라질 수 있다 — 10/31 동시 16개로
+    // 100번 돌렸을 때 2번, waitFor 뒤 textContent가 사라진 문구를 기다리다 시간 초과. 페이지 안 기록(countdown-watch.js)으로 본다.
+    await expect(page.locator('#recpill')).toBeVisible({ timeout: 15000 });
+    const log = await countdownLog(page);
+    expect(log.find((e) => e.key === 'cue')?.text).toBe('이제 당신의 차례입니다 !');
+    // 숫자는 영상 가운데, 문구는 아래 안내 자리(.studio-ready — 10/25 녹음실 재구성)
+    expect(log.find((e) => e.key.endsWith('녹음 시작'))?.ready).toContain('지금 바로 당신의 목소리를 들려주세요 !');
+    // 멈춘 영상 시각이 5.0초와 한 프레임(1/30초) 안이고, 녹음 중에도 그 정지 화면 그대로다.
     const paused = await clip.evaluate(v => ({ paused: v.paused, time: v.currentTime }));
     expect(paused.paused).toBe(true);
     expect(Math.abs(paused.time - 5)).toBeLessThanOrEqual(1 / 30);
-
-    // 숫자는 영상 가운데, 문구는 아래 안내 자리(10/25 녹음실 재구성)
-    await expect(page.locator('#count')).toBeVisible();
-    await expect(page.locator('.studio-ready')).toContainText('지금 바로 당신의 목소리를 들려주세요 !');
-    await expect(page.locator('#recpill')).toBeVisible({ timeout: 5000 });
-    // 녹음 중에는 영상이 5.0초 정지 화면 그대로다.
-    expect(await clip.evaluate(v => ({ p: v.paused, t: Math.round(v.currentTime * 10) / 10 }))).toEqual({ p: true, t: 5 });
     await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'continuing', { timeout: 6000 });
-    // 앱이 녹음기를 멈추기로 한 때(녹음기 start()부터) = 말끝 1.8초 + 0.6초 — 예전처럼 3초를 다 채우지 않는다.
-    // 바깥에서 «녹음 중»을 알아챈 때부터 재면 그 알아채는 간격만큼 흔들려(병렬 부하 1.95초) 시계로 재지 않는다
+    // 앱이 녹음기를 멈추기로 한 때(녹음기 start()부터) = 말끝 1.8초 + 0.6초 — 3초를 다 채우지 않는다(이 가지의 말끝 감지).
+    // 바깥에서 «녹음 중»을 알아챈 때부터 재면 그 알아채는 간격만큼 흔들려(병렬 부하 1.95초) 시계로 재지 않는다 — 시험용 마이크가 남긴 녹음기 시각으로 본다
     const { stopAt } = (await takes(page))[0];
     expect(stopAt).toBeGreaterThanOrEqual(1.8 + 0.6 - 0.02);
     expect(stopAt).toBeLessThan(1.8 + 0.6 + 0.35);

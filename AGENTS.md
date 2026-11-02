@@ -20,7 +20,7 @@
 
 - React·TypeScript·Vite의 `src/`를 `dist/`로 빌드한다. 학생 목소리는 브라우저 ffmpeg.wasm으로 합성하고 Functions가 검증·Storage 저장을 맡는다. `functions/`는 독립 npm 프로젝트다.
 - LOCKED: Functions `concurrency: 1`·`maxInstances: 10`, `trust proxy: 1`, 업로드 검사 순서(인증 전 상한 → BOOTH_TOKEN → App Check → 업로드 한도 → 본문). 저장 이름은 서버가 정한다. MP4 MIME·바이트 시그니처·디코딩된 크기 20MiB·파일명 120자 검증과 CORS 앵커·점 이스케이프를 유지한다.
-- 업로드 110초와 `BOOTH_TOKEN`의 클라이언트·서버 일치는 `src/config.ts`·`functions/index.js` 및 `test/contract.test.js`로 유지한다. Functions의 `uuid` override를 유지하고 `npm audit fix --force`를 사용하지 않는다.
+- 업로드 110초와 `BOOTH_TOKEN`의 클라이언트·서버 일치는 `src/config.ts`·`functions/index.js` 및 `test/contract.test.js`로 유지한다. Functions의 `uuid` override와 `rimraf` → `glob` override, 루트의 `eslint` → `minimatch` override를 유지하고 `npm audit fix --force`를 사용하지 않는다.
 - 장면 원판은 H.264/AAC, 정확히 10.0초, 5.0초에 키프레임이 있고 소리 트랙(원판 소리)이 있어야 한다 — 합성이 원판 소리에 목소리를 5.0초 늦춰 섞는다. 원판·미리보기·정지 화면은 `node tools/build-scene.mjs <장르> --parts A.mp4 B.mp4`로 한 번에 만들고, 녹음실 재생과 합성 모두 원판 한 파일을 쓴다(2.0, 2026-10-16). 원판 소리는 `node tools/build-scene-audio.mjs <큐 목록.json> <소리.wav>`로 만든다 — 트랙마다 출처·라이선스가 없으면 만들지 않고, 목소리 칸(5.0~8.5초)은 −8dB로 낮춘다. ffmpeg는 `public/vendor/` 절대 경로 동적 import를 유지한다.
 - `firebase.json`의 `Permissions-Policy: microphone=(self)`와 ffmpeg Worker·WASM·blob 재생을 허용하는 CSP를 유지한다. 보안 헤더 변경은 실제 녹음→합성 흐름으로 검증한다.
 - 학생 목소리가 담긴 완성 MP4를 다루며 이름·학교·연락처는 수집하지 않는다. 완성 파일은 링크 보유자가 열 수 있다는 고지를 유지한다. 랜덤 토큰 없는 파일명을 허용하지 않고 클라이언트 Storage 직접 접근 deny를 유지한다.
@@ -32,7 +32,7 @@
 ## 배포·산출물
 
 - 정식 주소는 `voice.edutogether.kr`, Hosting 대상 사이트는 `voice-cinema`다. 프로젝트 기본 사이트 `inky-voice-cinema`와 혼동하지 않는다. 배포 대상은 빌드된 `dist/`이며 `public/`의 파일은 그대로 공개되므로 내부 자료를 넣지 않는다.
-- 이 저장소의 운영 배포 가지는 `master`다. CI 통과 후 `storage,functions` → `hosting:voice-cinema` 순으로 배포된다. 같은 `deploy.yml`이 예약 실행(cron 매시 23분, GitHub 지연으로 실제로는 몇 시간에 한 번꼴)으로 라이브 배포 커밋(`/version.json`, 함수 `GET /`의 `commit`)을 master 끝과 대조해 뒤처졌으면 다시 배포한다 — master에 없는 코드를 로컬에서 배포하면 다음 대조 때 master 끝으로 되돌려진다. 배포 도구 firebase-tools는 루트 `devDependencies`에 정확한 버전으로 잠겨 있고 배포는 `node_modules/.bin/firebase`로만 한다 — `npx firebase-tools@…`로 받아 쓰지 않는다. 루트 `package.json`의 `overrides`(gaxios → uuid `^11.1.1`)는 지우지 않는다. 직접 push·병합·배포 승인은 상위 규칙을 따른다. 행사 전에는 기존 `voice-cinema.web.app` 주소를 끄지 않으며, 2026-11-07 마지막 배포 이후 11-14 행사 종료까지의 배포 동결을 유지한다.
+- 이 저장소의 운영 배포 가지는 `master`다. CI 통과 후 `storage,functions` → `hosting:voice-cinema` 순으로 배포된다. 같은 `deploy.yml`이 예약 실행(cron 매시 23분, GitHub 지연으로 실제로는 몇 시간에 한 번꼴)으로 라이브 배포 커밋(`/version.json`, 함수 `GET /`의 `commit`)을 master 끝과 대조해 뒤처졌으면 다시 배포한다 — master에 없는 코드를 로컬에서 배포하면 다음 대조 때 master 끝으로 되돌려진다. 배포 도구 firebase-tools는 `package.json`·`package-lock.json`에 두지 않고 `deploy.yml`에서 정확한 판으로 `npx --yes firebase-tools@15.32.1`을 부른다(2026-11-01, `_shared/CONVENTIONS.md` §3.7) — 받기는 auth 앞, 판은 세 줄이 같아야 하며 `test/contract.test.js`가 검사한다. 로컬에서도 같은 판으로 부른다. 직접 push·병합·배포 승인은 상위 규칙을 따른다. 행사 전에는 기존 `voice-cinema.web.app` 주소를 끄지 않으며, 2026-11-07 마지막 배포 이후 11-14 행사 종료까지의 배포 동결을 유지한다.
 - 폰트 원본·라이선스는 `fonts/`에 보존하고 배포에는 서브셋만 포함한다. `vite.config.ts`의 폰트 서브셋 생성 → 프리캐시 생성 순서를 유지한다.
 
 ## 검사·운영 회귀

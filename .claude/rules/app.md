@@ -94,7 +94,7 @@
 - 🟠 **미리보기 채널 주소(`voice-cinema--<채널>.web.app`)에서는 업로드가 늘 막힌다** — 서버 허용 출처(`ALLOWED_ORIGINS`)에 없어서다.
   10/20 대표님 아이폰 시험의 «클라우드 업로드 실패»가 이것이었다(서버 기록: 미리보기 주소에서 OPTIONS 3번, POST 0번 — 같은 날 실제 주소의
   PC 업로드는 200). 그래서 그 주소의 실패 화면은 «미리보기 주소에서는 QR을 만들 수 없어요…»라고 알린다(`src/logic.ts`의 `isPreviewChannel`).
-  업로드를 확인하려면 실제 주소에서 한다. 서버 기록은 `node_modules/.bin/firebase functions:log --only voiceCinema --json`으로 본다
+  업로드를 확인하려면 실제 주소에서 한다. 서버 기록은 `npx firebase-tools@15.32.1 functions:log --only voiceCinema --json`으로 본다
 - 🟠 **휴대폰 화면은 «화면 크기»가 아니라 «실제 브라우저 높이»로 잰다**(2026-10-17) — 주소창 때문에 iPhone 13 사파리는 390×664,
   안드로이드는 360×640 안팎이다. 390×844(화면 전체)로만 재고 «한 화면에 든다»고 보고했다가, 팀장이 iPhone 13 흉내로 찍자
   가운데 카드가 폭의 43%로 쪼그라든 것이 드러났다(그때는 남는 높이에 맞춰 카드를 줄이는 방식이었다)
@@ -225,24 +225,32 @@
 - **`public/vendor/`의 ffmpeg를 번들러에 태우지 말 것** — Worker+WebAssembly+blob: URL로 코어를 스스로
   로드하므로, 번들러가 해시·재작성하면 경로 해석이 깨진다. `src/lib/vendor.ts`의 절대경로 동적 import를 유지한다
 - **`npm audit fix --force`를 실행하지 말 것** — `firebase-admin`을 10.3.0으로 다운그레이드해 지금 쓰는 모듈형
-  API가 사라지면서 코드가 깨진다. 남은 moderate 취약점은 Google 쪽 전이 의존성(`uuid<11.1.1`) 문제로 업스트림 대기 상태다
-- 🟠 **배포 단계에서 `npx`로 firebase-tools를 받지 말 것**(2026-10-09, 보안 지적 대응) — firebase-tools는 의존성 잠금
-  파일을 싣지 않아, 그때그때 받으면 하위 의존성이 매번 새로 풀린다. 그것도 자격증명을 깐 뒤에. 지금은 루트
-  `devDependencies`에 **정확한 버전**(지금 15.32.1, `^` 없음)으로 넣어 `package-lock.json`이 하위 의존성까지 무결성 해시로
-  잠그고, deploy 잡은 auth **전**의 `npm ci`로 받아 둔 `node_modules/.bin/firebase`만 실행한다.
-  `test/contract.test.js`가 버전 고정과 배포 명령 두 줄을 검사한다(npx로 되돌리면 빨간불을 확인했다).
-  올릴 때는 `npm install -D --save-exact firebase-tools@<버전>`으로 package.json과 잠금 파일을 함께 바꾼다
-- 🟠 **루트 `package.json`의 `overrides: { "gaxios": { "uuid": "^11.1.1" } }`을 지우지 말 것**(2026-10-10) — firebase-tools가 끌어오는
-  gaxios 6.7.1이 취약한 uuid 9를 요구한다(Dependabot medium). gaxios 6의 최신판도, firebase-tools 최신판(15.33.0)도 같아서
-  잠금 파일이나 상위 패키지로는 못 고친다. **firebase-tools 자신의 package.json에 같은 덮어쓰기가 들어 있다** — 의존성으로
-  설치되면 그 설정이 적용되지 않을 뿐이다. `universal-analytics`는 이미 uuid 14라 범위를 gaxios로 좁혔다(낮추지 않게).
-  확인한 것: gaxios가 uuid 11.1.1을 보고 `v4()`가 동작, `firebase projects:list`(인증 경로) 정상
-- 🟡 **루트 `npm audit`에 남는 9건(moderate 2·high 7)은 전부 firebase-tools 안쪽이고 지금 고칠 판이 없다**(2026-10-10,
-  **팀장 결정: 그대로 두고 12월 말 분기 감사나 firebase-tools 새 판 때 다시 본다**) —
-  `braces`는 최신 3.0.3이 곧 취약 범위, `basic-ftp`·`@opentelemetry/core`는 고친 판이 다음 주 버전에만 있는데 부모(get-uri
-  `^5`, pubsub `^1.30.1`)가 이전 주 버전을 요구한다. npm이 권하는 해결은 firebase-tools를 14.23.0으로 **내리는** 것이라
-  쓰지 않는다. GitHub Dependabot은 이 9건을 알림으로 올리지 않는다. 배포 잡에서만 도는 개발 도구이고, 셋 다 공격자가
-  넣은 입력(FTP 목록·글롭 패턴·추적 헤더)이 있어야 하는 서비스 거부 류다. **분기 감사 때 firebase-tools 새 판을 보고 다시 판단한다**
+  API가 사라지면서 코드가 깨진다. functions `npm audit`는 2026-11-01 기준 0건이다(uuid · glob 덮어쓰기, 아래 두 항목)
+- 🟠 **firebase-tools를 `package.json` · `package-lock.json`에 다시 넣지 말 것**(2026-11-01 Bumm님 결정, `_shared/CONVENTIONS.md` §3.7) —
+  쓰는 자리에서 정확한 판을 박아 `npx --yes firebase-tools@15.32.1`로 부른다(`@latest` · 범위 금지). 잠금 파일에 두면 firebase-tools가 끌고 오는
+  고친 판 없는 옛 minimatch(3 · 5 · 6 · 9) 때문에 Dependabot 경고가 닫히지 않는다(11판으로 덮어쓰면 배포가 깨진다). 빼자 루트 `npm audit`가 26건 → 5건이 됐다
+  (남은 5건은 eslint의 minimatch 하나 — 아래 eslint 덮어쓰기로 0건).
+  - deploy 잡은 auth **전**에 `npx --yes firebase-tools@<판> --version`으로 받아 두고, auth 뒤 배포 두 줄이 같은 판을 다시 부른다 — 두 번째 부름은
+    다시 설치하지 않는다(빈 캐시에서 첫 부름 29초 설치, 두 번째 4초 · 설치 없음 실측). `test/contract.test.js`가 세 줄이 같은 정확한 판인지,
+    받기가 auth 앞인지, 잠금 파일에 없는지를 검사한다(다섯 가지로 일부러 틀리게 해 빨간불 확인)
+  - **대가(알고 고른 것)**: CLI의 하위 의존성은 실행할 때마다 정해지고 Dependabot이 추적하지 않는다. 2026-10-09에 잠금 파일로 옮긴 이유(«자격증명을
+    깐 뒤 잠기지 않은 하위 의존성을 받는다»)는 받기를 auth 앞에 두는 것으로 절반만 남겼다. 판을 올릴 때는 `deploy.yml`의 세 줄을 함께 바꾼다
+  - 로컬에서도 같은 판으로 부른다: `npx firebase-tools@15.32.1 <명령>`(이 저장소 폴더 안에서 — `firebase.json`을 읽는다)
+- 🟢 **루트 `overrides`(gaxios → uuid `^11.1.1`)는 2026-11-01에 뺐다** — firebase-tools와 함께 gaxios가 루트 트리에서 사라졌다. npx로 받는 CLI 안의
+  uuid 9는 위 «대가»에 든다(그쪽에는 덮어쓰기가 닿지 않는다)
+- 🟠 **`functions/package.json`의 `overrides`에 있는 `"rimraf": { "glob": "^14.0.3" }`을 지우지 말 것**(2026-11-01) — 이것으로 Dependabot #31(glob)·
+  #32(minimatch)가 닫힌다. glob 10.5.0 · minimatch 9.0.9는 firebase-admin 14.3.0 → firestore 8.7.1 → google-gax 5.0.8 → rimraf 5.0.10으로 딸려 오는데,
+  고친 판이 glob 14.0.2 · minimatch 11.0.1(10/27 공개)뿐이고 rimraf 최신(6.1.3)도 glob `^13`이라 Dependabot이 PR을 만들지 못한다.
+  firebase-admin을 14.5.0으로 올려도 firestore 9가 같은 google-gax 5를 데려와 빠지지 않는다(잠금 파일로 확인). google-gax 안에 rimraf를 부르는
+  파일이 없어 **함수가 도는 동안 rimraf · glob은 로드되지 않는다.** 확인한 것: rimraf 5 + glob 14로 `glob()` · `globSync()`와 rimraf의 glob 경로(맞는 파일 0개),
+  functions 유닛 55개, functions `npm audit` 0건. 범위를 rimraf로 좁힌 것은 다른 곳이 glob을 새로 쓰면 그쪽은 건드리지 않게 하려는 것이다
+- 🟠 **루트 `package.json`의 `overrides`에 있는 `"eslint": { "minimatch": "^11.0.1" }`을 지우지 말 것**(2026-11-01, 지시 팀장 — Codyssey PR #104 ·
+  CLASSCADE와 같은 방식) — 이것으로 Dependabot #43(minimatch)이 닫히고 루트 `npm audit`가 0건이 된다. firebase-tools를 뺀 뒤 루트의 minimatch는
+  eslint 10.10.0이 쓰는 10.2.6 하나였고, 고친 판은 11.0.1 이상뿐인데 최신 eslint 10.14.0도 `^10.2.6`이다. eslint와 `@eslint/config-array`는 이름으로
+  불러 쓰므로(`minimatch.Minimatch`) 11판에서도 그대로 돈다 — 10.2.6과 11.0.3에서 검사 대상 파일 78개 · 결과(메시지 0) · 파일별 규칙 64종 · 무시 경로 판정이
+  바이트까지 같았다. 범위를 eslint로 좁혔다(나중에 들어오는 다른 패키지가 옛 minimatch를 함수로 부르면 깨지지 않게).
+  🔴 **firebase-tools 같은 옛 소비자에는 11판을 덮어쓰지 말 것** — 11판은 `require("minimatch")`가 함수가 아니라 객체라서, firebase-tools `lib/fsAsync.js`
+  (functions 배포 묶기 `prepareFunctionsUpload`가 쓴다)와 superstatic이 `minimatch(...)`로 부르는 자리가 깨진다(배포가 죽는다)
 - **동결 기간에는 배포하지 말 것** — 아래 "행사 직전 배포 동결" 절의 기준과 절차를 따른다
 
 ## 행사 직전 배포 동결 (2026-09-08 산정, 팀장 승인 — 날짜는 대표 확인 시 조정 가능)
@@ -694,6 +702,20 @@ master의 배포 차이는 `functions/package-lock.json`). 조사해 보니 **`7
 - **GitHub은 저장소 활동이 60일 없으면 공개 저장소의 예약 실행을 끈다.** 행사 뒤 오래 손대지 않으면 꺼지는 것이 정상이다
 - 이 대조는 **라이브가 옛것이 된 뒤 몇 시간**(실측 간격 4~6시간)을 남길 수 있다. 그 사이를 줄이려면 묶인 실행을 지우거나
   외부 스케줄러로 수동 실행을 부르는 수밖에 없는데, 앞의 것은 GitHub이 거부하고 뒤의 것은 토큰·콘솔이 필요해 Bumm님 결정이다
+- 🔴 **master가 라이브 줄과 어긋나 있으면 이 대조가 라이브를 master로 되돌린다**(2026-10-31 실제로 겪음). 대조는 master 끝만
+  배포한다 — 라이브에 master에 없는 커밋이 나가 있으면 «두 곳이 다르다»나 «표시가 다르다»로 보고 master 끝을 다시 올린다.
+  - **경위**: GitHub 계정(817beatles)이 막힌 10/11~10/30에는 push를 못 해, 라이브를 이 PC에서 직접 올렸다(10/25 `2751ae6`,
+    Hosting만). master는 `510228c`(10/11, 1.0 여섯 장르)에 그대로 남았다. 막힌 동안 이 워크플로의 예약 실행은 한 번도 돌지
+    않았다(10/10 16:49Z 뒤 실행 0건 — 예약 실행이 막힌 계정에 묶여 멈춘 것으로 보인다, 확인은 안 됨). 계정이 풀린 뒤 첫 예약 실행
+    41108974767(10/30 18:41Z)이 «라이브 Hosting `2751ae6` · Functions `3e5e8d2`가 다르다 → 배포»로 판정해 **Hosting·Functions를
+    둘 다 `510228c`로 되돌렸다** — 라이브가 **10/31 03:43 ~ 09:42(KST) 약 6시간** 1.0이었다(영상도 1.0 여섯 장르, 2.0 장르 주소는 404).
+    10/31 09:17에 master를 라이브 줄 `2fb73a8`로 빨리감기 push해 CI 배포로 되돌렸다(Hosting 번들 `main-D_WBbenb.js` 그대로)
+  - **그래서**: 라이브에 무엇을 올렸으면 **그 커밋을 곧바로 master에 넣어 push한다.** push를 못 하는 기간에 로컬로 올렸으면,
+    풀리는 즉시 **다른 무엇보다 먼저** master를 라이브 줄로 맞춘다 — 예약 실행이 먼저 돌면 되돌린다(이번에는 풀린 지 몇 시간 만에 돌았다).
+    막힌 동안에는 예약 실행을 끌 수도 없다(`gh workflow disable`도 GitHub이 살아 있어야 한다)
+  - 같은 일로 드러난 것: `2751ae6`은 CI 배포를 한 번도 거치지 않아, 배포 뒤 스모크 검사가 «sw.js 설치 목록에 엔진이 없음»으로
+    떨어졌다(10/24에 엔진을 일부러 설치 목록에서 뺐다 — «느린 와이파이» 절). 10/31에 그 검사를 «서비스워커가 엔진 경로를 맡는가 ·
+    엔진 파일이 200인가»로 바꿨다. **로컬 배포만 거친 줄은 CI 배포의 검사를 아직 통과해 본 적이 없다** — 처음 CI로 낼 때 그 실행을 끝까지 본다
 
 ## 화면 문서(HTML)는 캐시하지 않는다 (2026-09-10)
 `firebase.json`의 `/`와 `**/*.html`에 `Cache-Control: no-cache`가 있다. **지우지 말 것.**
@@ -961,6 +983,18 @@ Claude in Chrome은 여분의 브라우저가 아니라 **대표 본인의 크�
   함께 돌던 때) 한 번에서 «애니메이션»이 가운데로 골라진 뒤 제목을 눌렀는데 녹음실이 열리지 않았다(5초). 같은 파일 17개를 3번씩(51개) 다시 돌리면 모두 통과.
   앞서(202번째 프레임 작업본) «여덟 바로가기로 …»도 부하 때 60초를 넘겼다 — 홈 캐러셀 검사가 기계가 바쁠 때 흔들린다(홈 코드는 이 작업들에서 바뀌지 않았다)
 - 원인 후보 그대로였다 — 위 «홈 캐러셀 검사 셋» 절에서 확인하고 고쳤다
+
+## 🟢 흔들린 검사 기록 — `e2e/dubbing-flow.spec.js` «5.0초에서 정확히 멈추고 … 녹음 3초» (2026-10-31 발견 · 원인 확인 · 고침)
+- Dependabot #15(`functions/package-lock.json`만 바꿈)의 CI 41152170462에서 «녹음 길이 > 3000ms»가 **2803ms**로 실패했다
+- **원인 확인**: 검사가 녹음 시작 시각을 `expect(#recpill).toBeVisible()`이 **Node 쪽에서 풀린 때**로 잡았다. 같은 검사를 동시 16개로
+  40번 돌리며 페이지 안 시각을 함께 남겼더니, Node가 «녹음 중»을 **12~533ms(중앙 366ms) 늦게** 잡았고 4번이 3초 아래(2857~2887ms)로 나왔다.
+  같은 때 녹음기 start→stop은 **3001~3402ms**, «녹음 중» 표시→이어 재생은 3121~3795ms로 늘 3초를 넘었다 — 앱은 맞고 측정이 틀렸다
+- **고침**: 녹음 길이를 페이지 안에서 녹음기의 start · stop 이벤트로 잰다(3000ms 이상 · 4000ms 미만)
+- 고치고 100번 돌리자 다른 줄에서 2번 시간 초과가 났다 — 0.6초 문구를 `waitFor`로 찾은 뒤 `textContent`를 따로 읽으러 가는 사이에
+  문구가 사라졌다. 문구와 3·2·1 글자는 `countdown-watch.js`의 페이지 안 기록으로 본다
+- 확인: 동시 16개로 100번 **100 통과**. `RECORD_BASE_SECONDS`를 2.5로 낮춘 판에서는 3번 모두 2.82~2.88초로 빨간불
+- 🟠 **짧게 있다 사라지는 것(문구 0.6초 · 숫자 0.3초)이나 시간 길이는 Node 쪽 확인으로 재지 않는다** — 재시도 간격(수백 ms)만큼 늦게 잡힌다.
+  페이지 안 기록(`countdown-watch.js`, 이벤트 시각)으로 남겨 두고 나중에 읽는다
 
 ## 🟢 모바일 글자 200%에서 상단 단계 표시가 넘치던 것 — 고침 (2026-10-05 발견 · 10-17 고침, 결정 10)
 휴대폰 폭 375px에서 글자를 200%로 키우면 헤더의 단계 표시 «3 영화 저장»이 화면 오른쪽 밖으로 **35px** 넘쳤다(페이지 폭 410px).
