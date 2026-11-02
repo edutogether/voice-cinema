@@ -518,10 +518,24 @@ export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObj
     });
     v.muted = true;
     v.currentTime = 0;
-    const ended = new Promise<void>((resolve) => {
-      const end = () => resolve();
-      v.addEventListener('ended', end, { once: true });
-      cancelClockRef.current = () => v.removeEventListener('ended', end);
+    // 영상이 끝나면 녹음도 끝난다. 영상이 오류로 서거나 브라우저가 멈추면 «ended»가 오지 않으므로 멈춤 · 오류 · 시간 상한(영상 길이 + 3초)도
+    // 함께 기다려, 녹음 상태에 갇히지 않고 준비 화면으로 돌아간다(11/2 종합감사). 끝까지 재생되면 브라우저는 pause → ended 순으로 알리는데,
+    // 그 pause 때는 이미 v.ended가 참이라 멈춤으로 세지 않는다
+    const outcome = new Promise<'ended' | 'stopped'>((resolve) => {
+      const settle = (how: 'ended' | 'stopped') => {
+        v.removeEventListener('ended', onEnded);
+        v.removeEventListener('pause', onStopped);
+        v.removeEventListener('error', onStopped);
+        window.clearTimeout(timer);
+        resolve(how);
+      };
+      const onEnded = () => settle('ended');
+      const onStopped = () => { if (!v.ended) settle('stopped'); };
+      const timer = window.setTimeout(() => settle('stopped'), (scene.length + 3) * 1000);
+      v.addEventListener('ended', onEnded);
+      v.addEventListener('pause', onStopped);
+      v.addEventListener('error', onStopped);
+      cancelClockRef.current = () => settle('stopped');
     });
     try {
       await v.play();
@@ -538,10 +552,14 @@ export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObj
     }
     setHint(sampleMode ? '샘플 체험이라 목소리는 녹음하지 않아요.' : HINT.dubRecording);
     setPhase('recording');
-    await ended;
+    const how = await outcome;
     stopWatch();
     cancelClockRef.current = null;
     if (stale()) return;
+    if (how === 'stopped') {
+      fail(HINT.playFailed);
+      return;
+    }
     await wait(DUB_TAIL_MS);
     if (stale()) return;
     if (!take || !ctx) {

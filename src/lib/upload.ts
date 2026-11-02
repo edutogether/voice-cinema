@@ -12,7 +12,12 @@ const APP_CHECK_WAIT_MS = 20000;
 /** App Check(reCAPTCHA Enterprise) 인스턴스. 저장 시점의 토큰 발급 대기를 줄이려 미리 초기화해 둔다. */
 export function initAppCheck(): Promise<unknown> {
   return (appCheck ??= (async () => {
-    const m = await loadAppCheckModule();
+    // 모듈을 받지 못했으면(와이파이 끊김) 이 약속을 버려 다음 저장 때 다시 시도한다. 초기화까지 간 뒤의 실패는 다시 초기화하면
+    // 같은 이름의 앱이 이미 있어 또 실패하므로 그대로 둔다(그때는 토큰 없이 보내고 판단은 서버가 한다 — appCheckToken)
+    const m = await loadAppCheckModule().catch((error: unknown) => {
+      appCheck = null;
+      throw error;
+    });
     const app = m.initializeApp(FIREBASE_CONFIG);
     return m.initializeAppCheck(app, {
       provider: new m.ReCaptchaEnterpriseProvider(RECAPTCHA_ENTERPRISE_SITE_KEY),

@@ -3,22 +3,15 @@
 // 가능했던" 결함이 배포까지 간 전례가 있어(2026-08-26), 회귀를 잡아줄
 // 테스트가 필요하다는 판단이었다.
 import { test, expect, describe } from 'vitest';
-import { sanitizeFilename, validateUploadRequest, createRateLimiter, chunk, hasMp4Signature, MAX_DECODED_BYTES, MAX_FILENAME_LEN, isAfterCutoff, buildServerFilename, deleteInBatches, GENRE_IDS, LEGACY_GENRE_IDS } from '../validate.js';
+import { validateUploadRequest, createRateLimiter, chunk, hasMp4Signature, MAX_DECODED_BYTES, MAX_FILENAME_LEN, isAfterCutoff, buildServerFilename, deleteInBatches, GENRE_IDS, LEGACY_GENRE_IDS } from '../validate.js';
 
 // 진짜 mp4 파일 시작부(박스 크기 4바이트 + 'ftyp')를 흉내낸 최소 픽스처.
 const FAKE_MP4_BYTES = Buffer.concat([Buffer.from([0, 0, 0, 32]), Buffer.from('ftypisom')]);
-
-test('sanitizeFilename: 경로 조작 문자를 제거한다', () => {
-  expect(sanitizeFilename('../../etc/passwd')).toBe('.._.._etc_passwd');
-  expect(sanitizeFilename('dub_fantasy_123_a1b2c3.mp4')).toBe('dub_fantasy_123_a1b2c3.mp4');
-  expect(sanitizeFilename('한글파일명.mp4')).toBe('한글파일명.mp4');
-});
 
 test('validateUploadRequest: 정상 요청은 통과한다', () => {
   const body = { filename: 'dub_fantasy_1_abcdef.mp4', mimeType: 'video/mp4', dataBase64: FAKE_MP4_BYTES.toString('base64') };
   const result = validateUploadRequest(body);
   expect(result.ok).toBe(true);
-  expect(result.safeName).toBe('dub_fantasy_1_abcdef.mp4');
   expect(result.buffer.equals(FAKE_MP4_BYTES)).toBe(true);
 });
 

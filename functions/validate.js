@@ -9,11 +9,6 @@ export const ALLOWED_MIME = new Set(['video/mp4']);
 export const MAX_DECODED_BYTES = 20 * 1024 * 1024; // 20MB
 export const MAX_FILENAME_LEN = 120;
 
-// 파일명에서 경로 조작(../ 등)과 GCS 키에 부적절한 문자를 제거한다.
-export function sanitizeFilename(filename) {
-  return String(filename).replace(/[^\w.\-가-힣]/g, '_');
-}
-
 // 2026-09-01 종합감사 발견 반영: mimeType 검사는 클라이언트가 JSON에 적어 보낸
 // 문자열만 볼 뿐 실제 파일 내용은 전혀 확인하지 않았다 — 공개 BOOTH_TOKEN만
 // 있으면 "video/mp4"라고 우기고 임의 바이트를 공개 버킷에 올릴 수 있었다.
@@ -24,7 +19,7 @@ export function hasMp4Signature(buffer) {
 }
 
 // req.body를 검사해 저장 가능한 상태인지 판단한다.
-// 성공 시 { ok: true, safeName, buffer }, 실패 시 { ok: false, status, error }를 반환한다.
+// 성공 시 { ok: true, buffer }, 실패 시 { ok: false, status, error }를 반환한다. 저장 이름은 이 결과가 아니라 buildServerFilename이 정한다.
 export function validateUploadRequest(body) {
   const { filename, mimeType, dataBase64 } = body || {};
 
@@ -38,7 +33,6 @@ export function validateUploadRequest(body) {
     return { ok: false, status: 400, error: '허용되지 않는 파일 형식입니다.' };
   }
 
-  const safeName = sanitizeFilename(filename);
   let buffer;
   try {
     buffer = Buffer.from(dataBase64, 'base64');
@@ -52,7 +46,7 @@ export function validateUploadRequest(body) {
     return { ok: false, status: 400, error: '올바른 mp4 파일이 아닙니다.' };
   }
 
-  return { ok: true, safeName, buffer };
+  return { ok: true, buffer };
 }
 
 // 저장 이름은 서버가 정한다(2026-10-05, 보안 지적 대응). 클라이언트가 보낸 이름은 장르를

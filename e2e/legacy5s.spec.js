@@ -63,6 +63,14 @@ test.describe('임시 영상 — 첫 화면', () => {
     }
     for (const name of HIDDEN) await expect(page.locator('.tile', { hasText: name })).toHaveCount(0);
     await expect(page.locator('#home .temp-video-note')).toHaveText(NOTE);
+    // 아래 그림 띠: 한 묶음이 장면 수만큼의 칸이라 마지막 장면 뒤에 빈칸이 없다(칸 수를 8로 박아 두면 5장르에서 세 칸이 비었다 — 11/2 해상도 전수)
+    const strip = await page.locator('.scene-choice-set').first().evaluate((set) => {
+      const cards = [...set.querySelectorAll('.scene-choice-card')];
+      const gap = parseFloat(getComputedStyle(set).columnGap);
+      return { columns: getComputedStyle(set).gridTemplateColumns.split(' ').length, cards: cards.length, tail: set.getBoundingClientRect().right - cards.at(-1).getBoundingClientRect().right, gap };
+    });
+    expect(strip).toMatchObject({ columns: 5, cards: 5 });
+    expect(strip.tail).toBeLessThanOrEqual(strip.gap + 1);
     await expect.poll(() => clips.filter((p) => p.startsWith('/clips/legacy5s/')).length).toBeGreaterThan(0);
     expect(clips.filter((p) => !p.startsWith('/clips/legacy5s/'))).toEqual([]);
   });
@@ -71,6 +79,7 @@ test.describe('임시 영상 — 첫 화면', () => {
     await page.goto('/');
     await expect(page.locator('.chart-heading h1 span')).toHaveText('8');
     for (const name of HIDDEN) await expect(page.locator('.tile', { hasText: name }).first()).toBeAttached();
+    expect(await page.locator('.scene-choice-set').first().evaluate((set) => getComputedStyle(set).gridTemplateColumns.split(' ').length)).toBe(8);
     await expect(page.locator('.temp-video-note')).toHaveCount(0);
     for (const length of await page.locator('.tile-length').allTextContents()) expect(length).toBe('10초');
   });
@@ -205,6 +214,23 @@ test.describe('임시 영상 — 녹음실: 3·2·1 → 멘트 → 영상 위에
     expect(onset.peak).toBeGreaterThan(0.05);
     // 영상이 움직인 때를 «playing» 이벤트로 잡아 한 프레임(1/30초) 안팎 어긋날 수 있다 — 두 프레임 안에서 맞는다
     expect(Math.abs(onset.onset - expected)).toBeLessThanOrEqual(2 / 30);
+  });
+
+  test('녹음 중 영상이 멈추면(브라우저가 세움) 녹음 상태에 갇히지 않고 준비 화면으로 돌아와 다시 녹음할 수 있다', async ({ page }) => {
+    test.setTimeout(90000);
+    await installSyntheticMic(page, [{ delay: 0.6, dur: 2 }, { delay: 0.6, dur: 2 }]);
+    await openStudio(page, scene('fantasy'));
+    await page.locator('#recBtn').click();
+    await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'recording', { timeout: 10000 });
+    await expect.poll(() => page.locator('#clip').evaluate((v) => v.currentTime)).toBeGreaterThan(0.5);
+    // 브라우저가 영상을 세운 모양(절전 · 디코더 한도 등) — 예전에는 «ended»만 기다려 녹음 상태에 머물렀다
+    await page.locator('#clip').evaluate((v) => v.pause());
+    await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'idle', { timeout: 5000 });
+    await expect(page.locator('#hint')).toHaveText('영상을 재생하지 못했어요. 장면 시작을 다시 눌러 주세요.');
+    await expect(page.locator('#afterRow')).toHaveCount(0);
+    // 다시 «장면 시작» — 이번에는 끝까지 녹음된다
+    await page.locator('#recBtn').click();
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
   });
 
   test('아무 소리도 없으면 저장하지 않고 다시 녹음하게 한다', async ({ page }) => {

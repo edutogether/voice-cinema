@@ -37,9 +37,14 @@ declare global {
   }
 }
 
+// 한 번 받은 모듈은 다시 받지 않는다. 받기에 실패한 약속은 버린다 — 와이파이가 잠깐 끊겨 한 번 실패해도 다음 시도(저장 다시 누르기 등)에
+// 새로고침 없이 다시 받는다(11/2 종합감사 — 예전에는 실패한 약속을 그대로 들고 있어 ffmpeg.ts의 «다음 저장 시도에 다시 받는다»가 지켜지지 않았다)
 const loadOnce = <T>(path: string): (() => Promise<T>) => {
   let promise: Promise<T> | null = null;
-  return () => (promise ??= import(/* @vite-ignore */ path) as Promise<T>);
+  return () => (promise ??= (import(/* @vite-ignore */ path) as Promise<T>).catch((error: unknown) => {
+    promise = null;
+    throw error;
+  }));
 };
 
 export const loadFFmpegModule = loadOnce<FFmpegModule>('/vendor/ffmpeg/index.js');

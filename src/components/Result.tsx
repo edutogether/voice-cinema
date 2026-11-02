@@ -146,7 +146,7 @@ export function Result({ active, job, onHome, onBack }: Props) {
                   : '인터넷이 잠깐 불안해서 QR을 만들지 못했어요. 아래 단추를 눌러 이 기기에 저장한 뒤 선생님께 알려 주세요.'}
             </p>
 
-            {/* 휴대폰에서 직접 체험하면 자기 화면의 QR을 찍을 수 없다 — 같은 공개 주소를 바로 여는 단추(휴대폰에서만 보임, result.css). 휴대폰 한 화면에 들어오게 QR보다 위에 둔다. 10/17 팀장 임시 진행, 대표님 일요일 확인 */}
+            {/* 휴대폰에서 직접 체험하면 자기 화면의 QR을 찍을 수 없다 — 같은 공개 주소를 바로 여는 단추(휴대폰에서만 보임, result.css). 휴대폰 한 화면에 들어오게 QR보다 위에 둔다(10/17 도입 — 10/20 · 10/21 완성 화면 검토에서도 그대로 두었다) */}
             {stage.kind === 'cloud' && (
               <a className="btn btn-lg btn-save open-movie" id="openMovieBtn" href={stage.url} target="_blank" rel="noopener"><ActionIcon name="play" /> 내 영화 열기</a>
             )}

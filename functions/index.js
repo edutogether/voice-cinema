@@ -21,9 +21,8 @@ const UPLOAD_PREFIX = 'dubs/';
 
 // 2026-08-28 발견 반영: 파일 수백~수천 개를 Promise.all 하나로 한꺼번에
 // 지우면 인스턴스 메모리(256MiB)를 초과해 죽는다(2000개 실측 스트레스테스트로
-// 실제 재현: "Memory limit of 256 MiB exceeded with 275 MiB used"). 이 두 라우트
-// (정리용 임시 라우트, 실제 cleanupAfterCutoff)가 전부 같은 패턴이라 공용 함수로
-// 묶어 한 번에 100개씩만 처리한다.
+// 실제 재현: "Memory limit of 256 MiB exceeded with 275 MiB used"). 그래서 자동삭제
+// (cleanupAfterCutoff)는 공용 함수(validate.js deleteInBatches)로 한 번에 100개씩만 처리한다.
 const DELETE_BATCH_SIZE = 100;
 
 // 정밀감사(2026-08-26) 발견 반영 — 이 엔드포인트는 원래 인증 없이 공개 배포된다
@@ -97,7 +96,8 @@ app.post('/upload', async (req, res, next) => {
     return res.status(401).json({ ok: false, error: '보안 검증에 실패했습니다.' });
   }
   if (isRateLimited(req.ip)) {
-    console.warn(`[upload:${requestId}] 분당 업로드 한도 초과: ${req.ip}`);
+    // IP는 로그에 남기지 않는다 — 개인정보처리방침이 «서비스에서 별도로 저장하지 않습니다»라고 약속한다(11/2 종합감사). 요청 번호로 충분하다
+    console.warn(`[upload:${requestId}] 분당 업로드 한도 초과`);
     return res.status(429).json({ ok: false, error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' });
   }
   next();
@@ -189,7 +189,7 @@ export const voiceCinema = onRequest(
   app
 );
 
-// 매일 새벽 3시(KST)에 깨어나서, CUTOFF_DATE가 지났으면 업로드된 영상을 전부 지운다.
+// 매일 자정(KST)에 깨어나서, CUTOFF_DATE가 지났으면 업로드된 영상을 전부 지운다.
 // memory를 512MiB로 올린 것과 배치 삭제 둘 다 2026-08-28 발견 반영 — 행사 당일
 // 수천 개가 쌓인 상태에서 한 번에 지우려다 메모리 초과로 이 함수 자체가 죽으면
 // 자동삭제가 아예 안 되는(개인정보가 안 지워지는) 심각한 결과로 이어질 수 있었다.

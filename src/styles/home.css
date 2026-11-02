@@ -193,11 +193,12 @@ body:has(#home.active) { background:#fff; }
 .scene-position { display:flex; align-items:center; gap:8px; font-size:.875rem; font-variant-numeric:tabular-nums; margin:0; }
 .scene-position > span { color:#777; }
 .scene-position .scene-current-name { display:none; }
-/* 여덟 장 + 한 칸의 여유로 순환 중에도 모든 장르의 온전한 선택지를 노출한다. */
+/* 장면 수(--scene-count — 지금 원판 8, 임시 영상 5) + 한 칸의 여유로 순환 중에도 모든 장르의 온전한 선택지를 노출한다.
+   한 칸 폭은 띠 폭의 1/9이고 한 묶음은 장면 수만큼 — 칸 수를 8로 박아 두면 장면이 줄 때 묶음 끝에 빈칸이 생긴다(11/2 임시 영상 5장르). */
 .scene-choice-row { position:relative; flex-shrink:0; border-top:1px solid #ececec; }
 .scene-choices { --choice-gap:14px; overflow:hidden; contain:paint; padding:32px 4px 6px; }
-.scene-choice-track { display:flex; width:calc(2400% / 9); animation:sceneChoicesFlow var(--flow-duration,48s) linear infinite; transform:translate3d(0,0,0); will-change:transform; }
-.scene-choice-set { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:var(--choice-gap); padding-right:var(--choice-gap); flex:0 0 33.333333%; min-width:0; }
+.scene-choice-track { display:flex; width:calc(var(--scene-count, 8) * 300% / 9); animation:sceneChoicesFlow var(--flow-duration,48s) linear infinite; transform:translate3d(0,0,0); will-change:transform; }
+.scene-choice-set { display:grid; grid-template-columns:repeat(var(--scene-count, 8),minmax(0,1fr)); gap:var(--choice-gap); padding-right:var(--choice-gap); flex:0 0 33.333333%; min-width:0; }
 @keyframes sceneChoicesFlow {
  from { transform:translate3d(0,0,0); }
  to { transform:translate3d(var(--flow-distance,-33.333333%),0,0); }
@@ -289,7 +290,7 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
  /* 아래 그림 띠는 그림을 크게 한다(10/19 대표님) */
  .scene-choices { --choice-gap:10px; padding:10px 4px 4px; }
  .scene-choice-track { width:max-content; }
- .scene-choice-set { flex:none; grid-template-columns:repeat(8,96px); }
+ .scene-choice-set { flex:none; grid-template-columns:repeat(var(--scene-count, 8),96px); }
  .scene-choice-card img { height:auto; aspect-ratio:16 / 9; }
  .scene-choice-card > span { margin-top:4px; font-size:.75rem; gap:0; }
  .scene-choice-card small { display:none; }
@@ -309,7 +310,7 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
  .chart-title-phone em { display:block; }
  .scene-stage { --scene-caption-height:calc(clamp(44px,calc(7 * var(--vh)),64px) + 18px); }
  .scene-shell .tile-enter { min-height:clamp(44px,calc(7 * var(--vh)),64px); font-size:clamp(1rem,calc(2.3 * var(--vh)),1.25rem); }
- .scene-choice-set { grid-template-columns:repeat(8,clamp(96px,calc(19 * var(--vh)),180px)); }
+ .scene-choice-set { grid-template-columns:repeat(var(--scene-count, 8),clamp(96px,calc(19 * var(--vh)),180px)); }
  .scene-choice-card > span { font-size:clamp(.75rem,calc(1.8 * var(--vh)),1rem); }
 }
 /* 아주 낮은 화면(작은 아이폰 사파리 등): 안내 줄을 접고 장면을 먼저 보인다. 그러면 제목이 머리글 바로 아래로 올라오므로,

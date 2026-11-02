@@ -97,10 +97,6 @@ body {
   }
 }
 
-.gold {
-  color: var(--gold);
-}
-
 /* 공용 버튼 */
 .btn {
   appearance: none;
@@ -124,10 +120,6 @@ body {
   background: rgba(255, 255, 255, 0.05);
   color: var(--cream);
   border: 1px solid var(--line);
-}
-.btn-gold {
-  background: linear-gradient(180deg, var(--gold-soft), var(--gold));
-  color: #1a1205;
 }
 .btn-save {
   background: linear-gradient(180deg, #46e0a6, var(--ok));

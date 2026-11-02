@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { GENRES, thumbUrl, thumbAvifUrl, type Genre } from '../genres';
 import { GenreTile } from './GenreTile';
 import { useSceneMotion } from '../hooks/useSceneMotion';
@@ -10,7 +10,7 @@ import { fitScale } from '../lib/fit';
 const AUTO_ADVANCE_MS = 6000;
 const PREVIEW_WAIT_MAX_MS = 30000;
 
-/** 중앙 작품은 앞으로, 이웃 작품은 뒤로 놓는다. 여덟 장면의 바로가기는 항상 보인다. */
+/** 중앙 작품은 앞으로, 이웃 작품은 뒤로 놓는다. 모든 장면의 바로가기는 항상 보인다. */
 export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect: (genre: Genre, source?: HTMLElement) => void }) {
   const [selected, setSelected] = useState(0);
   const [ready, setReady] = useState(() => !document.getElementById('splash'));
@@ -164,7 +164,9 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
         <p className="scene-position" aria-live={autoPaused || keyboardPaused ? 'polite' : 'off'}><strong>{String(selected + 1).padStart(2, '0')}</strong><span>/ {String(GENRES.length).padStart(2, '0')}</span><span className="scene-current-name">{GENRES[selected].name}</span></p>
       </div>
       <div className="scene-choice-row">
-        <div className="scene-choices" ref={choiceViewport} role="group" aria-label="여덟 장면 바로 고르기"
+        {/* 장면 수는 영상 자리에 따라 다르다(지금 원판 8 · 임시 영상 5 — src/genres.ts). 띠의 칸 수 · 폭은 CSS가 --scene-count로 계산한다 */}
+        <div className="scene-choices" ref={choiceViewport} role="group" aria-label={`장면 ${GENRES.length}개 바로 고르기`}
+          style={{ '--scene-count': GENRES.length } as CSSProperties}
           data-paused={!active || !visible || flowPaused} data-keyboard={keyboardChoices}
           onKeyDownCapture={() => setKeyboardChoices(true)}
           onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setKeyboardChoices(false); }}>
