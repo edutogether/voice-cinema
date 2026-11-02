@@ -7,10 +7,10 @@
 //            다 만든 뒤 node tools/check-scene.mjs로 확인한다.
 //   node tools/build-scene.mjs <장르> --slides <그림 폴더> [--audio <소리.wav>]
 //     시험용 원판: 그린 키프레임(vc2_<장르>_K###.png)을 그 시각에 맞춰 넘기는 10초 슬라이드. 앱 개발·시사 준비용.
-//   node tools/build-scene.mjs <장르> --legacy <원본.mp4>
-//     임시 5초 영상(LEGACY_5S, 11/2 대표님 — src/lib/videoSet.ts): 원본의 앞 5.000초를 public/clips/legacy5s/ 아래 같은 이름들로 만든다.
-//     멈추는 자리가 없고(영상 위에서 녹음) 소리 트랙은 무음이다(장학사님 Kling 원본은 소리가 없다 — 지금 원판에서 자를 때도 소리는 쓰지 않는다).
-//     미리보기는 5초 전체, 정지 · 썸네일은 첫 화면(녹음이 시작되는 그림)이다. 원본: _media/originals/2026-10-01(Kling) · 짝 없는 장르는 지금 원판.
+//   node tools/build-scene.mjs <장르> --legacy <원본.mp4> --seconds 5|10
+//     임시 영상(LEGACY_5S, 11/2 대표님 — src/lib/videoSet.ts): 장학사님 Kling 원본(_media/originals/2026-10-01)의 앞 5.000초 또는 10.000초를
+//     public/clips/legacy5s/ 아래 같은 이름들로 만든다(길이는 src/genres.ts의 그 장르 legacy5s.seconds). 멈추는 자리가 없고(영상 위에서 녹음)
+//     소리 트랙은 무음이다(원본에 소리가 없다). 미리보기는 영상 전체, 정지 · 썸네일은 첫 화면(녹음이 시작되는 그림)이다.
 //
 // 만드는 것(app-plan §2-5): public/clips/<장르>.mp4(1920×1080 H.264/AAC, 30fps, 키프레임 1초 간격 — 정지 시각 포함,
 // 자막 없음), previews/<장르>.mp4(0~정지 무음, 1280×720 — 최고조까지만, 해소는 아낀다),
@@ -35,15 +35,13 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const logos = join(root, 'tools', 'video-logos.png');
 const [genre, mode, ...rest] = process.argv.slice(2);
 if (!/^[a-z]+$/.test(genre ?? '') || !['--parts', '--slides', '--legacy'].includes(mode)) {
-  console.error('사용: node tools/build-scene.mjs <장르> --parts A.mp4 B.mp4 [--audio 소리.wav] [--pause 초] | --slides <그림 폴더> [--audio 소리.wav] [--pause 초] | --legacy <원본.mp4>');
+  console.error('사용: node tools/build-scene.mjs <장르> --parts A.mp4 B.mp4 [--audio 소리.wav] [--pause 초] | --slides <그림 폴더> [--audio 소리.wav] [--pause 초] | --legacy <원본.mp4> --seconds 5|10');
   process.exit(2);
 }
 const legacy = mode === '--legacy';
-// 임시 5초 영상은 5.000초 · legacy5s/ 아래(src/genres.ts의 LEGACY_SECONDS · legacyScene)
-const SECONDS = legacy ? 5 : 10;
 const clips = join(root, 'public', 'clips', ...(legacy ? ['legacy5s'] : []));
 if (!existsSync(logos)) throw new Error('로고 띠(tools/video-logos.png)가 없다 — node tools/build-video-logos.mjs');
-// --audio·--pause는 값 하나씩을 받는다 — 나머지가 입력 파일이다
+// --audio·--pause·--seconds는 값 하나씩을 받는다 — 나머지가 입력 파일이다
 const option = (name) => {
   const at = rest.indexOf(name);
   if (at < 0) return null;
@@ -53,6 +51,11 @@ const option = (name) => {
 };
 const audio = option('--audio');
 const pauseArg = option('--pause');
+const secondsArg = option('--seconds');
+// 임시 영상(legacy5s/ 아래)은 Kling 원본의 앞 5초 또는 10초 전체 — src/genres.ts의 그 장르 legacy5s.seconds와 같아야 한다(test/contract.test.js가 파일 길이로 대조)
+if (legacy !== (secondsArg !== null)) throw new Error('--seconds는 --legacy에만 쓰고, --legacy에는 --seconds 5 또는 10을 준다');
+if (legacy && !['5', '10'].includes(secondsArg)) throw new Error(`--seconds ${secondsArg}: 5 또는 10`);
+const SECONDS = legacy ? Number(secondsArg) : 10;
 // 임시 5초 영상은 멈추지 않는다 — 정지 시각 대신 0(첫 화면: 키프레임 · 정지 · 썸네일 그림)
 const PAUSE = legacy ? 0 : pauseArg === null ? LIVE_PAUSE : Number(pauseArg);
 if (legacy && (audio || pauseArg)) throw new Error('--legacy에는 --audio · --pause를 쓰지 않는다(소리 없음 · 멈춤 없음)');
@@ -113,7 +116,7 @@ const encode = (video, out) => ff(['-i', picture, '-i', sound, ...video, '-map',
   '-af', `apad,atrim=0:${SECONDS}`, '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-movflags', '+faststart', out]);
 encode(['-map', '0:v:0'], main);
 encode(['-i', logos, '-filter_complex', '[0:v][2:v]overlay=0:0,format=yuv420p[v]', '-map', '[v]'], final);
-// 미리보기: 지금 원판은 0~정지(최고조까지, 해소는 아낀다), 임시 5초 영상은 5초 전체(멈추는 자리가 없다)
+// 미리보기: 지금 원판은 0~정지(최고조까지, 해소는 아낀다), 임시 영상은 전체(멈추는 자리가 없다)
 ff(['-i', picture, '-t', String(PAUSE || SECONDS), '-an', '-vf', 'scale=1280:720:flags=lanczos', '-c:v', 'libx264', '-profile:v', 'high',
   '-preset', 'slow', '-crf', '20', '-maxrate', '3M', '-bufsize', '6M', '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
   join(clips, 'previews', `${genre}.mp4`)]);

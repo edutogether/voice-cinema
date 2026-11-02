@@ -20,6 +20,15 @@ function extract(source, pattern, label) {
   return m[1];
 }
 
+/** mp4의 mvhd 상자에서 길이(초)를 읽는다 */
+function mp4Seconds(file) {
+  const bytes = readFileSync(file);
+  const at = bytes.indexOf('mvhd');
+  expect(at, `${file}: mvhd 없음`).toBeGreaterThan(0);
+  if (bytes[at + 4] === 1) return Number(bytes.readBigUInt64BE(at + 28)) / bytes.readUInt32BE(at + 24);
+  return bytes.readUInt32BE(at + 20) / bytes.readUInt32BE(at + 16);
+}
+
 test('BOOTH_TOKEN: functions/index.js와 src/config.ts가 같은 값을 쓴다', () => {
   const server = extract(read('functions/index.js'), /const BOOTH_TOKEN = '([^']+)'/, '서버 BOOTH_TOKEN');
   const client = extract(read('src/config.ts'), /export const BOOTH_TOKEN = '([^']+)'/, '클라이언트 BOOTH_TOKEN');
@@ -109,9 +118,17 @@ test('목소리 칸: 장면 도구의 기본값이 앱의 지금 장면 시간�
   expect(frame).toBeGreaterThan(0);
   expect(frame).toBeLessThan(300);
   expect(genres).toContain('const next = (situation: string, example: string): Scene => ({ pause: NEXT_PAUSE, voiceWindow: 10 - NEXT_PAUSE, length: CLIP_SECONDS, guide: { situation, example } });');
-  // 임시 5초 영상(11/2 — 영상 위에서 녹음): 앱의 영상 길이와 장면 도구가 만드는 길이가 같다(완성본 · 진행 막대가 이 값을 쓴다)
-  const legacySeconds = Number(extract(genres, /export const LEGACY_SECONDS = (\d+);/, 'LEGACY_SECONDS'));
-  expect(Number(extract(read('tools/build-scene.mjs'), /const SECONDS = legacy \? (\d+) : 10;/, '장면 도구 임시 영상 길이'))).toBe(legacySeconds);
+  // 임시 영상(11/2 — 영상 위에서 녹음): 장르마다 앱이 쓰는 길이(legacy5s.seconds — 앞 5초 또는 10초 전체)와 실제 영상 파일의 길이가 같다
+  // (완성본 길이 · 진행 막대 · 녹음 길이가 이 값을 쓴다). 장면 도구가 받는 길이도 앱의 형(LegacySeconds)과 같다
+  expect(extract(genres, /export type LegacySeconds = ([\d |]+);/, 'LegacySeconds')).toBe('5 | 10');
+  expect(read('tools/build-scene.mjs')).toContain("!['5', '10'].includes(secondsArg)");
+  const legacy = Object.fromEntries([...genres.matchAll(/^ {2}\{ id: '([a-z]+)'[^\n]*\n {4}legacy5s: \{[^}\n]*seconds: (\d+) \}/gm)].map((m) => [m[1], Number(m[2])]));
+  expect(Object.keys(legacy).sort()).toEqual(['animation', 'drama', 'fantasy', 'hero', 'thriller']);
+  for (const [id, seconds] of Object.entries(legacy)) {
+    for (const rel of [`${id}.mp4`, `final/${id}.mp4`, `previews/${id}.mp4`]) {
+      expect(Math.abs(mp4Seconds(path.join(root, 'public', 'clips', 'legacy5s', rel)) - seconds), `legacy5s/${rel}`).toBeLessThan(1 / 30);
+    }
+  }
   const ids = [...genres.matchAll(/^ {2}\{ id: '([a-z]+)'/gm)].map((m) => m[1]);
   // 자유 발화 안내(10/26 대표님) — 8장르 모두 상황 안내와 예시 대사가 있다
   const guides = Object.fromEntries([...genres.matchAll(/^ {2}([a-z]+): next\('([^']+)', '([^']+)'\),\r?$/gm)].map((m) => [m[1], [m[2], m[3]]]));

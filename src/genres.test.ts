@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GENRES, LEGACY_SECONDS, NEXT_SCENES, genresFor, sceneOf } from './genres';
+import { GENRES, NEXT_SCENES, genresFor, sceneOf } from './genres';
 
 // 자유 발화 안내는 새 영상이 들어와 켠 장르에만 붙는다(10/26 대표님 «아직 기존 영상이 사용되는 경우에는 … 신규 대사를 강제 표시하지 않는다»)
 describe('장르의 장면 — 새 안내는 새 영상이 들어온 장르에만', () => {
@@ -30,16 +30,23 @@ describe('장르의 장면 — 새 안내는 새 영상이 들어온 장르에�
 });
 
 // 임시 5초 영상(LEGACY_5S, 11/2 대표님) — 영상만 바꾸고 장르 · 색 · 순서는 그대로, 새 영상이 오면 설정 한 줄(TEMP_VIDEOS)로 되돌린다
-describe('임시 5초 영상 — 장르마다 멘트 · 5초 · 영상 위 녹음', () => {
+describe('임시 영상 — Kling 짝이 있는 다섯 장르 · 장르마다 멘트 · 길이 · 영상 위 녹음', () => {
   const slides = genresFor('slides');
   const legacy = genresFor('legacy5s');
-  it('장르 이름 · 색 · 순서는 지금 원판과 같다(8장르)', () => {
-    expect(legacy.map(({ id, name, color }) => ({ id, name, color }))).toEqual(slides.map(({ id, name, color }) => ({ id, name, color })));
-    expect(legacy).toHaveLength(8);
+  it('Kling 짝이 있는 다섯만 보이고(SF · 스포츠 · 뮤지컬은 숨김, 11/2 대표님 L1), 이름 · 색 · 순서는 지금 원판과 같다', () => {
+    expect(legacy.map((g) => g.id)).toEqual(['fantasy', 'animation', 'hero', 'thriller', 'drama']);
+    const kept = slides.filter((g) => legacy.some((l) => l.id === g.id));
+    expect(legacy.map(({ id, name, color }) => ({ id, name, color }))).toEqual(kept.map(({ id, name, color }) => ({ id, name, color })));
   });
-  it('모든 장르가 5초 · 멈춤 없음(0초에 목소리) · 멘트 · legacy5s 폴더이고, 모드와 상관없이 그 장면이다', () => {
+  it('지금 원판(새 영상이 오면 TEMP_VIDEOS = null로 돌아가는 쪽)은 8장르 그대로다 — 숨긴 장르는 설정 한 줄로 돌아온다', () => {
+    expect(slides.map((g) => g.id)).toEqual(['sf', 'fantasy', 'animation', 'hero', 'thriller', 'drama', 'sports', 'musical']);
+  });
+  it('길이는 장르마다 앞 5초 또는 10초 전체(11/2 대표님 L3) — 판타지 · 애니메이션 · 히어로 5초, 스릴러 · 드라마 10초', () => {
+    expect(Object.fromEntries(legacy.map((g) => [g.id, g.scene.length]))).toEqual({ fantasy: 5, animation: 5, hero: 5, thriller: 10, drama: 10 });
+  });
+  it('모든 장르가 멈춤 없음(0초에 목소리) · 녹음 칸 = 영상 길이 · 멘트 · legacy5s 폴더이고, 모드와 상관없이 그 장면이다', () => {
     for (const genre of legacy) {
-      expect(genre.scene).toMatchObject({ pause: 0, voiceWindow: LEGACY_SECONDS, length: LEGACY_SECONDS, assets: 'legacy5s/' });
+      expect(genre.scene).toMatchObject({ pause: 0, voiceWindow: genre.scene.length, assets: 'legacy5s/' });
       expect(genre.scene.line, genre.id).toMatch(/[가-힣]/);
       expect(genre.scene.line, genre.id).not.toMatch(/[^ ][!?]/);   // 느낌표 · 물음표 앞 한 칸(전 앱 규칙)
       expect(genre.scene.guide).toBeUndefined();
@@ -47,13 +54,12 @@ describe('임시 5초 영상 — 장르마다 멘트 · 5초 · 영상 위 녹�
       for (const mode of ['live', 'next', 'final'] as const) expect(sceneOf(genre, mode), `${genre.id} ${mode}`).toBe(genre.scene);
     }
   });
-  it('Kling 원본과 짝이 있는 다섯 장르는 1.0 판의 그 영상 제목이고, 짝 없는 SF · 스포츠 · 뮤지컬은 지금 제목 그대로다', () => {
+  it('다섯 장르는 1.0 판의 그 영상 제목이다', () => {
     const title = Object.fromEntries(legacy.map((g) => [g.id, g.summary]));
-    expect(title).toMatchObject({
+    expect(title).toEqual({
       fantasy: '주문 한마디로 펼치는 마법', animation: '상상 속 친구와 나누는 이야기', hero: '위기의 순간을 뒤집는 한마디',
       thriller: '어둠 속에서 마주친 낯선 소리', drama: '마음 깊이 전하고 싶은 진심',
     });
-    for (const id of ['sf', 'sports', 'musical']) expect(title[id]).toBe(slides.find((g) => g.id === id)?.summary);
   });
   it('지금 원판 장르의 시간표 · 새 장면(FINAL_7S)은 그대로 남아 있다', () => {
     for (const genre of slides) {

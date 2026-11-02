@@ -55,10 +55,12 @@ export interface Genre {
   scene: Scene;
 }
 
-/** 임시 5초 영상(LEGACY_5S)일 때 이 장르에 쓰는 것 — 제목(없으면 지금 제목)과 아이 멘트(src/lib/videoSet.ts) */
+/** 임시 영상(LEGACY_5S)일 때 이 장르에 쓰는 것 — 제목(없으면 지금 제목) · 아이 멘트 · 영상 길이(src/lib/videoSet.ts) */
 interface Legacy5s {
   summary?: string;
   line: string;
+  /** Kling 원본에서 쓰는 길이 — 앞 5초(첫 생성 토막) 또는 10초 전체. 녹음도 이 길이다(영상 위에서 녹음) */
+  seconds: LegacySeconds;
 }
 
 // 지금 원판(2.0): 모든 장르가 5.0초에 멈추고, 상대 대사는 1.6초에 시작해 3.4초 전에 끝난다(스토리보드 §0). 아이 대사는 화면에 없다
@@ -68,16 +70,18 @@ const live = (partner: string): Scene => ({
 });
 
 /**
- * 임시 5초 영상(LEGACY_5S, 11/2 대표님 «새 영상이 아직 완성되지 않았으니 처음에 장학사님이 준 Kling 영상으로 영상만 바꿔 놔라»).
- * 원본은 1.0 판의 Kling 클립 여섯(9/1 `29cdeeb`, 백업 _media/originals/2026-10-01 — 10초짜리이고 Kling 5초 생성 두 토막을 이은 것)이다.
- * 그 앞 5.000초(첫 토막 — 인물이 화면을 보고 말하는 장면)를 쓴다(tools/build-scene.mjs --legacy). 짝은 기록대로(1.0 장르의 색을 물려받은 것 —
- * 위 머리말): 판타지 · 애니메이션 · 드라마는 같은 장르, 히어로 ← 액션, 스릴러 ← 호러. 제목은 1.0 판의 그 영상 제목이다.
- * SF · 스포츠 · 뮤지컬은 짝이 되는 Kling 영상이 없다(스포츠가 색을 물려받은 시트콤은 거실 장면이라 «마지막 슛»과 맞지 않는다) —
- * 지금 원판의 앞 5초로 같은 흐름을 쓰고, 멘트는 스토리보드의 예시 외침이다(_docs/intents/2026-10-11-scene-homage/storyboards.md).
+ * 임시 영상(LEGACY_5S, 11/2 대표님 «새 영상이 아직 완성되지 않았으니 처음에 장학사님이 준 Kling 영상으로 영상만 바꿔 놔라»).
+ * 원본은 1.0 판의 Kling 클립 여섯(9/1 `29cdeeb`, 백업 _media/originals/2026-10-01 — 10.077초짜리이고 Kling 5초 생성 두 토막을 이은 것)이다.
+ * 짝은 기록대로(1.0 장르의 색을 물려받은 것 — 위 머리말): 판타지 · 애니메이션 · 드라마는 같은 장르, 히어로 ← 액션, 스릴러 ← 호러. 제목은 1.0 판의 그 영상 제목이다.
+ * 길이는 장르마다 «앞 5초»와 «10초 전체» 중 덜 어색한 쪽(11/2 대표님 «보는 사람이 '너무 이상한데요 ?'라는 말이 안 나오게» — 근거는
+ * _docs/intents/2026-11-02-legacy5s/intent.md): 둘째 토막에서 화면이 튀거나 멘트 뒤에도 소리 없이 외치는 판타지 · 애니메이션 · 히어로는 앞 5초,
+ * 끊김 없이 이어지고 앞 5초로 자르면 말 도중에 끊기거나(드라마) 아무 일 없이 끝나는(스릴러) 둘은 10초 전체(tools/build-scene.mjs --legacy --seconds).
+ * 짝이 되는 Kling 영상이 없는 SF · 스포츠 · 뮤지컬은 임시 기간에 보이지 않는다(11/2 대표님 L1) — 새 영상이 오면 TEMP_VIDEOS = null 한 줄로
+ * 지금 원판 8장르가 그대로 돌아온다(그쪽은 legacy5s를 보지 않는다).
  * 원판 소리는 쓰지 않는다(Kling 원본은 소리가 없다 — 완성본은 영상 + 아이 목소리).
  */
-export const LEGACY_SECONDS = 5;
-const legacyScene = (line: string): Scene => ({ pause: 0, voiceWindow: LEGACY_SECONDS, length: LEGACY_SECONDS, line, assets: 'legacy5s/' });
+export type LegacySeconds = 5 | 10;
+const legacyScene = (line: string, seconds: LegacySeconds): Scene => ({ pause: 0, voiceWindow: seconds, length: seconds, line, assets: 'legacy5s/' });
 
 /**
  * 새 8편(대표님이 만드는 영상, 10/25 지시)의 시간표 — **준비만 해 두고 아직 쓰지 않는다.** 새 영상이 들어오면 그 장르의 `scene`을
@@ -101,31 +105,29 @@ export const NEXT_SCENES: Record<string, Scene> = {
   musical: next('무대를 열어 !', '자, 다 같이 춤추자 !'),
 };
 
-// 장르마다 지금 원판과 임시 5초 영상(legacy5s)일 때 쓸 것을 함께 적어 둔다 — 영상 자리(src/lib/videoSet.ts)가 고른다.
-const GENRE_LIST: (Genre & { legacy5s: Legacy5s })[] = [
-  { id: 'sf', name: 'SF', color: '#3fa7c9', summary: '물의 행성', scene: live('저 산… 움직여 !'),
-    legacy5s: { line: '엔진 점화 ! 출발 !' } },
+// 장르마다 지금 원판과 임시 영상(legacy5s)일 때 쓸 것을 함께 적어 둔다 — 영상 자리(src/lib/videoSet.ts)가 고른다. legacy5s가 없는 장르는 임시 기간에 숨는다.
+const GENRE_LIST: (Genre & { legacy5s?: Legacy5s })[] = [
+  { id: 'sf', name: 'SF', color: '#3fa7c9', summary: '물의 행성', scene: live('저 산… 움직여 !') },
   { id: 'fantasy', name: '판타지', color: '#8a63d2', summary: '빛의 결투', scene: live('나와 겨루겠다고 ?'),
-    legacy5s: { summary: '주문 한마디로 펼치는 마법', line: '빛이여, 나에게 힘을 줘 !' } },
+    legacy5s: { summary: '주문 한마디로 펼치는 마법', line: '빛이여, 나에게 힘을 줘 !', seconds: 5 } },
   { id: 'animation', name: '애니메이션', color: '#d97b3f', summary: '멋지게 떨어지기', scene: live('장난감은 못 날아 !'),
-    legacy5s: { summary: '상상 속 친구와 나누는 이야기', line: '안녕 ! 나랑 같이 놀자 !' } },
+    legacy5s: { summary: '상상 속 친구와 나누는 이야기', line: '안녕 ! 나랑 같이 놀자 !', seconds: 5 } },
   { id: 'hero', name: '히어로', color: '#c94f5c', summary: '왼쪽을 봐', scene: live('왼쪽을 봐. 우리가 왔어 !'),
-    legacy5s: { summary: '위기의 순간을 뒤집는 한마디', line: '포기하지 마 ! 우리가 막아 낸다 !' } },
+    legacy5s: { summary: '위기의 순간을 뒤집는 한마디', line: '포기하지 마 ! 우리가 막아 낸다 !', seconds: 5 } },
   { id: 'thriller', name: '스릴러', color: '#2f9e6e', summary: '레이저 금고', scene: live('레이저 바뀐다, 천천히 !'),
-    legacy5s: { summary: '어둠 속에서 마주친 낯선 소리', line: '거기… 누구 있어요 ?' } },
+    legacy5s: { summary: '어둠 속에서 마주친 낯선 소리', line: '거기… 누구 있어요 ?', seconds: 10 } },
   { id: 'drama', name: '드라마', color: '#c9a24b', summary: '기억의 한마디', scene: live('이제… 아무도 몰라보셔.'),
-    legacy5s: { summary: '마음 깊이 전하고 싶은 진심', line: '고마워. 너는 내 진짜 친구야.' } },
-  { id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '마지막 슛', scene: live('너한테 맡긴다 !'),
-    legacy5s: { line: '마지막 한 골, 들어가라 !' } },
-  { id: 'musical', name: '뮤지컬', color: '#c4559e', summary: '서커스 첫 무대', scene: live('쇼는 계속되어야 해 !'),
-    legacy5s: { line: '신사 숙녀 여러분, 쇼 타임 !' } },
+    legacy5s: { summary: '마음 깊이 전하고 싶은 진심', line: '고마워. 너는 내 진짜 친구야.', seconds: 10 } },
+  { id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '마지막 슛', scene: live('너한테 맡긴다 !') },
+  { id: 'musical', name: '뮤지컬', color: '#c4559e', summary: '서커스 첫 무대', scene: live('쇼는 계속되어야 해 !') },
 ];
 
-/** 영상 자리에 맞춘 장르 — legacy5s면 제목 · 장면을 임시 5초 영상 것으로 바꾼다(색 · 이름 · 순서는 그대로) */
+/** 영상 자리에 맞춘 장르 — legacy5s면 Kling 영상이 있는 장르만, 제목 · 장면을 임시 영상 것으로 바꾼다(색 · 이름 · 순서는 그대로) */
 export function genresFor(set: VideoSet): Genre[] {
-  return GENRE_LIST.map(({ legacy5s, ...genre }) => (set === 'legacy5s'
-    ? { ...genre, summary: legacy5s.summary ?? genre.summary, scene: legacyScene(legacy5s.line) }
-    : genre));
+  if (set !== 'legacy5s') return GENRE_LIST.map(({ legacy5s: _, ...genre }) => genre);
+  return GENRE_LIST.flatMap(({ legacy5s, ...genre }) => (legacy5s
+    ? [{ ...genre, summary: legacy5s.summary ?? genre.summary, scene: legacyScene(legacy5s.line, legacy5s.seconds) }]
+    : []));
 }
 
 export const GENRES: Genre[] = genresFor(videoSet);
