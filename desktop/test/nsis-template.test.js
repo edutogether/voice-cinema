@@ -155,6 +155,13 @@ test('화면 넘김은 그리기 멈춤 · 다시 켬 · 합성으로 — Poster
   assert.match(fnBody(installer, '${UN}vcFreeze'), /IsWindowVisible\(p \$HWNDPARENT\)[\s\S]*\$\{If\} \$0 <> 0\n\s+SendMessage \$HWNDPARENT \$\{VC_WM_SETREDRAW\} 0 0/);
   // 창이 뜰 때 칸 겹침 순서(머리 바탕 · 선 맨 아래 + WS_CLIPSIBLINGS)
   for (const f of ['vcGuiInit', 'un.vcGuiInit']) assert.match(fnBody(installer, f), new RegExp(`vcHeaderArt\\n\\s+Call ${f.startsWith('un.') ? 'un\\.' : ''}vcZOrder`));
+  // 아래 줄 선(1035)을 맨 아래로 내리기 전에 상표 글 칸 둘을 글 폭으로 줄인다 — 창 폭 그대로면 선이 통째로 가려진다(11/2 Bumm님 «선을 되살린 판»)
+  const zorder = fnBody(installer, '${UN}vcZOrder');
+  const fit1256 = zorder.indexOf('!insertmacro vcFitBrand 1256');
+  const fit1028 = zorder.indexOf('!insertmacro vcFitBrand 1028');
+  const lineBottom = zorder.indexOf('GetDlgItem $0 $HWNDPARENT 1035');
+  assert.ok(fit1256 >= 0 && fit1028 > fit1256 && lineBottom > fit1028, 'vcZOrder: 상표 글 칸 줄이기 → 선 맨 아래');
+  assert.match(macroBody(installer, 'vcFitBrand'), /GetTextExtentPoint32W[\s\S]*SetWindowPos\(p r0, p 0, i 0, i 0, i r1, i r3, i 0x16\)/);
   // 설치기: 설치 범위(뜬 뒤 다시 켬 · 떠날 때 멈춤) → 위치(만들기 전 멈춤 · nsDialogs::Show 바로 앞에서 다시 켜기 · 떠날 때 합성) → 진행 → 완료(뜬 뒤 다시 켬 · 떠날 때 멈춤)
   assert.match(dir, /!define MUI_PAGE_CUSTOMFUNCTION_SHOW vcModeShow\n!define MUI_PAGE_CUSTOMFUNCTION_LEAVE vcFreeze\n/);
   assert.match(fnBody(installer, 'vcModeShow'), /Push \$MultiUser\.InstallModePage\n\s+Call vcFreezeUntilShown/);
