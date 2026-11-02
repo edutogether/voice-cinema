@@ -2,8 +2,8 @@
 ; 정의한 뒤 · 쓰기 전이다(assistedInstaller.nsh — 제거기 시작 un.onInit도 이 뒤 uninstaller.nsh에서 컴파일된다).
 ;   - setInstallModePerAllUsers(템플릿 multiUser.nsh): 관리자 권한으로 넘기기 직전 작업 폴더 옮기기 한 줄(아래에 이유).
 ;   - MUI_UNPAGE_INSTFILES · MUI_UNPAGE_FINISH(MUI2 Pages/InstallFiles.nsh · Finish.nsh, NSIS 3.0.4.1 — electron-builder 26.17.0이 받는 판):
-;     «화면이 뜨기 직전에 할 일»(SHOW — 막대 · 그림, 완료 화면은 «다 띄운 뒤 다시 그리기»)과 «떠날 때 할 일»(LEAVE — 진행 화면은 «한 번에 그리기»
-;     다시 켜기, 완료 화면은 그리기 멈춤)만 더한다(installer.nsh «화면을 바꿀 때 덜 그린 장이 보이지 않게»). 나머지는 원래 내용 그대로다.
+;     «화면이 뜨기 직전에 할 일»(SHOW — 막대 · 그림, 완료 화면은 «다 띄운 뒤 다시 그리기»)과 완료 화면의 «떠날 때 할 일»(LEAVE — 그리기 멈춤)만
+;     더한다(installer.nsh «화면을 바꿀 때 덜 그린 장이 보이지 않게»). 나머지는 원래 내용 그대로다.
 ; 진행 · 완료 화면을 왜 바꿔 끼우나:
 ;   - 진행 화면: 템플릿은 첫 화면과 진행 화면 사이에 설치 범위 화면(PAGE_INSTALL_MODE)을 넣고, 그 화면의 함수가 MUI의 «SHOW» 설정을 먼저 가져간다.
 ;   - 완료 화면: 템플릿이 완료 화면 앞에 열어 둔 자리(customUninstallPage)에서는 그 화면의 변수($mui.FinishPage.Image)가 아직 없어 함수를 만들 수 없다.
@@ -63,16 +63,12 @@
   !verbose ${MUI_VERBOSE}
   !insertmacro MUI_UNPAGE_INIT
   !define MUI_PAGE_CUSTOMFUNCTION_SHOW un.vcInstFilesShow
-  !define MUI_PAGE_CUSTOMFUNCTION_LEAVE un.vcInstFilesLeave
   !insertmacro MUI_PAGEDECLARATION_INSTFILES
   !verbose pop
 
   Function un.vcInstFilesShow
     !insertmacro vcT "un-page-show"
     !insertmacro vcMakeBar
-  FunctionEnd
-  Function un.vcInstFilesLeave
-    !insertmacro vcComposited on
   FunctionEnd
 !macroend
 

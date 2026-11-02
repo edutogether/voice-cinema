@@ -177,9 +177,10 @@
 ;     nsDialogs 화면(설치 범위 · 위치 · 완료)은 nsDialogs가 새 화면을 띄운 뒤 첫 타이머에서 켠다(vcFreezeUntilShown).
 ;   - 진행 화면으로 갈 때(위치 · 제거 첫 화면 · 제거 범위를 떠날 때)는 멈추지 않고 합성을 켜 둔다(vcCompOn) — 진행 화면에는 SHOW 뒤에 다시 켤 자리가
 ;     없고(제거기는 SHOW 자리를 템플릿 제거 범위 화면이 가져간다), MUI가 첫 화면을 닫으며 LockWindow off로 멈춤을 푼다.
-;     진행 화면을 한 번 다 그리면 끈다(설치 · 제거 단계의 맨 앞 — vcCompositedOff). 켜 둔 채면 막대 · 상자가 스스로 다시 그리는 사이에 빈 장이
-;     끼었다(10/28 녹화: 막대 빈 장 2 · 상자 빈 장 5). 진행 화면을 떠날 때(완료 화면으로 넘어가기 직전) 다시 켠다 — MUI가 완료 화면을 열며
-;     LockWindow off로 단계 끝의 멈춤을 풀고 다시 그리는 동안 한 장에 그리게(Poster Studio는 진행 화면 내내 켜 둔 상태다).
+;     진행 화면을 한 번 다 그리면 끈다(설치 · 제거 단계의 맨 앞 — vcCompositedOff). 켜 둔 채면 막대가 스스로 다시 그리는 사이에 막대가 통째로
+;     빠진 장이 끼었다(10/28 창 캡처: 막대 2 · 상자 5, 11/2 화면 녹화: 설치 한 번에 2~7장 — Poster Studio 2fabd75처럼 진행 화면 내내 켜 둔 판).
+;     단계 끝(100%를 1초 보인 뒤)에 그리기를 멈춘 다음 다시 켠다(vcFinishProgress) — MUI가 완료 화면을 열며 LockWindow off로 그 멈춤을 풀고
+;     다시 그리는 동안 한 장에 그리게(11/2 화면 녹화: 진행 → 완료 넘김의 덜 그린 장이 줄었다 — 위 판과 견줌).
 ; 10/28에는 그리기 멈춤을 넣지 않았다 — MUI LockWindow와 부딪혀 회색 장 · «실행하기» 상자가 «안 보임»으로 남는 일이 있었다(A/B 8회). Poster Studio가
 ; 그 뒤 푼 방법을 옮겼다: 멈춤은 보일 때마다 다시 걸고(LockWindow off가 푼 것), 합성은 그리기를 멈춘 채로 끄고, 새 화면은 겹침 맨 위로 올린다.
 !macro vcComposited STATE
@@ -680,13 +681,15 @@ Var vcBaseShow   ; 줄에 쓸 위치의 모양
 ; 끝: 마지막 줄을 적고 막대를 100%로 채운 뒤 1초 보여 준다(막대는 바로 그린다 — vcSetBarRaw). 그다음 진행 화면은 저절로 완료 화면으로 넘어간다.
 ; NSIS가 끝에 붙이는 «완료» 줄은 이 뒤 «SetDetailsPrint none» 상태라 찍히지 않는다.
 ; 1초 뒤 그리기를 멈춘다 — 단계가 끝나면 NSIS가 가운데 단추를 «닫음»으로 바꾸고 MUI 완료 화면이 «마침»으로 바꾸는데, 그 사이 한 장이 녹화에
-; 잡혔다(Poster Studio 10/28 · 10/30). 완료 화면이 다 차면 vcThaw가 한 번에 그린다.
+; 잡혔다(Poster Studio 10/28 · 10/30). 멈춘 다음 합성을 켠다 — 완료 화면을 여는 MUI의 LockWindow off가 멈춤을 풀어도 그 다시 그리기가 한 장에 된다.
+; 완료 화면이 다 차면 vcThaw가 한 번에 그리고 합성을 끈다.
 !macro vcFinishProgress TEXT
   !insertmacro vcSetBar 1000
   !insertmacro vcStage "${TEXT}"
   ${IfNot} ${Silent}
     Sleep 1000
     Call ${VC_FN}vcFreeze
+    !insertmacro vcComposited on
   ${EndIf}
 !macroend
 
@@ -778,7 +781,6 @@ Var vcAppAnswer
   ; 진행 화면이 뜨기 직전에 막대를 바꿔 끼운다(함수 몸은 진행 화면을 정의한 뒤 — customFinishPage)
   !macro customPageAfterChangeDir
     !define MUI_PAGE_CUSTOMFUNCTION_SHOW vcInstFilesShow
-    !define MUI_PAGE_CUSTOMFUNCTION_LEAVE vcInstFilesLeave
   !macroend
 
   ; 완료 화면: electron-builder 기본 완료 화면(템플릿 assistedInstaller.nsh와 같은 «실행하기» 상자)에 왼쪽 그림 바꾸기만 더한다
@@ -800,9 +802,6 @@ Var vcAppAnswer
       Push " 중 (100%)"
       Call vcTextWidth
       Pop $vcPartExtra
-    FunctionEnd
-    Function vcInstFilesLeave
-      !insertmacro vcComposited on
     FunctionEnd
     ; 예전 판 지우기(기준 10) — 템플릿 변수($installMode 등)를 쓰므로 그 변수가 정해진 뒤인 이 자리에서 정의한다
     !include "${VC_NSIS_DIR}\old-version.nsh"

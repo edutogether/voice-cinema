@@ -63,6 +63,39 @@ status: in-progress
    electron-builder 순서다(→ `desktop/release/Voice Cinema Setup.exe`). Python 3 + Pillow가 필요하다.
 3. 확인: `npm test`(설치판 유닛) · `npm run test:e2e`(빌드한 앱) · 설치기 화면은 `tools/installer-probe.ps1`(아래 «확인 도구»).
 
+## 11/2 — Poster Studio 설치기 고침(2fabd75)을 옮김 (팀장 전달 — 대표님 «Voice Cinema 설치판도 Poster Studio 설치판에서 문제 됐던 것들을 똑같이 개선하라»)
+
+Poster Studio `desktop-20261027`의 설치기 커밋 10개(`a83ed19` ~ `d570c48`, 10/28 17:04 ~ 10/30)를 읽고 Voice Cinema에 빠진 것을 옮겼다. 파일 구조가 달라
+(Voice Cinema는 nsis/ 다섯 파일, Poster Studio는 installer.nsh 한 파일) 코드를 붙이지 않고 같은 동작이 나오게 옮겼다. 이미 있던 것(경로 폴더 단위 줄임 ·
+폴더 칸 선택 없음 · 막대를 바로 그림(«끝났습니다»가 막대보다 먼저) · 바로가기 단계 문장 · 범위 화면 아래 안내 잘림)은 다시 넣지 않았다.
+- 화면 넘김: 떠날 때 그리기 멈춤(WM_SETREDRAW) → 새 화면이 뜬 뒤 합성(WS_EX_COMPOSITED)으로 한 장에 그리고 그리기를 멈춘 채 합성을 끔(vcFreeze · vcThaw ·
+  vcFreezeUntilShown), 진행 화면으로 갈 때는 합성 켬(vcCompOn), 바깥 창 칸 겹침(1035 · 1034 맨 아래, 1256을 1028 아래, WS_CLIPSIBLINGS — vcZOrder).
+  10/28의 «늘 합성 · 머리 칸 맨 위로»(vcHeaderOrder)는 걷었다. 위치 화면은 nsDialogs라 만들기 전 멈춤 · 뜬 뒤 첫 타이머에서 다시 켬.
+- 단계 끝(100% 1초 뒤) 그리기 멈춤(«닫음» 한 장), «마침»은 창을 숨기지 않고 완료 화면 그대로 닫음(10/28의 HideWindow 대신).
+- 앱 파일을 설치 위치에 바로 풀며 파일마다 «설치: …», 큰 파일은 «설치 중: … (NN%)»(`nsis/vc-7z-list.mjs` — 빌드 때 그 7z에서 순서 · 크기 표). 임시 폴더 → 복사를 걷었다.
+  **영상(.mp4)도 7z에 넣는다**(`preCompressedFileExtensions: []`) — electron-builder 기본값은 영상 24개를 7z에서 빼 따로 써서, 그동안 줄 · 막대가 서 있었다(Poster Studio에는 영상이 없다).
+- 조용한 설치(/S)의 «나만» 위치(customInit).
+- 🟠 **진행 화면 동안의 합성만 Poster Studio와 다르다** — 같은 녹화 도구로 세 판을 견줬다(아래 모니터, 초당 30장 화면 녹화, 판정은 Poster Studio
+  `recording-blank-frames.mjs` · `recording-bar-end.mjs` 바이트 그대로 + 진행 중 막대가 통째로 빠진 장 세기):
+
+| 판 | 진행 화면 동안 합성 | 넘김 빈 화면(판정 도구) | 진행 중 막대 빠진 장 |
+|---|---|---|---|
+| 1차(`82565fa`) | 다 그린 뒤 끄고, 진행 화면을 떠날 때 켬 | 9편 합 17장 | 0 |
+| 2차(Poster Studio 2fabd75와 같음) | 내내 켬 | 6편 합 2장 | 편마다 2~7장 |
+| **3차(지금)** | 다 그린 뒤 끄고, **단계 끝 멈춤 뒤** 켬 | **6편 합 4장** | **0** |
+
+  2차의 막대 빠짐은 10/28 창 캡처에서 본 «막대 빈 장»과 같은 현상이다(Poster Studio 판정 도구는 진행 화면 안 막대를 보지 않아 잡지 못한다).
+- **3차 녹화**(판정 도구 — 빈 화면 / 머리 빈 / 단추 줄 빈 / 가운데 단추 잠깐, 장마다 0.033초): ④ 나만 설치 0/1/0/1 · ⑤ 나만 위 다시 설치 0/2/1/3 ·
+  ⑨ 모든 사용자 1/2/1/5 · ⑨b 0/2/0/2 · ③ 제거 2/2/2/2 · ③b 1/3/1/3. «머리 빈»에는 «마침» 뒤 창이 흐려지며 닫히는 장이 들어간다.
+  눈으로 본 넘김: 범위 → 위치 0장, 위치 → 진행 1장(단추 글이 먼저 «다음 >»), 진행 → 완료 1~3장(«설치 완료» 머리 · «마침» 진행 화면 · 빈 장),
+  제거 첫 화면 → 진행 1장. «닫음» 0장(1차에서는 9편 중 1편 1장). «끝났습니다»는 막대 100%와 같은 장에 뜨고 1.13~1.37초 보인다.
+  «실행하기» 상자는 설치 6편 모두 보이고 끌 수 있었다. 설치된 파일 = 빌드 결과(163개, 내용 다름 0 — 템플릿이 넣는 uninstallerIcon.ico 하나 더).
+  명령 창 0 · 아래 모니터 밖 창 0 · 안내문 검사 0.
+- 🟠 **아래 줄 구분선**(«Voice Cinema 2.0.0» 오른쪽 가로선, 칸 1035)은 Poster Studio 2fabd75처럼 설치 범위 · 위치 · 진행 화면에서 **사라졌다** — 칸 겹침(1035를 맨 아래 +
+  WS_CLIPSIBLINGS) 때문이다. 넘김 방식을 따로 바꾸지 않았다(팀장 — Bumm님 결정 대기).
+- 결과 묶음 `C:\Users\817be\work\voice-cinema\desktop-installer-20261102\` — 녹화 원본(`녹화-1차` · `녹화-2차-합성유지` · `녹화-3차-끝에서합성`의 `*\녹화\screen-01.mkv`),
+  넘김 앞뒤 · 걸린 장 원본 PNG(`*\넘김-프레임-원본`), 판마다 설치 파일.
+
 ## 10/28에 바꾼 것 (desktop/만)
 
 - **설정** `desktop/electron-builder.yml`: «모든 사용자»를 먼저 골라 둠(`selectPerMachineByDefault`), 시작 메뉴 폴더 `menuCategory: InKY Film Festival`

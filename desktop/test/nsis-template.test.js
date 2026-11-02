@@ -170,8 +170,11 @@ test('화면 넘김은 그리기 멈춤 · 다시 켬 · 합성으로 — Poster
   assert.match(fnBody(installer, 'un.vcModeShow'), /Push \$MultiUser\.InstallModePage\n\s+Call un\.vcFreezeUntilShown/);
   assert.match(un, /!define MUI_PAGE_CUSTOMFUNCTION_LEAVE un\.vcFreeze\n/);
   assert.match(fnBody(un, 'un.vcFinishShow'), /Push \$mui\.FinishPage\n\s+Call un\.vcFreezeUntilShown/);
-  // 설치 · 제거 단계 끝: 100%를 1초 보인 뒤 멈춘다(«닫음» → «마침» 사이 한 장)
-  assert.match(macroBody(installer, 'vcFinishProgress'), /Sleep 1000\n\s+Call \$\{VC_FN\}vcFreeze\n/);
+  // 설치 · 제거 단계 끝: 100%를 1초 보인 뒤 멈추고(«닫음» → «마침» 사이 한 장) 합성을 켠다(완료 화면을 여는 다시 그리기가 한 장에)
+  assert.match(macroBody(installer, 'vcFinishProgress'), /Sleep 1000\n\s+Call \$\{VC_FN\}vcFreeze\n\s+!insertmacro vcComposited on\n/);
+  // 진행 화면 동안은 합성을 끈다 — 켜 둔 채면 막대가 통째로 빠진 장이 설치 한 번에 2~7장 끼었다(11/2 화면 녹화 2차)
+  assert.match(ours, /!if "\$\{ROOT_KEY\}" == "SHELL_CONTEXT"\n(?:\s*;[^\n]*\n)*\s+!insertmacro vcCompositedOff\n/);
+  assert.match(macroBody(installer.replace(/^ {2}/gm, ''), 'customUnInstall'), /^\s*!insertmacro vcCompositedOff\n/);
   // «마침»은 창을 숨기지 않고 완료 화면 그대로 닫는다
   assert.doesNotMatch(installer + un, /\bHideWindow\b/);
 });

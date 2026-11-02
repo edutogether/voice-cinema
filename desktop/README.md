@@ -36,6 +36,8 @@ cd desktop && npm run dist
 - `npm run test:e2e` — 빌드한 앱을 직접 띄우는 검사(루트의 `@playwright/test`를 쓴다). 창은 가장 작은 모니터에 뜬다(시험 전용 환경 변수 `VC_TEST_SMALLEST_DISPLAY=1` — `main.js`가 처음부터 그 모니터에 창을 만든다)
 - `tools/installer-probe.ps1` — 설치 · 제거 화면을 사람처럼 넘기며 원본 캡처 · 안내문 폭 검사 · 진행 화면 기록 · 창 녹화 · 명령 창 감시(쓰는 법은 파일 머리)
 - `tools/progress-video.py` — 그 녹화로 막대 뒤로 감 · 멈춤 · 100% 시간 · 깜빡임을 잰다
+- `tools/installer-screen-record.ps1` — 설치 · 제거 창 자리의 실제 화면을 녹화한다(Poster Studio와 같은 방법, `tools/run-hidden.ps1`로 창 없이 · 탐침은 `-NoShots`).
+  판정은 Poster Studio 도구를 바이트 그대로 가져온 `tools/recording-blank-frames.mjs`(넘김 빈 장) · `tools/recording-bar-end.mjs`(«끝났습니다» 장의 막대)
 - `node tools/layout-compare.mjs <결과 폴더>` — 설치판과 웹(로컬 빌드)을 같은 안쪽 크기로 1~3단계 찍어 견준다(창을 띄우지 않는다)
 - `node tools/resize-check.mjs <결과 폴더>` — 빌드한 앱을 가장 작은 모니터에 띄워 창 크기를 바꿔 가며(최소 · 중간 · 최대화 · 끌기 · 다른 배율 모니터)
   1~3단계를 같은 크기로 새로 연 웹과 견준다
