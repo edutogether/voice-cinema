@@ -1,6 +1,6 @@
 // 녹음 판단 유닛테스트 — 아이 목소리를 흉내 낸 소리(280Hz 배음 + 음절 떨림)로 말끝 감지·발화 상한·무음·잘림·넣을 구간·배치·보정 음량을 본다.
 import { describe, expect, test } from 'vitest';
-import { checkTake, createVoiceTracker, frameLevels, maxSpeechFor } from './voiceCheck';
+import { checkDub, checkTake, createVoiceTracker, frameLevels, maxSpeechFor } from './voiceCheck';
 
 const RATE = 48000;
 const LIVE = 3.5; // 지금 장면(5.0초 정지)의 목소리 칸
@@ -354,5 +354,39 @@ describe('녹음 판정', () => {
   });
   test('1초도 안 되는 녹음은 다시 녹음', () => {
     expect(checkTake(voice(0.5, { delay: 0.1, dur: 0.3 }), RATE, LIVE).verdict).toBe('short');
+  });
+});
+
+// 임시 5초 영상(LEGACY_5S, 11/2 대표님) — 영상이 흐르는 동안 녹음한다. 정지 · 말끝 감지가 없고, 영상 0초가 나간 때(offset)부터 영상 길이만큼을 쓴다
+describe('영상 위에서 녹음한 것의 판정(checkDub)', () => {
+  const LEGACY = 5;
+  test('영상 0초가 나간 때부터 영상 길이만큼을 영상 0초에 놓는다 — 말이 3초를 넘어도 잘림이 아니다', () => {
+    const check = checkDub(voice(5.4, { delay: 0.5, dur: 4.2 }), RATE, 0.12, LEGACY);
+    expect(check.verdict).toBe('ok');
+    expect(check.start).toBeCloseTo(0.12, 3);
+    expect(check.end).toBeCloseTo(5.12, 3);
+    expect(check.at).toBe(0);
+    expect(check.firstSpeech).toBeGreaterThanOrEqual(0.48);
+    expect(check.lastSpeech).toBeLessThanOrEqual(4.72);
+  });
+  test('녹음이 영상보다 짧으면 녹음 끝까지만 쓴다', () => {
+    const check = checkDub(voice(4.6, { delay: 0.5, dur: 3 }), RATE, 0.1, LEGACY);
+    expect(check.end).toBeCloseTo(4.6, 3);
+  });
+  test('아무 소리도 없으면 무음(다시 녹음), 1초도 안 되면 짧음(다시 녹음)', () => {
+    expect(checkDub(voice(5.2, { amp: 0 }), RATE, 0.1, LEGACY).verdict).toBe('silent');
+    expect(checkDub(voice(0.5, { delay: 0.1, dur: 0.3 }), RATE, 0, LEGACY).verdict).toBe('short');
+  });
+  test('작은 목소리는 들어 보고 저장(quiet)하고 보정 음량을 준다 — 큰 목소리는 줄이지 않는다', () => {
+    const quiet = checkDub(voice(5.2, { delay: 0.6, dur: 3, amp: 0.006 }), RATE, 0.1, LEGACY);
+    expect(quiet.verdict).toBe('quiet');
+    expect(quiet.gainDb).toBeGreaterThan(0);
+    const loud = checkDub(voice(5.2, { delay: 0.6, dur: 3, amp: 0.6 }), RATE, 0.1, LEGACY);
+    expect(loud.verdict).toBe('ok');
+    expect(loud.gainDb).toBe(0);
+  });
+  test('영상 앞(offset 앞)에 낸 소리는 판정에 넣지 않는다', () => {
+    const before = checkDub(voice(5.6, { delay: 0.05, dur: 0.3 }), RATE, 0.5, LEGACY);
+    expect(before.verdict).toBe('silent');
   });
 });

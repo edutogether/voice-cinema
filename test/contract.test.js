@@ -108,7 +108,10 @@ test('목소리 칸: 장면 도구의 기본값이 앱의 지금 장면 시간�
   const frame = Number(extract(genres, /const NEXT_PAUSE = (\d+) \/ 30;/, '새 장면 정지 프레임(NEXT_PAUSE)'));
   expect(frame).toBeGreaterThan(0);
   expect(frame).toBeLessThan(300);
-  expect(genres).toContain('const next = (situation: string, example: string): Scene => ({ pause: NEXT_PAUSE, voiceWindow: 10 - NEXT_PAUSE, guide: { situation, example } });');
+  expect(genres).toContain('const next = (situation: string, example: string): Scene => ({ pause: NEXT_PAUSE, voiceWindow: 10 - NEXT_PAUSE, length: CLIP_SECONDS, guide: { situation, example } });');
+  // 임시 5초 영상(11/2 — 영상 위에서 녹음): 앱의 영상 길이와 장면 도구가 만드는 길이가 같다(완성본 · 진행 막대가 이 값을 쓴다)
+  const legacySeconds = Number(extract(genres, /export const LEGACY_SECONDS = (\d+);/, 'LEGACY_SECONDS'));
+  expect(Number(extract(read('tools/build-scene.mjs'), /const SECONDS = legacy \? (\d+) : 10;/, '장면 도구 임시 영상 길이'))).toBe(legacySeconds);
   const ids = [...genres.matchAll(/^ {2}\{ id: '([a-z]+)'/gm)].map((m) => m[1]);
   // 자유 발화 안내(10/26 대표님) — 8장르 모두 상황 안내와 예시 대사가 있다
   const guides = Object.fromEntries([...genres.matchAll(/^ {2}([a-z]+): next\('([^']+)', '([^']+)'\),\r?$/gm)].map((m) => [m[1], [m[2], m[3]]]));

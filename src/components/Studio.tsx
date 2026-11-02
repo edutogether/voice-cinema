@@ -12,6 +12,7 @@ import { SceneGuide } from './SceneGuide';
 import { MicMeter } from './MicMeter';
 import { SceneCaption } from './SceneCaption';
 import { StudioEntrance } from './StudioEntrance';
+import { TempVideoNote } from './TempVideoNote';
 import type { SceneEntrance } from '../lib/sceneEntrance';
 import type { RecordingSource } from './Result';
 
@@ -70,14 +71,17 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
   const previousPhaseRef = useRef<Phase>('idle');
   const scene = sceneFor(genre);
   const guide = scene.guide;
+  // 임시 5초 영상 — 정지 없이 영상 위에서 녹음한다(3·2·1 → 멘트 → 영상이 흐르는 동안 녹음, src/hooks/useDubbing.ts)
+  const line = scene.line;
   const dub = useDubbing(genre.id, scene, videoRef, sampleMode);
   const { phase } = dub;
   const inTake = TAKE_PHASES.includes(phase);
   const holding = HOLD_PHASES.includes(phase);
-  const step = STEP_AT[phase];
+  // 임시 5초 영상은 2단계가 «3·2·1 뒤 멘트»라 3·2·1 · 멘트가 2단계, 녹음(영상이 흐름)이 3단계다
+  const step = line && (phase === 'countdown' || phase === 'cue') ? 2 : STEP_AT[phase];
   const stepState = (n: number) => (n < step ? 'done' : n === step ? 'current' : 'next');
   // 오류 · 판정 알림이 아닌 기본 준비 안내 — 세로 화면에서는 같은 내용을 3단계로 보인다
-  const defaultHint = dub.hint === idleHint(scene.pause);
+  const defaultHint = dub.hint === idleHint(scene);
   const done = phase === 'recorded';
   const previewing = phase === 'previewing';
   const playing = phase === 'watching' || phase === 'continuing' || previewing;
@@ -143,7 +147,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
   };
 
   return (
-    <section id="studio" className={`view${active ? ' active' : ''}`} data-phase={phase}>
+    <section id="studio" className={`view${active ? ' active' : ''}`} data-phase={phase} data-dub={line ? '' : undefined}>
       <div className="studio-workspace">
         <div className="studio-screen">
           <div className="stage">
@@ -152,6 +156,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
               <div className="studio-scene-title">
                 <span className="studio-scene-label"><span id="chipName">{genre.name}</span>{sampleMode && ' · 녹음 샘플 체험'}</span>
                 <h1 ref={titleRef} tabIndex={-1}>{genre.summary}</h1>
+                <TempVideoNote className="is-studio" />
               </div>
               <span className="studio-brand"><img src="/icons/studio-microphone.png" width="34" height="34" alt="" /><span>Voice <em>Cinema</em></span></span>
             </div>
@@ -170,20 +175,24 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
             </div>
             <div className="studio-player-dock">
               <div className="studio-timeline">
-                <ClipTimeline phase={phase} pause={scene.pause} videoRef={videoRef} />
+                <ClipTimeline phase={phase} pause={scene.pause} length={scene.length} videoRef={videoRef} />
               </div>
               <div className={`controls${inTake ? ' is-recording' : ''}${done ? ' is-recorded' : ''}`}>
                 <div className="controls-copy">
                   {/* 자유 발화 안내(새 장면에 있을 때)는 멈춘 순간부터 보인다 — 숫자가 끝난 뒤에야 처음 보면 읽느라 머뭇거린다(10/25 대표님).
                       예시는 정답이 아니다(10/26 대표님) — 상황 안내가 크고, 예시는 작게 «예시»로, 그 아래 «내 말로 외쳐도 좋아요 !» */}
-                  {phase === 'cue' && <div className="studio-cue" role="status" id="cue"><strong>{STUDIO_COPY.yourTurn}</strong>{guide && <SceneGuide guide={guide} />}</div>}
+                  {/* 임시 5초 영상은 3·2·1 → 멘트 → 영상이 흐르는 동안 녹음이다 — 멘트는 3·2·1 뒤에 처음 뜨고 녹음 내내 그대로 보인다(11/2 대표님) */}
+                  {phase === 'cue' && (line
+                    ? <div className="studio-cue" role="status" id="cue"><span className="studio-line-label">{STUDIO_COPY.lineLabel}</span><strong className="studio-line" id="line">{line}</strong></div>
+                    : <div className="studio-cue" role="status" id="cue"><strong>{STUDIO_COPY.yourTurn}</strong>{guide && <SceneGuide guide={guide} />}</div>)}
                   {phase === 'countdown' && <div className="studio-ready" role="status">{guide
                     ? <SceneGuide guide={guide} />
-                    : <span className="studio-ready-copy">{STUDIO_COPY.speakNow}</span>}</div>}
+                    : <span className="studio-ready-copy">{line ? STUDIO_COPY.lineSoon : STUDIO_COPY.speakNow}</span>}</div>}
                   {phase === 'recording' && <div className="studio-shout" role="status" id="shout">
-                    <span className="studio-shout-row"><strong>{STUDIO_COPY.shoutNow}</strong><MicMeter level={dub.micLevel} /></span>
+                    <span className="studio-shout-row"><strong>{line ? STUDIO_COPY.speakLine : STUDIO_COPY.shoutNow}</strong><MicMeter level={dub.micLevel} /></span>
+                    {line && <span className="studio-line" id="line">{line}</span>}
                     {guide && <SceneGuide guide={guide} />}
-                    <small className="studio-shout-note">말을 마치면 영화가 바로 이어져요</small>
+                    <small className="studio-shout-note">{line ? STUDIO_COPY.dubNote : '말을 마치면 영화가 바로 이어져요'}</small>
                   </div>}
                   {!holding && <h2>{sampleMode && done ? '샘플 체험을 마쳤어요' : HEADLINE[phase]}</h2>}
                   {/* 새 장면은 자유 발화 안내를 준비 화면에서 미리 보여 준다 — «외칠 대사»(정답처럼 읽힘)는 10/26 대표님 지시로 뺐다 */}
@@ -191,8 +200,8 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
                   <div className={`hint${defaultHint ? ' is-default' : ''}`} id="hint" role="status" data-mic-error={dub.micError ?? undefined} data-take-check={dub.takeCheck ?? undefined}>{dub.hint}</div>
                   <ol className="studio-steps" aria-label="더빙 순서">
                     <li data-state={stepState(1)}><b>{stepState(1) === 'done' ? '✓' : 1}</b><span>«장면 시작»을 눌러요</span></li>
-                    <li data-state={stepState(2)}><b>{stepState(2) === 'done' ? '✓' : 2}</b><span>{Math.floor(scene.pause * 10) / 10}초에 영화가 멈춰요</span></li>
-                    <li data-state={stepState(3)}><b>{stepState(3) === 'done' ? '✓' : 3}</b><span>3·2·1 뒤에 크게 외쳐요</span></li>
+                    <li data-state={stepState(2)}><b>{stepState(2) === 'done' ? '✓' : 2}</b><span>{line ? '3·2·1 뒤에 멘트가 떠요' : `${Math.floor(scene.pause * 10) / 10}초에 영화가 멈춰요`}</span></li>
+                    <li data-state={stepState(3)}><b>{stepState(3) === 'done' ? '✓' : 3}</b><span>{line ? '영상에 맞춰 멘트를 말해요' : '3·2·1 뒤에 크게 외쳐요'}</span></li>
                   </ol>
                 </div>
                 {!done && <div className="record-actions">

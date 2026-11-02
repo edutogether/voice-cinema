@@ -56,7 +56,8 @@ export function Result({ active, job, onHome, onBack }: Props) {
     void (async () => {
       let merged: Blob;
       try {
-        merged = await mergeClip(job.genre.id, await voiceFor(job), sceneFor(job.genre).pause + job.plan.at);
+        const scene = sceneFor(job.genre);
+        merged = await mergeClip(job.genre.id, await voiceFor(job), scene.pause + job.plan.at, scene.length);
       } catch (e) {
         if (!cancelled) {
           setStage({

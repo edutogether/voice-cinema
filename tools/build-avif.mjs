@@ -21,13 +21,14 @@ export function avifArgs(src, out) {
     '-aom-params', 'tune=ssim', '-pix_fmt', 'yuv420p', out];
 }
 
-export function buildAvif(genres) {
+// base: 장면 그림이 든 폴더(기본 public/clips — 임시 5초 영상은 public/clips/legacy5s)
+export function buildAvif(genres, base = clips) {
   for (const dir of ['stills', 'thumbs']) {
-    for (const name of readdirSync(join(clips, dir)).filter((f) => f.endsWith('.jpg')).sort()) {
+    for (const name of readdirSync(join(base, dir)).filter((f) => f.endsWith('.jpg')).sort()) {
       const genre = name.slice(0, -'.jpg'.length);
       if (genres.length && !genres.includes(genre)) continue;
-      const src = join(clips, dir, name);
-      const out = join(clips, dir, `${genre}.avif`);
+      const src = join(base, dir, name);
+      const out = join(base, dir, `${genre}.avif`);
       execFileSync('ffmpeg', avifArgs(src, out), { stdio: ['ignore', 'inherit', 'inherit'] });
       console.log(`${dir}/${genre}: JPEG ${(statSync(src).size / 1024).toFixed(0)}KB → AVIF ${(statSync(out).size / 1024).toFixed(0)}KB`);
     }

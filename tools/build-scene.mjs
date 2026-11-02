@@ -7,6 +7,10 @@
 //            다 만든 뒤 node tools/check-scene.mjs로 확인한다.
 //   node tools/build-scene.mjs <장르> --slides <그림 폴더> [--audio <소리.wav>]
 //     시험용 원판: 그린 키프레임(vc2_<장르>_K###.png)을 그 시각에 맞춰 넘기는 10초 슬라이드. 앱 개발·시사 준비용.
+//   node tools/build-scene.mjs <장르> --legacy <원본.mp4>
+//     임시 5초 영상(LEGACY_5S, 11/2 대표님 — src/lib/videoSet.ts): 원본의 앞 5.000초를 public/clips/legacy5s/ 아래 같은 이름들로 만든다.
+//     멈추는 자리가 없고(영상 위에서 녹음) 소리 트랙은 무음이다(장학사님 Kling 원본은 소리가 없다 — 지금 원판에서 자를 때도 소리는 쓰지 않는다).
+//     미리보기는 5초 전체, 정지 · 썸네일은 첫 화면(녹음이 시작되는 그림)이다. 원본: _media/originals/2026-10-01(Kling) · 짝 없는 장르는 지금 원판.
 //
 // 만드는 것(app-plan §2-5): public/clips/<장르>.mp4(1920×1080 H.264/AAC, 30fps, 키프레임 1초 간격 — 정지 시각 포함,
 // 자막 없음), previews/<장르>.mp4(0~정지 무음, 1280×720 — 최고조까지만, 해소는 아낀다),
@@ -26,16 +30,18 @@ import console from 'node:console';
 import process from 'node:process';
 import { buildAvif } from './build-avif.mjs';
 
-const SECONDS = 10;
 const LIVE_PAUSE = 5;
 const root = fileURLToPath(new URL('../', import.meta.url));
-const clips = join(root, 'public', 'clips');
 const logos = join(root, 'tools', 'video-logos.png');
 const [genre, mode, ...rest] = process.argv.slice(2);
-if (!/^[a-z]+$/.test(genre ?? '') || !['--parts', '--slides'].includes(mode)) {
-  console.error('사용: node tools/build-scene.mjs <장르> --parts A.mp4 B.mp4 [--audio 소리.wav] [--pause 초] | --slides <그림 폴더> [--audio 소리.wav] [--pause 초]');
+if (!/^[a-z]+$/.test(genre ?? '') || !['--parts', '--slides', '--legacy'].includes(mode)) {
+  console.error('사용: node tools/build-scene.mjs <장르> --parts A.mp4 B.mp4 [--audio 소리.wav] [--pause 초] | --slides <그림 폴더> [--audio 소리.wav] [--pause 초] | --legacy <원본.mp4>');
   process.exit(2);
 }
+const legacy = mode === '--legacy';
+// 임시 5초 영상은 5.000초 · legacy5s/ 아래(src/genres.ts의 LEGACY_SECONDS · legacyScene)
+const SECONDS = legacy ? 5 : 10;
+const clips = join(root, 'public', 'clips', ...(legacy ? ['legacy5s'] : []));
 if (!existsSync(logos)) throw new Error('로고 띠(tools/video-logos.png)가 없다 — node tools/build-video-logos.mjs');
 // --audio·--pause는 값 하나씩을 받는다 — 나머지가 입력 파일이다
 const option = (name) => {
@@ -47,8 +53,10 @@ const option = (name) => {
 };
 const audio = option('--audio');
 const pauseArg = option('--pause');
-const PAUSE = pauseArg === null ? LIVE_PAUSE : Number(pauseArg);
-if (!(PAUSE > 0 && PAUSE < SECONDS)) throw new Error(`--pause ${pauseArg}: 0~${SECONDS}초 사이여야 한다`);
+// 임시 5초 영상은 멈추지 않는다 — 정지 시각 대신 0(첫 화면: 키프레임 · 정지 · 썸네일 그림)
+const PAUSE = legacy ? 0 : pauseArg === null ? LIVE_PAUSE : Number(pauseArg);
+if (legacy && (audio || pauseArg)) throw new Error('--legacy에는 --audio · --pause를 쓰지 않는다(소리 없음 · 멈춤 없음)');
+if (!legacy && !(PAUSE > 0 && PAUSE < SECONDS)) throw new Error(`--pause ${pauseArg}: 0~${SECONDS}초 사이여야 한다`);
 const inputs = rest;
 const ff = (args) => execFileSync('ffmpeg', ['-y', '-v', 'error', ...args], { stdio: ['ignore', 'inherit', 'inherit'] });
 const work = mkdtempSync(join(tmpdir(), `vc2-${genre}-`));
@@ -63,6 +71,9 @@ if (mode === '--parts') {
   ff(['-i', inputs[0], '-i', inputs[1], '-filter_complex',
     `[0:v]${FIT},trim=0:${PAUSE},setpts=PTS-STARTPTS[a];[1:v]${FIT},trim=0:${SECONDS - PAUSE},setpts=PTS-STARTPTS[b];[a][b]concat=n=2:v=1:a=0[v]`,
     '-map', '[v]', '-c:v', 'libx264', '-crf', '12', '-preset', 'fast', picture]);
+} else if (legacy) {
+  if (inputs.length !== 1) throw new Error('--legacy에는 원본 영상 하나');
+  ff(['-i', inputs[0], '-vf', `${FIT},trim=0:${SECONDS},setpts=PTS-STARTPTS`, '-an', '-c:v', 'libx264', '-crf', '12', '-preset', 'fast', picture]);
 } else {
   // concat 목록 안의 경로는 목록 파일 기준으로 풀리므로 절대 경로로 바꿔 둔다.
   const dir = resolve(inputs[0]);
@@ -77,8 +88,11 @@ if (mode === '--parts') {
 }
 
 // 소리 트랙: 받은 것이 없으면 시험용 소리(낮은 울림 + 8.5초 «빠밤» 두 화음)를 만든다 — 합성(섞기)이 늘 원판 소리를 갖도록.
+// 임시 5초 영상은 무음 트랙이다(합성은 원판 소리[0:a]가 있어야 섞는다 — 완성본 소리는 아이 목소리뿐).
 const sound = audio ?? join(work, 'placeholder.wav');
-if (!audio) {
+if (legacy) {
+  ff(['-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo', '-t', String(SECONDS), sound]);
+} else if (!audio) {
   const chord = (at, hz) => `sine=f=${hz}:d=0.6,afade=t=out:st=0.2:d=0.4,volume=1.2,adelay=${at * 1000}:all=1`;
   ff(['-f', 'lavfi', '-i', `sine=f=110:d=${SECONDS},volume=0.8`, '-f', 'lavfi', '-i', chord(8.5, 523.25),
     '-f', 'lavfi', '-i', chord(8.5, 659.25), '-f', 'lavfi', '-i', chord(8.85, 783.99),
@@ -95,16 +109,17 @@ const final = join(clips, 'final', `${genre}.mp4`);
 // 키프레임 1초 간격(-g 30, 장면 전환으로 끼어드는 키프레임 없음) + 정지 시각을 명시 — 멈춤 탐색이 정확하고 빠르다.
 const encode = (video, out) => ff(['-i', picture, '-i', sound, ...video, '-map', '1:a:0', '-t', String(SECONDS),
   '-c:v', 'libx264', '-profile:v', 'high', '-preset', 'slow', '-crf', '20', '-maxrate', '8M', '-bufsize', '16M',
-  '-g', '30', '-keyint_min', '30', '-sc_threshold', '0', '-force_key_frames', `0,${PAUSE}`, '-pix_fmt', 'yuv420p',
+  '-g', '30', '-keyint_min', '30', '-sc_threshold', '0', '-force_key_frames', PAUSE ? `0,${PAUSE}` : '0', '-pix_fmt', 'yuv420p',
   '-af', `apad,atrim=0:${SECONDS}`, '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-movflags', '+faststart', out]);
 encode(['-map', '0:v:0'], main);
 encode(['-i', logos, '-filter_complex', '[0:v][2:v]overlay=0:0,format=yuv420p[v]', '-map', '[v]'], final);
-ff(['-i', picture, '-t', String(PAUSE), '-an', '-vf', 'scale=1280:720:flags=lanczos', '-c:v', 'libx264', '-profile:v', 'high',
+// 미리보기: 지금 원판은 0~정지(최고조까지, 해소는 아낀다), 임시 5초 영상은 5초 전체(멈추는 자리가 없다)
+ff(['-i', picture, '-t', String(PAUSE || SECONDS), '-an', '-vf', 'scale=1280:720:flags=lanczos', '-c:v', 'libx264', '-profile:v', 'high',
   '-preset', 'slow', '-crf', '20', '-maxrate', '3M', '-bufsize', '6M', '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
   join(clips, 'previews', `${genre}.mp4`)]);
 ff(['-ss', String(PAUSE), '-i', picture, '-frames:v', '1', '-vf', 'scale=1280:720:flags=lanczos', '-q:v', '2', join(clips, 'stills', `${genre}.jpg`)]);
 ff(['-ss', String(PAUSE), '-i', picture, '-frames:v', '1', '-vf', 'scale=640:360:flags=lanczos', '-q:v', '2', join(clips, 'thumbs', `${genre}.jpg`)]);
-buildAvif([genre]);
+buildAvif([genre], clips);
 
 rmSync(work, { recursive: true, force: true });
 const duration = (file) => Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]).toString());

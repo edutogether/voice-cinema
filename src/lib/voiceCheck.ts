@@ -226,6 +226,39 @@ export function checkTake(samples: ArrayLike<number>, sampleRate: number, voiceW
   return { verdict, gainDb, peak, speechSeconds, firstSpeech, lastSpeech, start: round(start), end: round(end), at: round(at), fadeOut: round(fadeOut) };
 }
 
+/**
+ * 영상 위에서 녹음한 것의 판정(임시 5초 영상 — 영상이 흐르는 동안 녹음, 11/2 대표님). 정지 · 말끝 감지 없이 영상 길이만큼 담으므로
+ * 잘림 · 경계 · 일찍 말함은 보지 않는다 — 무음 · 너무 짧음(다시 녹음)과 작은 목소리(들어 보고 저장)만 가리고 보정 음량을 정한다.
+ * offset: 영상 0초가 화면에 나간 때(초, 녹음 시작 기준) · length: 영상 길이(초). 영화에 넣을 구간은 녹음의 [offset, offset + length]이고
+ * 영상 0초에 놓는다(at 0) — 아이가 화면의 인물을 보며 말한 그 자리 그대로다. 문턱은 checkTake와 같은 규칙(그 구간의 소음 바닥 × 2.5)이다.
+ */
+export function checkDub(samples: ArrayLike<number>, sampleRate: number, offset: number, length: number): TakeCheck {
+  const levels = frameLevels(samples, sampleRate);
+  const duration = samples.length / sampleRate;
+  const start = Math.max(0, Math.min(offset, duration));
+  const end = Math.min(duration, start + length);
+  const first = Math.floor(start / FRAME_SECONDS);
+  const window = levels.slice(first, Math.ceil(end / FRAME_SECONDS));
+  let peak = 0;
+  for (let i = Math.floor(start * sampleRate), last = Math.min(samples.length, Math.ceil(end * sampleRate)); i < last; i++) peak = Math.max(peak, Math.abs(samples[i]));
+  const floor = noiseFloor(window);
+  const threshold = Math.max(ABS_SPEECH, Math.min(MAX_THRESHOLD, floor * SNR));
+  const active = window.map((level, i) => (level >= threshold ? i : -1)).filter((i) => i >= 0);
+  const speech = active.map((i) => window[i]);
+  const speechSeconds = speech.length * FRAME_SECONDS;
+  const firstSpeech = active.length ? (first + active[0]) * FRAME_SECONDS : -1;
+  const lastSpeech = active.length ? (first + active[active.length - 1] + 1) * FRAME_SECONDS : -1;
+  const speechLevel = rms(speech);
+  const noiseRoom = floor > 0 ? Math.max(0, toDb(NOISE_CEILING / floor)) : MAX_GAIN_DB;
+  const gainDb = speech.length ? Math.round(Math.min(Math.max(0, toDb(TARGET_SPEECH / speechLevel)), MAX_GAIN_DB, noiseRoom) * 10) / 10 : 0;
+  const verdict: Verdict =
+    duration < MIN_TAKE_SECONDS ? 'short'
+      : peak < SILENT_PEAK || speechSeconds < MIN_SPEECH_SECONDS ? 'silent'
+        : speechLevel < QUIET_SPEECH ? 'quiet'
+          : 'ok';
+  return { verdict, gainDb, peak, speechSeconds, firstSpeech, lastSpeech, start: round(start), end: round(end), at: 0, fadeOut: FADE_OUT_SECONDS };
+}
+
 const round = (x: number) => Math.round(x * 1000) / 1000;
 
 /**

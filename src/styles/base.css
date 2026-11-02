@@ -179,3 +179,28 @@ body {
     bottom: 48px;
   }
 }
+
+/* 임시 5초 영상일 때만 보이는 «영상은 최종 영상으로 교체될 예정입니다»(src/components/TempVideoNote.tsx, 11/2) — 주의 앰버, 체험을 가리지 않게 작게 */
+.temp-video-note {
+  display: inline-block;
+  margin: 0;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.5;
+  word-break: keep-all;
+}
+.temp-video-note.is-home {
+  align-self: flex-start;
+  margin: 0 0 12px;
+  color: #b45309;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+}
+.temp-video-note.is-studio {
+  margin-top: 6px;
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}

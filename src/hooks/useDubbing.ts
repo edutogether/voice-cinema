@@ -3,7 +3,7 @@ import { pickSupportedMime } from '../logic';
 import type { Scene } from '../genres';
 import { decodeTake, engineReady, processVoice, type VoicePlan } from '../lib/ffmpeg';
 import { stopVideoAt, watchVideoTime } from '../lib/videoClock';
-import { checkTake, createVoiceTracker, maxSpeechFor, rms, type Verdict } from '../lib/voiceCheck';
+import { checkDub, checkTake, createVoiceTracker, maxSpeechFor, rms, type Verdict } from '../lib/voiceCheck';
 
 // 장면 더빙 흐름(대표님 10/11 확정, app-plan §1 — 녹음·안내 박자는 10/24, 말끝 감지·정지 연출은 10/25 대표님 지시로 고침):
 //   장면 시작 → 0~정지 시각 재생(상대 대사 자막) → 장면의 정지 시각에 멈춤 + 화면이 살짝 어두워짐(대사가 있으면 바로 크게)
@@ -13,6 +13,10 @@ import { checkTake, createVoiceTracker, maxSpeechFor, rms, type Verdict } from '
 //   → 같은 영상을 정지 시각부터 이어 재생하며 다듬은 목소리를 그 자리에 맞춰 들려줌 → 다시 녹음·저장.
 // 녹음 전에는 «미리보기»로 장면 전체를 소리와 함께 볼 수 있다(10/20 대표님 — 녹음·합성 없이 보기만, 끝나거나 멈추면 준비 상태로).
 // «다시 듣기»는 10/20 대표님 지시로 없앴다(이어 재생이 이미 내 목소리가 들어간 장면을 들려준다).
+// 임시 5초 영상(LEGACY_5S, 11/2 대표님 — 장면에 멘트가 있을 때)은 정지 없이 영상 위에서 녹음한다:
+//   장면 시작 → 바로 3·2·1 → 멘트(LINE_MS) → 녹음기가 켜진 뒤 영상이 처음부터 흐르는 동안 녹음(소리 끔 — 원판은 소리가 없다) → 영상이 끝나면
+//   멈춤 → 녹음 검사(무음 · 짧음 · 작은 목소리, src/lib/voiceCheck.ts checkDub) → 같은 영상을 처음부터 다시 틀며 목소리를 그 자리(영상 0초)에 맞춰
+//   들려줌 → 다시 녹음 · 저장. 목소리는 녹음 중 영상 0초가 화면에 나간 순간부터 영상 길이만큼 쓴다 — 아이가 인물을 보며 말한 자리 그대로다.
 // 단계(phase) 하나가 화면 전체를 결정하고, 정리는 effect cleanup이 맡는다.
 export type Phase = 'idle' | 'previewing' | 'requesting' | 'watching' | 'cue' | 'countdown' | 'recording' | 'checking' | 'continuing' | 'recorded';
 
@@ -20,6 +24,10 @@ export type Phase = 'idle' | 'previewing' | 'requesting' | 'watching' | 'cue' | 
 export const CUE_MS = 600;
 /** 3·2·1 숫자 하나의 시간 */
 export const COUNT_MS = 300;
+/** 임시 5초 영상: 3·2·1 뒤 멘트를 먼저 읽는 시간 — 그다음 녹음기가 켜지고 영상이 흐른다(멘트는 녹음 내내 보인다) */
+export const LINE_MS = 1000;
+/** 임시 5초 영상: 영상이 끝난 뒤 조금 더 담는다 — 마지막 음절 · 녹음기가 마지막 조각을 내보내는 시간 */
+const DUB_TAIL_MS = 150;
 /** 녹음기가 이 안에 켜지지 않으면 녹음을 시작하지 못한 것으로 본다 */
 const RECORDER_START_MS = 2000;
 /** 녹음 중 음량을 재는 간격(src/lib/voiceCheck.ts의 한 칸과 같다) */
@@ -29,8 +37,10 @@ const PROCESS_WAIT_MS = 2500;
 /** 브라우저가 녹음을 풀지 못해 엔진으로 풀 때 엔진(31MB)을 기다리는 상한 */
 const ENGINE_DECODE_WAIT_MS = 20000;
 
-/** 준비 화면 안내 — 이 장면이 멈추는 시각을 그대로 알린다(지금 원판 5초, 새 장면 7초) */
-export const idleHint = (pause: number) => `'장면 시작'을 누르면 장면이 흐르다 ${Math.floor(pause * 10) / 10}초에 멈춰요. 3·2·1 뒤에 내 목소리로 외쳐 주세요 !`;
+/** 준비 화면 안내 — 이 장면이 멈추는 시각을 그대로 알린다(지금 원판 5초, 새 장면 7초). 임시 5초 영상은 멈추지 않고 영상 위에서 녹음한다 */
+export const idleHint = (scene: Pick<Scene, 'pause' | 'line'>) => (scene.line
+  ? `'장면 시작'을 누르면 3·2·1 뒤에 멘트가 떠요. 영상이 흐르는 동안 멘트를 말해 주세요 !`
+  : `'장면 시작'을 누르면 장면이 흐르다 ${Math.floor(scene.pause * 10) / 10}초에 멈춰요. 3·2·1 뒤에 내 목소리로 외쳐 주세요 !`);
 
 // 권한 대기·실패 원인을 해당 전환 시점의 안내로 보여준다.
 const HINT = {
@@ -40,6 +50,10 @@ const HINT = {
   cue: '장면이 멈췄어요. 이제 내 차례예요 !',
   countdown: '숫자가 사라지면 외쳐 주세요. 말을 마치면 장면이 바로 이어져요.',
   recording: '지금 외쳐요 ! 말을 마치면 장면이 바로 이어져요.',
+  // 임시 5초 영상(영상 위에서 녹음)
+  dubCountdown: '숫자가 끝나면 멘트가 떠요.',
+  dubLine: '멘트를 읽어 보세요. 곧 영상이 흐르고 녹음이 시작돼요.',
+  dubRecording: '영상에 맞춰 멘트를 말해 주세요 ! 영상이 끝나면 녹음도 끝나요.',
   checking: '목소리를 확인하고 있어요…',
   continuing: '내 목소리가 들어간 장면을 이어 보는 중이에요…',
   recorded: '잘했어요 ! 마음에 들면 저장하세요',
@@ -139,6 +153,8 @@ interface Take {
   /** 가장 최근 측정 칸의 음량(RMS) — 녹음 중 화면의 마이크 반응이 쓴다 */
   level(): number;
   done: Promise<TakeResult>;
+  /** 녹음을 끝낸다 — 그 녹음을 쓴다(done이 결과를 낸다). 영상 위에서 녹음할 때 영상이 끝나면 부른다 */
+  finish(): void;
   /** 녹음을 멈추고 음량 측정을 떼어 낸다(화면을 떠날 때·실패할 때) */
   discard(): void;
 }
@@ -147,8 +163,9 @@ interface Take {
  * 녹음기와 음량 측정을 미리 만든다(숫자가 끝나자마자 켜도록). 말소리 추적기(src/lib/voiceCheck.ts)가 말끝을 알아보면 바로 멈추고,
  * 말이 시작되지 않으면 기다림 상한(2.5초)에, 말이 발화 상한(maxSpeech)을 넘어 이어지면 그 자리에서 멈춘다(그 녹음은 판정이 다시 녹음으로 돌린다).
  * 음량 측정은 녹음 중에만 하고 아무것도 저장하지 않는다 — 녹음 파일은 MediaRecorder 하나뿐이다.
+ * untilFinished: 말끝 · 상한으로 멈추지 않고 finish()를 부를 때까지 담는다(영상 위에서 녹음 — 임시 5초 영상). 음량은 마이크 반응에만 쓴다.
  */
-function prepareTake(stream: MediaStream, ctx: AudioContext, maxSpeech: number): Take {
+function prepareTake(stream: MediaStream, ctx: AudioContext, maxSpeech: number, untilFinished = false): Take {
   const mime = pickSupportedMime(MIME_CANDIDATES, (m) => MediaRecorder.isTypeSupported(m));
   const recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
   const track = stream.getAudioTracks()[0];
@@ -221,6 +238,7 @@ function prepareTake(stream: MediaStream, ctx: AudioContext, maxSpeech: number):
       timer = window.setInterval(() => {
         analyser.getFloatTimeDomainData(frame);
         lastLevel = rms(frame);
+        if (untilFinished) return;
         const step = tracker.push(lastLevel, (performance.now() - startedAt) / 1000);
         if (step === 'continue') return;
         liveCut = step === 'stop-cut';
@@ -241,12 +259,21 @@ function prepareTake(stream: MediaStream, ctx: AudioContext, maxSpeech: number):
     start,
     level: () => lastLevel,
     done,
+    finish: stop,
     discard() {
       closed = true;
       stop();
       release();
     },
   };
+}
+
+/** 녹음을 푼다 — 브라우저가 자기 녹음을 풀지 못하면(사파리 mp4 녹음이 그런 판이 있다) 엔진으로 풀어 본다. 그것까지 안 되면 null(녹음이 깨졌다) */
+async function decodeRecording(ctx: AudioContext, blob: Blob, mime: string): Promise<AudioBuffer | null> {
+  const decode = (b: Blob) => b.arrayBuffer().then((bytes) => ctx.decodeAudioData(bytes));
+  if (!blob.size) return null;
+  const decoded = await decode(blob).catch(() => null);
+  return decoded ?? within(decodeTake(blob, mime), ENGINE_DECODE_WAIT_MS).then(decode).catch(() => null);
 }
 
 function mono(buffer: AudioBuffer): Float32Array {
@@ -291,7 +318,7 @@ type PreviewVoice = { buffer: AudioBuffer; gain: number; offset: number; duratio
 
 export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObject<HTMLVideoElement | null>, sampleMode = false): Dubbing {
   const [phase, setPhase] = useState<Phase>('idle');
-  const [hint, setHint] = useState<string>(() => idleHint(scene.pause));
+  const [hint, setHint] = useState<string>(() => idleHint(scene));
   const [countdown, setCountdown] = useState(0);
   const [micError, setMicError] = useState<MicFailure | null>(null);
   const [recorded, setRecorded] = useState<Recording | null>(null);
@@ -333,9 +360,10 @@ export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObj
     setTakeCheck(null);
     setCountdown(0);
     setMicError(null);
-    setHint(idleHint(scene.pause));
+    setHint(idleHint({ pause: scene.pause, line: scene.line }));
     setPhase('idle');
-  }, [stopClock, discardTake, stopVoice, videoRef, scene.pause]);
+    // 장면 객체가 아니라 값에 건다 — ?scenes=next의 장면은 그릴 때마다 새 객체라(src/genres.ts sceneOf), 객체에 걸면 아래 정리가 매번 돌아 녹음을 접는다
+  }, [stopClock, discardTake, stopVoice, videoRef, scene.pause, scene.line]);
 
   // 장르가 바뀌거나 화면을 벗어나면 무조건 초기화된다.
   useEffect(() => reset, [genreId, reset]);
@@ -423,6 +451,134 @@ export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObj
     });
   }, [videoRef, playFromPause, sampleMode]);
 
+  /**
+   * 담은 녹음을 넘긴다 — 다듬은 목소리를 미리 듣기와 완성본이 같이 쓴다. 엔진을 아직 받는 중이면 기다리지 않고 저장할 때 다듬는다.
+   * 다듬은 목소리가 아직 없으면 처리 전 녹음의 같은 구간에 같은 보정 음량만 걸어 들려준다(완성본은 저장할 때 다듬은 소리다).
+   * from: 이어 재생을 시작할 영상 시각
+   */
+  const deliverTake = useCallback(async (take: TakeResult, decoded: AudioBuffer, plan: VoicePlan, verdict: Verdict, from: number, myRun: number) => {
+    const ctx = audioRef.current;
+    const voice = engineReady() ? processVoice(take.blob, take.mime, plan) : null;
+    voice?.catch(() => {});
+    let preview: AudioBuffer | null = null;
+    if (voice && ctx) {
+      preview = await within(voice, PROCESS_WAIT_MS).then((wav) => wav.arrayBuffer()).then((bytes) => ctx.decodeAudioData(bytes)).catch(() => null);
+    }
+    if (myRun !== runRef.current) return;
+    setRecorded({ take: take.blob, mime: take.mime, plan, voice });
+    setTakeCheck(verdict);
+    finishTake(preview
+      ? { buffer: preview, gain: 1, offset: 0, duration: preview.duration, at: plan.at, from }
+      : { buffer: decoded, gain: 10 ** (plan.gainDb / 20), offset: plan.start, duration: plan.end - plan.start, at: plan.at, from }, verdict, myRun);
+  }, [finishTake]);
+
+  /**
+   * 임시 5초 영상 — 영상 위에서 녹음한다(위 머리말). 녹음기를 먼저 켜고(start 이벤트) 영상을 처음부터 틀어, 영상 0초가 화면에 나간 때를
+   * 녹음 시각으로 잰다(offset) — 그 자리부터 영상 길이만큼이 아이 목소리다. 녹음 중에는 영상 소리를 끈다(원판은 소리가 없고, 스피커 소리가
+   * 마이크로 들어가 겹치지 않게). fail: 쓸 수 없는 녹음을 거두고 준비 상태로(startTake의 것)
+   */
+  const dubOverVideo = useCallback(async (
+    v: HTMLVideoElement, stream: MediaStream | null, ctx: AudioContext | null, myRun: number, stale: () => boolean,
+    fail: (message: string, options?: { mic?: boolean; verdict?: Verdict }) => void,
+  ) => {
+    if (stream && ctx) {
+      try {
+        takeRef.current = prepareTake(stream, ctx, scene.length, true);
+      } catch {
+        fail(HINT.micBroken, { mic: true });
+        return;
+      }
+    }
+    // 1) 바로 3·2·1 — 영상은 첫 화면에 서 있다
+    setHint(HINT.dubCountdown);
+    setPhase('countdown');
+    for (let n = 3; n > 0; n--) {
+      setCountdown(n);
+      await wait(COUNT_MS);
+      if (stale()) return;
+    }
+    setCountdown(0);
+    // 2) 멘트를 먼저 읽는다(녹음 내내 그대로 보인다)
+    setHint(HINT.dubLine);
+    setPhase('cue');
+    await wait(LINE_MS);
+    if (stale()) return;
+
+    // 3) 녹음기가 실제로 켜진 뒤 영상을 처음부터 — 영상이 끝나면 녹음도 끝난다
+    const take = takeRef.current;
+    if (take && !(await take.start())) {
+      if (!stale()) fail(HINT.recordFailed, { mic: true });
+      return;
+    }
+    if (stale()) return;
+    const recordStart = performance.now();
+    let zeroAt = -1;
+    const stopWatch = watchVideoTime(v, (time) => {
+      if (zeroAt < 0 && !v.paused) zeroAt = performance.now() - time * 1000;
+    });
+    v.muted = true;
+    v.currentTime = 0;
+    const ended = new Promise<void>((resolve) => {
+      const end = () => resolve();
+      v.addEventListener('ended', end, { once: true });
+      cancelClockRef.current = () => v.removeEventListener('ended', end);
+    });
+    try {
+      await v.play();
+    } catch {
+      stopWatch();
+      if (stale()) return;
+      stopClock();
+      fail(HINT.playFailed);
+      return;
+    }
+    if (stale()) {
+      stopWatch();
+      return;
+    }
+    setHint(sampleMode ? '샘플 체험이라 목소리는 녹음하지 않아요.' : HINT.dubRecording);
+    setPhase('recording');
+    await ended;
+    stopWatch();
+    cancelClockRef.current = null;
+    if (stale()) return;
+    await wait(DUB_TAIL_MS);
+    if (stale()) return;
+    if (!take || !ctx) {
+      finishTake(null, 'ok', myRun);
+      return;
+    }
+    take.finish();
+    const result = await take.done;
+    if (stale()) return;
+    takeRef.current = null;
+    if (result.problem) {
+      fail(result.problem === 'micLost' ? HINT.micBroken : HINT.recordFailed, { mic: true });
+      return;
+    }
+
+    // 4) 녹음 검사 — 영상 0초가 나간 자리부터 영상 길이만큼을 본다
+    setHint(HINT.checking);
+    setPhase('checking');
+    const decoded = await decodeRecording(ctx, result.blob, result.mime);
+    if (stale()) return;
+    if (!decoded) {
+      fail(HINT.takeBroken, { verdict: 'short' });
+      return;
+    }
+    const offset = zeroAt < 0 ? 0 : Math.max(0, (zeroAt - recordStart) / 1000);
+    const check = checkDub(mono(decoded), decoded.sampleRate, offset, scene.length);
+    const retry = RETRY_HINT[check.verdict];
+    if (retry) {
+      fail(retry, { verdict: check.verdict });
+      return;
+    }
+    const plan: VoicePlan = {
+      gainDb: check.gainDb, start: check.start, end: check.end, at: check.at, fadeOut: check.fadeOut, channels: decoded.numberOfChannels,
+    };
+    await deliverTake(result, decoded, plan, check.verdict, 0, myRun);
+  }, [scene, sampleMode, stopClock, finishTake, deliverTake]);
+
   const startTake = useCallback(() => {
     // 미리보기 중에 «장면 시작»을 누르면 미리보기를 접고 바로 시작한다(아래 resetVideo의 멈춤은 미리보기 쪽에서 지난 실행으로 무시된다).
     if (phase !== 'idle' && phase !== 'previewing') return;
@@ -471,6 +627,11 @@ export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObj
           return;
         }
         stream = result.stream;
+      }
+
+      if (scene.line) {
+        await dubOverVideo(v, stream, ctx, myRun, stale, fail);
+        return;
       }
 
       // 1) 0~정지 시각 — 소리와 함께 재생하다 장면의 정지 시각에서 정확히 멈춘다.
@@ -546,12 +707,7 @@ export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObj
       //    무음·잘림·작은 목소리를 보고 영화에 넣을 구간과 보정 음량을 정한다.
       setHint(HINT.checking);
       setPhase('checking');
-      // 브라우저가 자기 녹음을 풀지 못하면(사파리 mp4 녹음이 그런 판이 있다) 엔진으로 풀어 본다 — 그것까지 안 되면 녹음이 깨진 것이다.
-      const decode = (blob: Blob) => blob.arrayBuffer().then((bytes) => ctx.decodeAudioData(bytes));
-      let decoded = result.blob.size ? await decode(result.blob).catch(() => null) : null;
-      if (!decoded && result.blob.size && !stale()) {
-        decoded = await within(decodeTake(result.blob, result.mime), ENGINE_DECODE_WAIT_MS).then(decode).catch(() => null);
-      }
+      const decoded = await decodeRecording(ctx, result.blob, result.mime);
       if (stale()) return;
       if (!decoded) {
         fail(HINT.takeBroken, { verdict: 'short' });
@@ -568,22 +724,9 @@ export function useDubbing(genreId: string, scene: Scene, videoRef: React.RefObj
       };
       // 이어 재생은 정지 시각부터 — 말 시작이 정지 시각 앞에 놓인 녹음(상한 경계)만 그만큼 앞에서 시작해 미리 듣기와 완성본이 같게 한다
       const from = scene.pause + Math.min(0, check.at + (check.firstSpeech - check.start));
-      // 다듬은 목소리를 미리 듣기와 완성본이 같이 쓴다. 엔진을 아직 받는 중이면 기다리지 않고 저장할 때 다듬는다.
-      const voice = engineReady() ? processVoice(result.blob, result.mime, plan) : null;
-      voice?.catch(() => {});
-      let preview: AudioBuffer | null = null;
-      if (voice) {
-        preview = await within(voice, PROCESS_WAIT_MS).then((wav) => wav.arrayBuffer()).then((bytes) => ctx.decodeAudioData(bytes)).catch(() => null);
-      }
-      if (stale()) return;
-      setRecorded({ take: result.blob, mime: result.mime, plan, voice });
-      setTakeCheck(check.verdict);
-      // 다듬은 목소리가 아직 없으면 처리 전 녹음의 같은 구간에 같은 보정 음량만 걸어 들려준다(완성본은 저장할 때 다듬은 소리다).
-      finishTake(preview
-        ? { buffer: preview, gain: 1, offset: 0, duration: preview.duration, at: plan.at, from }
-        : { buffer: decoded, gain: 10 ** (plan.gainDb / 20), offset: plan.start, duration: plan.end - plan.start, at: plan.at, from }, check.verdict, myRun);
+      await deliverTake(result, decoded, plan, check.verdict, from, myRun);
     })();
-  }, [phase, videoRef, sampleMode, scene, audioContext, stopClock, finishTake]);
+  }, [phase, videoRef, sampleMode, scene, audioContext, stopClock, finishTake, deliverTake, dubOverVideo]);
 
   /**
    * 녹음 없이 장면 전체(0~10초)를 소리와 함께 본다(10/20 대표님). 끝나거나 멈추면(브라우저가 멈춘 경우도) 준비 상태로 돌아간다.

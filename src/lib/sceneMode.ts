@@ -8,8 +8,8 @@
 // 정식 주소 · 옛 주소 · Portal(edutogether.kr)에서는 무엇을 붙여도 live다 — 허용 목록 밖은 전부 live라서다.
 // 미리보기 채널 규칙은 앞뒤를 묶고 점을 이스케이프한다(CORS 허용 출처와 같은 이유 — 접미사 위조·아무 문자 한 개). 업로드 실패 안내의
 // isPreviewChannel(src/logic.ts)은 다른 사이트의 채널까지 넓게 알아보는 것이라 이 문으로 쓰지 않는다.
-const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
-const PREVIEW_CHANNEL = /^voice-cinema--[a-z0-9-]+\.web\.app$/;
+export const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]'];
+export const PREVIEW_CHANNEL = /^voice-cinema--[a-z0-9-]+\.web\.app$/;
 
 export type SceneMode = 'live' | 'next' | 'final';
 

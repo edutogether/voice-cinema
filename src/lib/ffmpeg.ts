@@ -181,8 +181,11 @@ export async function processVoice(take: Blob, mime: string, plan: VoicePlan): P
   return new Blob([data.buffer], { type: 'audio/wav' });
 }
 
-/** 원판 영상 + 다듬은 목소리를 브라우저 안에서 합쳐 mp4로 만든다. at: 목소리를 넣는 영상 시각(초) — 정지 시각 + 배치 */
-export async function mergeClip(genreId: string, voice: Blob, at: number): Promise<Blob> {
+/**
+ * 원판 영상 + 다듬은 목소리를 브라우저 안에서 합쳐 mp4로 만든다. at: 목소리를 넣는 영상 시각(초) — 정지 시각 + 배치.
+ * seconds: 완성본 길이 — 원판 길이(지금 원판 · 새 장면 10초, 임시 5초 영상 5초 — 장면의 length)
+ */
+export async function mergeClip(genreId: string, voice: Blob, at: number, seconds: number = CLIP_SECONDS): Promise<Blob> {
   const { fetchFile } = await loadFFmpegUtil();
   const id = ++jobSeq;
   const [video, audio, output] = [`clip${id}.mp4`, `voice${id}.wav`, `movie${id}.mp4`];
@@ -196,7 +199,7 @@ export async function mergeClip(genreId: string, voice: Blob, at: number): Promi
     '-map', '0:v:0', '-map', '[a]',
     '-c:v', 'copy',
     '-c:a', 'aac', '-b:a', '160k',
-    '-t', String(CLIP_SECONDS),
+    '-t', String(seconds),
     '-movflags', '+faststart',
     output,
   ], [[video, await fetchFile(finalClipUrl(genreId))], [audio, await fetchFile(voice)]], output, '영상 합성');

@@ -1022,6 +1022,18 @@ Claude in Chrome은 여분의 브라우저가 아니라 **대표 본인의 크�
   근거 · 정한 값 · 새 영상을 켜는 순서는 `_docs/intents/2026-10-26-final-7s/intent.md`
   개발 주소와 이 앱의 미리보기 채널(`voice-cinema--<채널>-<해시>.web.app`)의 `?scenes=next`에서만 미리 켜진다(`src/lib/sceneMode.ts`) —
   정식 주소 · 옛 주소 · Portal에서는 어떤 쿼리로도 켜지지 않는다(허용 목록 밖은 전부 지금 시간표, `src/lib/sceneMode.test.ts`)
+- 🟠 **임시 5초 영상(LEGACY_5S, 11/2 대표님 — `src/lib/videoSet.ts`)**: 새 영상이 오기 전까지 영상만 장학사님 Kling 영상의 앞 5초(`public/clips/legacy5s/`,
+  `node tools/build-scene.mjs <장르> --legacy <원본>`)로 바꿔 보인다. 흐름은 «장면 시작 → 바로 3·2·1 → 멘트(1초) → 녹음기가 켜진 뒤 영상이 처음부터 흐르는 동안 녹음 →
+  영상이 끝나면 멈춤»이고, 목소리는 녹음 중 영상 0초가 화면에 나간 때부터 영상 길이만큼을 영상 0초에 놓는다(`useDubbing`의 `dubOverVideo`, 판정은 `checkDub`).
+  켜지는 곳은 미리보기 채널(기본, `?videos=slides`면 지금 원판)과 개발 주소의 `?videos=legacy5s`뿐이고 정식 주소 · 옛 주소 · Portal은 언제나 지금 원판이다 —
+  🔴 **이 문을 정식 주소로 넓히지 말 것**(라이브는 바꾸지 않는다). 개발 주소 기본이 지금 원판인 것은 기존 E2E가 그 흐름을 그대로 보게 하려는 것이다(새 흐름은 `e2e/legacy5s.spec.js`).
+  🟠 **새 영상이 오면 `TEMP_VIDEOS`를 `null`로** — 그 한 줄로 모든 주소에서 꺼진다. 10초 · 7.0초 멈춤(FINAL_7S) 코드와 지금 원판 자산은 그대로 남아 있다.
+  짝 · 멘트 · 정한 값은 `_docs/intents/2026-11-02-legacy5s/intent.md`
+  - 🟠 **`useDubbing`의 `reset`을 장면 객체(`scene`)에 걸지 말 것** — `?scenes=next`의 장면은 `sceneOf`가 그릴 때마다 새 객체로 만들어, `reset`이 매번 새로 생기고
+    `useEffect(() => reset, [genreId, reset])`의 정리가 단계가 바뀔 때마다 돌아 녹음을 접는다(11/2 처음 판에서 겪음 — «장면 시작»을 눌러도 준비 화면 그대로, 7초 흐름 E2E 6개 빨간불).
+    값(`scene.pause` · `scene.line`)에만 건다
+  - 미리보기가 끝난 자리를 검사할 때: 재생이 끝나면 브라우저는 `pause` → `ended` 순으로 알리고 앱은 `pause`에서 0초로 되감는다 — 밖에서 `currentTime`을 묻거나
+    `ended`에서 읽으면 놓친다. 앱보다 먼저 단 `pause` 듣기에서 `currentTime` · `ended`를 남긴다(`e2e/legacy5s.spec.js`)
 - 🔴 **새 시간표의 문(`sceneMode.ts`)을 넓히지 말 것** — 미리보기 채널 규칙은 앞뒤를 묶고(`^…$`) 점을 이스케이프하며 이 사이트 이름(`voice-cinema--`)으로
   시작해야 한다. 업로드 실패 안내의 `isPreviewChannel`(`src/logic.ts`)은 다른 사이트의 채널까지 받는 넓은 규칙이라 이 문으로 쓰지 않는다.
   10/25 다섯 가지로 느슨하게 바꿔 다섯 번 다 빨간불을 확인했다(앞 묶음·뒤 묶음·점·다른 사이트·빈 채널 이름)

@@ -7,7 +7,8 @@ import { fileURLToPath } from 'node:url';
 
 const clips = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public', 'clips');
 
-for (const dir of ['stills', 'thumbs']) {
+// 임시 5초 영상(legacy5s/, 11/2)의 그림도 같은 규칙이다 — 같은 <picture>로 보인다
+for (const dir of ['stills', 'thumbs', 'legacy5s/stills', 'legacy5s/thumbs']) {
   test(`${dir}: JPEG마다 같은 이름의 AVIF가 있고, AVIF는 4:2:0(AV1 Main 프로필)이다`, () => {
     const jpgs = readdirSync(path.join(clips, dir)).filter((f) => f.endsWith('.jpg'));
     expect(jpgs.length).toBeGreaterThan(0);
