@@ -93,7 +93,7 @@ export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, ne
       </span>
       <span className="tile-body">
         <span className="tile-copy">
-          <span className="gname">{genre.name}<span className="tile-length">10초</span></span>
+          <span className="gname">{genre.name}<span className="tile-length">{genre.scene.length}초</span></span>
           <span className="gsub">{genre.summary}</span>
         </span>
         <span className="tile-enter" aria-hidden="true"><span className="tile-enter-icon"><ActionIcon name="mic" /></span>더빙하기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></span>

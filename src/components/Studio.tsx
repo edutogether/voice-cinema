@@ -156,9 +156,10 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
               <div className="studio-scene-title">
                 <span className="studio-scene-label"><span id="chipName">{genre.name}</span>{sampleMode && ' · 녹음 샘플 체험'}</span>
                 <h1 ref={titleRef} tabIndex={-1}>{genre.summary}</h1>
-                <TempVideoNote className="is-studio" />
               </div>
               <span className="studio-brand"><img src="/icons/studio-microphone.png" width="34" height="34" alt="" /><span>Voice <em>Cinema</em></span></span>
+              {/* 머리줄 둘째 줄 — 가로 화면은 제목 아래 가운데, 세로 화면은 머리줄 폭 전체(제목 칸에 두면 휴대폰에서 두 줄로 접힌다) */}
+              <TempVideoNote className="is-studio" />
             </div>
             {/* 영상이 화면의 주인공 — 16:9 전체 구도를 자르지 않는다. 가로 화면은 영상이 화면을 채우고 머리줄·조작부가 그 위에 얹히며,
                 세로 화면은 머리줄 → 영상 → 진행 막대 → 안내 칸 → 단추 순서로 붙는다(10/25 대표님 녹음실 재구성) */}

@@ -199,7 +199,8 @@ body {
   border: 1px solid #fcd34d;
 }
 .temp-video-note.is-studio {
-  margin-top: 6px;
+  grid-column: 2;
+  justify-self: center;
   color: #fcd34d;
   background: rgba(245, 158, 11, 0.12);
   border: 1px solid rgba(245, 158, 11, 0.4);

@@ -57,6 +57,8 @@ test.describe('임시 5초 영상 — 첫 화면', () => {
     await expect(page.locator('.chart-heading h1 span')).toHaveText('8');
     for (const scene of SCENES) await expect(page.locator('.tile', { hasText: scene.name }).first()).toBeAttached();
     await expect(page.locator('#home .temp-video-note')).toHaveText(NOTE);
+    // 카드의 길이 표시는 장면 길이 그대로(5초) — 10초로 박아 두면 5초 영상 옆에 «10초»가 붙는다
+    for (const length of await page.locator('.tile-length').allTextContents()) expect(length).toBe('5초');
     await expect.poll(() => clips.filter((p) => p.startsWith('/clips/legacy5s/')).length).toBeGreaterThan(0);
     expect(clips.filter((p) => !p.startsWith('/clips/legacy5s/'))).toEqual([]);
   });
@@ -65,7 +67,27 @@ test.describe('임시 5초 영상 — 첫 화면', () => {
     await page.goto('/');
     await expect(page.locator('.chart-heading h1 span')).toHaveText('8');
     await expect(page.locator('.temp-video-note')).toHaveCount(0);
+    for (const length of await page.locator('.tile-length').allTextContents()) expect(length).toBe('10초');
   });
+
+  for (const size of [{ width: 390, height: 844 }, { width: 360, height: 640 }, { width: 1440, height: 900 }]) {
+    test(`${size.width}×${size.height} 녹음실: «교체 예정»은 머리줄 둘째 줄에 한 줄로, 제목 아래에 있고 화면 밖으로 나가지 않는다`, async ({ page }) => {
+      await page.setViewportSize(size);
+      await openStudio(page, SCENES[1]);
+      const note = page.locator('#studio .temp-video-note');
+      await expect(note).toHaveText(NOTE);
+      const box = await note.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        const title = document.querySelector('.studio-scene-title').getBoundingClientRect();
+        return { top: r.top, bottom: r.bottom, left: r.left, right: r.right, height: r.height, lineHeight: parseFloat(getComputedStyle(el).lineHeight),
+          titleBottom: title.bottom, width: document.documentElement.clientWidth };
+      });
+      expect(box.height).toBeLessThan(box.lineHeight * 1.5 + 10);
+      expect(box.top).toBeGreaterThanOrEqual(box.titleBottom);
+      expect(box.left).toBeGreaterThanOrEqual(0);
+      expect(box.right).toBeLessThanOrEqual(box.width);
+    });
+  }
 });
 
 test.describe('임시 5초 영상 — 녹음실: 3·2·1 → 멘트 → 영상 위에서 녹음', () => {
