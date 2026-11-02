@@ -19,7 +19,7 @@ body:has(#result.active) { background:#fff; }
 .poster-logo-education img { display:block; width:auto; height:25px; }
 .poster-credit { position:absolute; z-index:1; bottom:36px; left:32px; right:32px; }
 .poster-credit p { margin:0 0 12px; font-size:.9375rem; line-height:1.6; }
-.poster-credit strong { display:block; font-size:clamp(36px,calc(3.5 * var(--vw)),56px); font-weight:750; line-height:1.2; letter-spacing:-.045em; }
+.poster-credit strong { display:block; font-size:clamp(36px,calc(3.5 * var(--vw)),56px); font-weight:750; line-height:1.2; letter-spacing:-.045em; word-break:keep-all; }
 .poster-credit > span { display:block; margin-top:20px; font-size:.875rem; color:#eee; }
 .result-details { min-width:0; padding:26px 0; align-self:center; }
 .result-details .result-eyebrow { color:#e52320; font-size:.875rem; font-weight:700; margin:0 0 22px; }

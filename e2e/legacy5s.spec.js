@@ -313,3 +313,39 @@ test.describe('임시 영상 — 녹음실: 3·2·1 → 멘트 → 영상 위에
     await expect(page.locator('#afterRow')).toHaveCount(0);
   });
 });
+
+// 완성 화면 그림 위 큰 제목 — 임시 영상 제목(11~14자)은 휴대폰에서 두 줄이 되는데, 낱말 가운데서 끊기면 «한마 / 디»처럼 한 글자만 떨어졌다
+// (11/2 해상도 전수 · 큰 휴대폰 430에서 찾음). 줄은 띄어쓰기 자리에서만 바뀌어야 한다.
+test.describe('임시 영상 — 휴대폰 완성 화면 제목', () => {
+  test.use({ viewport: { width: 360, height: 640 } });
+  test('가장 긴 제목도 띄어쓰기 자리에서만 줄이 바뀐다', async ({ page }) => {
+    test.setTimeout(150000);
+    await page.route(UPLOAD_PATTERN, (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, url: 'https://storage.googleapis.com/fake/dub_test.mp4' }) }));
+    await installSyntheticMic(page, [{ delay: 0.6, dur: 2 }]);
+    await openStudio(page, scene('hero'));
+    await page.locator('#recBtn').click();
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
+    await page.locator('button', { hasText: '저장하기' }).click();
+    await expect(page.locator('#done')).toBeVisible({ timeout: 60000 });
+    const title = page.locator('.poster-credit strong');
+    await expect(title).toHaveText(scene('hero').title);
+    const lines = await title.evaluate((el) => {
+      const node = el.firstChild;
+      const text = node.textContent;
+      const breaks = [];
+      let prevTop = null;
+      for (let i = 0; i < text.length; i++) {
+        if (text[i] === ' ') continue;
+        const range = document.createRange();
+        range.setStart(node, i);
+        range.setEnd(node, i + 1);
+        const top = range.getClientRects()[0].top;
+        if (prevTop !== null && top > prevTop + 2) breaks.push(text.slice(0, i));
+        prevTop = top;
+      }
+      return breaks;
+    });
+    expect(lines.length).toBeGreaterThan(0); // 이 폭에서는 두 줄이 된다 — 한 줄이면 이 검사가 아무것도 보지 않는 것
+    for (const before of lines) expect(before.endsWith(' '), `«${before}» 뒤에서 줄이 바뀜`).toBe(true);
+  });
+});
