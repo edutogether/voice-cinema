@@ -27,11 +27,14 @@ mkdirSync(out, { recursive: true });
 const STEPS = ['max', 'restore', '1100x700', '1100x660', '667x700', '640x640', '760x660', '1250x660', 'max', 'restore'];
 const STAGES = ['1-home', '2-studio', '2-recorded', '3-result'];
 
-// VC_SCALE=1.5 · 2 · 3 — Windows 배율을 바꾸지 않고(시스템 설정) 앱 화면 배율만 그 값으로 띄운다(Chromium --force-device-scale-factor)
-const SCALE = process.env.VC_SCALE;
+// VC_DPR=1.5 · 2 · 3 — Windows 배율(시스템 설정)은 바꾸지 않고 앱 화면의 밀도(devicePixelRatio)만 그 값으로 흉내 낸다. 창 크기 걸음은 Windows가
+// 배율을 적용한 뒤의 크기(DIP = CSS px)라 그대로 쓴다 — 실제 배율에서도 화면 배치는 DIP 크기로만 정해지고, 밀도는 그림 · 선을 그리는 촘촘함만 바꾼다.
+// Chromium --force-device-scale-factor는 쓰지 않는다: 모든 모니터의 좌표를 그 배율로 다시 셈해 시험 창이 아래 모니터 밖으로 계산되고,
+// main.js의 시험 안전장치가 창을 띄우지 않고 끝냈다(11/2 1.5 · 2 · 3배 모두).
+const DPR = process.env.VC_DPR;
 const app = await _electron.launch({
   executablePath: EXE,
-  args: [`--user-data-dir=${path.join(out, 'profile')}`, '--mute-audio', '--use-fake-device-for-media-stream', ...(SCALE ? [`--force-device-scale-factor=${SCALE}`] : [])],
+  args: [`--user-data-dir=${path.join(out, 'profile')}`, '--mute-audio', '--use-fake-device-for-media-stream'],
   env: { ...process.env, VC_TEST_SMALLEST_DISPLAY: '1' },
 });
 const report = { steps: {}, drag: [], monitors: [] };
@@ -59,6 +62,14 @@ try {
   await routeDesktopUpload(app);
   const page = await app.firstWindow();
   await page.waitForFunction(() => document.visibilityState === 'visible', null, { timeout: 60000 });
+  if (DPR) {
+    // 폭 · 높이 0 = 창 크기를 그대로 따른다(밀도만 바꿈). 다시 불러와도 이 흉내는 남는다
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: 0, height: 0, deviceScaleFactor: Number(DPR), mobile: false });
+    report.dpr = await page.evaluate(() => devicePixelRatio);
+    // 밀도는 단정밀도로 돌아온다(1.5 → 1.5000000596) — 천분의 일까지만 견준다
+    if (Math.abs(report.dpr - Number(DPR)) > 1e-3) throw new Error(`화면 밀도 흉내가 걸리지 않았다(${report.dpr})`);
+  }
   await installSyntheticMic(page, [{ delay: 0.3, dur: 1.5 }]);
 
   // 그 단계로 간다 — 늘 새로 불러온 화면에서 시작한다(창 크기는 그대로). 첫 화면은 자동 넘김을 멈춘다(손가락 한 번 누르기 — desktop/e2e와 같다):
@@ -117,6 +128,12 @@ try {
       const fresh = await snap(`${stage}-${i}-${step}-fresh`);
       judge(list, `${stage} ${i} ${step}`, resized, fresh);
     }
+  }
+  if (DPR) {
+    // 다시 불러오기 · 창 바꾸기를 거친 뒤에도 흉내가 걸려 있었는지
+    report.dprAfterSteps = await page.evaluate(() => devicePixelRatio);
+    console.log('dpr after steps', report.dprAfterSteps);
+    if (Math.abs(report.dprAfterSteps - Number(DPR)) > 1e-3) failures++;
   }
 
   // 끌어서 바꾸기(첫 화면): 1390×700 → 650×640(반 화면보다 좁게) → 1390×700을 20px씩(0.03초 간격) — 창 캡처로 녹화하며 걸음마다 비율을 잰다
