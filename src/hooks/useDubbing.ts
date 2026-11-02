@@ -37,10 +37,13 @@ const PROCESS_WAIT_MS = 2500;
 /** 브라우저가 녹음을 풀지 못해 엔진으로 풀 때 엔진(31MB)을 기다리는 상한 */
 const ENGINE_DECODE_WAIT_MS = 20000;
 
+/** 화면에 알리는 정지 시각(초) — 소수 한 자리에서 버린다(준비 화면 안내와 녹음실 단계 표시가 같이 쓴다) */
+export const pauseLabel = (pause: number) => Math.floor(pause * 10) / 10;
+
 /** 준비 화면 안내 — 이 장면이 멈추는 시각을 그대로 알린다(지금 원판 5초, 새 장면 7초). 임시 5초 영상은 멈추지 않고 영상 위에서 녹음한다 */
 export const idleHint = (scene: Pick<Scene, 'pause' | 'line'>) => (scene.line
   ? `'장면 시작'을 누르면 3·2·1 뒤에 멘트가 떠요. 영상이 흐르는 동안 멘트를 말해 주세요 !`
-  : `'장면 시작'을 누르면 장면이 흐르다 ${Math.floor(scene.pause * 10) / 10}초에 멈춰요. 3·2·1 뒤에 내 목소리로 외쳐 주세요 !`);
+  : `'장면 시작'을 누르면 장면이 흐르다 ${pauseLabel(scene.pause)}초에 멈춰요. 3·2·1 뒤에 내 목소리로 외쳐 주세요 !`);
 
 // 권한 대기·실패 원인을 해당 전환 시점의 안내로 보여준다.
 const HINT = {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { clipUrl, sceneFor, stillUrl, type Genre } from '../genres';
-import { idleHint, useDubbing, type Phase } from '../hooks/useDubbing';
+import { idleHint, pauseLabel, useDubbing, type Phase } from '../hooks/useDubbing';
 import { STUDIO_COPY } from '../copy';
 import { lastInputWasKeyboard } from '../lib/inputModality';
 import { holdBackground } from '../lib/backgroundLoad';
@@ -201,7 +201,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
                   <div className={`hint${defaultHint ? ' is-default' : ''}`} id="hint" role="status" data-mic-error={dub.micError ?? undefined} data-take-check={dub.takeCheck ?? undefined}>{dub.hint}</div>
                   <ol className="studio-steps" aria-label="더빙 순서">
                     <li data-state={stepState(1)}><b>{stepState(1) === 'done' ? '✓' : 1}</b><span>«장면 시작»을 눌러요</span></li>
-                    <li data-state={stepState(2)}><b>{stepState(2) === 'done' ? '✓' : 2}</b><span>{line ? '3·2·1 뒤에 멘트가 떠요' : `${Math.floor(scene.pause * 10) / 10}초에 영화가 멈춰요`}</span></li>
+                    <li data-state={stepState(2)}><b>{stepState(2) === 'done' ? '✓' : 2}</b><span>{line ? '3·2·1 뒤에 멘트가 떠요' : `${pauseLabel(scene.pause)}초에 영화가 멈춰요`}</span></li>
                     <li data-state={stepState(3)}><b>{stepState(3) === 'done' ? '✓' : 3}</b><span>{line ? '영상에 맞춰 멘트를 말해요' : '3·2·1 뒤에 크게 외쳐요'}</span></li>
                   </ol>
                 </div>

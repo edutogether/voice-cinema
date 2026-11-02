@@ -233,6 +233,75 @@ test.describe('임시 영상 — 녹음실: 3·2·1 → 멘트 → 영상 위에
     await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
   });
 
+  // 영상 위 녹음의 실패 갈래(11/2 종합감사 — 지금 원판 흐름은 recording-voice.spec.js가 본다). 어느 갈래든 그 녹음은 쓰지 않고 준비 화면으로 돌아오며,
+  // 다시 «장면 시작»을 누르면 끝까지 녹음된다.
+  const recoversFrom = async (page, hint) => {
+    await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'idle', { timeout: TAKE_MS });
+    await expect(page.locator('#hint')).toHaveText(hint);
+    await expect(page.locator('#afterRow')).toHaveCount(0);
+    await page.locator('#recBtn').click();
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
+  };
+
+  test('녹음기가 켜지지 않으면(2초) 영상을 틀지 않고 준비 화면으로 — 다시 누르면 녹음된다', async ({ page }) => {
+    test.setTimeout(90000);
+    await installSyntheticMic(page, [{ delay: 0.6, dur: 2 }]);
+    await page.addInitScript(() => {
+      const start = window.MediaRecorder.prototype.start;
+      let refused = false;
+      window.MediaRecorder.prototype.start = function (...args) {
+        if (refused) return start.apply(this, args);
+        refused = true;
+      };
+    });
+    await openStudio(page, scene('fantasy'));
+    await page.locator('#recBtn').click();
+    await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'idle', { timeout: 10000 });
+    expect(await page.locator('#clip').evaluate((v) => v.paused && v.currentTime === 0)).toBe(true);
+    await recoversFrom(page, '⚠ 녹음을 시작하지 못했어요 — 다시 눌러 주세요');
+  });
+
+  test('영상이 재생을 거절하면(play) 준비 화면으로 — 다시 누르면 녹음된다', async ({ page }) => {
+    test.setTimeout(90000);
+    await installSyntheticMic(page, [{ delay: 0.6, dur: 2 }]);
+    await page.addInitScript(() => {
+      const play = window.HTMLMediaElement.prototype.play;
+      let refused = false;
+      window.HTMLMediaElement.prototype.play = function (...args) {
+        if (!refused && this.id === 'clip' && document.querySelector('#studio')?.dataset.phase === 'cue') {
+          refused = true;
+          return Promise.reject(new window.DOMException('재생 거절', 'NotAllowedError'));
+        }
+        return play.apply(this, args);
+      };
+    });
+    await openStudio(page, scene('fantasy'));
+    await page.locator('#recBtn').click();
+    await recoversFrom(page, '영상을 재생하지 못했어요. 장면 시작을 다시 눌러 주세요.');
+  });
+
+  test('녹음 중 마이크가 뽑히면 그 녹음을 쓰지 않고 준비 화면으로 — 다시 누르면 마이크를 새로 연결해 녹음된다', async ({ page }) => {
+    test.setTimeout(90000);
+    await installSyntheticMic(page, [{ delay: 0.6, dur: 2, unplug: 1.2 }, { delay: 0.6, dur: 2 }]);
+    await openStudio(page, scene('fantasy'));
+    await page.locator('#recBtn').click();
+    await recoversFrom(page, '⚠ 마이크에 문제가 생겼어요 — 연결 확인 후 다시 눌러 주세요');
+    expect(await page.evaluate(() => window.__mic.requests)).toBe(2);
+  });
+
+  test('녹음 파일을 풀지 못하면(브라우저 · 엔진 모두) 저장하지 않고 다시 녹음하게 한다', async ({ page }) => {
+    test.setTimeout(120000);
+    await installSyntheticMic(page, [{ delay: 0.6, dur: 2 }]);
+    await page.addInitScript(() => {
+      window.BaseAudioContext.prototype.decodeAudioData = () => Promise.reject(new window.DOMException('풀 수 없음', 'EncodingError'));
+    });
+    await openStudio(page, scene('fantasy'));
+    await page.locator('#recBtn').click();
+    await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'idle', { timeout: 90000 });
+    await expect(page.locator('#hint')).toHaveText('녹음이 제대로 담기지 않았어요. 다시 눌러 주세요.');
+    await expect(page.locator('#afterRow')).toHaveCount(0);
+  });
+
   test('아무 소리도 없으면 저장하지 않고 다시 녹음하게 한다', async ({ page }) => {
     test.setTimeout(60000);
     await installSyntheticMic(page, [{ silent: true }]);
