@@ -6,7 +6,7 @@ import { installSyntheticMic } from './synthetic-mic.js';
 // 없고, «다른 더빙 하기»는 Lucide 아이콘을 앞에 단 좁은 단추다.
 const UPLOAD_PATTERN = '**/voiceCinema/upload';
 
-for (const [width, height] of [[1440, 900], [390, 664]]) {
+for (const [width, height] of [[1440, 900], [768, 1024], [390, 664]]) {
   test(`${width}×${height}: 완성 화면 그림·로고·제목·단추`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     // 저장할 수 있는 녹음 — 크롬 내장 가짜 마이크의 «삐»는 3초를 넘어 이어지는 말로 보여 다시 녹음이 된다(10/26)
@@ -41,6 +41,10 @@ for (const [width, height] of [[1440, 900], [390, 664]]) {
     await expect(poster).not.toContainText('Voice');
     await expect(poster.locator('.poster-credit strong')).toHaveText(title);
     await expect(poster.locator('.poster-credit > span')).toHaveText('SF');
+    // 그림 위 두 로고는 겹치지 않는다 — 패드 세로(768)에서 교육청 로고가 «InKY Film Festival» 끝을 가렸다(11/2 해상도 전수)
+    const inky = await poster.locator('.poster-logo-inky').boundingBox();
+    const education = await poster.locator('.poster-logo-education').boundingBox();
+    expect(inky.x + inky.width).toBeLessThan(education.x);
 
     await expect(page.locator('#savemode')).toHaveCount(0);
     await expect(page.locator('#result')).not.toContainText('11월 30일');
@@ -57,8 +61,8 @@ for (const [width, height] of [[1440, 900], [390, 664]]) {
     // QR 안내 문장은 한 줄(«있어요»만 아랫줄로 떨어지지 않게)
     const msgLines = await page.locator('#doneMsg').evaluate((el) => Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)));
     expect(msgLines).toBe(1);
-    if (width > 760) {
-      // 단추는 글자 폭만큼, 그림은 오른쪽 내용 높이에 맞춘다
+    if (width > 900) {
+      // 넓은 두 칸 화면: 단추는 글자 폭만큼, 그림은 오른쪽 내용 높이에 맞춘다
       const details = await page.locator('.result-details').evaluate((el) => {
         const s = getComputedStyle(el);
         return { width: el.clientWidth, content: el.clientHeight - parseFloat(s.paddingTop) - parseFloat(s.paddingBottom) };

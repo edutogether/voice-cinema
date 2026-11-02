@@ -63,8 +63,16 @@ body:has(#result.active) { background:#fff; }
  .result-symbol { margin-bottom:14px; }
  .qrbox img { width:152px; height:152px; }
 }
+/* 900 이하(패드 세로 768 등)는 그림 칸을 PC와 같은 비율로 두고 로고를 휴대폰 크기로 — 그림 칸을 .85로 줄였을 때 폭 318px에 두 로고(좌우 18px)가
+   들어가지 않아 교육청 로고가 «InKY Film Festival» 끝을 가렸다(11/2 해상도 전수 · 라이브에도 있던 것). */
 @container app (max-width:900px) {
- .result-card { width:calc(100% - 48px); gap:28px; grid-template-columns:minmax(0,.85fr) minmax(0,1fr); }
+ .result-card { width:calc(100% - 48px); gap:28px; }
+ .poster-logo { top:12px; height:30px; padding:0 11px; font-size:.8125rem; gap:5px; }
+ .poster-logo-inky { left:12px; }
+ .poster-logo-education { right:12px; }
+ .poster-logo .festival-symbol { width:28px; height:20px; }
+ .poster-logo .festival-symbol img { left:-23.75px; width:158.75px; }
+ .poster-logo-education img { height:21px; }
  .poster-credit { left:24px; right:24px; }
 }
 @container app (max-width:600px) {
@@ -72,12 +80,6 @@ body:has(#result.active) { background:#fff; }
  /* 포스터를 영화 비율로 줄여 QR이 첫 화면(360×740)에 다 들어오게 한다(10/17). */
  .result-poster { aspect-ratio:16 / 9; border-radius:12px; }
  .result-poster > .pic > img { object-position:center 35%; }
- .poster-logo { top:12px; height:30px; padding:0 11px; font-size:.8125rem; gap:5px; }
- .poster-logo-inky { left:12px; }
- .poster-logo-education { right:12px; }
- .poster-logo .festival-symbol { width:28px; height:20px; }
- .poster-logo .festival-symbol img { left:-23.75px; width:158.75px; }
- .poster-logo-education img { height:21px; }
  .poster-credit { bottom:20px; left:20px; }
  .poster-credit p { display:none; }
  .poster-credit strong { font-size:2rem; }
