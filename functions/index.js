@@ -97,7 +97,8 @@ app.post('/upload', async (req, res, next) => {
     return res.status(401).json({ ok: false, error: '보안 검증에 실패했습니다.' });
   }
   if (isRateLimited(req.ip)) {
-    console.warn(`[upload:${requestId}] 분당 업로드 한도 초과: ${req.ip}`);
+    // IP는 로그에 남기지 않는다 — 개인정보처리방침이 «서비스에서 별도로 저장하지 않습니다»라고 약속한다(11/2 종합감사). 요청 번호로 충분하다
+    console.warn(`[upload:${requestId}] 분당 업로드 한도 초과`);
     return res.status(429).json({ ok: false, error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' });
   }
   next();
