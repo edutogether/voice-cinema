@@ -144,6 +144,15 @@ export default [
     },
   },
   {
+    // 설치기 빌드 때 makensis가 부르는 스크립트(7z 안의 푸는 순서 · 크기 표 — desktop/nsis/install-files.nsh의 !system)
+    files: ['desktop/nsis/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: { process: 'readonly', console: 'readonly', Buffer: 'readonly' },
+    },
+  },
+  {
     // 설치판 확인 도구가 Electron에 먼저 읽히는 파일(electron -r) · 같은 엔진 브라우저 창 — CommonJS
     files: ['desktop/tools/**/*.cjs'],
     languageOptions: {

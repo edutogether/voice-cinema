@@ -24,6 +24,7 @@
 !define VC_LVS_EX_DOUBLEBUFFER 0x00010000
 !define VC_LVM_GETCOLUMNWIDTH 0x101D
 !define VC_WM_GETFONT 0x0031
+!define VC_WM_SETREDRAW 0x000B
 ; 이 파일이 있는 폴더 — 아래 훅 안에서 함께 넣는 파일(install-files.nsh · un-pages.nsh)을 찾는다
 !define VC_NSIS_DIR "${__FILEDIR__}"
 
@@ -165,12 +166,22 @@
   System::Free $R7
 !macroend
 
-; ── 화면을 바꿀 때 반쯤 그린 장이 보이지 않게(기준 7 · 11) ──
-; NSIS는 다음 화면으로 넘어갈 때 앞 화면을 먼저 없애고 새 화면을 만든다. 그 사이 창 전체가 회색인 장 · 머리만 그린 장이 한두 장(0.07초) 보였다
-; (10/28 «설치 범위 → 설치 위치» 녹화). 창 전체를 한 번에 그려 다 그린 장만 보이게 한다(WS_EX_COMPOSITED — 창과 그 안의 칸을 함께 두 번 그려 바꿈).
-; 진행 화면 동안에는 끈다 — 켜 두면 막대 · 상자가 스스로 다시 그리는 사이에 빈 장이 끼었다(같은 날 녹화: 막대 빈 장 2 · 상자 빈 장 5).
-; 끄는 때는 진행 화면을 한 번 다 그린 뒤(설치 · 제거 단계의 맨 앞 — vcCompositedOff)다. 화면이 뜨기 직전(SHOW)에 끄면 넘어가는 그 그림이
-; 나뉘어 그려져 반쯤 그린 장 2장이 다시 끼었다. 진행 화면을 떠날 때(LEAVE — 완료 화면으로 넘어가기 직전) 다시 켠다.
+; ── 화면을 바꿀 때 덜 그린 장이 보이지 않게(기준 7 · 11 — 11/2 대표님 «Poster Studio 설치판에서 문제 됐던 것들을 똑같이», 팀장 전달) ──
+; NSIS는 다음 화면으로 넘어갈 때 앞 화면을 먼저 없애고 새 화면을 만든다. Windows가 지운 자리를 바로 바탕색으로 칠해, 새 화면이 다 차기 전의
+; 빈 화면 · 머리만 그린 장이 한두 장(0.07초) 보였다. Poster Studio 설치판(10/28 저녁 ~ 10/30)과 같은 방법으로 막는다:
+;   - 멈춤(vcFreeze): 앞 화면을 떠날 때 바깥 창 그리기를 멈춘다(WM_SETREDRAW 0 — 그동안 앞 화면이 그대로 보인다). 바깥 창이 아직 안 보이면(첫 화면)
+;     멈추지 않는다 — 다시 켜기가 숨은 창을 보이게 만든다. 멈추는 때: 설치 범위 · 완료 화면을 떠날 때, 위치 화면을 만들기 전,
+;     설치 · 제거 단계 끝(100%를 1초 보인 뒤 — NSIS «닫음» → MUI «마침» 사이 한 장).
+;   - 다시 켬(vcThaw): 새 화면을 칸 겹침 맨 위로 올리고, 창 전체를 합성(WS_EX_COMPOSITED — 창과 그 안의 칸을 함께 두 번 그려 바꿈)으로 한 장에 그린 뒤
+;     그리기를 멈춘 채로 합성을 끄고 다시 켠다 — 합성을 그냥 끄면 Windows가 창을 보통 방식(바탕부터 칸마다)으로 다시 그려 그 사이가 녹화에 잡혔다.
+;     nsDialogs 화면(설치 범위 · 위치 · 완료)은 nsDialogs가 새 화면을 띄운 뒤 첫 타이머에서 켠다(vcFreezeUntilShown).
+;   - 진행 화면으로 갈 때(위치 · 제거 첫 화면 · 제거 범위를 떠날 때)는 멈추지 않고 합성을 켜 둔다(vcCompOn) — 진행 화면에는 SHOW 뒤에 다시 켤 자리가
+;     없고(제거기는 SHOW 자리를 템플릿 제거 범위 화면이 가져간다), MUI가 첫 화면을 닫으며 LockWindow off로 멈춤을 푼다.
+;     진행 화면을 한 번 다 그리면 끈다(설치 · 제거 단계의 맨 앞 — vcCompositedOff). 켜 둔 채면 막대 · 상자가 스스로 다시 그리는 사이에 빈 장이
+;     끼었다(10/28 녹화: 막대 빈 장 2 · 상자 빈 장 5). 진행 화면을 떠날 때(완료 화면으로 넘어가기 직전) 다시 켠다 — MUI가 완료 화면을 열며
+;     LockWindow off로 단계 끝의 멈춤을 풀고 다시 그리는 동안 한 장에 그리게(Poster Studio는 진행 화면 내내 켜 둔 상태다).
+; 10/28에는 그리기 멈춤을 넣지 않았다 — MUI LockWindow와 부딪혀 회색 장 · «실행하기» 상자가 «안 보임»으로 남는 일이 있었다(A/B 8회). Poster Studio가
+; 그 뒤 푼 방법을 옮겼다: 멈춤은 보일 때마다 다시 걸고(LockWindow off가 푼 것), 합성은 그리기를 멈춘 채로 끄고, 새 화면은 겹침 맨 위로 올린다.
 !macro vcComposited STATE
   Push $0
   System::Call "user32::GetWindowLongW(p $HWNDPARENT, i -20) i .r0"
@@ -190,30 +201,113 @@
   ${EndIf}
 !macroend
 
-; 머리 로고(설치 · 제거의 가운데 화면 공통 — 칸 1046): MUI가 기본 그림을 넣은 뒤(.onGUIInit 끝) 칸에 맞는 판으로 바꾼다. 첫 화면이 뜨기 전이라 깜빡이지 않는다.
-; «한 번에 그리기»는 형제 칸을 쌓인 차례(z-order)대로 그린다 — 창 머리의 흰 바탕(1034)과 아래 글의 바탕(1256)이 그 위의 제목(1037) · 설명(1038) ·
-; 머리 그림(1046) · 아래 글(1028)보다 위에 쌓여 있어 글 · 그림이 바탕에 덮였다(10/28 캡처 — 평소 그리기에서는 나중에 그려 보였다).
-; 바탕 둘을 맨 아래로, 그 위 글 · 그림을 맨 위로 둔다. SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE
-!macro vcHeaderOrder
-  Push $R6
-  !insertmacro vcZ 1034 1
-  !insertmacro vcZ 1256 1
-  !insertmacro vcZ 1037 0
-  !insertmacro vcZ 1038 0
-  !insertmacro vcZ 1046 0
-  !insertmacro vcZ 1028 0
-  Pop $R6
-!macroend
-!macro vcZ ID AFTER
-  GetDlgItem $R6 $HWNDPARENT ${ID}
-  ${If} $R6 != 0
-    System::Call "user32::SetWindowPos(p R6, p ${AFTER}, i 0, i 0, i 0, i 0, i 0x13)"
-  ${EndIf}
+; 바깥 창의 칸 하나가 겹침 위 칸 자리를 칠하지 않게(WS_CLIPSIBLINGS — vcZOrder). $0 · $1을 쓴다
+!macro vcClipSiblings ID
+  GetDlgItem $0 $HWNDPARENT ${ID}
+  System::Call "user32::GetWindowLongW(p r0, i -16) i .r1"
+  IntOp $1 $1 | 0x04000000
+  System::Call "user32::SetWindowLongW(p r0, i -16, i r1)"
 !macroend
 
+Var vcFrozen
+Var vcThawPage
+!macro vcRedrawFunctions UN
+  ; 보이면 멈춘다(이미 멈췄으면 «안 보임»으로 읽혀 그대로). vcFrozen이 «1»이어도 다시 본다 — MUI가 창 전체 화면(제거 첫 화면 · 완료)을 열고 닫을 때
+  ; LockWindow off로 그리기를 다시 켠다(완료 화면 PRE — 설치 · 제거 단계 끝에서 멈춘 것이 풀린다).
+  Function ${UN}vcFreeze
+    Push $0
+    System::Call "user32::IsWindowVisible(p $HWNDPARENT) i .r0"
+    ${If} $0 <> 0
+      SendMessage $HWNDPARENT ${VC_WM_SETREDRAW} 0 0
+      StrCpy $vcFrozen "1"
+    ${EndIf}
+    Pop $0
+  FunctionEnd
+
+  ; 스택: 새 화면 HWND. 새 화면을 칸 겹침 맨 위로 올리고(창 전체 화면이 머리 바탕 · 머리 선을 덮게 — vcZOrder) 창 전체를 합성으로 한 장에 그린 뒤,
+  ; 그리기를 멈춘 채로 합성을 끄고 다시 켠다. vcCompOn으로 켜 둔 합성도 여기서 꺼진다.
+  Function ${UN}vcThaw
+    Exch $0
+    ${If} $vcFrozen == "1"
+      Push $1
+      Push $2
+      ShowWindow $0 8   ; SW_SHOWNA — NSIS가 뒤에 하는 것을 먼저(이미 보이면 그대로)
+      System::Call "user32::SetWindowPos(p r0, p 0, i 0, i 0, i 0, i 0, i 0x13)"   ; HWND_TOP — NOSIZE | NOMOVE | NOACTIVATE
+      System::Call "user32::GetWindowLongW(p $HWNDPARENT, i -20) i .r1"
+      IntOp $1 $1 & 0xFDFFFFFF   ; 합성을 뺀 값
+      IntOp $2 $1 | 0x02000000
+      System::Call "user32::SetWindowLongW(p $HWNDPARENT, i -20, i r2)"
+      SendMessage $HWNDPARENT ${VC_WM_SETREDRAW} 1 0
+      System::Call "user32::RedrawWindow(p $HWNDPARENT, p 0, p 0, i 0x585)"   ; INVALIDATE | ERASE | ALLCHILDREN | UPDATENOW | FRAME
+      SendMessage $HWNDPARENT ${VC_WM_SETREDRAW} 0 0
+      System::Call "user32::SetWindowLongW(p $HWNDPARENT, i -20, i r1)"
+      SendMessage $HWNDPARENT ${VC_WM_SETREDRAW} 1 0
+      StrCpy $vcFrozen ""
+      Pop $2
+      Pop $1
+    ${EndIf}
+    Pop $0
+  FunctionEnd
+
+  ; 진행 화면으로 넘어갈 때(위치 · 제거 첫 화면 · 제거 범위 LEAVE): 진행 화면이 처음 그려질 때 한 장에 그려지게 한다(진행 화면을 다 그리면 vcCompositedOff가 끈다)
+  Function ${UN}vcCompOn
+    !insertmacro vcComposited on
+  FunctionEnd
+
+  ; ── 바깥 창 칸의 겹침 순서(창이 뜰 때 한 번 — 머리 그림을 바꿔 끼운 뒤) ──
+  ; 겹치는 칸: 머리 바탕(1034) 위의 제목(1037) · 부제(1038) · 그림(1046), 아래 줄 선(1035) 위의 상표 글(1256 · 1028), 창 전체 화면(제거 첫 화면 · 완료) 아래의
+  ; 머리 바탕 · 머리 선(1036). 보통 그리기는 겹침 위 칸부터 칠해 아래 칸이 이기고, 합성 그리기는 아래 칸부터 칠해 위 칸이 이긴다. NSIS 화면 틀은 바탕 · 선이
+  ; 글 · 그림보다 위라 합성으로 그리면 머리가 비고 완료 화면 위가 흰 띠로 덮였다(Poster Studio 10/28). 그래서 보일 칸을 위에 두고, 가려질 칸(1034 · 1035 ·
+  ; 1036 · 1256)은 위 칸 자리를 칠하지 않게 한다(WS_CLIPSIBLINGS) — 두 방식 모두 지금 보이는 모습과 같다. 새 화면은 vcThaw(제거 첫 화면은 vcSidebarArt)가 맨 위로 올린다.
+  Function ${UN}vcZOrder
+    Push $0
+    Push $1
+    GetDlgItem $0 $HWNDPARENT 1035
+    System::Call "user32::SetWindowPos(p r0, p 1, i 0, i 0, i 0, i 0, i 0x13)"   ; HWND_BOTTOM
+    GetDlgItem $0 $HWNDPARENT 1034
+    System::Call "user32::SetWindowPos(p r0, p 1, i 0, i 0, i 0, i 0, i 0x13)"   ; 그 아래 — 맨 아래
+    GetDlgItem $0 $HWNDPARENT 1256
+    GetDlgItem $1 $HWNDPARENT 1028
+    System::Call "user32::SetWindowPos(p r0, p r1, i 0, i 0, i 0, i 0, i 0x13)"   ; 1256을 1028 바로 아래로 — 보통 그리기에서 보이던 것이 1028(회색 글)이다
+    !insertmacro vcClipSiblings 1034
+    !insertmacro vcClipSiblings 1035
+    !insertmacro vcClipSiblings 1036
+    !insertmacro vcClipSiblings 1256
+    Pop $1
+    Pop $0
+  FunctionEnd
+
+  ; nsDialogs 화면(설치 범위 · 위치 · 완료)은 SHOW 뒤에 nsDialogs가 앞 화면을 지우고 새 화면을 띄운다 — 그 뒤 첫 타이머에서 다시 켠다. 스택: 새 화면 HWND
+  Function ${UN}vcFreezeUntilShown
+    Exch $0
+    StrCpy $vcThawPage $0
+    Pop $0
+    Call ${UN}vcFreeze
+    Push $0
+    GetFunctionAddress $0 ${UN}vcThawTimer
+    nsDialogs::CreateTimer $0 1
+    Pop $0
+  FunctionEnd
+  Function ${UN}vcThawTimer
+    Push $0
+    GetFunctionAddress $0 ${UN}vcThawTimer
+    nsDialogs::KillTimer $0
+    Pop $0
+    Push $vcThawPage
+    Call ${UN}vcThaw
+  FunctionEnd
+!macroend
+!ifndef BUILD_UNINSTALLER
+  !insertmacro vcRedrawFunctions ""
+  !define VC_FN ""
+!else
+  !insertmacro vcRedrawFunctions "un."
+  !define VC_FN "un."
+!endif
+
+; 머리 로고(설치 · 제거의 가운데 화면 공통 — 칸 1046): MUI가 기본 그림을 넣은 뒤(.onGUIInit 끝) 칸에 맞는 판으로 바꾼다. 첫 화면이 뜨기 전이라 깜빡이지 않는다.
+; 그 뒤 바깥 창 칸의 겹침 순서를 고친다(vcZOrder — 부르는 곳은 vcGuiInit · un.vcGuiInit).
 !macro vcHeaderArt
-  !insertmacro vcComposited on
-  !insertmacro vcHeaderOrder
   Push $R6
   Push $R7
   Push $R8
@@ -238,8 +332,9 @@
   Push $R7
   Push $R8
   Push $R9
-  ; 전체 창 화면(그림이 든 화면)을 창 머리의 흰 바탕 칸보다 위로 올린다 — «한 번에 그리기»(vcComposited)는 형제 칸을 쌓인 차례대로 그려,
-  ; 머리 바탕이 화면 위쪽 100px(제목 · 그림 윗부분)을 덮었다(10/28 녹화). SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE, 맨 위(HWND_TOP)
+  ; 전체 창 화면(그림이 든 화면)을 창 머리의 흰 바탕 칸보다 위로 올린다 — 합성 그리기는 형제 칸을 쌓인 차례대로 그려, 머리 바탕이 화면 위쪽
+  ; 100px(제목 · 그림 윗부분)을 덮었다(10/28 녹화). 완료 화면은 vcThaw도 올리지만, 제거기 첫 화면은 창이 아직 안 보여 멈추지 않으므로 여기서 올린다
+  ; (그 화면을 떠날 때 합성으로 그려도 머리 바탕 · 머리 선이 덮지 않게 — vcZOrder). SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE, 맨 위(HWND_TOP)
   System::Call "user32::GetParent(p ${IMAGE}) p .R7"
   System::Call "user32::SetWindowPos(p R7, p 0, i 0, i 0, i 0, i 0, i 0x13)"
   !insertmacro vcClientWidth ${IMAGE}
@@ -584,19 +679,20 @@ Var vcBaseShow   ; 줄에 쓸 위치의 모양
 
 ; 끝: 마지막 줄을 적고 막대를 100%로 채운 뒤 1초 보여 준다(막대는 바로 그린다 — vcSetBarRaw). 그다음 진행 화면은 저절로 완료 화면으로 넘어간다.
 ; NSIS가 끝에 붙이는 «완료» 줄은 이 뒤 «SetDetailsPrint none» 상태라 찍히지 않는다.
+; 1초 뒤 그리기를 멈춘다 — 단계가 끝나면 NSIS가 가운데 단추를 «닫음»으로 바꾸고 MUI 완료 화면이 «마침»으로 바꾸는데, 그 사이 한 장이 녹화에
+; 잡혔다(Poster Studio 10/28 · 10/30). 완료 화면이 다 차면 vcThaw가 한 번에 그린다.
 !macro vcFinishProgress TEXT
   !insertmacro vcSetBar 1000
   !insertmacro vcStage "${TEXT}"
   ${IfNot} ${Silent}
     Sleep 1000
+    Call ${VC_FN}vcFreeze
   ${EndIf}
 !macroend
 
-; ── «마침»을 누르면 창을 먼저 숨긴다(기준 7) ──
-; NSIS는 «마침» 뒤 완료 화면을 지운 빈 창을 3장쯤(0.1초) 보인 뒤 닫았다(10/28 녹화). 누르는 순간 창을 먼저 숨긴다
-; (템플릿도 앱을 띄우기 전에 창을 숨긴다 — doStartApp). 화면 사이의 바꿈은 MUI 그대로 둔다 — 창 그리기를 멈췄다가 한 번에 그리는 방법을 시험했으나
-; MUI가 화면을 바꾸며 스스로 그리기를 다시 켜(LockWindow) 오히려 창 전체가 회색인 장이 생기거나, 완료 화면의 «실행하기» 상자가
-; Windows상 «안 보임»으로 남는 일이 있어(같은 날 A/B 8회) 넣지 않았다.
+; ── «마침»을 누르면 완료 화면 그대로 닫는다(기준 7) ──
+; «마침»을 누르면 nsDialogs가 완료 화면을 먼저 지워 창이 사라지기 전에 빈 창이 보였다(10/28 녹화 3장 · 0.1초). 완료 화면을 떠날 때 그리기를 멈춰
+; 완료 화면 그대로 닫힌다(Poster Studio와 같다 — 10/28에는 창을 먼저 숨겼다. 템플릿은 앱을 띄우기 전에 창을 숨긴다 — doStartApp).
 
 ; ── 켜져 있는 Voice Cinema 찾기 · 끄기(기준 9 · 11) ──
 ; 템플릿은 PowerShell을 세 번 띄워 찾는다(4초쯤 — 그동안 막대가 멈췄다). 실행 파일 이름으로 바로 찾는다(nsProcess — 창을 띄우지 않고 즉시).
@@ -690,13 +786,20 @@ Var vcAppAnswer
     ; 함수 몸은 MUI가 화면(머리 그림 칸 포함)을 정의한 뒤에 컴파일돼야 한다 — 마지막 화면을 넣는 이 자리에서 정의한다
     Function vcGuiInit
       !insertmacro vcHeaderArt
+      Call vcZOrder
     FunctionEnd
     Function vcModeShow
       !insertmacro vcModeLabel
+      Push $MultiUser.InstallModePage
+      Call vcFreezeUntilShown
     FunctionEnd
     Function vcInstFilesShow
       !insertmacro vcT "page-show"
       !insertmacro vcMakeBar
+      ; «설치 중: <경로> (NN%)» 줄은 «설치: » 줄보다 « 중»과 « (NN%)»만큼 길다 — 그 몫만큼 경로 칸을 좁혀 잰다(vcExtractPartLine)
+      Push " 중 (100%)"
+      Call vcTextWidth
+      Pop $vcPartExtra
     FunctionEnd
     Function vcInstFilesLeave
       !insertmacro vcComposited on
@@ -718,14 +821,13 @@ Var vcAppAnswer
       !define MUI_FINISHPAGE_RUN_FUNCTION "StartApp"
     !endif
     !define MUI_PAGE_CUSTOMFUNCTION_SHOW vcFinishShow
-    !define MUI_PAGE_CUSTOMFUNCTION_LEAVE vcFinishLeave
+    !define MUI_PAGE_CUSTOMFUNCTION_LEAVE vcFreeze
     !insertmacro MUI_PAGE_FINISH
 
     Function vcFinishShow
       !insertmacro vcSidebarArt $mui.FinishPage.Image $mui.FinishPage.Image.Bitmap
-    FunctionEnd
-    Function vcFinishLeave
-      HideWindow
+      Push $mui.FinishPage
+      Call vcFreezeUntilShown
     FunctionEnd
   !macroend
 
@@ -749,6 +851,26 @@ Var vcAppAnswer
     Pop $0
   !macroend
 
+  ; 조용한 설치(/S)도 «나만» 기본 위치를 화면 설치와 같게(…\Programs\InKY Film Festival\Voice Cinema — Poster Studio 10/28 저녁과 같다).
+  ; 위 기본 위치는 설치 범위 화면에서 정하는데 조용한 설치는 그 화면을 거치지 않아 템플릿 기본(…\Programs\Voice Cinema)에 깔렸다.
+  ; 예전 설치 위치(등록 값)와 /D는 그대로 따른다. «모든 사용자»는 템플릿이 이미 같은 모양이다(menuCategory).
+  !macro customInit
+    ${If} ${Silent}
+    ${AndIf} $installMode == "CurrentUser"
+      Push $0
+      Push $1
+      ReadRegStr $0 HKCU "${INSTALL_REGISTRY_KEY}" InstallLocation
+      !insertmacro GetDParameter $1
+      ${If} $0 == ""
+      ${AndIf} $1 == ""
+        ${GetParent} "$INSTDIR" $0
+        StrCpy $INSTDIR "$0\${MENU_FILENAME}\${APP_FILENAME}"
+      ${EndIf}
+      Pop $1
+      Pop $0
+    ${EndIf}
+  !macroend
+
   Function .onGUIEnd
     ${If} $vcUserDefaultWritten == "1"
       ReadRegStr $0 HKCU "${UNINSTALL_REGISTRY_KEY}" UninstallString
@@ -761,20 +883,29 @@ Var vcAppAnswer
 
   ; ── 앱 파일 설치(install-files.nsh가 바꿔 끼운 installApplicationFiles)가 부르는 함수 ──
   ; 그 매크로는 설치 단계(Section) 안에서 펼쳐져 거기서는 함수를 정의할 수 없다 — 그래서 여기 둔다.
-  ; 막대 몫(0~1000)은 이 PC에서 잰 단계별 시간에 맞춘다(10/28: 압축 풀기 2.8초 · 복사 2.4초 · 그 뒤 바로가기 · 등록 1.1초) — 막대가 고르게 찬다.
-  ; 앱 내용(영상 등)이 바뀌어도 그대로 맞게, 파일 목록 · 개수 · 크기는 하나도 박지 않고 그때 설치기에 든 파일로 센다(10/28 대표님 «영상은 나중에 갈아끼운다»):
-  ;   - 압축 풀기는 푼 바이트 비율, 복사는 «파일 크기 + 파일 하나당 몫»의 비율로 찬다. 복사 시간은 파일 수(열고 닫기 · 줄 적기)와 크기를 함께 따른다 —
-  ;     10/28 이 PC에서 파일 170여 개 2.4초 가운데 실행 파일 247MB가 0.3초쯤이라, 파일 하나의 몫을 9MB 복사와 같게 잡는다(VC_COPY_FILE_KB).
-  ;     영상이 몇 배 커지면 그 파일들이 막대를 크기만큼 더 차지한다(파일 수로만 세면 큰 영상 하나를 복사하는 동안 막대가 멈춘다).
-  ;   - 크기는 KB로 센다(2GB가 넘는 파일 · 합계도 32비트 정수 안에서 계산되게).
+  ; 설치 위치에 바로 풀며(Nsis7z::ExtractWithCallback) 푼 바이트가 파일 끝을 지날 때마다 «설치: <설치 위치>\…»를 적는다(11/2 — Poster Studio 설치판과 같다,
+  ; 대표님 «설치 중입니다 하면 주르륵 떠야»). 예전(10/28)에는 임시 폴더에 푼 뒤(그동안 2.8초 줄 없이 «준비하는 중») 파일마다 복사하며 줄을 적었다.
+  ; 예전 판은 이 앞에서 이미 지웠다(old-version.nsh · 템플릿 uninstallOldVersion) — 임시 폴더를 거쳐 «한 번에 바꾸기»를 할 까닭이 없다.
+  ;   - 푸는 순서 · 크기 표는 빌드 때 실제 7z에서 만든다(vc-7z-list.mjs — «끝 KB · 크기 KB · 상대 경로»). 앱 내용(영상 등)이 바뀌어도 다시 빌드하면 맞는다 —
+  ;     파일 목록 · 개수 · 크기는 하나도 박지 않는다(10/28 대표님 «영상은 나중에 갈아끼운다»).
+  ;   - 줄은 그 파일이 다 풀린 뒤에만 나온다(표의 «끝»을 지났을 때 — 앞질러 나오지 않음). 큰 파일 하나를 푸는 동안(실행 파일 ≈ 2초) 줄이 멈추지 않게,
+  ;     줄 없이 VC_EX_PART_KB만큼 풀리면 «설치 중: …\파일 (NN%)»을 적는다.
+  ;   - 막대는 푼 바이트 비율로 40 → 840(그 뒤 «확인» 860 · 시작 메뉴 905 · 바탕화면 950 · 끝 1000).
+  ;   - 크기는 KB(1000바이트)로 센다 — Nsis7z의 바이트 수에서 끝 세 자리를 떼어 견주므로 2GB가 넘는 파일 · 합계도 32비트 정수 안에서 계산된다.
   !define VC_BAR_EXTRACT_FROM 40
-  !define VC_BAR_EXTRACT_TO 460
-  !define VC_BAR_COPY_TO 840
-  !define VC_COPY_FILE_KB 9216
+  !define VC_BAR_EXTRACT_TO 840
   !define /math VC_BAR_EXTRACT_SPAN ${VC_BAR_EXTRACT_TO} - ${VC_BAR_EXTRACT_FROM}
-  !define /math VC_BAR_COPY_SPAN ${VC_BAR_COPY_TO} - ${VC_BAR_EXTRACT_TO}
-  Var vcCopyTotal   ; 옮길 몫 합계(KB)
-  Var vcCopyDone    ; 옮긴 몫(KB)
+  !define VC_EX_PART_KB 50000
+  Var vcExFile
+  Var vcExEnd       ; 다음 파일이 다 풀리는 끝(KB) — 표가 끝나면 -1
+  Var vcExSize
+  Var vcExPath
+  Var vcExStart     ; 다음 파일이 시작하는 자리(= 앞 파일의 끝)
+  Var vcExLineKb    ; 마지막 줄을 적을 때 푼 양
+  Var vcExLine
+  Var vcExI
+  Var vcExC
+  Var vcPartExtra   ; «설치 중: … (NN%)» 줄이 «설치: …» 줄보다 긴 폭(vcInstFilesShow에서 잰다)
 
   ; 몫(0~1000)의 비율: 스택 위 전체, 그 아래 지금까지 → 스택: 0~1000. 큰 수를 곱하지 않게 전체를 1000으로 먼저 나눈다.
   Function vcPerMille
@@ -799,8 +930,90 @@ Var vcAppAnswer
     Pop $R0
   FunctionEnd
 
-  ; 압축 풀기 콜백 — 스택: 지금까지 푼 바이트, 전체 바이트(Nsis7z 순서). 막대 40 → 460(푼 바이트 비율)
-  ; 바이트 수는 2GB를 넘을 수 있어 끝 세 자리를 떼어(천 바이트 단위) 32비트 정수로 셈한다.
+  Function vcExtractBegin
+    FileOpen $vcExFile "$PLUGINSDIR\vc-7z-list.txt" r
+    FileSeek $vcExFile 2   ; UTF-16LE BOM
+    StrCpy $vcExEnd 0
+    StrCpy $vcExLineKb 0
+    Call vcExtractNext
+  FunctionEnd
+
+  ; 표의 다음 줄 → $vcExStart · $vcExEnd · $vcExSize · $vcExPath(없으면 $vcExEnd = -1)
+  Function vcExtractNext
+    StrCpy $vcExStart $vcExEnd
+    ClearErrors
+    FileReadUTF16LE $vcExFile $vcExLine
+    ${If} ${Errors}
+    ${OrIf} $vcExLine == ""
+      StrCpy $vcExEnd -1
+      Return
+    ${EndIf}
+    ; 줄 끝(\r\n)을 뗀다
+    ${Do}
+      StrCpy $vcExC $vcExLine 1 -1
+      ${If} $vcExC == "$\r"
+      ${OrIf} $vcExC == "$\n"
+        StrCpy $vcExLine $vcExLine -1
+      ${Else}
+        ${ExitDo}
+      ${EndIf}
+    ${Loop}
+    ; «끝 크기 경로» — 앞의 두 칸은 빈칸으로 가른다(경로에는 빈칸이 있을 수 있다 — «Voice Cinema.exe»)
+    StrCpy $vcExI 0
+    ${Do}
+      StrCpy $vcExC $vcExLine 1 $vcExI
+      ${If} $vcExC == " "
+      ${OrIf} $vcExC == ""
+        ${ExitDo}
+      ${EndIf}
+      IntOp $vcExI $vcExI + 1
+    ${Loop}
+    StrCpy $vcExEnd $vcExLine $vcExI
+    IntOp $vcExI $vcExI + 1
+    StrCpy $vcExLine $vcExLine "" $vcExI
+    StrCpy $vcExI 0
+    ${Do}
+      StrCpy $vcExC $vcExLine 1 $vcExI
+      ${If} $vcExC == " "
+      ${OrIf} $vcExC == ""
+        ${ExitDo}
+      ${EndIf}
+      IntOp $vcExI $vcExI + 1
+    ${Loop}
+    StrCpy $vcExSize $vcExLine $vcExI
+    IntOp $vcExI $vcExI + 1
+    StrCpy $vcExPath $vcExLine "" $vcExI
+  FunctionEnd
+
+  ; 표에서 푼 양($R8, KB)까지 다 풀린 파일의 줄을 적는다
+  Function vcExtractFlush
+    ${Do}
+      ${If} $vcExEnd < 0
+      ${OrIf} $vcExEnd > $R8
+        ${ExitDo}
+      ${EndIf}
+      !insertmacro vcFileLine "설치: " "$INSTDIR\$vcExPath"
+      !insertmacro vcT "file $vcExPath"
+      StrCpy $vcExLineKb $R8
+      Call vcExtractNext
+    ${Loop}
+  FunctionEnd
+
+  ; «설치 중: <경로> (NN%)» — 스택: 퍼센트. 경로는 다른 줄과 같은 규칙으로 줄이되(vcFitPath) « 중» · « (NN%)» 몫만큼 칸을 좁혀 잰다
+  Function vcExtractPartLine
+    Exch $R6
+    Push $R0
+    IntOp $vcPathWidth $vcPathWidth - $vcPartExtra
+    Push "$INSTDIR\$vcExPath"
+    Call vcFitPath
+    Pop $R0
+    IntOp $vcPathWidth $vcPathWidth + $vcPartExtra
+    !insertmacro vcLine "설치 중: $R0 ($R6%)"
+    Pop $R0
+    Pop $R6
+  FunctionEnd
+
+  ; 압축 풀기 콜백 — 스택: 지금까지 푼 바이트, 전체 바이트(Nsis7z 순서). 바이트 수는 2GB를 넘을 수 있어 끝 세 자리를 떼어(천 바이트 단위) 셈한다.
   Function vcExtractProgress
     Exch $R8
     Exch
@@ -834,138 +1047,45 @@ Var vcAppAnswer
       IntOp $R7 $R7 + ${VC_BAR_EXTRACT_FROM}
       !insertmacro vcSetBar $R7
     ${EndIf}
+    ; 다 풀린 파일 줄 → 없으면 큰 파일을 푸는 중인 줄
+    StrCpy $R7 $vcExLineKb
+    Call vcExtractFlush
+    ${If} $vcExLineKb == $R7
+    ${AndIf} $vcExEnd > $R8
+    ${AndIf} $vcExSize >= ${VC_EX_PART_KB}
+      IntOp $R7 $R8 - $vcExLineKb
+      ${If} $R7 >= ${VC_EX_PART_KB}
+        IntOp $R7 $R8 - $vcExStart
+        IntOp $R7 $R7 * 100
+        IntOp $R7 $R7 / $vcExSize
+        Push $R7
+        Call vcExtractPartLine
+        StrCpy $vcExLineKb $R8
+      ${EndIf}
+    ${EndIf}
     Pop $R7
     Pop $R9
     Pop $R8
   FunctionEnd
 
-  ; 파일 하나의 복사 몫(KB) — 스택: 경로 → 스택: 크기(KB) + 파일 하나당 몫. 크기는 GetFileAttributesEx의 위 · 아래 32비트로(2GB가 넘어도 맞다).
-  Function vcCopyWeight
-    Exch $R0
-    Push $R1
-    Push $R2
-    System::Call '*(i, i, i, i, i, i, i, i, i) p .R1'   ; WIN32_FILE_ATTRIBUTE_DATA(속성 · 시각 셋 · 크기 위 · 아래)
-    System::Call 'kernel32::GetFileAttributesExW(w R0, i 0, p R1) i .R2'
-    StrCpy $R0 0
-    ${If} $R2 != 0
-      System::Call '*$R1(i, i, i, i, i, i, i, i .R2, i .R0)'
-      IntOp $R0 $R0 >>> 10
-      IntOp $R2 $R2 << 22
-      IntOp $R0 $R0 + $R2
-    ${EndIf}
-    System::Free $R1
-    IntOp $R0 $R0 + ${VC_COPY_FILE_KB}
-    Pop $R2
-    Pop $R1
-    Exch $R0
+  ; 다 푼 뒤: 표에 남은 줄을 마저 적고(끝 세 자리를 떼어 견주므로 마지막 몇 개가 남을 수 있다) 표를 닫는다
+  Function vcExtractEnd
+    Push $R8
+    StrCpy $R8 2147483647
+    Call vcExtractFlush
+    Pop $R8
+    FileClose $vcExFile
+    !insertmacro vcSetBar ${VC_BAR_EXTRACT_TO}
   FunctionEnd
 
-  ; 임시 폴더에 푼 파일의 복사 몫을 더한다(복사 막대의 분모) — 스택: 상대 경로(""부터)
-  Function vcCountOut
-    Exch $R0
-    Push $R1
-    Push $R2
-    FindFirst $R1 $R2 "$PLUGINSDIR\7z-out$R0\*.*"
-    ${DoUntil} $R2 == ""
-      ${If} $R2 != "."
-      ${AndIf} $R2 != ".."
-        ${If} ${FileExists} "$PLUGINSDIR\7z-out$R0\$R2\*.*"
-          Push "$R0\$R2"
-          Call vcCountOut
-        ${Else}
-          Push "$PLUGINSDIR\7z-out$R0\$R2"
-          Call vcCopyWeight
-          Exch $R0
-          IntOp $vcCopyTotal $vcCopyTotal + $R0
-          Pop $R0
-        ${EndIf}
-      ${EndIf}
-      FindNext $R1 $R2
-    ${Loop}
-    FindClose $R1
-    Pop $R2
-    Pop $R1
-    Pop $R0
-  FunctionEnd
-
-  ; 파일 하나를 임시 폴더에서 설치 위치로 복사하고 «설치: …»를 적는다 — 스택: 상대 경로(«\locales\ko.pak» 모양). 막대 460 → 840(복사 몫 비율)
-  Function vcCopyOne
-    Exch $R0
-    Push $R3
-    Push $R4
-    ; 덮어쓰기가 막히면(켜진 앱이 파일을 잡고 있으면) 1초 간격으로 다섯 번 다시 해 보고, 그래도 안 되면 묻는다
-    StrCpy $R4 0
-    ${Do}
-      System::Call "kernel32::CopyFileW(w '$PLUGINSDIR\7z-out$R0', w '$INSTDIR$R0', i 0) i .R3"
-      ${If} $R3 != 0
-        ${ExitDo}
-      ${EndIf}
-      IntOp $R4 $R4 + 1
-      ${If} $R4 > 5
-        MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "$(appCannotBeClosed)" /SD IDCANCEL IDRETRY +2
-        Quit
-        StrCpy $R4 0
-      ${EndIf}
-      Sleep 1000
-    ${Loop}
-    !insertmacro vcFileLine "설치: " "$INSTDIR$R0"
-    !insertmacro vcT "copy $R0"
-    Push "$INSTDIR$R0"
-    Call vcCopyWeight
-    Pop $R3
-    IntOp $vcCopyDone $vcCopyDone + $R3
-    Push $vcCopyDone
-    Push $vcCopyTotal
-    Call vcPerMille
-    Pop $R3
-    IntOp $R3 $R3 * ${VC_BAR_COPY_SPAN}
-    IntOp $R3 $R3 / 1000
-    IntOp $R3 $R3 + ${VC_BAR_EXTRACT_TO}
-    !insertmacro vcSetBar $R3
-    ; 마지막 파일을 옮긴 그 순간 «확인» 단계로 — 복사가 끝난 직후 첫 파일 작업이 Windows(백신)의 새 파일 검사를 기다려 지금 내용 0.34초,
-    ; 영상을 키운 내용 1.8초 동안 막대가 섰는데, 그동안 단계 문장이 아직 «설치하는 중»이었다(10/28 측정). 기다림이 시작되기 전에 문장을 바꾼다.
-    ${If} $vcCopyDone >= $vcCopyTotal
-      Call vcCheckStage
-    ${EndIf}
-    Pop $R4
-    Pop $R3
-    Pop $R0
-  FunctionEnd
-
-  ; «설치한 파일을 확인하는 중입니다 …» 단계 문장을 한 번만 적는다(마지막 파일을 옮긴 때 — 그때를 못 만나면 복사를 다 마친 뒤 install-files.nsh에서)
+  ; «설치한 파일을 확인하는 중입니다 …» 단계 문장(다 푼 뒤 — install-files.nsh). 다 푼 직후 첫 파일 작업이 Windows(백신)의 새 파일 검사를 기다려
+  ; 막대가 선다(10/28 측정 — 지금 내용 0.34초, 영상을 키운 내용 1.8초). 그 기다림을 이름 붙인 단계로 치른다. 한 번만 적는다.
   Var vcChecking
   Function vcCheckStage
     ${If} $vcChecking != "1"
       StrCpy $vcChecking "1"
       !insertmacro vcStage "설치한 파일을 확인하는 중입니다 …"
     ${EndIf}
-  FunctionEnd
-
-  ; 임시 폴더에 푼 것을 설치 위치로 하나씩 복사한다 — 스택: 상대 경로(""부터).
-  ; 앱 실행 파일(247MB)은 installApplicationFiles가 맨 먼저 따로 복사하므로 여기서는 건너뛴다(install-files.nsh에 이유).
-  Function vcCopyTree
-    Exch $R0
-    Push $R1
-    Push $R2
-    CreateDirectory "$INSTDIR$R0"
-    FindFirst $R1 $R2 "$PLUGINSDIR\7z-out$R0\*.*"
-    ${DoUntil} $R2 == ""
-      ${If} $R2 != "."
-      ${AndIf} $R2 != ".."
-        ${If} ${FileExists} "$PLUGINSDIR\7z-out$R0\$R2\*.*"
-          Push "$R0\$R2"
-          Call vcCopyTree
-        ${ElseIf} "$R0\$R2" != "\${PRODUCT_FILENAME}.exe"
-          Push "$R0\$R2"
-          Call vcCopyOne
-        ${EndIf}
-      ${EndIf}
-      FindNext $R1 $R2
-    ${Loop}
-    FindClose $R1
-    Pop $R2
-    Pop $R1
-    Pop $R0
   FunctionEnd
 
   ; 파일 · 등록 · 바로가기를 마친 뒤: 시작 메뉴에 «Uninstall Voice Cinema»를 더하고, 만든 바로가기를 상자에 적고 끝낸다
@@ -1001,14 +1121,17 @@ Var vcAppAnswer
     ; 다음 화면은 곧바로 지우는 진행 화면이다 — 떠나기 전에 켜진 앱을 묻고(기준 9), «취소»면 이 화면에 남는다
     !define MUI_PAGE_CUSTOMFUNCTION_LEAVE un.vcWelcomeLeave
     !insertmacro MUI_UNPAGE_WELCOME
-    ; 다음은 제거 범위 화면(두 범위가 함께 깔렸을 때만) — 설치기와 같이 아래 안내 칸을 올리고 늘린다(함수 몸은 customUninstallPage)
+    ; 다음은 제거 범위 화면(두 범위가 함께 깔렸을 때만) — 설치기와 같이 아래 안내 칸을 올리고 늘린다(함수 몸은 customUninstallPage).
+    ; 떠날 때는 다음이 진행 화면이라 합성을 켠다(제거 첫 화면 LEAVE와 같다)
     !define MUI_PAGE_CUSTOMFUNCTION_SHOW un.vcModeShow
+    !define MUI_PAGE_CUSTOMFUNCTION_LEAVE un.vcCompOn
     ; 진행 화면 · 완료 화면은 템플릿이 정한 자리에서 «SHOW» 설정과 함수를 붙일 수 없다 — 그 화면을 넣는 MUI 매크로를
     ; «SHOW 설정 + 원래 내용 + 함수»로 바꿔 둔다(un-pages.nsh에 이유)
     !include "${VC_NSIS_DIR}\un-pages.nsh"
 
     Function un.vcGuiInit
       !insertmacro vcHeaderArt
+      Call un.vcZOrder
     FunctionEnd
     Function un.vcWelcomeShow
       !insertmacro vcSidebarArt $mui.WelcomePage.Image $mui.WelcomePage.Image.Bitmap
@@ -1018,6 +1141,8 @@ Var vcAppAnswer
       ${If} $vcAppAnswer == "cancel"
         Abort
       ${EndIf}
+      ; 다음은 진행 화면(또는 제거 범위 화면) — 처음 그려질 때 한 장에(vcCompOn). 멈춤은 안 된다 — MUI가 첫 화면을 닫으며 LockWindow off로 푼다
+      Call un.vcCompOn
     FunctionEnd
   !macroend
 
@@ -1028,6 +1153,8 @@ Var vcAppAnswer
     ; 사용자가 고른 다른 위치(예: D:\Apps\Voice Cinema)의 위 폴더는 비었어도 그대로 둔다 — 이름이 «InKY Film Festival»일 때만 지운다.
     Function un.vcModeShow
       !insertmacro vcModeLabel
+      Push $MultiUser.InstallModePage
+      Call un.vcFreezeUntilShown
     FunctionEnd
     Function un.onUninstSuccess
       ${GetParent} "$INSTDIR" $R0

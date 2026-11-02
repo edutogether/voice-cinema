@@ -33,6 +33,7 @@ param(
   [switch]$AfterCancel,
   [string]$StartApp = '',   # 설치 · 제거기를 띄우기 전에 이 앱을 켜 둔다(기준 9 시험)
   [switch]$RevealDir,       # 위치 화면에서 줄인 경로(«…»)를 눌러 전체 경로가 되는지 찍고 적는다
+  [switch]$NoShots,         # 화면을 찍지 않는다(글 · 안내문 검사는 그대로) — 화면 녹화(installer-screen-record.ps1)와 함께 돌릴 때, 찍기가 창 그리기에 끼어들지 않게
   [int]$Minutes = 8
 )
 # 시험 창을 둘 모니터: 가장 작은 화면(이 PC는 아래 1760×990 · 125% — 위 두 큰 모니터는 사람이 쓴다). 바꿀 때는 여기만 고친다.
@@ -312,6 +313,7 @@ if ($Kind -eq 'uninstall' -and -not $Attach) {
 # PrintWindow에 PW_RENDERFULLCONTENT(2)를 주면 Windows가 화면에 합성한 그대로(투명 바탕 글 칸 포함) 그 창만 그려 준다. 보이는 테두리 안만 남긴다.
 # 배율을 모르는 창(NSIS 설치 창 · 묻는 창)은 그 창이 그리는 원래 크기(100%)로 찍힌다 — 125% 모니터에서 Windows가 늘려 보이는 것보다 1.25배 작다.
 function Capture([IntPtr]$h, [string]$name) {
+  if ($NoShots) { return }
   Start-Sleep -Milliseconds 150
   $s = [W]::Stretch($h)
   $wr = New-Object W+RECT; [W]::GetWindowRect($h, [ref]$wr) | Out-Null
@@ -500,7 +502,8 @@ while ((Get-Date) -lt $until) {
       $new = @(); for ($i = $listSeen; $i -lt $rec.list.count; $i++) { $new += [W]::ListItem($list.H, $i) }
       if ($new.Count) { $rec.newLines = $new; $listSeen = $rec.list.count }
       # 상자 줄은 «설치: / 삭제: 경로» 아니면 한국어 문장(마침표 · …로 끝남)뿐이어야 한다(기준 14)
-      foreach ($line in $new) { if ($line -notmatch '^(설치|삭제): \S' -and $line -notmatch '^[^\x00-\x7F].*[가-힣].*(\.|…)$') { [void]$issues.Add("[진행 상자] 문장도 파일 줄도 아님: $line") } }
+      # 큰 파일을 푸는 동안은 «설치 중: 경로 (NN%)»(11/2 — Poster Studio 설치판과 같다)
+      foreach ($line in $new) { if ($line -notmatch '^(설치|삭제): \S' -and $line -notmatch '^설치 중: \S.* \(\d{1,3}%\)$' -and $line -notmatch '^[^\x00-\x7F].*[가-힣].*(\.|…)$') { [void]$issues.Add("[진행 상자] 문장도 파일 줄도 아님: $line") } }
     }
     $rec.recT = if ($script:recStart) { [math]::Round(((Get-Date) - $script:recStart).TotalSeconds, 3) } else { $null }
     ($rec | ConvertTo-Json -Compress -Depth 5) | Add-Content -Path $trace -Encoding UTF8
@@ -557,7 +560,8 @@ while ((Get-Date) -lt $until) {
   # 둘 다 그 전에 녹화를 끝내고, 이 창은 다시 보지 않는다(새 창이 뜨면 다음 조각으로 녹화한다).
   # «모든 사용자» 설치: 설치 범위 화면에서 «다음»을 누르면 이 창이 숨고 관리자 권한 창이 새로 뜬다(평소 권한 창은 숨은 채 기다린다).
   # 제거기는 화면을 띄우기 전에 관리자 권한으로 다시 뜨므로 이런 일이 없다.
-  $allUsersNext = ($Kind -eq 'install') -and ($Mode -eq 'all') -and [bool]($innerCtls | Where-Object { $_.Text -match '^모든 사용자' -and $_.Visible })
+  # 이 도구가 관리자 권한으로 설치기를 띄웠으면(설치기도 관리자 권한) 다시 뜨지 않고 같은 창이 위치 화면으로 넘어간다 — 그때는 이 창을 계속 본다
+  $allUsersNext = ($Kind -eq 'install') -and ($Mode -eq 'all') -and -not ($elevated -and -not $Attach) -and [bool]($innerCtls | Where-Object { $_.Text -match '^모든 사용자' -and $_.Visible })
   if ($next.Text -match '마침|닫음' -or $allUsersNext) { StopRecord; [void][W]::closed.Add($h); $script:pressed = @{ win = $h; button = $next.H; at = Get-Date } }
   [W]::Press($next.H)
   Start-Sleep -Milliseconds 300

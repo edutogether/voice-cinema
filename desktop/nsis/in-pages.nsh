@@ -19,8 +19,11 @@
 ; 설치 범위 화면(템플릿 PAGE_INSTALL_MODE — customWelcomePage 바로 뒤에 들어간다)이 뜨기 직전(SHOW): 아래 안내 칸을 단추 바로 아래로 올리고 늘린다.
 ; 템플릿은 그 칸을 0u 110u 280u 50u로 만드는데 화면 아래 끝이 140u쯤이라 세 줄만 보인다 — 줄 사이에 빈 줄을 두니(굴림이 맞닿아서)
 ; «…이미 설치되어 있습니다. / (위치) / 예전 것을 지우고 새로 설치합니다.»의 마지막 줄이 잘렸다(10/28 캡처). 단추(30u · 50u, 높이 20u) 아래 75u부터 쓴다.
-; 함수 몸은 그 화면의 변수($MultiUser.InstallModePage)가 생긴 뒤인 installer.nsh customFinishPage에 있다.
+; 함수 몸은 그 화면의 변수($MultiUser.InstallModePage)가 생긴 뒤인 installer.nsh customFinishPage에 있다. 그 함수는 끝에 «새 화면이 뜬 뒤 다시 켜기»를 건다.
+; 떠날 때(«다음», 관리자 권한으로 다시 뜨지 않는 길만 — 템플릿 LEAVE 맨 끝) 그리기를 멈춘다: nsDialogs가 다음 화면(위치)을 만들기 전에 이 화면을 지운다
+; (installer.nsh «화면을 바꿀 때 덜 그린 장이 보이지 않게»).
 !define MUI_PAGE_CUSTOMFUNCTION_SHOW vcModeShow
+!define MUI_PAGE_CUSTOMFUNCTION_LEAVE vcFreeze
 
 !macroundef MUI_PAGE_DIRECTORY
 !macro MUI_PAGE_DIRECTORY
@@ -191,6 +194,8 @@
     !ifdef VC_DIR_PRE
       Call ${VC_DIR_PRE}
     !endif
+    ; 띄우기로 정했으면 칸을 만들기 전에 그리기를 멈춘다(설치 범위 화면 LEAVE에서 이미 멈췄으면 그대로) — 다시 켜는 것은 nsDialogs가 이 화면을 띄운 뒤(아래)
+    Call vcFreeze
     !insertmacro MUI_HEADER_TEXT "$(vcDirTitle)" "$(MUI_TEXT_DIRECTORY_SUBTITLE)"
     nsDialogs::Create 1018
     Pop $R0
@@ -267,6 +272,8 @@
     GetDlgItem $R1 $HWNDPARENT 1
     ${NSD_SetFocus} $R1
     SendMessage $vcDirEdit ${EM_SETSEL} 0 0
+    Push $R0
+    Call vcFreezeUntilShown
     nsDialogs::Show
   FunctionEnd
 
@@ -292,6 +299,8 @@
     ${If} $vcAppAnswer == "cancel"
       Abort
     ${EndIf}
+    ; 다음은 진행 화면 — 처음 그려질 때 한 장에(installer.nsh vcCompOn, 진행 화면을 다 그리면 vcCompositedOff가 끈다)
+    Call vcCompOn
   FunctionEnd
 !macroend
 

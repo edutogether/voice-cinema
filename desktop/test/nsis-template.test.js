@@ -101,6 +101,9 @@ test('설치기 화면 글은 한국어 문장과 «설치: / 삭제: » 줄뿐�
       }
       const fileLine = line.match(/!insertmacro vcFileLine "([^"]*)"/);
       if (fileLine) assert.ok(['설치: ', '삭제: '].includes(fileLine[1]), `${file}: ${line.trim()}`);
+      // 상자 한 줄(vcLine)은 파일 줄 매크로 안 · 큰 파일을 푸는 동안의 «설치 중: 경로 (NN%)»뿐이다
+      const plainLine = line.match(/!insertmacro vcLine "([^"]*)"/);
+      if (plainLine && plainLine[1] !== '${PREFIX}$R0') assert.equal(plainLine[1], '설치 중: $R0 ($R6%)', `${file}: ${line.trim()}`);
       const lang = line.match(/LangString (\w+) \$\{LANG_KOREAN\} "([^"]*)"/);
       const page = line.match(/!define (MUI_\w+_TEXT\w*) "([^"]*)"/);
       for (const [, name, text] of [lang, page].filter(Boolean)) {
@@ -130,6 +133,71 @@ test('설치기 화면 글은 한국어 문장과 «설치: / 삭제: » 줄뿐�
   }
   const timing = read(path.join(dir, 'installer.nsh')).match(/!macro vcT LABEL\n([\s\S]*?)!macroend/)[1];
   assert.match(timing, /^\s*!ifdef VC_TIMING\n[\s\S]*FileWrite \$8[\s\S]*!endif\n$/);
+});
+
+// 11/2 대표님 «Poster Studio 설치판에서 문제 됐던 것들을 똑같이»(팀장 전달) — 화면 넘김은 그쪽(2fabd75)과 같은 자리에서 멈추고 · 다시 켜고 · 합성한다
+const fnBody = (text, name) => {
+  const m = text.match(new RegExp(`Function ${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\n([\\s\\S]*?)FunctionEnd`));
+  assert.ok(m, `함수 ${name} 없음`);
+  return m[1];
+};
+test('화면 넘김은 그리기 멈춤 · 다시 켬 · 합성으로 — Poster Studio 설치판과 같은 자리다', () => {
+  const installer = read(path.join(HERE, 'nsis', 'installer.nsh'));
+  const dir = read(path.join(HERE, 'nsis', 'in-pages.nsh'));
+  const un = read(path.join(HERE, 'nsis', 'un-pages.nsh'));
+  // 다시 켤 때는 새 화면을 맨 위로 올리고, 합성으로 한 장에 그린 뒤 그리기를 멈춘 채로 합성을 끈다(그냥 끄면 보통 방식으로 다시 그린다)
+  const thaw = fnBody(installer, '${UN}vcThaw').replace(/\s*;[^\n]*/g, '');
+  const steps = ['ShowWindow $0 8', 'SetWindowPos(p r0, p 0', 'SetWindowLongW(p $HWNDPARENT, i -20, i r2)', '${VC_WM_SETREDRAW} 1 0', 'RedrawWindow',
+    '${VC_WM_SETREDRAW} 0 0', 'SetWindowLongW(p $HWNDPARENT, i -20, i r1)', '${VC_WM_SETREDRAW} 1 0'];
+  let at = -1;
+  for (const s of steps) { const i = thaw.indexOf(s, at + 1); assert.ok(i > at, `vcThaw 차례: ${s}`); at = i; }
+  // 멈춤은 창이 보일 때만(첫 화면은 멈추지 않는다)
+  assert.match(fnBody(installer, '${UN}vcFreeze'), /IsWindowVisible\(p \$HWNDPARENT\)[\s\S]*\$\{If\} \$0 <> 0\n\s+SendMessage \$HWNDPARENT \$\{VC_WM_SETREDRAW\} 0 0/);
+  // 창이 뜰 때 칸 겹침 순서(머리 바탕 · 선 맨 아래 + WS_CLIPSIBLINGS)
+  for (const f of ['vcGuiInit', 'un.vcGuiInit']) assert.match(fnBody(installer, f), new RegExp(`vcHeaderArt\\n\\s+Call ${f.startsWith('un.') ? 'un\\.' : ''}vcZOrder`));
+  // 설치기: 설치 범위(뜬 뒤 다시 켬 · 떠날 때 멈춤) → 위치(만들기 전 멈춤 · nsDialogs::Show 바로 앞에서 다시 켜기 · 떠날 때 합성) → 진행 → 완료(뜬 뒤 다시 켬 · 떠날 때 멈춤)
+  assert.match(dir, /!define MUI_PAGE_CUSTOMFUNCTION_SHOW vcModeShow\n!define MUI_PAGE_CUSTOMFUNCTION_LEAVE vcFreeze\n/);
+  assert.match(fnBody(installer, 'vcModeShow'), /Push \$MultiUser\.InstallModePage\n\s+Call vcFreezeUntilShown/);
+  const dirShow = fnBody(dir, 'vcDirShow');
+  assert.ok(dirShow.indexOf('Call vcFreeze\n') > dirShow.indexOf('Call ${VC_DIR_PRE}') && dirShow.indexOf('Call vcFreeze\n') < dirShow.indexOf('nsDialogs::Create'));
+  assert.match(dirShow, /Push \$R0\n\s+Call vcFreezeUntilShown\n\s+nsDialogs::Show/);
+  assert.match(fnBody(dir, 'vcDirLeave'), /Call vcCompOn\n\s*$/);
+  assert.match(installer, /!define MUI_PAGE_CUSTOMFUNCTION_LEAVE vcFreeze\n\s+!insertmacro MUI_PAGE_FINISH/);
+  assert.match(fnBody(installer, 'vcFinishShow'), /Push \$mui\.FinishPage\n\s+Call vcFreezeUntilShown/);
+  // 제거기: 첫 화면 · 제거 범위를 떠날 때 합성(다음이 진행 화면) → 완료(뜬 뒤 다시 켬 · 떠날 때 멈춤)
+  assert.match(fnBody(installer, 'un.vcWelcomeLeave'), /Call un\.vcCompOn\n\s*$/);
+  assert.match(installer, /!define MUI_PAGE_CUSTOMFUNCTION_SHOW un\.vcModeShow\n\s+!define MUI_PAGE_CUSTOMFUNCTION_LEAVE un\.vcCompOn\n/);
+  assert.match(fnBody(installer, 'un.vcModeShow'), /Push \$MultiUser\.InstallModePage\n\s+Call un\.vcFreezeUntilShown/);
+  assert.match(un, /!define MUI_PAGE_CUSTOMFUNCTION_LEAVE un\.vcFreeze\n/);
+  assert.match(fnBody(un, 'un.vcFinishShow'), /Push \$mui\.FinishPage\n\s+Call un\.vcFreezeUntilShown/);
+  // 설치 · 제거 단계 끝: 100%를 1초 보인 뒤 멈춘다(«닫음» → «마침» 사이 한 장)
+  assert.match(macroBody(installer, 'vcFinishProgress'), /Sleep 1000\n\s+Call \$\{VC_FN\}vcFreeze\n/);
+  // «마침»은 창을 숨기지 않고 완료 화면 그대로 닫는다
+  assert.doesNotMatch(installer + un, /\bHideWindow\b/);
+});
+
+test('앱 파일은 설치 위치에 바로 풀며 «설치: …» 줄을 적는다 — 표는 빌드 때 그 7z에서 만든다', () => {
+  // 임시 폴더에 풀어 옮기지 않는다(그동안 줄이 없었다)
+  const body = macroBody(ours, 'installApplicationFiles');
+  assert.doesNotMatch(ours.replace(/^\s*;.*$/gm, ''), /7z-out|CopyFiles|CopyFileW/);
+  assert.match(body, /File "\/oname=\$PLUGINSDIR\\vc-7z-list\.txt" "\$\{APP_64\}\.vc-list\.txt"/);
+  assert.match(body, /SetOutPath \$INSTDIR\n\s+Call vcExtractBegin\n\s+GetFunctionAddress \$R9 vcExtractProgress\n\s+Nsis7z::ExtractWithCallback "\$PLUGINSDIR\\app-\$packageArch\.7z" \$R9\n\s+Call vcExtractEnd/);
+  // 표 만들기가 실패하면 빌드가 멈춘다(!system … = 0)
+  assert.match(ours, /!system 'node "\$\{VC_NSIS_DIR\}\\vc-7z-list\.mjs" "\$\{APP_64\}" "\$\{APP_64\}\.vc-list\.txt"' = 0/);
+  assert.ok(fs.existsSync(path.join(HERE, 'nsis', 'vc-7z-list.mjs')));
+  // 영상도 7z에 든다 — 기본값(이미 압축된 파일은 7z에서 빼 따로 씀)이면 영상을 쓰는 동안 줄 · 막대가 서 있다
+  assert.match(read(path.join(HERE, 'electron-builder.yml')), /^ {2}preCompressedFileExtensions: \[\]$/m);
+  // 줄은 표의 «끝»을 지난 파일만(앞질러 나오지 않음) · 줄 없이 오래 풀리는 큰 파일은 «설치 중: … (NN%)»
+  const installer = read(path.join(HERE, 'nsis', 'installer.nsh'));
+  assert.match(fnBody(installer, 'vcExtractFlush'), /\$\{OrIf\} \$vcExEnd > \$R8\n\s+\$\{ExitDo\}[\s\S]*vcFileLine "설치: " "\$INSTDIR\\\$vcExPath"/);
+  assert.match(fnBody(installer, 'vcExtractProgress'), /\$\{AndIf\} \$vcExSize >= \$\{VC_EX_PART_KB\}[\s\S]*Call vcExtractPartLine/);
+});
+
+test('조용한 설치(/S)도 «나만» 위치가 «InKY Film Festival» 아래다(예전 위치 · /D가 없을 때)', () => {
+  const installer = read(path.join(HERE, 'nsis', 'installer.nsh'));
+  const init = macroBody(installer.replace(/^ {2}/gm, ''), 'customInit');
+  assert.match(init, /\$\{If\} \$\{Silent\}\n\s+\$\{AndIf\} \$installMode == "CurrentUser"/);
+  assert.match(init, /\$\{If\} \$0 == ""\n\s+\$\{AndIf\} \$1 == ""\n\s+\$\{GetParent\} "\$INSTDIR" \$0\n\s+StrCpy \$INSTDIR "\$0\\\$\{MENU_FILENAME\}\\\$\{APP_FILENAME\}"/);
 });
 
 test('바꿔 끼운 매크로가 부르는 템플릿 매크로가 있다', () => {
