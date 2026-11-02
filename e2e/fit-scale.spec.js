@@ -65,3 +65,32 @@ test('창 크기가 바뀌면 다시 맞춘다 — 2560에서 1280×587로 줄�
   expect(await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight)).toBe(0);
   await page.close();
 });
+
+// 창을 줄이는 순간 앞 크기의 화면이 넘쳐 세로 스크롤 막대가 잠깐 생기고, fit.js가 그 폭을 뺀 너비로 비율을 정한 채 남던 결함
+// (10/28 설치판에서 발견 — 웹에도 있다, 1200×900 → 1200×800에서 0.8675, 새로 열면 0.8785). Playwright 헤드리스는 기본으로
+// 스크롤 막대를 숨겨(--hide-scrollbars) 이 모양이 드러나지 않는다 — 이 검사만 막대를 켠 브라우저를 따로 띄운다.
+test('스크롤 막대가 있는 창을 줄여도 비율이 같은 크기로 새로 연 화면과 같다 — 1200×900에서 1200×800', async ({ playwright }) => {
+  const { baseURL } = test.info().project.use;
+  const browser = await playwright.chromium.launch({ ignoreDefaultArgs: ['--hide-scrollbars'] });
+  const zoom = (page) => page.evaluate(() => document.body.style.zoom);
+  const appH = (page) => page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-h')));
+  try {
+    const fresh = await browser.newPage({ viewport: { width: 1200, height: 800 } });
+    await fresh.goto(`${baseURL}/`);
+    await fresh.locator('#splash').waitFor({ state: 'detached' });
+    const expected = await zoom(fresh);
+    await fresh.close();
+
+    const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
+    await page.goto(`${baseURL}/`);
+    await page.locator('#splash').waitFor({ state: 'detached' });
+    const before = await appH(page);
+    await page.setViewportSize({ width: 1200, height: 800 });
+    // 줄인 뒤 첫 맞춤(기준 화면 높이가 바뀜)을 기다린 다음, 막대가 사라진 뒤의 비율을 본다
+    await expect.poll(() => appH(page)).not.toBe(before);
+    await expect.poll(() => zoom(page)).toBe(expected);
+    expect(await page.evaluate(() => document.documentElement.clientWidth)).toBe(1200);
+  } finally {
+    await browser.close();
+  }
+});
