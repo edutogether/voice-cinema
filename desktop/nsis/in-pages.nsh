@@ -169,7 +169,67 @@
     SendMessage $vcDirEdit ${EM_SETSEL} -1 -1
   FunctionEnd
 
-  ; 찾아보기: 고른 폴더 아래에 앱 이름 폴더를 붙인다(NSIS 위치 화면과 같다 — 이미 그 이름으로 끝나면 그대로)
+  ; 설치 위치를 제거해도 안전한 폴더로 맞춘다 — 제거기는 설치 폴더를 통째로 지우므로(un.vcDeleteTree · 템플릿 RMDir /r), 사용자 폴더에 바로 깔리면
+  ; 그 안의 사용자 파일까지 지워진다(11/2 Poster Studio 종합감사 🔴 — 이 설치기는 폴더 칸에 직접 쓴 경로를 검사 없이 그대로 썼다).
+  ; 마지막 폴더 이름이 정확히 앱 이름이고 그 폴더를 써도 될 때(vcDirUsable)만 그대로 두고, 아니면 앱 이름 폴더를 붙인다.
+  ; 붙인 폴더도 다른 파일이 든 폴더일 수 있으므로(예: D:\ → D:\Voice Cinema가 선생님의 영상 폴더) 부르는 쪽이 결과를 vcDirUsable로 한 번 더 본다.
+  ; 스택: 경로 → 스택: 설치할 경로. 찾아보기 · «설치» · 조용한 설치(/D, customInit)가 함께 쓴다
+  Function vcSafeInstDir
+    Exch $R0
+    Push $R1
+    StrCpy $R1 $R0 1 -1
+    ${If} $R1 == "\"
+      StrCpy $R0 $R0 -1
+    ${EndIf}
+    ${GetFileName} $R0 $R1
+    ${If} $R1 == "${APP_FILENAME}"
+      Push $R0
+      Call vcDirUsable
+      Pop $R1
+    ${Else}
+      StrCpy $R1 "busy"
+    ${EndIf}
+    ${If} $R1 != "ok"
+      StrCpy $R0 "$R0\${APP_FILENAME}"
+    ${EndIf}
+    Pop $R1
+    Exch $R0
+  FunctionEnd
+
+  ; 이 폴더에 설치해도 되는가 — 없거나 · 비었거나 · 우리 설치(실행 파일 · 제거기가 있음)면 «ok», 다른 파일이 들어 있으면 «busy»
+  ; (제거기가 그 폴더를 통째로 지우므로 다른 파일이 든 폴더에는 깔지 않는다). 스택: 경로 → 스택: «ok» | «busy»
+  Function vcDirUsable
+    Exch $R0
+    Push $R1
+    Push $R2
+    Push $R3
+    ${IfNot} ${FileExists} "$R0\*.*"
+      StrCpy $R3 "ok"
+    ${ElseIf} ${FileExists} "$R0\${APP_EXECUTABLE_FILENAME}"
+    ${OrIf} ${FileExists} "$R0\${UNINSTALL_FILENAME}"
+      StrCpy $R3 "ok"
+    ${Else}
+      ; 비었는가 — «.» · «..» 말고 하나라도 있으면 다른 파일이 든 폴더로 본다
+      StrCpy $R3 "ok"
+      FindFirst $R1 $R2 "$R0\*.*"
+      ${DoUntil} $R2 == ""
+        ${If} $R2 != "."
+        ${AndIf} $R2 != ".."
+          StrCpy $R3 "busy"
+          ${ExitDo}
+        ${EndIf}
+        FindNext $R1 $R2
+      ${Loop}
+      FindClose $R1
+    ${EndIf}
+    StrCpy $R0 $R3
+    Pop $R3
+    Pop $R2
+    Pop $R1
+    Exch $R0
+  FunctionEnd
+
+  ; 찾아보기: 고른 폴더 아래에 앱 이름 폴더를 붙인다(NSIS 위치 화면과 같다 — 이미 그 이름의 빈 폴더 · 우리 설치면 그대로, vcSafeInstDir)
   Function vcDirBrowse
     Pop $R9
     ${NSD_GetText} $vcDirEdit $R8
@@ -177,14 +237,9 @@
     Pop $R8
     ${If} $R8 != "error"
     ${AndIf} $R8 != ""
-      ${GetFileName} $R8 $R7
-      ${If} $R7 != "${APP_FILENAME}"
-        StrCpy $R7 $R8 1 -1
-        ${If} $R7 == "\"
-          StrCpy $R8 $R8 -1
-        ${EndIf}
-        StrCpy $R8 "$R8\${APP_FILENAME}"
-      ${EndIf}
+      Push $R8
+      Call vcSafeInstDir
+      Pop $R8
       ${NSD_SetText} $vcDirEdit $R8
       ShowWindow $vcDirShort ${SW_HIDE}
     ${EndIf}
@@ -282,9 +337,18 @@
   ; 실제로 지우는 것은 진행 화면에서다(old-version.nsh — 지우는 줄 «삭제: …»부터 보인다).
   Function vcDirLeave
     ${NSD_GetText} $vcDirEdit $R0
-    StrCpy $R1 $R0 1 -1
-    ${If} $R1 == "\"
-      StrCpy $R0 $R0 -1
+    ; 칸에 직접 쓴 경로도 찾아보기와 같은 규칙으로 — 사용자 폴더에 바로 깔리지 않게(제거가 그 폴더를 통째로 지운다)
+    Push $R0
+    Call vcSafeInstDir
+    Pop $R0
+    ${NSD_SetText} $vcDirEdit $R0
+    ; 앱 이름 폴더를 붙인 곳도 다른 파일이 든 폴더면 깔지 않고 이 화면에 남는다(제거가 그 폴더를 통째로 지운다)
+    Push $R0
+    Call vcDirUsable
+    Pop $R1
+    ${If} $R1 != "ok"
+      MessageBox MB_OK|MB_ICONEXCLAMATION "$(vcDirBusy)"
+      Abort
     ${EndIf}
     StrCpy $INSTDIR $R0
     ReadRegStr $vcInstalledString HKCU "${UNINSTALL_REGISTRY_KEY}" UninstallString

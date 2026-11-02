@@ -16,9 +16,9 @@ const PARTITION = 'persist:voice-cinema';
 
 let mainWindow = null;
 
-/** 앱 밖 주소(공개 영상 주소 등)는 기본 브라우저로 연다. */
+/** 앱 밖 주소(공개 영상 주소 등)는 기본 브라우저로 연다 — https만(바깥 링크는 https만 쓴다는 org 보안 기준, 11/2 종합감사). */
 function openOutside(url) {
-  if (/^https?:\/\//.test(url)) shell.openExternal(url);
+  if (/^https:\/\//.test(url)) shell.openExternal(url);
 }
 
 function setUpSession() {
@@ -65,12 +65,13 @@ function createWindow() {
     title: APP_NAME,
     width: 1366,
     height: 860,
-    // 창 안쪽 최소 크기(10/28 기준 16): 웹이 PC 화면으로 맞춰지는 가장 작은 크기다 — 폭 1024 이상(public/fit.js가 그보다 좁으면 태블릿 · 휴대폰
-    // 화면으로 바꾸고, 높이도 600보다 낮으면 맞춤을 끈다)에 세로 스크롤 막대 몫 16, 높이는 글자가 기준(720)의 75% 아래로 줄지 않는 540.
-    // 예전 값(창 800×600 — 안쪽 784×561)은 웹이 맞춤을 끄는 크기라 화면이 깨졌다.
+    // 창 안쪽 최소 크기: 현장 노트북(1366×768) 화면 반쪽에 붙여도 들어가게(안쪽 약 667×700 — 11/2 Poster Studio 종합감사 🟠, 예전 1040×540은
+    // 반 화면에 안 들어갔다). public/fit.js는 폭 1024 미만이면 세로 창을 태블릿 세로(768)로, 가로 창을 태블릿 가로(1024)로 맞추고, 짧은 변이 600보다
+    // 작으면 휴대폰 화면 · 맞춤 끔으로 바뀐다(예전 값 창 800×600 · 안쪽 784×561은 그 구간이라 화면이 깨졌다). 600×600으로 두면 세로 스크롤 막대(약 15px)가
+    // 생기는 순간 폭이 586이 되어 휴대폰 화면으로 넘어가 같은 크기에서 화면이 둘로 갈렸다(11/2 창 크기 확인) — 막대가 생겨도 600 아래로 내려가지 않게 640.
     useContentSize: true,
-    minWidth: 1040,
-    minHeight: 540,
+    minWidth: 640,
+    minHeight: 640,
     show: false,
     backgroundColor: '#ffffff', // 첫 화면(스플래시)의 바탕 — 화면이 그려지기 전에 다른 색이 번쩍이지 않게
     webPreferences: { partition: PARTITION, contextIsolation: true, sandbox: true, nodeIntegration: false, spellcheck: false },
@@ -126,9 +127,15 @@ if (!app.requestSingleInstanceLock()) {
       event.preventDefault();
       openOutside(url);
     });
-    // 크롬이라면 «앗, 이런!» 화면과 새로고침 단추가 뜰 자리다 — 설치판은 빈 창으로 남지 않게 다시 연다.
+    // 크롬이라면 «앗, 이런!» 화면과 새로고침 단추가 뜰 자리다 — 설치판은 빈 창으로 남지 않게 다시 연다. 다만 화면이 뜨자마자 또 죽는
+    // 경우(메모리 부족 · 그래픽 드라이버)에 끝없이 다시 열며 노트북을 붙잡지 않게, 1분 안에 세 번까지만 다시 연다(11/2 종합감사)
+    const crashes = [];
     contents.on('render-process-gone', (_e, details) => {
-      if (details.reason !== 'clean-exit') contents.reload();
+      if (details.reason === 'clean-exit') return;
+      const now = Date.now();
+      crashes.push(now);
+      while (crashes.length && now - crashes[0] > 60_000) crashes.shift();
+      if (crashes.length <= 3) contents.reload();
     });
   });
 

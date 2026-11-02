@@ -83,6 +83,8 @@
     ; 이미 설치되어 있을 때(기준 10 — 팀장 전달 문구 그대로) · 예전 판 제거가 안 됐을 때(관리자 권한을 거절한 경우 포함)
     LangString vcAlreadyInstalled ${LANG_KOREAN} "${PRODUCT_NAME}가 이미 설치되어 있습니다.$\r$\n지우고 새로 설치할까요?"
     LangString vcOldRemoveFailed ${LANG_KOREAN} "예전 ${PRODUCT_NAME}를 지우지 못했습니다.$\r$\n다시 시도할까요?"
+    ; 설치할 폴더에 다른 파일이 들어 있을 때(제거가 그 폴더를 통째로 지우므로 깔지 않는다 — in-pages.nsh vcDirUsable)
+    LangString vcDirBusy ${LANG_KOREAN} "이 폴더에는 다른 파일이 들어 있어 설치할 수 없습니다.$\r$\n빈 폴더나 다른 위치를 골라 주세요."
   !else
     LangString whichInstallationShouldBeRemoved ${LANG_KOREAN} "제거할 설치를 골라 주세요."
     ; 제거 범위 화면(두 범위가 함께 깔렸을 때만 뜸) — 기본 번역의 «\n»은 줄바꿈이 아니라 글자 그대로 찍힌다
@@ -224,6 +226,12 @@
   System::Call "user32::ReleaseDC(p r0, p r4)"
   System::Call "*$5(i .r1)"
   System::Free $5
+  ; 흐린 글 칸(WS_DISABLED — 1028)은 Windows가 흰 글을 1화소 오른쪽 아래에 한 번 더 그리므로 1화소 더 둔다(딱 맞추면 마지막 글자 오른쪽 흰 테가 잘린다 — Poster Studio c524c24)
+  System::Call "user32::GetWindowLongW(p r0, i -16) i .r2"
+  IntOp $2 $2 & 0x08000000
+  ${If} $2 <> 0
+    IntOp $1 $1 + 1
+  ${EndIf}
   System::Call "*(i 0, i 0, i 0, i 0) p .r5"
   System::Call "user32::GetWindowRect(p r0, p r5)"
   System::Call "*$5(i, i .r2, i, i .r3)"
@@ -899,6 +907,22 @@ Var vcAppAnswer
         StrCpy $INSTDIR "$0\${MENU_FILENAME}\${APP_FILENAME}"
       ${EndIf}
       Pop $1
+      Pop $0
+    ${EndIf}
+    ; 조용한 설치에 /D로 사용자 폴더를 주어도 그 폴더에 바로 깔지 않는다 — 화면 설치와 같은 규칙(in-pages.nsh vcSafeInstDir, 제거가 설치 폴더를 통째로 지운다)
+    ${If} ${Silent}
+      Push $INSTDIR
+      Call vcSafeInstDir
+      Pop $INSTDIR
+      ; 붙인 폴더도 다른 파일이 든 폴더면 깔지 않고 오류 코드 2로 끝낸다(조용한 설치는 물을 수 없다)
+      Push $0
+      Push $INSTDIR
+      Call vcDirUsable
+      Pop $0
+      ${If} $0 != "ok"
+        SetErrorLevel 2
+        Quit
+      ${EndIf}
       Pop $0
     ${EndIf}
   !macroend

@@ -72,16 +72,17 @@ test('설치기에는 첫 화면(환영)이 없고, 위치 화면을 떠날 때 
   assert.match(page, /Page custom vcDirShow vcDirLeave/);
   assert.match(page.match(/Function vcDirShow\n([\s\S]*?)FunctionEnd/)[1], /^\s+Call \$\{VC_DIR_PRE\}/m);
   const leave = page.match(/Function vcDirLeave\n([\s\S]*?)FunctionEnd/)[1];
-  // 설치 위치는 폴더 칸의 전체 경로 → 이미 설치(두 범위) → 켜진 앱 순서, «취소»는 그 화면에 남는다(Abort)
+  // 설치 위치는 폴더 칸의 전체 경로 → (다른 파일이 든 폴더면 그 화면에 남음) → 이미 설치(두 범위) → 켜진 앱 순서, «취소»는 그 화면에 남는다(Abort)
+  assert.ok(leave.indexOf('vcDirBusy') < leave.indexOf('StrCpy $INSTDIR'));
   assert.ok(leave.indexOf('StrCpy $INSTDIR') < leave.indexOf('vcAlreadyInstalled'));
   assert.ok(leave.indexOf('HKCU') < leave.indexOf('vcAlreadyInstalled') && leave.indexOf('HKLM') < leave.indexOf('vcAlreadyInstalled'));
   assert.ok(leave.indexOf('vcAlreadyInstalled') < leave.indexOf('vcCloseRunningApp'));
-  assert.equal((leave.match(/Abort/g) ?? []).length, 2);
+  assert.equal((leave.match(/Abort/g) ?? []).length, 3);
 });
 
 // 화면 · 묻는 창 · 진행 상자에는 한국어 문장과 «설치: / 삭제: 경로» 줄만 나온다(기준 6 · 14) — 기록용 영어 · 숫자(10/28 «[t] old uninstalled»)가 다시 들어오지 않게
 // 묻는 창(MessageBox)에 쓰는 문구 — 설치 창 안내문과 달리 Windows 글꼴로 그려 줄 간격이 있다
-const BOXES = new Set(['appRunning', 'appCannotBeClosed', 'vcAlreadyInstalled', 'vcOldRemoveFailed', 'uninstallFailed', 'decompressionFailed', 'loginWithAdminAccount']);
+const BOXES = new Set(['appRunning', 'appCannotBeClosed', 'vcAlreadyInstalled', 'vcOldRemoveFailed', 'vcDirBusy', 'uninstallFailed', 'decompressionFailed', 'loginWithAdminAccount']);
 test('설치기 화면 글은 한국어 문장과 «설치: / 삭제: » 줄뿐이다', () => {
   const dir = path.join(HERE, 'nsis');
   const files = fs.readdirSync(dir).filter((f) => f.endsWith('.nsh'));
@@ -234,4 +235,29 @@ test('화면 훅이 그대로 있다(첫 화면 · 위치 뒤 · 완료 · 제�
   const un = assisted.slice(assisted.indexOf('!insertmacro customUnWelcomePage'));
   const i = (s) => un.indexOf(s);
   assert.ok(i('PAGE_INSTALL_MODE') < i('MUI_UNPAGE_INSTFILES') && i('MUI_UNPAGE_INSTFILES') < i('MUI_UNPAGE_FINISH'));
+});
+
+test('설치 위치는 제거해도 안전한 폴더로 — 사용자 폴더에 바로 깔지 않는다(찾아보기 · «설치» · 조용한 설치 /D 모두)', () => {
+  const installer = read(path.join(HERE, 'nsis', 'installer.nsh'));
+  const dir = read(path.join(HERE, 'nsis', 'in-pages.nsh'));
+  // 제거기는 설치 폴더를 통째로 지운다(un.vcDeleteTree · 템플릿 RMDir /r) — 그래서 마지막 폴더 이름이 앱 이름이고 없거나 · 비었거나 · 우리 설치일 때만 그대로
+  const safe = fnBody(dir, 'vcSafeInstDir');
+  assert.match(safe, /\$\{If\} \$R1 == "\$\{APP_FILENAME\}"\n\s+Push \$R0\n\s+Call vcDirUsable/);
+  assert.match(safe, /\$\{If\} \$R1 != "ok"\n\s+StrCpy \$R0 "\$R0\\\$\{APP_FILENAME\}"/);
+  // 써도 되는 폴더: 없거나 · 우리 설치(실행 파일 · 제거기) · 비었음 — 하나라도 다른 것이 들어 있으면 «busy»
+  const usable = fnBody(dir, 'vcDirUsable');
+  assert.match(usable, /\$\{IfNot\} \$\{FileExists\} "\$R0\\\*\.\*"\n\s+StrCpy \$R3 "ok"/);
+  assert.match(usable, /\$\{FileExists\} "\$R0\\\$\{APP_EXECUTABLE_FILENAME\}"\n\s+\$\{OrIf\} \$\{FileExists\} "\$R0\\\$\{UNINSTALL_FILENAME\}"/);
+  assert.match(usable, /FindFirst \$R1 \$R2 "\$R0\\\*\.\*"[\s\S]*StrCpy \$R3 "busy"[\s\S]*FindClose/);
+  for (const [text, name] of [[dir, 'vcDirBrowse'], [dir, 'vcDirLeave']]) assert.match(fnBody(text, name), /Call vcSafeInstDir\n\s+Pop \$R[08]/, name);
+  // 붙인 결과도 다시 본다 — 다른 파일이 든 폴더면 화면 설치는 묻고 그 화면에 남고, 조용한 설치는 오류 코드 2로 끝낸다
+  assert.match(fnBody(dir, 'vcDirLeave'), /Call vcDirUsable\n\s+Pop \$R1\n\s+\$\{If\} \$R1 != "ok"\n\s+MessageBox MB_OK\|MB_ICONEXCLAMATION "\$\(vcDirBusy\)"\n\s+Abort/);
+  const init = installer.match(/!macro customInit\n([\s\S]*?)!macroend/)[1];
+  assert.match(init, /\$\{If\} \$\{Silent\}\n\s+Push \$INSTDIR\n\s+Call vcSafeInstDir\n\s+Pop \$INSTDIR/);
+  assert.match(init, /Call vcDirUsable\n\s+Pop \$0\n\s+\$\{If\} \$0 != "ok"\n\s+SetErrorLevel 2\n\s+Quit/);
+});
+
+test('앱 창 최소 크기는 640×640 — 현장 노트북 반 화면에 들어가고, 스크롤 막대가 생겨도 짧은 변이 600(휴대폰 화면) 아래로 내려가지 않는다', () => {
+  const main = read(path.join(HERE, 'main.js'));
+  assert.match(main, /useContentSize: true,\n\s+minWidth: 640,\n\s+minHeight: 640,/);
 });

@@ -23,17 +23,21 @@ const EXE = process.env.VC_DESKTOP_EXE ?? path.join(DESKTOP, 'release', 'win-unp
 const out = path.resolve(process.argv[2] ?? 'resize-out');
 mkdirSync(out, { recursive: true });
 // 'max' = 최대화, 'restore' = 최대화 풀기(그 전 크기로), 그 밖은 창 안쪽 크기(CSS px)
-const STEPS = ['max', 'restore', '1100x700', '1100x620', '1040x540', '1250x660', 'max', 'restore'];
+// 667×700 = 현장 노트북(1366×768) 반 화면에 붙인 안쪽, 640×640 = 최소(11/2 — 예전 최소 1040×540은 반 화면에 안 들어갔다), 760×660 = 태블릿 가로로 맞추는 창
+const STEPS = ['max', 'restore', '1100x700', '1100x660', '667x700', '640x640', '760x660', '1250x660', 'max', 'restore'];
 const STAGES = ['1-home', '2-studio', '2-recorded', '3-result'];
 
+// VC_SCALE=1.5 · 2 · 3 — Windows 배율을 바꾸지 않고(시스템 설정) 앱 화면 배율만 그 값으로 띄운다(Chromium --force-device-scale-factor)
+const SCALE = process.env.VC_SCALE;
 const app = await _electron.launch({
   executablePath: EXE,
-  args: [`--user-data-dir=${path.join(out, 'profile')}`, '--mute-audio', '--use-fake-device-for-media-stream'],
+  args: [`--user-data-dir=${path.join(out, 'profile')}`, '--mute-audio', '--use-fake-device-for-media-stream', ...(SCALE ? [`--force-device-scale-factor=${SCALE}`] : [])],
   env: { ...process.env, VC_TEST_SMALLEST_DISPLAY: '1' },
 });
 const report = { steps: {}, drag: [], monitors: [] };
 const win = (fn, arg) => app.evaluate(({ BrowserWindow }, [src, a]) => new Function('w', 'a', src)(BrowserWindow.getAllWindows()[0], a), [fn, arg]);
-// 화면 맞춤(public/fit.js)이 지금 크기에서 정할 비율 — fit.js와 같은 셈(폭 = html 폭, 높이 = 100svh 상자). PC(폭 1024 이상 · 가로) 기준 1366 × 720.
+// 화면 맞춤(public/fit.js)이 지금 크기에서 정할 비율 — fit.js와 같은 셈(폭 = html 폭, 높이 = 100svh 상자). PC(폭 1024 이상 · 가로)는 1366, 그보다 좁거나
+// 세로인 창은 짧은 변이 600 이상이면 태블릿(세로 768 · 가로 1024), PC · 태블릿은 높이 720에도 맞춘다(마우스 창이라 터치 판정은 없다).
 const sizeNow = () => {
   const probe = document.createElement('div');
   probe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:100svh;visibility:hidden';
@@ -43,7 +47,11 @@ const sizeNow = () => {
   const w = document.documentElement.clientWidth;
   // 비율은 fit.js가 그대로 적어 두는 --fit으로 읽는다 — body.style.zoom 글자는 유효숫자 6자리로 잘려(1.0022223 → «1.00222») 같은 값도 어긋나 보인다
   const zoom = Number(getComputedStyle(document.documentElement).getPropertyValue('--fit').trim() || '1');
-  const want = Math.min(w / 1366, h / 720);
+  const portrait = h >= w;
+  let base = 1366;
+  if (portrait || w < 1024) base = Math.min(w, h) >= 600 ? (portrait ? 768 : 1024) : (portrait ? 390 : 0);
+  let want = base ? w / base : 1;
+  if (base && base !== 390) want = Math.min(want, h / 720);
   return { w, h, inner: [innerWidth, innerHeight], zoom: +zoom.toFixed(6), want: +want.toFixed(6), fits: Math.abs(zoom - want) < 1e-6 };
 };
 let failures = 0;
@@ -111,7 +119,7 @@ try {
     }
   }
 
-  // 끌어서 바꾸기(첫 화면): 1390×700 → 1040×540 → 1390×700을 10px씩(0.03초 간격) — 창 캡처로 녹화하며 걸음마다 비율을 잰다
+  // 끌어서 바꾸기(첫 화면): 1390×700 → 650×640(반 화면보다 좁게) → 1390×700을 20px씩(0.03초 간격) — 창 캡처로 녹화하며 걸음마다 비율을 잰다
   await enter('1-home');
   await setStep('restore');
   await win('w.setContentSize(1390, 700)');
@@ -120,7 +128,7 @@ try {
   const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', `gfxcapture=hwnd=${hwnd}:capture_cursor=0:max_framerate=30,hwdownload,format=bgra`, '-fps_mode', 'cfr', '-r', '30', '-c:v', 'ffv1', path.join(out, 'drag.mkv')], { stdio: ['pipe', 'ignore', 'ignore'], windowsHide: true });
   await page.waitForTimeout(1200);
   const path1 = [];
-  for (let k = 0; k <= 35; k++) path1.push([1390 - k * 10, 700 - Math.round(k * 160 / 35)]);
+  for (let k = 0; k <= 37; k++) path1.push([1390 - k * 20, 700 - Math.round(k * 60 / 37)]);
   for (const [cw, ch] of [...path1, ...path1.slice().reverse()]) {
     await win('w.setContentSize(a[0], a[1])', [cw, ch]);
     await page.waitForTimeout(30);
