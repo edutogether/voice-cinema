@@ -1,15 +1,3 @@
-/* 완성 화면에서 사용하는 공용 머리말. */
-.cinema-header { display:flex; align-items:center; justify-content:space-between; gap:28px; min-height:96px; border-bottom:1px solid #333633; }
-.cinema-wordmark { display:flex; align-items:center; gap:12px; font-size:1.5rem; font-weight:700; letter-spacing:-.035em; white-space:nowrap; }
-.cinema-wordmark img { width:36px; height:36px; }
-.cinema-wordmark strong { font-weight:700; }
-.cinema-wordmark small { display:block; margin-top:5px; font-size:.75rem; font-weight:500; letter-spacing:.07em; color:#b8b9b1; }
-.cinema-steps { display:flex; gap:26px; list-style:none; padding:0; margin:0; color:#a7aba6; font-size:.875rem; }
-.cinema-steps li { display:flex; align-items:center; gap:9px; padding:12px 0; border-bottom:2px solid transparent; white-space:nowrap; }
-.cinema-steps li > span { font-variant-numeric:tabular-nums; font-size:.75rem; color:inherit; }
-.cinema-steps [aria-current] { color:#f2cf6b; border-bottom-color:#f2cf6b; font-weight:600; }
-.cinema-festival { font-size:.875rem; color:#b8b9b1; }
-
 /* CGV 무비차트의 이미지·제목 위계. 여섯 장면은 같은 화면에서 고른다. */
 body:has(#home.active) { background:#fff; }
 #home { width:var(--app-w); margin-inline:calc((100% - var(--app-w)) / 2); padding:0 28px; height:var(--app-h); min-height:40rem; flex:none; background:#fff; color:#171717; }
@@ -105,7 +93,6 @@ body:has(#home.active) { background:#fff; }
   .chart-layout { gap:0; }
 }
 @container app (max-width:1150px) {
-  .cinema-festival { display:none; }
   .festival-header { gap:14px; padding-inline:20px; }
   .privacylink { right:20px; }
   .festival-steps { gap:12px; }
@@ -118,12 +105,6 @@ body:has(#home.active) { background:#fff; }
   .tile-enter { display:none; }
   .chart-heading > p { max-width:230px; }
   .enginebar { top:98px; }
-  .cinema-steps { gap:20px; }
-  .cinema-header { flex-wrap:wrap; padding:20px 0 0; gap:16px; }
-  .cinema-steps { flex-basis:100%; justify-content:space-between; }
-  .cinema-steps li { flex:1; justify-content:center; }
-  .cinema-wordmark { font-size:1.25rem; }
-  .cinema-wordmark small { display:none; }
 }
 @container app (max-width:760px) {
   #home { padding:0 16px; }

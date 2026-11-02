@@ -9,8 +9,8 @@
 5. 정리: 쓰이지 않는 `sanitizeFilename` · `safeName`(저장 이름은 10/05부터 서버가 정한다) · CSS(`.gold` · `.btn-gold` · `.retention-note` · `.btn-primary`),
    서버 주석 두 곳(자동삭제 «새벽 3시» → «자정», 없는 «정리용 임시 라우트»), `sampleMode.ts`가 `LOCAL_HOSTS`를 다시 적던 것, `logic.ts` 카카오 주석 자리,
    `Result.tsx`의 낡은 «대표님 일요일 확인» 표식, `package.json` `engines`(`>=18` → vite 8 · vitest 5가 요구하는 `>=22.12`).
-6. 남긴 것(팀장 보고 — 결정 필요): 쓰이지 않는 `src/components/CinemaHeader.tsx`와 그 CSS는 지우는 명령을 쓰지 않는다는 지시대로 두었다. `useDubbing.ts`(787줄)의 녹음 후처리
-   중복과 책임 분리는 핵심 상태기계라 행사 뒤로 제안했다.
+6. 쓰이지 않는 `src/components/CinemaHeader.tsx`(9/30 개편 때 고아)와 그 CSS(`home.css`의 `.cinema-*` 묶음과 1150 · 900 구간의 줄)는 팀장 결정(Q4, 11/2)으로
+   git으로 지웠다. 쓰는 곳이 없음을 확인했고 화면은 그대로다(아래 확인). `useDubbing.ts`(808줄)의 녹음 후처리 중복과 책임 분리는 행사 뒤(팀장 결정 Q5).
 7. 시험 보강(종합감사 테스트 −3): 합성 필터 글자 단위 시험 `src/lib/ffmpeg.test.ts` 13개(채널 평균 · 시각 다시 세기 · 순서 · −18dBFS 압축 · −2/−1dBFS 리미터의
    자동 레벨 끔 · 지연 보정 · 두 채널 복사 · 원판 다시 낮추지 않음 — 일부러 틀리게 바꾸면 4개 빨간불), 영상 위 녹음의 실패 갈래 E2E 4개(녹음기가 안 켜짐 · 영상 재생 거절 ·
    녹음 중 마이크 뽑힘 · 녹음 파일을 못 풂 — 모두 준비 화면으로 돌아오고 다시 녹음된다). 정지 시각 표시 계산을 `pauseLabel` 하나로(준비 안내 · 녹음실 단계 표시).
