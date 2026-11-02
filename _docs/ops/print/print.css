@@ -34,6 +34,12 @@ figure img { width: 100%; border: 0.75pt solid var(--line); border-radius: 4pt; 
 figcaption { font-size: 8.8pt; color: var(--sub); margin-top: 3pt; }
 .figs { display: grid; grid-template-columns: 1fr 1fr; gap: 8pt; }
 .figs.three { grid-template-columns: 1fr 1fr 1fr; }
+/* 완성 화면 셋 — 가운데 휴대폰 그림(세로)이 양옆 PC 그림(16:9)과 높이가 같게 */
+.figs.results { grid-template-columns: 1fr 0.44fr 1fr; }
+/* PC · 휴대폰 첫 화면 한 쌍 — 같은 높이로 나란히, 설명은 아래 한 번 */
+figure.pair > div { display: flex; justify-content: center; align-items: flex-start; gap: 8pt; }
+figure.pair img { width: auto; height: 46mm; }
+figure.pair figcaption { text-align: center; }
 .cover { height: 250mm; display: flex; flex-direction: column; justify-content: space-between; break-after: page; }
 .cover .eyebrow { color: var(--sub); font-size: 11pt; }
 .cover h1 { font-size: 34pt; margin-top: 10pt; }
