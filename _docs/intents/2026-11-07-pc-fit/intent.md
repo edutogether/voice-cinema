@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 등급: 2
 작성자: Voice Cinema 세션 (지시 팀장 — Bumm님 11/7 말씀 전달)
 작성 시각: 2026-11-07 02:50
