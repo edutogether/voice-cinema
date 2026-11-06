@@ -1,6 +1,7 @@
 /* 해상도별 화면 맞춤(2026-10-23 대표님 — 조직 표준 방식): 화면 종류마다 «기준 화면» 하나를 두고, 실제 화면에 맞춰 통째로 비율을 바꾼다.
  *   PC 1366 · 태블릿 가로 1024 · 태블릿 세로 768 · 휴대폰(세로) 390 — 기준 폭과 같은 화면에서는 아무것도 바꾸지 않는다(비율 1).
- *   기준은 흔한 작은 화면 쪽으로 잡았다 — 큰 화면은 같은 모습을 키워 보이고, 작은 화면에서 글자가 기준보다 크게 줄지 않는다.
+ *   기준은 흔한 작은 화면 쪽으로 잡았다 — 작은 화면에서 글자가 기준보다 크게 줄지 않는다.
+ *   PC는 키우지 않는다(11/7 Bumm님 «640 480 화면으로 해상도 깨진 윈도우마냥 다 커져 있네») — 넓은 창에서는 Poster Studio처럼 실제 크기 그대로 화면을 더 넓게 쓴다.
  *   PC·태블릿은 높이도 맞춘다 — 한 화면짜리 화면(첫 페이지·녹음실·완성)이 다 드는 높이(MIN_H)보다 낮은 창에서는 그 높이에 맞춰 더 줄인다.
  *   가로로 눕힌 휴대폰은 맞추지 않는다(비율 1). 크기 구간별 손질은 하지 않는다.
  * 화면 종류: 터치 기기이거나, 마우스라도 창이 세로이거나 좁으면(1024 미만) 짧은 변으로 휴대폰(600 미만)·태블릿을 가른다. 나머지는 PC다.
@@ -30,9 +31,11 @@
       else base = portrait ? 390 : 0;
     }
     var z = base ? w / base : 1;
+    if (base === 1366) z = Math.min(z, 1);
     if (base && base !== 390) z = Math.min(z, h / MIN_H);
     body.style.zoom = z === 1 ? '' : String(z);
     root.style.setProperty('--fit', String(z));
+    root.style.setProperty('--fit-undo', String(1 / z));
     root.style.setProperty('--app-w', w / z + 'px');
     root.style.setProperty('--app-h', h / z + 'px');
     root.dataset.fit = base ? String(base) : 'none';

@@ -64,6 +64,10 @@ body:has(#result.active) { background:#fff; }
  .result-symbol { margin-bottom:14px; }
  .qrbox img { width:152px; height:152px; }
 }
+/* 넓고 높은 창: 실제 크기 그대로 두면 위쪽에 작게 붙고 아래가 빈다(11/7) — 창 높이만큼 넓히고 세로로 가운데에 둔다. */
+@container app (min-width:901px) and (min-height:801px) {
+ .result-card { width:min(calc(100% - 80px),max(1280px,calc(var(--app-h) * 1.3))); margin-block:auto; }
+}
 /* 900 이하(패드 세로 768 등)는 그림 칸을 PC와 같은 비율로 두고 로고를 휴대폰 크기로 — 그림 칸을 .85로 줄였을 때 폭 318px에 두 로고(좌우 18px)가
    들어가지 않아 교육청 로고가 «InKY Film Festival» 끝을 가렸다(11/2 해상도 전수 · 라이브에도 있던 것). */
 @container app (max-width:900px) {

@@ -63,6 +63,7 @@
   라이브 줄이던 `feat/vc2-release`는 10/31 master에 빨리감기로 합쳤다(위 10/31 절). 되돌림: 태그 `rollback-20261025-live-ad8d6e9`, `_docs/ops/rollback-20261025.md`. 자세한 것은 CHANGELOG 맨 위.
   - Hosting 표시 `ad8d6e9`(정본 · 옛 주소 둘 다)·번들 `main-B8wYoNj4.js`·서비스워커·`fit.js`가 로컬과 같음. 클립 40개는 배포 전·후 라이브 해시가 같다(영상 바뀐 것 없음).
   - 기준 화면 PC 1366 · 태블릿 1024/768 · 휴대폰 390을 통째로 맞춘다. 규칙은 `app.md` «해상도별 화면 맞춤», 근거는 `_docs/intents/2026-10-23-responsive-fit/intent.md`.
+  - 🟠 11/7부터 PC는 키우지 않는다(줄이기만, Poster Studio와 같은 크기) · 메인 영상과 그림 띠는 16:9 그대로 · PC 스플래시는 Poster Studio와 같은 값 — `_docs/intents/2026-11-07-pc-fit/intent.md`
   - 화면 편집판(Git 밖): `C:\Users\817be\Documents\vc-editor\`(바탕화면 «Voice Cinema 화면 편집판», `http://127.0.0.1:5490/__editor/`). 앱 사본 `app\`은 라이브와 같은 빌드다 — 새 배포 뒤에는 `dist\`를 다시 복사한다.
   - `feat/vc2-v3`(거절된 Higgsfield 원판 + 히어로 · 드라마 새 장면)는 이 작업이 없다 — 나중에 그 가지를 쓰면 이 커밋을 합친다.
 - 🟢 (10/31 끝남) **GitHub이 풀리면 곧바로 이 가지를 master에 합쳐 push한다** — 걱정한 그대로 됐다. 풀린 뒤 push보다 예약 «배포 대조»가

@@ -2,12 +2,12 @@ import { test, expect } from '@playwright/test';
 import { pauseScenes } from './pause-scenes.js';
 
 // 해상도별 화면 맞춤(10/23 대표님 — 조직 표준 방식, public/fit.js): 화면 종류마다 기준 화면 하나(PC 1366 · 태블릿 가로 1024 · 세로 768 · 휴대폰 390)를
-// 통째로 줄이고 키운다. PC · 태블릿은 높이 720보다 낮은 창에서 높이에 맞춰 더 줄여, 한 화면짜리 화면이 스크롤 없이 다 든다.
+// 통째로 줄이고 키운다. PC는 줄이기만 한다(11/7 Bumm님 — 넓은 창에서는 실제 크기 그대로). PC · 태블릿은 높이 720보다 낮은 창에서 높이에 맞춰 더 줄여, 한 화면짜리 화면이 스크롤 없이 다 든다.
 // 옛 방식은 1280×587 · 1366×635 창에서 첫 페이지 · 녹음실이 640px로 넘쳤다(옛 빌드 조사 12건).
 const cases = [
   // [폭, 높이, 터치, 기준 화면 종류, 기준 화면 폭, 기준 화면 높이]
-  [2560, 1440, false, '1366', 1366, 768],
-  [1920, 1080, false, '1366', 1366, 768],
+  [2560, 1440, false, '1366', 2560, 1440],
+  [1920, 1080, false, '1366', 1920, 1080],
   [1366, 768, false, '1366', 1366, 768],
   [1280, 587, false, '1366', 1570, 720],
   [1366, 1024, true, '1024', 1024, 768],
@@ -56,7 +56,47 @@ test('마우스로 쓰는 좁은 창(세로)은 PC 기준으로 줄이지 않고
   await page.close();
 });
 
-test('창 크기가 바뀌면 다시 맞춘다 — 2560에서 1280×587로 줄이면 기준 화면이 1366×768에서 1570×720이 된다', async ({ browser }) => {
+// PC 웹(11/7 Bumm님 «640 480 화면으로 해상도 깨진 윈도우마냥 다 커져 있네» · «위아래로 잘려 있어» · «포스터랑 똑같이 맞춰»).
+// 창 크기는 흔한 화면 · Windows 배율에서 크롬 탭 · 주소창 · 작업 표시줄(135)을 뺀 실제 값이다.
+for (const [width, height] of [[1280, 585], [1366, 633], [1536, 729], [1707, 825], [1920, 945], [2048, 1017], [2560, 1305], [3840, 2025]]) {
+  test(`PC ${width}×${height}: 키우지 않고, 스플래시는 Poster Studio와 같고, 가운데 영상과 그림 띠는 16:9 그대로다`, async ({ browser }) => {
+    const page = await browser.newPage({ viewport: { width, height } });
+    await page.goto('/');
+    await page.locator('#splash .logo img').waitFor();
+    // Poster Studio PC 스플래시를 잰 값: 아이콘 72 · 이름 높이 45 · 로딩바 190 · 교육청 로고 190. 작은 창에서도 줄이지 않는다.
+    const splash = await page.evaluate(async () => {
+      await Promise.all(document.querySelector('#splash .logo').getAnimations().map(animation => animation.finished));
+      const size = (selector) => { const r = document.querySelector(selector).getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; };
+      return { logo: size('#splash .logo img'), nameHeight: size('#splash .name')[1], bar: size('#splash .sbar')[0], education: size('#splash .splash-education')[0] };
+    });
+    expect(splash).toEqual({ logo: [72, 72], nameHeight: 45, bar: 190, education: 190 });
+
+    await page.locator('#splash').waitFor({ state: 'detached' });
+    await pauseScenes(page);
+    const fit = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fit')));
+    expect(fit).toBeCloseTo(Math.min(1, width / 1366, height / 720), 3);
+    const header = await page.locator('.festival-header').boundingBox();
+    expect(header.height, '머리글이 화면 크기를 따라 커졌다').toBeLessThanOrEqual(81);
+
+    const media = await page.locator('.scene-shell.is-current .tile-media').boundingBox();
+    expect(Math.abs(media.width * 9 / 16 - media.height), '가운데 영상 칸이 영화 비율이 아니다(cover가 잘라 낸다)').toBeLessThan(1.5);
+    const thumb = await page.locator('.scene-choice img').first().boundingBox();
+    expect(Math.abs(thumb.width * 9 / 16 - thumb.height), '그림 띠가 영화 비율이 아니다').toBeLessThan(1.5);
+
+    // 왼쪽 안내와 오른쪽 그림 띠의 구분선은 같은 높이, 영화제 두 줄은 안내 글 아래에 겹치지 않는다
+    const guide = await page.locator('.chart-guide').boundingBox();
+    const line = await page.locator('.scene-navigation').boundingBox();
+    expect(Math.abs(guide.y - line.y), '두 구분선이 어긋난다').toBeLessThanOrEqual(1);
+    const guideText = await page.locator('.chart-guide p').boundingBox();
+    const footer = await page.locator('#home .cinema-footer').boundingBox();
+    expect(footer.y, '영화제 두 줄이 안내 글과 겹친다').toBeGreaterThanOrEqual(guideText.y + guideText.height);
+
+    expect(await page.evaluate(() => ({ x: document.documentElement.scrollWidth - window.innerWidth, y: document.documentElement.scrollHeight - window.innerHeight }))).toEqual({ x: 0, y: 0 });
+    await page.close();
+  });
+}
+
+test('창 크기가 바뀌면 다시 맞춘다 — 2560에서 1280×587로 줄이면 기준 화면이 2560×1440에서 1570×720이 된다', async ({ browser }) => {
   const page = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
