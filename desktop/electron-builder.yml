@@ -10,6 +10,8 @@ files:
   - main.js
   - bundle.js
   - save-path.js
+  - mail-store.js
+  - preload.js
   - package.json
 # 화면은 웹과 같은 산출물을 그대로 싣는다(새로 만들지 않는다). firebase.json은 보안 헤더(CSP 등)를 웹과 똑같이 붙이려고 함께 싣는다.
 extraResources:

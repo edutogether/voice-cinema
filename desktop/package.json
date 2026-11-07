@@ -11,6 +11,7 @@
     "start": "electron .",
     "test": "node --test test/*.test.js",
     "dist": "py -3 tools/make-icons.py && npm --prefix .. run build && node --test test/*.test.js && electron-builder --win nsis --x64",
+    "dist:trial": "py -3 tools/make-icons.py && npm --prefix .. run build && node --test test/*.test.js && electron-builder --win dir --x64 -c.productName=\"Voice Cinema Mail Trial\" -c.appId=kr.edutogether.voicecinema.mailtrial -c.extraMetadata.productName=\"Voice Cinema Mail Trial\"",
     "test:e2e": "playwright test"
   },
   "devDependencies": {

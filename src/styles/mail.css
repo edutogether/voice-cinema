@@ -1,0 +1,45 @@
+/* 설치판 메일 전달 화면 — 완성 화면(result.css)의 흰색/빨간색을 그대로 쓴다. 웹에서는 이 요소들이 그려지지 않는다. */
+.mail-field { margin:0 0 14px; }
+.mail-field label { display:block; margin-bottom:6px; font-size:.875rem; font-weight:650; color:#262626; }
+.mail-field input { display:block; width:100%; height:48px; padding:0 14px; box-sizing:border-box; border:1px solid #b5b5b5; border-radius:10px; background:#fff; color:#171717; font:inherit; font-size:1rem; }
+.mail-field input:focus-visible { outline:3px solid #e52320; outline-offset:1px; }
+.mail-field input[aria-invalid="true"] { border-color:#e52320; }
+.result-details p.mail-error { margin:6px 0 0; color:#c91b19; font-size:.875rem; line-height:1.5; }
+.mail-actions { justify-content:flex-start; margin-top:20px; }
+#result .mail-actions .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; flex:0 1 auto; max-width:100%; padding-inline:22px; }
+#result .btn:disabled { opacity:.6; cursor:default; }
+.result-details p.mail-address { margin:0 0 10px; padding:14px 16px; border:1px solid #e5e5e5; border-radius:10px; background:#f7f7f7; font-size:1.25rem; font-weight:750; line-height:1.4; word-break:break-all; }
+.result-details p.mail-name-shown { margin:0 0 14px; color:#262626; }
+.result-details p.mail-typo { margin:0 0 4px; padding:12px 14px; border:1px solid #f3d2cf; border-radius:10px; background:#fff3f2; color:#642a26; font-size:.9375rem; }
+.mail-typo-fix { display:block; margin-top:4px; padding:0; border:0; background:none; color:#c91b19; font:inherit; font-weight:700; text-decoration:underline; cursor:pointer; }
+@container app (max-height:700px) and (min-width:601px) {
+ .mail-field { margin-bottom:10px; }
+ .mail-field input { height:42px; }
+ .mail-actions { margin-top:14px; }
+ #result .mail-actions .btn { padding-block:12px; }
+}
+
+/* 시험판 표시 · 대기 목록 · «보낸 것으로 처리» 안내 — 모든 화면 위에 뜬다. */
+.mail-bar { position:fixed; left:12px; bottom:12px; z-index:40; display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; max-width:calc(100% - 24px); padding:7px 12px; box-sizing:border-box; border-radius:8px; background:#171717; color:#fff; font-size:.8125rem; line-height:1.4; box-shadow:0 4px 14px #0000003d; }
+.mail-bar strong { font-weight:750; color:#ffd24a; }
+.mail-offline { display:flex; align-items:center; gap:5px; cursor:pointer; }
+.mail-offline input { width:15px; height:15px; margin:0; accent-color:#e52320; }
+.mail-queue-chip { padding:3px 10px; border:1px solid #fff; border-radius:6px; background:#fff; color:#171717; font:inherit; font-weight:700; cursor:pointer; }
+.mail-queue { width:min(560px,calc(100% - 48px)); padding:24px; border:0; border-radius:14px; color:#171717; box-shadow:0 18px 50px #00000059; }
+.mail-queue::backdrop { background:#00000059; }
+.mail-queue h2 { margin:0 0 12px; font-size:1.25rem; font-weight:750; }
+.mail-queue ul { margin:0 0 16px; padding:0; list-style:none; }
+.mail-queue li { display:flex; flex-wrap:wrap; align-items:center; gap:4px 12px; padding:12px 0; border-top:1px solid #eee; font-size:.9375rem; }
+.mail-queue-to { font-weight:700; word-break:break-all; }
+.mail-queue-state { color:#626262; font-size:.875rem; }
+.mail-queue-buttons { display:flex; gap:8px; margin-left:auto; }
+.mail-queue button,.mail-sent button { padding:6px 12px; border:1px solid #d8d8d8; border-radius:8px; background:#fff; color:#262626; font:inherit; font-size:.875rem; font-weight:650; cursor:pointer; }
+.mail-queue button:disabled { opacity:.5; cursor:default; }
+.mail-sent { position:fixed; right:12px; bottom:12px; z-index:41; width:min(480px,calc(100% - 24px)); max-height:calc(100% - 24px); padding:20px 22px; box-sizing:border-box; overflow:auto; border:2px solid #171717; border-radius:12px; background:#fff; color:#171717; box-shadow:0 12px 40px #00000052; }
+.mail-sent h2 { margin:0 0 6px; font-size:1.25rem; font-weight:750; }
+.mail-sent-note { margin:0 0 12px; color:#c91b19; font-size:.875rem; font-weight:650; line-height:1.5; word-break:keep-all; }
+.mail-sent dl { display:grid; grid-template-columns:auto minmax(0,1fr); gap:6px 12px; margin:0 0 12px; font-size:.875rem; line-height:1.5; }
+.mail-sent dt { color:#626262; }
+.mail-sent dd { margin:0; word-break:break-all; }
+.mail-sent-body { white-space:pre-wrap; }
+.mail-sent-done { margin:0 0 12px; font-size:.875rem; font-weight:700; color:#047857; }

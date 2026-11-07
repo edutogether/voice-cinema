@@ -79,7 +79,7 @@ async function captureDialogs(app, downloads) {
 test('설치판 안의 화면이 정본 주소 · 앱 이름 창으로 뜨고, 서비스워커 없이 엔진을 곧바로 준비한다', async () => {
   const { app, page } = await launch();
   expect(page.url()).toBe(`${ORIGIN}/`);
-  expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getTitle())).toBe('Voice Cinema');
+  expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getTitle())).toBe('Voice Cinema 메일 시험판');
   await expect(page.locator('.tile')).toHaveCount(8);
   // 글꼴 · 그림은 설치판 안의 것(Pretendard · 장면 그림)
   expect(await page.evaluate(async () => { await document.fonts.ready; return [...document.fonts].filter((f) => f.status === 'loaded' && f.family === 'Pretendard').length; })).toBeGreaterThan(0);
@@ -134,7 +134,8 @@ test('업로드가 안 되면 «이 기기에 저장»이 다운로드 폴더에
   await openStudio(page, '히어로');
   expect(await recordOnce(page)).toMatchObject({ phase: 'recorded' });
   await page.locator('button', { hasText: '저장하기' }).click();
-  await expect(page.locator('#downloadRow')).toBeVisible({ timeout: 90000 });
+  await page.locator('#mailSaveHereBtn').click({ timeout: 200000 });
+  await expect(page.locator('#downloadRow')).toBeVisible();
   expect(await uploads(app)).toHaveLength(3); // 처음 + 다시 2번(MAX_UPLOAD_ATTEMPTS)
   await page.locator('#downloadBtn').click();
   await expect.poll(() => app.evaluate(() => globalThis.__dialogs.length), { timeout: 30000 }).toBe(1);
@@ -164,7 +165,8 @@ test('인터넷이 없어도 첫 화면 · 녹음 · 합성이 되고, 올리지
     window.dispatchEvent(new Event('offline'));
   });
   await page.locator('button', { hasText: '저장하기' }).click();
-  await expect(page.locator('#doneMsg')).toHaveText(OFFLINE_MSG, { timeout: 90000 });
+  await page.locator('#mailSaveHereBtn').click({ timeout: 90000 });
+  await expect(page.locator('#doneMsg')).toHaveText(OFFLINE_MSG);
   await page.locator('#downloadBtn').click();
   await expect.poll(() => app.evaluate(() => globalThis.__dialogs.length), { timeout: 30000 }).toBe(1);
   expect(Math.abs(mp4Duration(readFileSync(path.join(downloads, 'Voice Cinema_스포츠.mp4'))) - 10)).toBeLessThanOrEqual(0.05);

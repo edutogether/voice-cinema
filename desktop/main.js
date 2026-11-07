@@ -1,18 +1,22 @@
 'use strict';
 // Voice Cinema Windows 설치판의 시작점. 화면은 웹과 같은 dist를 그대로 쓰고(bundle.js), 여기서는 창 · 마이크 권한 · 저장만 정한다.
-const { app, BrowserWindow, Menu, dialog, screen, session, shell } = require('electron');
+const { app, BrowserWindow, Menu, dialog, ipcMain, safeStorage, screen, session, shell } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
 const { ORIGIN, isBundleUrl, hostingHeaders, serveBundle } = require('./bundle');
 const { uniqueSavePath } = require('./save-path');
+const { createMailStore } = require('./mail-store');
 
-const APP_ID = 'kr.edutogether.voicecinema';
-const APP_NAME = 'Voice Cinema';
+// 메일 시험판: 설치된 Voice Cinema와 섞이지 않게 이름이 따로이고(앱 데이터 폴더는 package.json의 dist:trial이 정한다), 창 제목으로 시험판임을 알린다.
+const APP_ID = 'kr.edutogether.voicecinema.mailtrial';
+const APP_NAME = 'Voice Cinema 메일 시험판';
 // 설치판은 resources/web(웹 산출물)과 resources/firebase.json(보안 헤더)을 싣는다(electron-builder.yml). 개발 실행은 저장소의 것을 쓴다.
 const RESOURCES = app.isPackaged ? process.resourcesPath : path.join(__dirname, '..');
 const WEB_ROOT = path.resolve(RESOURCES, app.isPackaged ? 'web' : 'dist');
 const HEADERS = hostingHeaders(JSON.parse(fs.readFileSync(path.join(RESOURCES, 'firebase.json'), 'utf8')));
 const PARTITION = 'persist:voice-cinema';
+// 못 보낸 메일 대기분을 지우는 때 — 서버가 영상을 지우는 때와 같다(functions/index.js의 CUTOFF_DATE, test/mail-store.test.js가 대조한다).
+const MAIL_PURGE_AT = Date.parse('2026-12-01T00:00:00+09:00');
 
 let mainWindow = null;
 
@@ -53,6 +57,34 @@ function setUpSession() {
   });
 }
 
+/** 메일 대기열을 열고 화면과 잇는다. 키를 쓸 수 없으면(암호화 불가 · Windows 계정 암호 초기화 등) 다리를 놓지 않아 «이 기기에 저장»으로 간다. 로그에 이름 · 주소를 남기지 않는다. */
+function setUpMailQueue() {
+  let store = null;
+  try {
+    if (safeStorage.isEncryptionAvailable()) {
+      store = createMailStore({
+        dir: path.join(app.getPath('userData'), 'mail-queue'),
+        seal: (text) => safeStorage.encryptString(text),
+        unseal: (sealed) => safeStorage.decryptString(sealed),
+        purgeAt: MAIL_PURGE_AT,
+      });
+    }
+  } catch (e) {
+    console.error('[메일 대기열] 열지 못함', e.message);
+  }
+  const fromApp = (event) => isBundleUrl(event.senderFrame?.url ?? '');
+  ipcMain.on('mail:available', (event) => { event.returnValue = store !== null && fromApp(event); });
+  const handle = (channel, run) => ipcMain.handle(channel, (event, ...args) => {
+    if (!store || !fromApp(event)) throw new Error('허용되지 않은 요청');
+    return run(...args);
+  });
+  handle('mail:add', (info, bytes) => store.add(info, Buffer.from(bytes)));
+  handle('mail:list', () => store.list());
+  handle('mail:video', (id) => store.video(id));
+  handle('mail:update', (id, patch) => store.update(id, patch));
+  handle('mail:remove', (id) => store.remove(id));
+}
+
 function createWindow() {
   // 시험 전용 VC_TEST_SMALLEST_DISPLAY=1(desktop/e2e · tools의 검사만 넣는다): 처음부터 가장 작은 모니터에 창을 만든다 — 사람이 쓰는 큰 모니터에
   // 시험 창이 한순간도 뜨지 않게(10/28 기준 12). 빌드한 앱은 Node의 «-r» 사전 로드를 무시해 바깥에서 자리를 옮길 수 없었다. 만든 뒤 다른 배율의
@@ -76,7 +108,7 @@ function createWindow() {
     minHeight: 640,
     show: false,
     backgroundColor: '#ffffff', // 첫 화면(스플래시)의 바탕 — 화면이 그려지기 전에 다른 색이 번쩍이지 않게
-    webPreferences: { partition: PARTITION, contextIsolation: true, sandbox: true, nodeIntegration: false, spellcheck: false, ...(testHidden && { backgroundThrottling: false }) },
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), partition: PARTITION, contextIsolation: true, sandbox: true, nodeIntegration: false, spellcheck: false, ...(testHidden && { backgroundThrottling: false }) },
   });
   // 창 제목은 앱 이름으로 둔다(웹 탭 제목은 «InKY Voice Cinema»).
   mainWindow.on('page-title-updated', (event) => event.preventDefault());
@@ -144,6 +176,7 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(() => {
     setUpSession();
+    setUpMailQueue();
     createWindow();
   });
   app.on('window-all-closed', () => app.quit());
