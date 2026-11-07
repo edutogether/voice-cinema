@@ -78,6 +78,9 @@ try {
     if (stage === '1-home') { await page.waitForTimeout(1500); return; }
     await page.getByRole('button', { name: '판타지 미리보기 선택', exact: true }).click();
     await page.waitForFunction(() => document.querySelector('#chipName')?.textContent === '판타지' && document.querySelector('#clip')?.readyState === 4, null, { timeout: 30000 });
+    // 11/7부터 녹음실에 들어가면 장면이 바로 흐른다 — 끝으로 건너뛰어 준비 화면에서 잰다(재생 중에는 진행 막대가 움직여 두 화면이 같을 수 없다)
+    await page.evaluate(() => { const clip = document.querySelector('#clip'); clip.currentTime = clip.duration - 0.2; });
+    await page.locator('#studio.active[data-phase="idle"]').waitFor({ timeout: 30000 });
     await page.waitForTimeout(1500);
     if (stage === '2-studio') return;
     const take = await recordOnce(page);
