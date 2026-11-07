@@ -112,6 +112,8 @@ html[data-fit="none"] .download-link { display:none; }
 @container app (max-width:1250px) {
   .chart-aside { display:none; }
   .chart-layout { gap:0; }
+  /* 왼쪽 안내가 접히면 설명 글이 오른쪽 위로 올라와 «개인정보처리방침» 줄 바로 아래에 온다 — 링크 칸(머리글 아래 3 + 24px)을 비켜 내린다(11/8 해상도 전수, 글자끼리 닿을 듯 붙었다). */
+  .chart-heading > p { margin-top:10px; }
 }
 @container app (max-width:1150px) {
   .cinema-festival { display:none; }
@@ -124,7 +126,6 @@ html[data-fit="none"] .download-link { display:none; }
   .festival-steps { grid-column:1 / -1; grid-row:2; justify-content:center; }
   .partner-cgv { width:58px; }
   .partner-education { width:145px; }
-  .tile-enter { display:none; }
   .chart-heading > p { max-width:230px; }
   .enginebar { top:98px; }
   .cinema-steps { gap:20px; }
