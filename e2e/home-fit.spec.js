@@ -131,6 +131,24 @@ test('PC: 선택한 카드만 경량 영상으로 재생하고 녹음실 진입 
 });
 
 
+// 머리글 로고의 누르는 칸(터치 기기)은 머리글 안에서만 넓힌다 — 위로 화면 끝을 넘거나 아래 단계 표시를 덮으면(그 자리를 누르면 처음 화면으로 돌아간다) 안 된다.
+for (const [width, height] of [[360, 640], [375, 553], [390, 664], [393, 659], [430, 740], [390, 844], [1024, 768], [768, 1024]]) {
+  test(`${width}×${height}: 머리글 로고의 누르는 칸이 화면 안에 있고 단계 표시를 덮지 않으며 손가락 크기다`, async ({ browser }) => {
+    const page = await browser.newPage({ viewport: { width, height }, hasTouch: true, isMobile: true });
+    await page.goto('/');
+    await page.locator('#splash').waitFor({ state: 'detached' });
+    const steps = await page.locator('.festival-steps').boundingBox();
+    const stacked = steps.y > 30;
+    for (const selector of ['#home .festival-partners', '#home .festival-signature']) {
+      const box = await page.locator(selector).boundingBox();
+      expect(box.y, `${selector}가 화면 위로 넘어간다`).toBeGreaterThanOrEqual(0);
+      expect(box.height, `${selector}의 누르는 칸이 작다`).toBeGreaterThanOrEqual(40);
+      if (stacked) expect(box.y + box.height, `${selector}가 단계 표시를 덮는다`).toBeLessThanOrEqual(steps.y + 0.5);
+    }
+    await page.close();
+  });
+}
+
 for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080]]) {
   test(`${width}×${height}: 왼쪽 제목은 한 줄이고 작은 마이크는 소개 위에 왼쪽 정렬된다`, async ({ page }) => {
     await page.setViewportSize({ width, height });
