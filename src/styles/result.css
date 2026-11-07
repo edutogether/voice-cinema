@@ -64,8 +64,9 @@ body:has(#result.active) { background:#fff; }
  .result-symbol { margin-bottom:14px; }
  .qrbox img { width:152px; height:152px; }
 }
-/* 낮은 창(세로 휴대폰 제외): 완성 화면이 스크롤 없이 한 화면에 들게 여백을 줄이고, 그림은 머리글 · 바닥글을 뺀 높이까지만 쓴다. */
-@container app (max-height:700px) and (min-width:601px) {
+/* 낮은 창(세로 휴대폰 제외): 완성 화면이 스크롤 없이 한 화면에 들게 여백을 줄이고, 그림은 머리글 · 바닥글을 뺀 높이까지만 쓴다.
+   PC · 태블릿은 화면 맞춤이 높이 640을 지켜 주므로 600 아래는 가로로 눕힌 휴대폰뿐이다 — 어차피 스크롤하는 화면이라 그림을 줄이지 않는다(11/8 해상도 전수, 폭 233px로 줄어 두 로고가 겹치고 포스터 글이 위로 잘렸다). */
+@container app (min-height:600px) and (max-height:700px) and (min-width:601px) {
  .result-card { margin-block:20px 16px; }
  .result-poster { max-height:calc(var(--app-h) - 154px); }
  .result-details { padding:0; }
@@ -76,6 +77,12 @@ body:has(#result.active) { background:#fff; }
  .qrbox img { width:152px; height:152px; }
  .result-actions { margin-top:16px; }
  #result .workflow-footer { padding-block:8px; }
+}
+/* 가로로 눕힌 휴대폰: 그림과 글을 위에서 함께 시작한다 — 가운데로 맞추면 그림이 긴 글의 가운데로 내려가 첫 화면 왼쪽이 빈다(11/8 해상도 전수). 표시 그림을 접어 QR을 앞으로 당긴다. */
+@container app (max-height:599px) and (min-width:601px) {
+ .result-card { align-items:start; margin-block:28px 16px; }
+ .result-details .result-eyebrow { margin-bottom:10px; }
+ .result-symbol { display:none; }
 }
 /* 넓고 높은 창: 실제 크기 그대로 두면 위쪽에 작게 붙고 아래가 빈다(11/7) — 창 높이만큼 넓히고 세로로 가운데에 둔다. */
 @container app (min-width:901px) and (min-height:801px) {
@@ -94,7 +101,8 @@ body:has(#result.active) { background:#fff; }
  .poster-credit { left:24px; right:24px; }
 }
 @container app (max-width:600px) {
- .result-card { display:flex; flex-direction:column; align-items:stretch; width:calc(100% - 40px); margin-top:20px; gap:18px; }
+ /* 위 여백은 머리글 아래 «개인정보처리방침» 줄(3 + 24px)을 비켜 둔다 — 20px일 때 글자가 그림 위 가장자리에 닿았다(11/8 해상도 전수). */
+ .result-card { display:flex; flex-direction:column; align-items:stretch; width:calc(100% - 40px); margin-top:30px; gap:18px; }
  /* 포스터를 영화 비율로 줄여 QR이 첫 화면(360×740)에 다 들어오게 한다(10/17). */
  .result-poster { aspect-ratio:16 / 9; border-radius:12px; }
  .result-poster > .pic > img { object-position:center 35%; }

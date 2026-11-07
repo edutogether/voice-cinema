@@ -28,6 +28,9 @@ for (const [width, height] of [[1440, 900], [768, 1024], [390, 664]]) {
     release();
     await expect(page.locator('#qrbox')).toBeVisible({ timeout: 60000 });
     const after = await poster.boundingBox();
+    // «개인정보처리방침» 줄이 그림 위에 얹히지 않는다 — 휴대폰에서 글자가 그림 위 가장자리에 닿아 있었다(11/8 해상도 전수)
+    const link = await page.locator('#result .privacylink').boundingBox();
+    if (link.x + link.width > after.x && link.x < after.x + after.width) expect(after.y, '방침 링크 줄이 그림에 얹혔다').toBeGreaterThanOrEqual(link.y + link.height - 1);
     await expect(page.locator('#result .download-link'), '설치 파일 아이콘은 첫 화면에만 있다').toHaveCount(0);
     expect(after.width).toBeGreaterThan(200);
     expect(after.width).toBeCloseTo(before.width, 0);
@@ -68,5 +71,34 @@ for (const [width, height] of [[1440, 900], [768, 1024], [390, 664]]) {
       expect((await home.boundingBox()).width).toBeLessThan(details.width * .6);
       expect(Math.abs(after.height - details.content)).toBeLessThanOrEqual(40);
     }
+  });
+}
+
+// 가로로 눕힌 휴대폰: 낮은 창 규칙이 그림을 쪼그리지 않는다 — 폭이 233px로 줄어 두 로고가 겹치고 포스터 글이 위로 잘렸다(11/8 해상도 전수)
+for (const [width, height] of [[932, 380], [844, 340], [780, 304], [667, 331], [640, 300]]) {
+  test(`${width}×${height} 가로 휴대폰: 완성 화면 그림 위 로고 · 글이 겹치거나 잘리지 않는다`, async ({ browser }) => {
+    const page = await browser.newPage({ viewport: { width, height }, hasTouch: true, isMobile: true });
+    await page.route(UPLOAD_PATTERN, (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, url: 'https://storage.googleapis.com/fake/dub_result.mp4' }) }));
+    await page.goto('/');
+    await page.locator('#splash').waitFor({ state: 'detached' });
+    await page.locator('.tile', { hasText: 'SF' }).first().click();
+    await page.locator('#recBtn').click();
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: 40000 });
+    await page.locator('#saveBtn').click();
+    await expect(page.locator('#qrbox')).toBeVisible({ timeout: 60000 });
+    const poster = await page.locator('.result-poster').boundingBox();
+    const inky = await page.locator('.poster-logo-inky').boundingBox();
+    const education = await page.locator('.poster-logo-education').boundingBox();
+    expect(inky.x + inky.width, '두 로고가 겹쳤다').toBeLessThan(education.x);
+    const top = await page.locator('.poster-credit').evaluate((el) => {
+      const first = [...el.children].find((c) => getComputedStyle(c).display !== 'none');
+      return first.getBoundingClientRect().top;
+    });
+    expect(top, '포스터 글이 위로 잘렸다').toBeGreaterThanOrEqual(poster.y);
+    expect(top, '포스터 글이 로고 줄까지 올라왔다').toBeGreaterThanOrEqual(inky.y + inky.height);
+    // 그림과 글이 같은 높이에서 시작한다 — 그림이 긴 글의 가운데로 내려가 첫 화면 왼쪽이 비어 있었다
+    const details = await page.locator('.result-details').boundingBox();
+    expect(Math.abs(poster.y - details.y), '그림이 글보다 아래에서 시작한다').toBeLessThanOrEqual(1);
+    await page.close();
   });
 }

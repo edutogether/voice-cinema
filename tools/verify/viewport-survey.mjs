@@ -110,7 +110,10 @@ function measurePage(roles) {
   const MEDIA = /^(IMG|VIDEO|CANVAS)$/;
   const mediaLike = (el) => MEDIA.test(el.tagName) || (!el.textContent.trim() && !!el.querySelector('img, video, canvas'));
   const TEXTUAL = /^(H1|H2|H3|P|LI|LABEL|SPAN|STRONG|A)$/;
-  const rectOf = (o) => { if (o.box || !TEXTUAL.test(o.el.tagName)) return o.el.getBoundingClientRect(); const rg = document.createRange(); rg.selectNodeContents(o.el); const rs = [...rg.getClientRects()].filter((r) => r.width > 0 && r.height > 0); if (!rs.length) return o.el.getBoundingClientRect(); return { left: Math.min(...rs.map((r) => r.left)), top: Math.min(...rs.map((r) => r.top)), right: Math.max(...rs.map((r) => r.right)), bottom: Math.max(...rs.map((r) => r.bottom)) }; };
+  // 잘라 보이는 그림(로고 스프라이트)은 보이는 부분만 잰다
+  const shown = (el) => { const r = el.getBoundingClientRect(); let v = { left: r.left, top: r.top, right: r.right, bottom: r.bottom }; for (let p = el.parentElement; p && p !== document.documentElement && p !== document.body; p = p.parentElement) { const s = getComputedStyle(p); if (!/(hidden|clip)/.test(s.overflowX + s.overflowY)) continue; const c = p.getBoundingClientRect(); v = { left: Math.max(v.left, c.left), top: Math.max(v.top, c.top), right: Math.min(v.right, c.right), bottom: Math.min(v.bottom, c.bottom) }; } return v; };
+  const area = (el) => { const v = shown(el); return Math.max(0, v.right - v.left) * Math.max(0, v.bottom - v.top); };
+  const rectOf = (o) => { if (o.media) return shown(o.el); if (o.box || !TEXTUAL.test(o.el.tagName)) return o.el.getBoundingClientRect(); const rg = document.createRange(); rg.selectNodeContents(o.el); const rs = [...rg.getClientRects()].filter((r) => r.width > 0 && r.height > 0); if (!rs.length) return o.el.getBoundingClientRect(); return { left: Math.min(...rs.map((r) => r.left)), top: Math.min(...rs.map((r) => r.top)), right: Math.max(...rs.map((r) => r.right)), bottom: Math.max(...rs.map((r) => r.bottom)) }; };
   // 장면 카드(.tile)는 카드 전체가 단추라, 단추 하나로 세지 않고 안의 글 · 그림을 따로 잰다
   const leaves = [...scope.querySelectorAll('img, video, canvas, button, input, textarea, select, h1, h2, h3, p, li, label, span, strong, a')].filter((el) => {
     if (!vis(el) || hiddenOrSide(el) || el.matches('.tile')) return false;
@@ -123,7 +126,8 @@ function measurePage(roles) {
   const pairs = [];
   for (let i = 0; i < leaves.length; i++) for (let j = i + 1; j < leaves.length; j++) {
     const a = leaves[i], b = leaves[j]; if (a.el.contains(b.el) || b.el.contains(a.el)) continue;
-    if ((a.fl || b.fl) && (a.media || b.media)) continue;
+    // 떠 있는 표시를 그림 위에 얹은 것은 일부러 겹친 것이다 — 그림이 바탕 노릇을 할 만큼 클 때만. 로고처럼 작은 그림과 겹치면 결함이다(11/8 — 가로 휴대폰 완성 화면에서 두 로고가 겹쳤는데 «깨끗»으로 나왔다)
+    if ((a.fl || b.fl) && ((a.media && area(a.el) >= 2 * area(b.el)) || (b.media && area(b.el) >= 2 * area(a.el)))) continue;
     const h = hit(a, b); if (h) pairs.push({ a, b, h });
   }
   for (const el of scope.querySelectorAll('*')) {
@@ -135,6 +139,15 @@ function measurePage(roles) {
     const c = { el, pin: true, box: true };
     for (const l of leaves) { if (l.pin || el.contains(l.el) || l.el.contains(el)) continue; const h = hit(c, l); if (h) pairs.push({ a: c, b: l, h }); }
   }
+  // 머리글 아래 떠 있는 방침 링크: 떠 있는 것과 그림은 위에서 세지 않고 글끼리는 4px 문턱이라, 글자에 닿거나 2px 안으로 붙은 것을 따로 본다(11/8 — 휴대폰 완성 화면에서 글자가 포스터에 닿았는데 «깨끗»으로 나왔다)
+  for (const link of leaves.filter((l) => l.el.matches('.privacylink'))) {
+    const p = rectOf(link);
+    for (const l of leaves) {
+      if (l === link || l.el.closest('header')) continue;
+      const q = rectOf(l), ow = Math.min(p.right, q.right) - Math.max(p.left, q.left), oh = Math.min(p.bottom + 2, q.bottom) - Math.max(p.top, q.top);
+      if (ow > 4 && oh > 0) pairs.push({ a: link, b: l, h: { ow, oh, x: Math.max(p.left, q.left), y: Math.max(p.top, q.top) + scrollY } });
+    }
+  }
   const sy = scrollY, maxY = document.scrollingElement.scrollHeight - H;
   if (maxY > 4 && pairs.some((p) => p.a.pin || p.b.pin)) { scrollTo(0, maxY); for (const p of pairs) if ((p.a.pin || p.b.pin) && !hit(p.a, p.b)) p.gone = true; scrollTo(0, sy); }
   const overlaps = pairs.filter((p) => !p.gone).map(({ a, b, h }) => name(a.el) + ' ↔ ' + name(b.el) + ' ' + Math.round(h.ow) + '×' + Math.round(h.oh) + ' @' + Math.round(h.x) + ',' + Math.round(h.y));
@@ -142,12 +155,14 @@ function measurePage(roles) {
   for (const el of scope.querySelectorAll('*')) {
     if (!vis(el) || hiddenOrSide(el)) continue; const s = getComputedStyle(el);
     if (el.clientWidth <= 2 || el.clientHeight <= 2) continue;
-    if (!/(hidden|clip)/.test(s.overflowY) || el.scrollHeight <= el.clientHeight + 4) continue;
+    if (!/(hidden|clip)/.test(s.overflowY)) continue;
+    // 아래로 넘친 글은 scrollHeight에 잡히지만 위로 넘친 글은 안 잡힌다(11/8 — 포스터 윗글이 위로 잘렸는데 «깨끗»으로 나왔다)
+    const tall = el.scrollHeight > el.clientHeight + 4;
     const box = el.getBoundingClientRect(), tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
     for (let t = tw.nextNode(); t; t = tw.nextNode()) {
       if (!t.textContent.trim() || !vis(t.parentElement) || hiddenOrSide(t.parentElement)) continue;
       const rg = document.createRange(); rg.selectNodeContents(t);
-      if ([...rg.getClientRects()].some((r) => r.height > 0 && (r.bottom > box.bottom + 2 || r.top < box.top - 2))) { cutY.push(name(el) + ' «' + t.textContent.trim().slice(0, 16) + '» ' + el.scrollHeight + '/' + el.clientHeight); break; }
+      if ([...rg.getClientRects()].some((r) => r.height > 0 && ((tall && r.bottom > box.bottom + 2) || r.top < box.top - 2))) { cutY.push(name(el) + ' «' + t.textContent.trim().slice(0, 16) + '» ' + el.scrollHeight + '/' + el.clientHeight); break; }
     }
   }
   // 빈 띠: 다 담은(contain) 영상 · 그림이 칸 비율과 달라 남는 띠
@@ -172,6 +187,10 @@ function measurePage(roles) {
     if (!vis(el) || hiddenOrSide(el)) continue; const r = el.getBoundingClientRect();
     if (r.width > 4 && r.height > 4 && r.height < 40) small.push(name(el) + ' ' + Math.round(r.height) + 'px');
   }
+  // 메인의 주 단추가 아예 없는 크기(11/8 — 761~900 폭에 «더빙하기»가 없었는데 «깨끗»으로 나왔다). 찾을 단추가 없으면 아래 스크롤 판정도 0으로 지나간다
+  const enter = scope === document.body ? document.querySelector('.scene-shell.is-current .tile-enter') : null;
+  const enterHome = enter?.closest('section');
+  if (enter && (!enterHome || vis(enterHome)) && !vis(enter)) off.push('«더빙하기» 단추가 안 보임');
   // 주 단추: 그 화면에서 할 일이 스크롤 없이 보이는가(판정은 도구 쪽 — 가로로 눕힌 휴대폰은 세지 않는다)
   const primary = ['#recBtn', '#saveBtn', '.scene-shell.is-current .tile-enter', '#openMovieBtn', '#qrbox', '#downloadBtn', '#errBackBtn'].map((q) => document.querySelector(q)).find((el) => el && vis(el));
   const cta = primary ? Math.max(0, Math.round(primary.getBoundingClientRect().bottom + scrollY - H)) : 0;
@@ -238,10 +257,12 @@ if (SELFTEST) {
     <div style="position:relative;width:300px;height:240px"><button class=tile id=card style="display:block;width:300px;height:240px;padding:0;border:0;position:relative"><span style="display:block;width:300px;height:170px"><img style="display:block;width:300px;height:170px" src="${svg}"></span><span class=gname id=cardname style="display:block;width:120px">장면 이름</span><span class=tile-enter id=cardbtn style="position:absolute;left:60px;top:198px">더빙하기 단추</span></button><button class=scene-arrow id=cardarrow style="position:absolute;left:0;top:60px">이전</button></div></body>`;
   const I = `<!doctype html><meta charset=utf-8><body style="margin:0;font:20px/30px sans-serif"><button id=behind style="width:300px;height:200px">메인</button><p id=behind2 style="position:absolute;left:0;top:0;margin:0">겹친 글</p><div id=splash style="position:fixed;inset:0;background:#fff"><p id=splashname style="margin:0">앱 이름</p></div></body>`;
   const H2 = `<!doctype html><meta charset=utf-8><body style="margin:0"><div class="scene-shell is-current"><div class=tile-media style="width:320px;height:180px"></div></div></body>`;
+  const J = `<!doctype html><meta charset=utf-8><body style="margin:0;font:12px/14px sans-serif"><a class=privacylink id=touching style="position:absolute;left:0;top:0">개인정보처리방침</a><img id=underlink style="position:absolute;left:0;top:14px;width:200px;height:60px" src="${svg}"><a class=privacylink id=clear style="position:absolute;left:300px;top:0">개인정보처리방침</a><img id=farlink style="position:absolute;left:300px;top:30px;width:200px;height:60px" src="${svg}"><div class="scene-shell is-current" style="position:absolute;top:120px"><span class=tile-enter style="display:none">더빙하기</span></div></body>`;
+  const K = `<!doctype html><meta charset=utf-8><body style="margin:0;font:14px/20px sans-serif"><div id=tinyposter style="position:relative;overflow:hidden;width:240px;height:100px"><img style="position:absolute;inset:0;width:100%;height:100%" src="${svg}"><span id=logotext style="position:absolute;left:10px;top:10px;width:130px">InKY Film Festival</span><span style="position:absolute;left:100px;top:10px;width:120px;height:21px;display:block"><img id=logoimg style="display:block;width:120px;height:21px" src="${svg}"></span><span id=badge2 style="position:absolute;right:4px;bottom:4px">완성</span><p id=uptext style="position:absolute;left:10px;bottom:0;margin:0;height:130px">위로 밀려 잘린 글</p></div></body>`;
   const browser = await chromium.launch(LAUNCH);
   const page = await browser.newPage({ viewport: { width: 1000, height: 700 } });
   const run = async (html) => { await page.setContent(html); await delay(150); return page.evaluate(measurePage, { 작은: ['#small'] }); };
-  const [a, b, d, e, f, g, h, i] = [await run(A), await run(B), await run(D), await run(E), await run(F), await run(G), await run(H2), await run(I)];
+  const [a, b, d, e, f, g, h, i, j, k] = [await run(A), await run(B), await run(D), await run(E), await run(F), await run(G), await run(H2), await run(I), await run(J), await run(K)];
   // 터치 기기에서만 세는 손가락 단추
   const touch = await browser.newContext({ viewport: { width: 400, height: 700 }, hasTouch: true, isMobile: true });
   const tp = await touch.newPage();
@@ -270,6 +291,12 @@ if (SELFTEST) {
     ['장면 카드 그림 위 화살표는 안 잡는다', !g.overlaps.some((s) => s.includes('#cardarrow'))],
     ['장면 카드 안의 글끼리 겹치면 잡는다', g.overlaps.some((s) => s.includes('#cardname') && s.includes('#cardbtn'))],
     ['스플래시 뒤의 메인은 안 잰다', i.overlaps.length === 0],
+    ['방침 링크 글자가 그림에 닿으면 잡는다', j.overlaps.some((s) => s.includes('#touching') && s.includes('#underlink'))],
+    ['방침 링크에서 떨어진 그림은 안 잡는다', !j.overlaps.some((s) => s.includes('#clear'))],
+    ['메인에 «더빙하기»가 안 보이면 잡는다', j.off.some((s) => s.includes('더빙하기'))],
+    ['떠 있는 글과 작은 로고 그림이 겹치면 잡는다', k.overlaps.some((s) => s.includes('#logotext') && s.includes('#logoimg'))],
+    ['그림 위 글이 위로 넘쳐 잘리면 잡는다', k.cutY.some((s) => s.includes('위로 밀려'))],
+    ['큰 그림 위 배지는 그대로 안 잡는다', !k.overlaps.some((s) => s.includes('#badge2'))],
     ['가운데 영상 칸이 16:9가 아니면 잡는다', g.crops.length === 1],
     ['16:9인 칸은 안 잡는다', h.crops.length === 0],
     ['zoom 안의 글자는 곱한 크기로 읽는다', g.type['작은'] === 10],
@@ -528,8 +555,10 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
     await delay(250);
     await seek(4.4);
     await page.locator('#cue').waitFor({ timeout: 15000 });
+    await delay(400); // 나타나는 움직임(.25초) 도중에 찍으면 글자가 흐리게 나온다
     await shot('09-녹음실-내차례');
     await page.locator('#overlay').waitFor({ timeout: 8000 });
+    await delay(400);
     await shot('10-녹음실-숫자');
     await page.locator('#recpill').waitFor({ timeout: 12000 });
     await shot('11-녹음실-녹음중');
