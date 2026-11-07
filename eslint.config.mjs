@@ -109,14 +109,14 @@ export default [
     },
   },
   {
-    // 화면 크기 조사 도구 — Node에서 돌고, page.evaluate() 안의 측정 코드는 브라우저에서 돈다.
+    // 화면 크기 조사 도구 — Node에서 돌고, page.evaluate() 안의 측정 코드는 브라우저에서, app.evaluate() 안은 설치판의 주 프로세스에서 돈다.
     files: ['tools/verify/*.mjs'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
       globals: {
-        process: 'readonly', console: 'readonly', URL: 'readonly', fetch: 'readonly',
-        window: 'readonly', document: 'readonly', navigator: 'readonly', location: 'readonly',
+        process: 'readonly', console: 'readonly', URL: 'readonly', fetch: 'readonly', Response: 'readonly', setTimeout: 'readonly',
+        window: 'readonly', document: 'readonly', navigator: 'readonly', location: 'readonly', sessionStorage: 'readonly',
         getComputedStyle: 'readonly', matchMedia: 'readonly', requestAnimationFrame: 'readonly',
         scrollTo: 'readonly', scrollX: 'readonly', scrollY: 'readonly', innerWidth: 'readonly', innerHeight: 'readonly',
         NodeFilter: 'readonly', DOMException: 'readonly',

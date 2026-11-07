@@ -2,6 +2,7 @@
 /* 해상도 조사(2026-11-07 Bumm님 «모든 해상도 포스터 고쳤던거 기준으로», 팀장 전달) — Poster Studio의 scripts/verify/viewport-survey.mjs를 이 앱의 화면에 맞게 옮긴 것.
 
      node tools/verify/viewport-survey.mjs <주소 | dist 폴더> <결과 폴더> [--sizes 갈래:가로x세로,…] [--screens 낱말,…] [--capture] [--snapshot] [--assets <dist 폴더>] [--jobs 3] [--dpr 배율]
+     node tools/verify/viewport-survey.mjs <Voice Cinema.exe> <결과 폴더> [--sizes desktop:가로x세로[@배율],…] [--screens 낱말,…] [--capture] [--jobs 2]
      node tools/verify/viewport-survey.mjs --selftest
 
    크기마다 진짜 흐름(스플래시 → 메인 → 녹음실 → 녹음 → 합성 → 완성, 오류 세 가지, 개인정보처리방침)을 지나며 화면마다 잰다:
@@ -15,13 +16,15 @@
    마이크는 크롬의 가짜 장치, 업로드는 도구가 페이지 밖에서 답한다 — 네트워크로 나가면 종료코드 2. 스크롤 막대는 켜 둔다(헤드리스 기본값은 막대를 숨겨 작은 창 문제를 가린다).
    --assets를 주면 엔진 · 장면 영상은 그 폴더에서 답한다 — 라이브를 잴 때 큰 파일을 되받지 않으려는 것이다(같은 커밋의 빌드여야 한다).
    --capture는 화면마다 원본 해상도 캡처를 <결과>/<PC · 태블릿 · 휴대폰>/<크기>/<화면>.png로 남기고, 문서가 창보다 길면 -전체.png를 더한다. 없으면 결함이 있는 화면만 남긴다.
+   첫 인자가 .exe면 설치판을 잰다 — 앱을 숨긴 창(VC_TEST_WINDOW=hidden, 재는 크기가 시험 모니터보다 커서 보이면 큰 모니터까지 넘어간다)으로 띄워 창 안쪽 크기를 그 값으로 바꾸고 같은 화면들을 지난다.
+   «@배율»은 화면 밀도만 흉내 낸다(Windows 설정은 바꾸지 않는다, 크기는 배율을 적용한 뒤의 값). 업로드는 앱의 세션에서 답하고, 결과는 <결과>/설치판/<크기>/에 둔다.
    --snapshot은 화면마다 요소의 자리 · 크기 · 글자를 <결과>/snap/…json으로 남긴다 — tools/verify/layout-compare.mjs로 전 · 뒤를 대조한다.
    결과는 <결과>/report.json · report.md. 결함이 있으면 종료코드 1, 흐름이 막히면 표에 «막힘»으로 적고 역시 1이다. */
 import fs from 'node:fs/promises';
 import fss from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
-import { chromium } from '@playwright/test';
+import { chromium, _electron } from '@playwright/test';
 
 const args = process.argv.slice(2);
 const opt = (name, def) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : def; };
@@ -41,9 +44,11 @@ const PC = ['1280x587', '1366x635', '1536x731', '1920x945', '2048x1017', '2560x1
   '1024x768', '1280x800', '1366x768', '1440x900', '1536x864', '1600x900', '1920x1080', '2560x1440', '1440x767', '1920x947', '2560x1307',
   '761x600', '800x600', '900x500', '1024x640', '1099x700', '1200x600', '1400x560', '1920x600'];
 const DEFAULT_SIZES = [...PHONE.map((s) => 'phone:' + s), ...TABLET.map((s) => 'tablet:' + s), ...PC.map((s) => 'pc:' + s)].join(',');
+// 설치판: 최소 창 · 반 화면 · 최대화한 안쪽(1366×768 100% · 1920×1080 100 · 125 · 150% · 2560×1440 · 4K 100 · 150 · 200 · 300%) · 3840×2160
+const DESKTOP = ['640x640', '667x700', '760x660', '1100x660', '1366x697', '1280x649@1.5', '1536x793@1.25', '1920x1009', '2560x1369', '2560x1369@1.5', '1920x1009@2', '1280x649@3', '3840x2089', '3840x2160'];
 // 실제 기기 배율: 휴대폰 3, 태블릿 2. PC는 화면 배율이 정해진 창만(1920×1080 노트북 150% · 125%)
 const DPR = { phone: () => 3, tablet: () => 2, pc: (w, h) => (w === 1280 && h === 587 ? 1.5 : w === 1536 && h === 731 ? 1.25 : 1) };
-const FOLDER = { phone: '휴대폰', tablet: '태블릿', pc: 'PC' };
+const FOLDER = { phone: '휴대폰', tablet: '태블릿', pc: 'PC', desktop: '설치판' };
 const UA = {
   phone: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
   tablet: 'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
@@ -298,21 +303,28 @@ function serve(root) {
   return new Promise((resolve) => { server.listen(0, '127.0.0.1', () => resolve({ server, url: `http://127.0.0.1:${server.address().port}/` })); });
 }
 
-const isDir = fss.existsSync(target) && fss.statSync(target).isDirectory();
+const isDir = !target.toLowerCase().endsWith('.exe') && fss.existsSync(target) && fss.statSync(target).isDirectory();
 const local = isDir ? await serve(path.resolve(target)) : null;
 const base = local ? local.url : target.replace(/\/?$/, '/');
 const assetsRoot = opt('--assets', null) ? path.resolve(opt('--assets')) : null;
 const onlyScreens = opt('--screens', null)?.split(',');
-const sizes = opt('--sizes', DEFAULT_SIZES).split(',').map((s) => { const [kind, wh] = s.split(':'); const [w, h] = wh.split('x').map(Number); return { kind, w, h, tag: wh }; });
+const EXE = target.toLowerCase().endsWith('.exe') ? path.resolve(target) : null;
+const sizes = opt('--sizes', EXE ? DESKTOP.map((d) => 'desktop:' + d).join(',') : DEFAULT_SIZES).split(',').map((s) => {
+  const [kind, wh] = s.split(':');
+  const [size, scale] = wh.split('@');
+  const [w, h] = size.split('x').map(Number);
+  return { kind, w, h, tag: wh, scale: scale ? Number(scale) : 1 };
+});
 const report = [];
 let realUploads = 0;
 
-async function surveySize(browser, { kind, w, h, tag }) {
-  const touch = kind !== 'pc';
+const FAKE_URL = 'https://storage.googleapis.com/inky-voice-cinema.firebasestorage.app/dubs/dub_animation_0000000000000_000000000000.mp4';
+
+// 브라우저 쪽: 크기마다 새 맥락. 업로드와 큰 파일은 도구가 페이지 밖에서 답한다.
+async function openBrowser(browser, { kind, w, h, touch }) {
   const dpr = opt('--dpr') ? Number(opt('--dpr')) : DPR[kind](w, h);
   const context = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: dpr, isMobile: touch, hasTouch: touch, userAgent: UA[kind], permissions: ['microphone'], serviceWorkers: 'block', reducedMotion: 'no-preference' });
   const page = await context.newPage();
-  const dir = path.join(out, FOLDER[kind], tag);
   // 업로드는 페이지 밖으로 나가지 않는다. 앞의 failing번은 실패로, 그다음은 1.5초 늦게 성공으로 답한다.
   const upload = { failing: 0, routed: 0, seen: 0 };
   context.on('request', (r) => { if (r.method() === 'POST' && r.url().includes('/upload')) upload.seen++; });
@@ -320,7 +332,7 @@ async function surveySize(browser, { kind, w, h, tag }) {
     upload.routed++;
     if (upload.failing > 0) { upload.failing--; await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ ok: false, error: '시험' }) }); return; }
     await delay(1500);
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, url: 'https://storage.googleapis.com/inky-voice-cinema.firebasestorage.app/dubs/dub_animation_0000000000000_000000000000.mp4' }) });
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, url: FAKE_URL }) });
   });
   // App Check · reCAPTCHA는 잴 것이 아니다 — 토큰을 기다리지 않게 막는다
   await context.route(/recaptcha|firebaseappcheck/, (route) => route.abort());
@@ -333,6 +345,66 @@ async function surveySize(browser, { kind, w, h, tag }) {
     if (range) { const start = Number(range[1]), end = range[2] ? Number(range[2]) : all.length - 1; await route.fulfill({ status: 206, headers: { 'Content-Type': type, 'Accept-Ranges': 'bytes', 'Content-Range': `bytes ${start}-${end}/${all.length}` }, body: all.subarray(start, end + 1) }); return; }
     await route.fulfill({ status: 200, headers: { 'Content-Type': type, 'Accept-Ranges': 'bytes' }, body: all });
   });
+  return { page, home: base, failNext: (n) => { upload.failing = n; }, realUploads: () => Math.max(0, upload.seen - upload.routed), close: () => context.close() };
+}
+
+// 설치판 쪽: 앱을 숨긴 창으로 띄운다. 모든 https가 앱의 세션을 지나므로 업로드와 App Check를 거기서 답한다(desktop/tools/layout-lib.mjs와 같은 자리).
+async function openDesktop({ w, h, tag, scale }) {
+  const app = await _electron.launch({
+    executablePath: EXE,
+    args: [`--user-data-dir=${path.join(out, 'profile', tag)}`, '--mute-audio', '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'],
+    env: { ...process.env, VC_TEST_WINDOW: 'hidden' },
+  });
+  await app.evaluate(({ session }, url) => {
+    const ses = session.fromPartition('persist:voice-cinema');
+    const original = ses.fetch.bind(ses);
+    const cors = { 'Access-Control-Allow-Origin': 'https://voice.edutogether.kr', Vary: 'Origin' };
+    globalThis.__survey = { failing: 0, posts: 0, answered: 0 };
+    ses.fetch = async (request, options) => {
+      if (/recaptcha|firebaseappcheck/.test(request.url)) throw new Error('시험이라 막음');
+      if (!request.url.endsWith('/voiceCinema/upload')) return original(request, options);
+      if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: { ...cors, 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': request.headers.get('access-control-request-headers') ?? '*' } });
+      globalThis.__survey.posts++;
+      await request.text();
+      globalThis.__survey.answered++;
+      if (globalThis.__survey.failing > 0) {
+        globalThis.__survey.failing--;
+        return new Response(JSON.stringify({ ok: false, error: '시험' }), { status: 500, headers: { ...cors, 'Content-Type': 'application/json' } });
+      }
+      await new Promise((done) => setTimeout(done, 1500));
+      return new Response(JSON.stringify({ ok: true, url }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
+    };
+  }, FAKE_URL);
+  const page = await app.firstWindow();
+  await app.evaluate(({ BrowserWindow }, [cw, ch]) => { BrowserWindow.getAllWindows()[0].setContentSize(cw, ch); }, [w, h]);
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Emulation.setDeviceMetricsOverride', { width: 0, height: 0, deviceScaleFactor: scale, mobile: false });
+  await delay(500);
+  const inner = await page.evaluate(() => [innerWidth, innerHeight]);
+  if (Math.abs(inner[0] - w) > 1 || Math.abs(inner[1] - h) > 1) { await app.close(); throw new Error(`창이 그 크기가 되지 않았다(안쪽 ${inner.join('x')})`); }
+  await page.evaluate(() => sessionStorage.clear());
+  let leaked = 0;
+  return {
+    page,
+    home: 'https://voice.edutogether.kr/',
+    failNext: (n) => app.evaluate((_e, count) => { globalThis.__survey.failing = count; }, n),
+    realUploads: () => leaked,
+    close: async () => { const c = await app.evaluate(() => globalThis.__survey); leaked = Math.max(0, c.posts - c.answered); await app.close(); },
+  };
+}
+
+async function surveySize(browser, { kind, w, h, tag, scale }) {
+  const touch = kind === 'phone' || kind === 'tablet';
+  let opened;
+  try {
+    opened = kind === 'desktop' ? await openDesktop({ w, h, tag, scale }) : await openBrowser(browser, { kind, w, h, touch });
+  } catch (e) {
+    report.push({ size: tag, kind, screen: '흐름', error: `열기: ${e.message.split('\n')[0]}`, bad: true });
+    console.log(`${kind} ${tag}: 열지 못함 — ${e.message.split('\n')[0]}`);
+    return false;
+  }
+  const { page, home } = opened;
+  const dir = path.join(out, FOLDER[kind], tag);
   // 짧게 지나가는 화면(«이제 당신의 차례» 0.6초 · 숫자 0.3초)을 찍을 수 있게 그때만 늘린다. 합성 실패는 원판 요청을 페이지 안에서 실패시킨다(<video>는 fetch를 쓰지 않는다).
   await page.addInitScript(() => {
     const realTimeout = window.setTimeout.bind(window);
@@ -363,9 +435,10 @@ async function surveySize(browser, { kind, w, h, tag }) {
   const settle = () => page.evaluate(() => new Promise((done) => { let last = '', same = 0, n = 0; const tick = () => { const r = document.querySelector('.scene-shell.is-current')?.getBoundingClientRect(); const now = r ? r.left + ',' + r.width : ''; same = now === last ? same + 1 : 0; last = now; n++; if (same >= 10 || n > 300) done(); else requestAnimationFrame(tick); }; tick(); }));
   const seek = (t) => page.evaluate((s) => { document.getElementById('clip').currentTime = s; }, t);
   let step = '시작';
+  let touchLost = false;
   try {
     step = '스플래시';
-    await page.goto(base);
+    await page.goto(home);
     await page.locator('#splash').waitFor({ state: 'visible', timeout: 15000 });
     await page.evaluate(() => document.fonts.ready.then(() => true));
     await delay(650);
@@ -436,7 +509,7 @@ async function surveySize(browser, { kind, w, h, tag }) {
     await page.locator('#errBackBtn').click();
     await page.locator('#afterRow').waitFor({ timeout: 10000 });
     step = '기기 저장';
-    upload.failing = 3;
+    await opened.failNext(3);
     await page.locator('#saveBtn').click();
     await page.locator('#loading').waitFor({ timeout: 20000 });
     await delay(150);
@@ -448,34 +521,41 @@ async function surveySize(browser, { kind, w, h, tag }) {
     await page.goBack();
     await page.locator('#afterRow').waitFor({ timeout: 10000 });
     step = '완성';
-    upload.failing = 0;
+    await opened.failNext(0);
     await page.locator('#saveBtn').click();
     await page.locator('#qrbox').waitFor({ timeout: 90000 });
     await delay(200);
     await page.evaluate(() => { scrollTo(0, 0); });
     await shot('17-완성');
     step = '개인정보처리방침';
-    await page.goto(base + 'privacy.html');
+    await page.goto(home + 'privacy.html');
     await page.evaluate(() => document.fonts.ready.then(() => true));
     await delay(300);
     await shot('18-개인정보처리방침');
   } catch (e) {
     report.push({ size: tag, kind, screen: '흐름', error: `${step}: ${e.message.split('\n')[0]}`, bad: true });
     console.log(`${kind} ${tag}: ${step}에서 막힘 — ${e.message.split('\n')[0]}`);
+    touchLost = e.message.includes('터치 흉내가 풀렸다');
   }
-  realUploads += Math.max(0, upload.seen - upload.routed);
-  await context.close();
+  await opened.close();
+  realUploads += opened.realUploads();
+  return touchLost;
 }
 
-// 크기마다 브라우저를 따로 띄운다 — 한 브라우저에 PC와 휴대폰을 섞어 돌리면 휴대폰 쪽 터치 흉내가 중간에 풀려(11/7 실측: 844×340이 PC 비율 0.53으로, 375×553에서 «내 영화 열기»가 사라짐) 없는 결함을 보고한다.
+// 터치 흉내는 가끔 PC 전체에서 한꺼번에 풀린다(11/7 실측: 브라우저를 나눠도 돌던 휴대폰 두 크기가 같은 순간에 풀려, 844×340이 PC 비율 0.53이 되고
+// 375×553에서 «내 영화 열기»가 사라졌다). 실제 기기에는 없는 일이라 그 크기를 처음부터 다시 잰다.
+const browser = EXE ? null : await chromium.launch(LAUNCH);
 const queue = [...sizes];
 await Promise.all(Array.from({ length: JOBS }, async () => {
   for (let s = queue.shift(); s; s = queue.shift()) {
-    const browser = await chromium.launch(LAUNCH);
-    await surveySize(browser, s);
-    await browser.close();
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      if (!(await surveySize(browser, s)) || attempt === 3) break;
+      console.log(`${s.kind} ${s.tag}: 터치 흉내가 풀려 처음부터 다시 잰다(${attempt}번째)`);
+      for (let i = report.length - 1; i >= 0; i--) if (report[i].size === s.tag && report[i].kind === s.kind) report.splice(i, 1);
+    }
   }
 }));
+await browser?.close();
 local?.server.close();
 await fs.writeFile(path.join(out, 'report.json'), JSON.stringify(report, null, 1));
 
