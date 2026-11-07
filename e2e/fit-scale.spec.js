@@ -117,14 +117,62 @@ test('내용이 넘쳐 세로 스크롤 막대가 생겨도 가로로 넘치지 
     const page = await browser.newPage({ viewport: { width: 640, height: 640 } });
     await page.goto(`${baseURL}/`);
     await page.locator('#splash').waitFor({ state: 'detached' });
-    const zoom = await page.evaluate(() => document.body.style.zoom);
+    const state = () => page.evaluate(() => {
+      const d = document.documentElement;
+      const appW = parseFloat(getComputedStyle(d).getPropertyValue('--app-w'));
+      return { over: d.scrollWidth - d.clientWidth, clientW: d.clientWidth, appW, drawn: Math.round(appW * parseFloat(d.style.getPropertyValue('--fit'))) };
+    });
     await page.evaluate(() => { const tall = document.createElement('div'); tall.id = 'tall'; tall.style.height = '2000px'; document.querySelector('.wrap').append(tall); });
-    await expect.poll(() => page.evaluate(() => document.documentElement.clientWidth)).toBeLessThan(640);
-    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), '막대 폭만큼 가로로 넘친다').toBe(0);
-    expect(await page.evaluate(() => document.body.style.zoom), '막대가 생겼다고 비율이 바뀌면 안 된다(높이가 바뀌어 되풀이된다)').toBe(zoom);
-    // 내용이 줄어 막대가 사라지면 처음과 같아진다
+    await expect.poll(async () => (await state()).clientW).toBeLessThan(640);
+    await expect.poll(async () => (await state()).over, '막대 폭만큼 가로로 넘친다').toBe(0);
+    await expect.poll(async () => (await state()).appW, '막대 때문에 휴대폰 배치로 내려가면 안 된다').toBeCloseTo(768, 1);
+    // 내용이 줄어 막대가 사라져도 오른쪽에 빈 띠가 남지 않는다
     await page.evaluate(() => document.querySelector('#tall').remove());
-    await expect.poll(() => page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-w')))).toBeCloseTo(768, 1);
+    await expect.poll(async () => (await state()).clientW).toBe(640);
+    await expect.poll(async () => (await state()).drawn, '오른쪽 빈 띠').toBe(640);
+    expect((await state()).over).toBe(0);
+  } finally {
+    await browser.close();
+  }
+});
+
+// 640×640은 기준 폭이 768이라 막대(15px)가 생기면 앱 폭이 750이 되어 휴대폰 배치(760 이하)로 바뀐다. 그 배치에서는 내용이 들어가 막대가 사라지고, 사라지면 다시 넘쳐,
+// 창을 건드리지 않아도 비율이 끝없이 오갔다(11/8 설치판 640×640 입력 오류 화면에서 발견 — 웹 공용 코드다).
+test('막대가 생기면 배치가 바뀌어 내용이 들어가는 화면에서도 비율이 오가지 않는다 — 640×640', async ({ playwright }) => {
+  const { baseURL } = test.info().project.use;
+  const browser = await playwright.chromium.launch({ ignoreDefaultArgs: ['--hide-scrollbars'] });
+  try {
+    const page = await browser.newPage({ viewport: { width: 640, height: 640 } });
+    await page.goto(`${baseURL}/`);
+    await page.locator('#splash').waitFor({ state: 'detached' });
+    const seen = await page.evaluate(async () => {
+      const app = document.querySelector('#root');
+      for (const child of app.children) child.style.display = 'none';
+      const style = document.createElement('style');
+      style.textContent = '#tall { height:10px; } @container app (min-width:761px) { #tall { height:776px; } }';
+      document.head.append(style);
+      const tall = document.createElement('div');
+      tall.id = 'tall';
+      app.append(tall);
+      const wait = (ms) => new Promise((done) => window.setTimeout(done, ms));
+      await wait(500);
+      const zooms = new Set();
+      const end = performance.now() + 1500;
+      while (performance.now() < end) {
+        zooms.add(document.body.style.zoom);
+        await new Promise((done) => requestAnimationFrame(done));
+      }
+      return [...zooms];
+    });
+    expect(seen, '창을 건드리지 않았는데 비율이 오간다').toHaveLength(1);
+    const state = await page.evaluate(() => {
+      const d = document.documentElement;
+      const appW = parseFloat(getComputedStyle(d).getPropertyValue('--app-w'));
+      return { over: d.scrollWidth - d.clientWidth, drawn: appW * parseFloat(d.style.getPropertyValue('--fit')), clientW: d.clientWidth, appW };
+    });
+    expect(state.over, '가로 넘침').toBe(0);
+    expect(state.drawn, '오른쪽 빈 띠').toBeCloseTo(state.clientW, 0);
+    expect(state.appW, '휴대폰 배치로 내려가면 안 된다').toBeGreaterThan(760);
   } finally {
     await browser.close();
   }

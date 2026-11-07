@@ -22,8 +22,11 @@
     if (matchMedia('(pointer: coarse)').matches) return true;
     return navigator.maxTouchPoints > 0 && !matchMedia('(pointer: fine)').matches;
   };
+  var fittedW = 0;
+  var refitted = false;
   var fit = function () {
     var w = root.clientWidth;
+    fittedW = w;
     var h = probe.getBoundingClientRect().height || window.innerHeight;
     if (!w || !h) return;
     var portrait = h >= w;
@@ -41,15 +44,23 @@
     root.dataset.fit = kind;
   };
   fit();
-  window.addEventListener('resize', fit);
-  // 창을 줄이는 순간에는 앞 크기의 화면이 넘쳐 세로 스크롤 막대가 잠깐 생기고, 그 폭(15px)을 뺀 너비로 비율을 정한다. 막대는 맞춘 뒤 사라지지만
-  // 창 크기는 그대로라 resize가 다시 오지 않아, 그 크기를 새로 연 것보다 작은 비율 · 오른쪽 빈 띠로 남았다(10/28 설치판 기준 16에서 발견 — 웹에도 있다).
-  // 화면 폭이 바뀌었는데(막대가 사라짐) 넘치는 내용이 없으면 다시 맞춘다. 내용이 정말 넘쳐 막대가 남아 있는 화면에서는 비율을 다시 맞추지 않는다 —
-  // 맞출 때마다 막대가 생겼다 사라졌다 하며 되풀이될 수 있어서다. 그때는 화면 폭만 막대를 뺀 값으로 바꾼다. 안 그러면 막대 폭만큼 가로로 넘친다(11/8 설치판 640×640 완성 화면).
+  window.addEventListener('resize', function () {
+    refitted = false;
+    fit();
+  });
+  // 스크롤 막대(15px)가 생기거나 사라져 화면 폭이 바뀌면, 그 창 크기에서 한 번만 다시 맞춘다. 그 뒤로는 비율은 두고 화면 폭만 따라간다.
+  // 다시 맞추지 않으면: 창을 줄이는 순간 잠깐 생긴 막대 폭만큼 작은 비율 · 오른쪽 빈 띠로 남고(10/28 설치판 기준 16에서 발견 — 웹에도 있다),
+  // 폭 768인 창에서 막대가 앱 폭을 760 아래로 끌어내려 휴대폰 배치가 된다. 여러 번 다시 맞추면: 비율이 작아져 막대가 사라지고 사라진 폭으로
+  // 맞추면 또 넘쳐, 창을 건드리지 않아도 비율이 끝없이 오간다(11/8 설치판 640×640 입력 오류 화면).
   if (window.ResizeObserver) {
     new ResizeObserver(function () {
-      if (root.scrollHeight <= root.clientHeight) fit();
-      else root.style.setProperty('--app-w', root.clientWidth / parseFloat(root.style.getPropertyValue('--fit')) + 'px');
+      var w = root.clientWidth;
+      if (w !== fittedW && !refitted) {
+        refitted = true;
+        fit();
+      } else {
+        root.style.setProperty('--app-w', w / parseFloat(root.style.getPropertyValue('--fit')) + 'px');
+      }
     }).observe(root);
   }
 })();
