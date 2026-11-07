@@ -7,7 +7,7 @@
 // firebase-admin 등 functions/node_modules 안에만 있는 의존성을 로드하려 해서
 // 이 위치에서 import가 실패한다.
 import { test, expect } from 'vitest';
-import { readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -43,6 +43,17 @@ test('업로드 타임아웃: 클라이언트(ms)와 서버(초)가 같은 시�
     extract(read('src/config.ts'), /export const UPLOAD_TIMEOUT_MS = (\d+)/, '클라이언트 UPLOAD_TIMEOUT_MS')
   );
   expect(clientMs).toBe(serverSeconds * 1000);
+});
+
+// 첫 화면 설치 파일 아이콘은 Hosting 리디렉션을 거쳐 Storage의 파일로 간다. 주소가 어긋나면 아이콘이 404가 되고, 파일이 Hosting에 들어가면 배포가 240MB 늘어난다.
+test('설치 파일 아이콘: 앱의 주소와 Hosting 리디렉션이 같고, 파일을 Hosting에 싣지 않는다', () => {
+  const href = extract(read('src/config.ts'), /SETUP_DOWNLOAD = \{ href: '([^']+)'/, 'SETUP_DOWNLOAD.href');
+  const redirects = JSON.parse(read('firebase.json')).hosting.redirects;
+  expect(redirects.map((r) => r.source)).toContain(href);
+  const redirect = redirects.find((r) => r.source === href);
+  expect(redirect.type, '302여야 파일 자리를 바꿀 수 있다(브라우저가 영구 기억하지 않는다)').toBe(302);
+  expect(redirect.destination.startsWith('https://storage.googleapis.com/inky-voice-cinema-download/')).toBe(true);
+  expect(existsSync(path.join(root, 'public', href.slice(1))), '설치 파일을 public에 두면 안 된다').toBe(false);
 });
 
 // 개인정보처리방침이 약속한 삭제 시각과 실제 예약 시각이 어긋나면 그건 틀린 고지다.

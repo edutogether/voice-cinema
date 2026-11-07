@@ -1,3 +1,5 @@
+import { DownloadLink } from './DownloadLink';
+
 /** 행사 공통 표기와 Voice Cinema의 현재 체험 단계를 분리한다. */
 export function FestivalHeader({ step = 1 }: { step?: 1 | 2 | 3 }) {
   return (
@@ -19,7 +21,10 @@ export function FestivalHeader({ step = 1 }: { step?: 1 | 2 | 3 }) {
         <span className="festival-symbol" aria-hidden="true"><img src="/brands/inky.png" alt="" /></span>
         <span><strong>InKY</strong> <span className="festival-english">Film Festival</span></span>
       </button>
-      <a className="privacylink" href="./privacy.html" target="_blank" rel="noopener" aria-label="개인정보처리방침 (새 탭)">개인정보처리방침</a>
+      <div className="header-links">
+        {step === 1 && <DownloadLink />}
+        <a className="privacylink" href="./privacy.html" target="_blank" rel="noopener" aria-label="개인정보처리방침 (새 탭)">개인정보처리방침</a>
+      </div>
     </header>
   );
 }

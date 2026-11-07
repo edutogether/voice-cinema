@@ -110,6 +110,26 @@ test('창 크기가 바뀌면 다시 맞춘다 — 2560에서 1280×587로 줄�
 // 창을 줄이는 순간 앞 크기의 화면이 넘쳐 세로 스크롤 막대가 잠깐 생기고, fit.js가 그 폭을 뺀 너비로 비율을 정한 채 남던 결함
 // (10/28 설치판에서 발견 — 웹에도 있다). 폭이 비율을 정하는 창이어야 막대 폭이 비율에 드러난다(740×800이면 막대가 있을 때 0.944, 없을 때 0.9635). Playwright 헤드리스는 기본으로
 // 스크롤 막대를 숨겨(--hide-scrollbars) 이 모양이 드러나지 않는다 — 이 검사만 막대를 켠 브라우저를 따로 띄운다.
+test('내용이 넘쳐 세로 스크롤 막대가 생겨도 가로로 넘치지 않는다 — 640×640', async ({ playwright }) => {
+  const { baseURL } = test.info().project.use;
+  const browser = await playwright.chromium.launch({ ignoreDefaultArgs: ['--hide-scrollbars'] });
+  try {
+    const page = await browser.newPage({ viewport: { width: 640, height: 640 } });
+    await page.goto(`${baseURL}/`);
+    await page.locator('#splash').waitFor({ state: 'detached' });
+    const zoom = await page.evaluate(() => document.body.style.zoom);
+    await page.evaluate(() => { const tall = document.createElement('div'); tall.id = 'tall'; tall.style.height = '2000px'; document.querySelector('.wrap').append(tall); });
+    await expect.poll(() => page.evaluate(() => document.documentElement.clientWidth)).toBeLessThan(640);
+    await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), '막대 폭만큼 가로로 넘친다').toBe(0);
+    expect(await page.evaluate(() => document.body.style.zoom), '막대가 생겼다고 비율이 바뀌면 안 된다(높이가 바뀌어 되풀이된다)').toBe(zoom);
+    // 내용이 줄어 막대가 사라지면 처음과 같아진다
+    await page.evaluate(() => document.querySelector('#tall').remove());
+    await expect.poll(() => page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-w')))).toBeCloseTo(768, 1);
+  } finally {
+    await browser.close();
+  }
+});
+
 test('스크롤 막대가 있는 창을 줄여도 비율이 같은 크기로 새로 연 화면과 같다 — 740×900에서 740×800', async ({ playwright }) => {
   const { baseURL } = test.info().project.use;
   const browser = await playwright.chromium.launch({ ignoreDefaultArgs: ['--hide-scrollbars'] });

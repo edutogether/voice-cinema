@@ -17,12 +17,14 @@
    --assets를 주면 엔진 · 장면 영상은 그 폴더에서 답한다 — 라이브를 잴 때 큰 파일을 되받지 않으려는 것이다(같은 커밋의 빌드여야 한다).
    --capture는 화면마다 원본 해상도 캡처를 <결과>/<PC · 태블릿 · 휴대폰>/<크기>/<화면>.png로 남기고, 문서가 창보다 길면 -전체.png를 더한다. 없으면 결함이 있는 화면만 남긴다.
    첫 인자가 .exe면 설치판을 잰다 — 앱을 숨긴 창(VC_TEST_WINDOW=hidden, 재는 크기가 시험 모니터보다 커서 보이면 큰 모니터까지 넘어간다)으로 띄워 창 안쪽 크기를 그 값으로 바꾸고 같은 화면들을 지난다.
-   «@배율»은 화면 밀도만 흉내 낸다(Windows 설정은 바꾸지 않는다, 크기는 배율을 적용한 뒤의 값). 업로드는 앱의 세션에서 답하고, 결과는 <결과>/설치판/<크기>/에 둔다.
+   «@배율»은 화면 밀도만 흉내 낸다(Windows 설정은 바꾸지 않는다, 크기는 배율을 적용한 뒤의 값). 캡처는 그 밀도의 실제 화소다. 업로드는 앱의 세션에서 답하고, 결과는 <결과>/설치판/<크기>/에 둔다.
+   숨긴 창은 그리기가 초당 1~2번뿐이다 — 자리와 글자를 재는 데는 문제없지만 움직임을 보는 시험은 아니다(그것은 desktop/tools/resize-check.mjs가 보이는 창으로 본다).
    --snapshot은 화면마다 요소의 자리 · 크기 · 글자를 <결과>/snap/…json으로 남긴다 — tools/verify/layout-compare.mjs로 전 · 뒤를 대조한다.
    결과는 <결과>/report.json · report.md. 결함이 있으면 종료코드 1, 흐름이 막히면 표에 «막힘»으로 적고 역시 1이다. */
 import fs from 'node:fs/promises';
 import fss from 'node:fs';
 import http from 'node:http';
+import { Buffer } from 'node:buffer';
 import path from 'node:path';
 import { chromium, _electron } from '@playwright/test';
 
@@ -387,6 +389,25 @@ async function openDesktop({ w, h, tag, scale }) {
   return {
     page,
     home: 'https://voice.edutogether.kr/',
+    // page.screenshot은 흉내 낸 밀도를 빼고 CSS 크기로 찍고, 숨긴 창에서 움직임이 없는 화면이면 CDP 캡처는 끝나지 않는다(새 그림이 안 나온다).
+    // 창 캡처는 밀도까지 실제 화소로 바로 돌아온다. 창보다 긴 문서도 CDP로 통째로 찍으면 끝나지 않아, 한 화면씩 내려가며 «-전체-1.png, -2.png…»로 찍는다.
+    capture: async (file, full) => {
+      const grab = async (to) => {
+        // 창 캡처는 마지막으로 그린 그림을 돌려준다 — 숨긴 창은 초당 1~2번 그리므로 다시 그리게 하고 기다려야 지금 화면이 찍힌다(안 그러면 «저장 중»이 «완성» 이름으로 남았다)
+        await app.evaluate(({ BrowserWindow }) => { BrowserWindow.getAllWindows()[0].webContents.invalidate(); });
+        await delay(1300);
+        const png = await app.evaluate(async ({ BrowserWindow }) => (await BrowserWindow.getAllWindows()[0].webContents.capturePage(undefined, { stayHidden: true, stayAwake: true })).toPNG().toString('base64'));
+        await fs.writeFile(to, Buffer.from(png, 'base64'));
+      };
+      if (!full) { await grab(file); return; }
+      const { doc, view } = await page.evaluate(() => ({ doc: document.documentElement.scrollHeight, view: innerHeight }));
+      const pages = Math.ceil(doc / (view * 0.9));
+      for (let i = 0; i < pages; i++) {
+        await page.evaluate((y) => { scrollTo(0, y); }, i * view * 0.9);
+        await grab(file.replace(/\.png$/, `-${i + 1}.png`));
+      }
+      await page.evaluate(() => { scrollTo(0, 0); });
+    },
     failNext: (n) => app.evaluate((_e, count) => { globalThis.__survey.failing = count; }, n),
     realUploads: () => leaked,
     close: async () => { const c = await app.evaluate(() => globalThis.__survey); leaked = Math.max(0, c.posts - c.answered); await app.close(); },
@@ -424,15 +445,17 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
     report.push({ size: tag, kind, screen, ...m, bad });
     if (CAPTURE || bad) {
       await fs.mkdir(dir, { recursive: true });
-      await page.screenshot({ path: path.join(dir, `${screen}.png`) });
-      if (m.docH > m.H + 1 && CAPTURE) await page.screenshot({ path: path.join(dir, `${screen}-전체.png`), fullPage: true });
+      const take = (file, fullPage) => (opened.capture ? opened.capture(file, fullPage) : page.screenshot({ path: file, fullPage }));
+      await take(path.join(dir, `${screen}.png`), false);
+      if (m.docH > m.H + 1 && CAPTURE) await take(path.join(dir, `${screen}-전체.png`), true);
     }
     if (SNAPSHOT) { await fs.mkdir(path.join(out, 'snap'), { recursive: true }); await fs.writeFile(path.join(out, 'snap', `${kind}-${tag}-${screen}.json`), JSON.stringify(await page.evaluate(layoutPage))); }
     console.log(`${kind} ${tag} ${screen}: ${bad ? `가로 ${m.hscroll} · 밖 ${m.off.length} · 잘림 ${m.clipped.length} · 겹침 ${m.overlaps.length} · 아래 ${m.cutY.length} · 띠 ${m.bands.length} · 16:9 ${m.crops.length} · 손가락 ${m.small.length} · 주 단추 아래 ${m.cta}` : '깨끗'} (최소 ${m.minFont}px)`);
   };
   const phase = (p) => page.locator(`#studio.active[data-phase="${p}"]`).waitFor({ timeout: 30000 });
   // 장면 넘김 움직임이 끝날 때까지 기다린다 — 움직이는 중에 재면 카드가 칸 밖에 있는 것으로 잡힌다
-  const settle = () => page.evaluate(() => new Promise((done) => { let last = '', same = 0, n = 0; const tick = () => { const r = document.querySelector('.scene-shell.is-current')?.getBoundingClientRect(); const now = r ? r.left + ',' + r.width : ''; same = now === last ? same + 1 : 0; last = now; n++; if (same >= 10 || n > 300) done(); else requestAnimationFrame(tick); }; tick(); }));
+  // 숨긴 설치판 창은 그리기가 초당 1~2번이라 프레임이 아니라 시계로 잰다(자리가 세 번 연달아 같으면 끝) — 2.6초만 기다렸더니 움직이는 중인 카드가 칸 밖으로 잡혔다
+  const settle = kind === 'desktop' ? () => page.evaluate(() => new Promise((done) => { let last = '', same = 0, n = 0; const check = () => { const r = document.querySelector('.scene-shell.is-current')?.getBoundingClientRect(); const now = r ? r.left + ',' + r.width : ''; same = now === last ? same + 1 : 0; last = now; n++; if (same >= 3 || n > 40) done(); else setTimeout(check, 500); }; check(); })) : () => page.evaluate(() => new Promise((done) => { let last = '', same = 0, n = 0; const tick = () => { const r = document.querySelector('.scene-shell.is-current')?.getBoundingClientRect(); const now = r ? r.left + ',' + r.width : ''; same = now === last ? same + 1 : 0; last = now; n++; if (same >= 10 || n > 300) done(); else requestAnimationFrame(tick); }; tick(); }));
   const seek = (t) => page.evaluate((s) => { document.getElementById('clip').currentTime = s; }, t);
   let step = '시작';
   let touchLost = false;
@@ -456,11 +479,15 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
     }
     // 제목이 가장 긴 애니메이션 장면으로 간다. 앞의 장면들은 메인에서 함께 잰다.
     step = '장면 고르기';
+    // 숨긴 창은 느려 재는 동안 자동 넘김이 장면을 바꾼다 — 손가락 한 번 누르기로 멈춘다(desktop/tools/resize-check.mjs와 같다)
+    if (kind === 'desktop') await page.locator('.scene-carousel').dispatchEvent('pointerdown', { pointerType: 'touch', isPrimary: true });
     await page.locator('.scene-arrow-next').click();
     await settle();
     await shot('04-메인-둘째장면');
-    await page.locator('.scene-arrow-next').click();
-    await page.locator('.scene-shell.is-current [data-genre="animation"]').waitFor({ timeout: 8000 });
+    // 앞에서 자동 넘김이 한 장 넘겼을 수 있어 횟수를 정하지 않고 그 장면까지 넘긴다
+    const animation = page.locator('.scene-shell.is-current [data-genre="animation"]');
+    for (let i = 0; i < 8 && !(await animation.count()); i++) { await page.locator('.scene-arrow-next').click(); await delay(400); }
+    await animation.waitFor({ timeout: 8000 });
     await delay(450);
     step = '녹음실 재생';
     await page.locator('.scene-shell.is-current .tile').click();

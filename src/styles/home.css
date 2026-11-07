@@ -90,8 +90,15 @@ body:has(#home.active) { background:#fff; }
 .cinema-footer p { margin:0; }
 #home .cinema-footer { min-height:52px; padding-block:8px; }
 .cinema-footer p span { margin-left:16px; }
-.privacylink { position:absolute; top:calc(100% + 3px); right:28px; display:inline-flex; min-height:24px; align-items:center; color:#666; text-decoration:none; font-size:.75rem; }
+.header-links { position:absolute; top:calc(100% + 3px); right:28px; display:flex; align-items:center; gap:8px; }
+.privacylink { display:inline-flex; min-height:24px; align-items:center; color:#666; text-decoration:none; font-size:.75rem; }
 .privacylink:hover { color:#171717; text-decoration:underline; }
+/* 첫 화면 설치 파일 아이콘(11/7 Bumm님, Poster Studio와 같다) — 방침 글자와 같은 색 · 1.15em, 밑줄 없음, 마우스를 올리면 커서만 손가락. 휴대폰에서는 Windows 설치 파일을 쓸 수 없어 보이지 않는다. */
+.download-link { display:flex; align-items:center; min-height:24px; color:#666; font-size:.75rem; text-decoration:none; cursor:pointer; }
+.download-link svg { display:block; width:1.15em; height:1.15em; }
+.download-link:focus-visible { outline:2px solid #ed3124; outline-offset:2px; }
+@media (pointer:coarse) { .download-link { min-height:44px; padding:0 6px 0 12px; margin:-10px -6px -10px -12px; } }
+html[data-fit="none"] .download-link { display:none; }
 /* 진행률이 사라져도 카드 높이가 바뀌지 않게 헤더 아래에 독립 표시한다. */
 .enginebar { display:none; position:absolute; right:160px; top:82px; color:#626262; font-size:.6875rem; line-height:1.5; }
 .enginebar.show { display:block; }
@@ -109,7 +116,7 @@ body:has(#home.active) { background:#fff; }
 @container app (max-width:1150px) {
   .cinema-festival { display:none; }
   .festival-header { gap:14px; padding-inline:20px; }
-  .privacylink { right:20px; }
+  .header-links { right:20px; }
   .festival-steps { gap:12px; }
 }
 @container app (max-width:900px) {
@@ -148,7 +155,9 @@ body:has(#home.active) { background:#fff; }
   .chart-heading > p { max-width:none; }
   .cinema-footer { gap:8px; font-size:.6875rem; line-height:1.36; }
   .cinema-footer p span { display:none; }
-  .privacylink { right:16px; font-size:.6875rem; }
+  .header-links { right:16px; }
+  .privacylink { font-size:.6875rem; }
+  .download-link { display:none; }
   .enginebar { right:136px; top:94px; font-size:.6875rem; line-height:1.36; }
 }
 /* 아주 좁은 휴대폰(320px 안팎)에서도 로고 한 줄이 넘치지 않게 한 단계 더 줄인다 */
