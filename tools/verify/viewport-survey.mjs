@@ -70,8 +70,8 @@ const ROLES = {
 };
 
 /* 페이지 안에서 도는 판정 — 값은 전부 화면 px다(zoom 안의 getBoundingClientRect는 화면 px, 글자 크기는 currentCSSZoom을 곱한다). */
-// 창 크기 하나에서 비율이 바뀌는 횟수의 정상 상한 — 맞춤 한 번 + 막대 때문에 다시 맞춤 한 번. 넘으면 창을 건드리지 않았는데 비율이 오가는 것이다(11/8 설치판 640×640).
-const FLIPS_OK = 2;
+// 창 크기 하나에서 비율 · 앱 폭이 바뀌는 횟수의 정상 상한 — 맞춤 + 막대가 생기고 사라짐. 넘으면 창을 건드리지 않았는데 오가는 것이다(11/8 설치판 640×640).
+const FLIPS_OK = 4;
 
 function measurePage(roles) {
   const W = document.documentElement.clientWidth, H = innerHeight;
@@ -434,7 +434,7 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
     let fit = '', flips = 0;
     window.__fitFlips = () => flips;
     window.addEventListener('resize', () => { flips = 0; });
-    window.setInterval(() => { const now = document.documentElement?.style.getPropertyValue('--fit') ?? ''; if (now && now !== fit) { fit = now; flips++; } }, 50);
+    window.setInterval(() => { const style = document.documentElement?.style; const now = style ? style.getPropertyValue('--fit') + ' ' + style.getPropertyValue('--app-w') : ''; if (now.trim() && now !== fit) { fit = now; flips++; } }, 50);
     const realTimeout = window.setTimeout.bind(window);
     window.setTimeout = (fn, ms, ...rest) => realTimeout(fn, window.__stretch && ms === 600 ? 2500 : window.__stretch && ms === 300 ? 1600 : ms, ...rest);
     const realFetch = window.fetch.bind(window);
@@ -610,7 +610,7 @@ for (const { kind, tag } of sizes) {
   lines.push(`| ${tag} | ${FOLDER[kind]} | ${zoom ? zoom.toFixed(3) : '—'} | ${screens.map(cell).join(' | ')} |`);
 }
 const flat = report.filter((r) => r.bad);
-const details = flat.flatMap((r) => (r.error ? [`- ${FOLDER[r.kind]} ${r.size} 막힘: ${r.error}`] : [`- ${FOLDER[r.kind]} ${r.size} ${r.screen}: ` + [...(r.flips > FLIPS_OK ? [`창을 건드리지 않았는데 비율이 ${r.flips}번 바뀜`] : []), ...(r.hscroll ? [`가로 넘침 ${r.hscroll}px`] : []), ...r.off, ...r.clipped.map((s) => '잘림 ' + s), ...r.overlaps.map((s) => '겹침 ' + s), ...r.cutY.map((s) => '아래 ' + s), ...r.bands.map((s) => '띠 ' + s), ...r.crops.map((s) => '16:9 ' + s), ...r.small.map((s) => '손가락 ' + s), ...(r.cta ? [`주 단추가 ${r.cta}px 아래`] : [])].join(' / ')]));
+const details = flat.flatMap((r) => (r.error ? [`- ${FOLDER[r.kind]} ${r.size} 막힘: ${r.error}`] : [`- ${FOLDER[r.kind]} ${r.size} ${r.screen}: ` + [...(r.flips > FLIPS_OK ? [`창을 건드리지 않았는데 비율 · 앱 폭이 ${r.flips}번 바뀜`] : []), ...(r.hscroll ? [`가로 넘침 ${r.hscroll}px`] : []), ...r.off, ...r.clipped.map((s) => '잘림 ' + s), ...r.overlaps.map((s) => '겹침 ' + s), ...r.cutY.map((s) => '아래 ' + s), ...r.bands.map((s) => '띠 ' + s), ...r.crops.map((s) => '16:9 ' + s), ...r.small.map((s) => '손가락 ' + s), ...(r.cta ? [`주 단추가 ${r.cta}px 아래`] : [])].join(' / ')]));
 await fs.writeFile(path.join(out, 'report.md'), lines.join('\n') + '\n\n## 결함 ' + flat.length + '화면\n\n' + details.join('\n') + '\n');
 console.log(lines.join('\n'));
 console.log(`결함 ${flat.length}화면 / ${report.length}화면, 실제 업로드 ${realUploads}건`);
