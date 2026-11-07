@@ -58,7 +58,7 @@ body:has(#result.active) { background:#fff; }
 .save-steps [aria-current] > span { border-color:#e52320; background:#e52320; color:white; }
 .result-details .result-wait-note { font-size:.875rem; color:#737373; }
 #result .workflow-footer { color:#737373; padding:20px 24px; font-size:.8125rem; }
-@container app (max-height:800px) and (min-width:901px) {
+@container app (max-height:800px) and (min-width:601px) {
  .result-card { margin-top:40px; }
  .result-details { padding:0; }
  .result-symbol { margin-bottom:14px; }

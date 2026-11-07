@@ -28,6 +28,7 @@ for (const [width, height] of [[1440, 900], [768, 1024], [390, 664]]) {
     release();
     await expect(page.locator('#qrbox')).toBeVisible({ timeout: 60000 });
     const after = await poster.boundingBox();
+    await expect(page.locator('#result .download-link'), '설치 파일 아이콘은 첫 화면에만 있다').toHaveCount(0);
     expect(after.width).toBeGreaterThan(200);
     expect(after.width).toBeCloseTo(before.width, 0);
     expect(after.height).toBeCloseTo(before.height, 0);
