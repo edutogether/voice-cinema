@@ -100,6 +100,23 @@ export default [
         navigator: 'readonly', caches: 'readonly', document: 'readonly', window: 'readonly',
         performance: 'readonly', getComputedStyle: 'readonly', MutationObserver: 'readonly',
         requestAnimationFrame: 'readonly',
+        // engine-cache-keep.spec.js는 서비스워커 옮기기를 시험하려고 작은 서버를 직접 띄운다.
+        URL: 'readonly', location: 'readonly', fetch: 'readonly', Response: 'readonly', Buffer: 'readonly',
+      },
+    },
+  },
+  {
+    // 화면 크기 조사 도구 — Node에서 돌고, page.evaluate() 안의 측정 코드는 브라우저에서 돈다.
+    files: ['tools/verify/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: {
+        process: 'readonly', console: 'readonly', URL: 'readonly', fetch: 'readonly',
+        window: 'readonly', document: 'readonly', navigator: 'readonly', location: 'readonly',
+        getComputedStyle: 'readonly', matchMedia: 'readonly', requestAnimationFrame: 'readonly',
+        scrollTo: 'readonly', scrollX: 'readonly', scrollY: 'readonly', innerWidth: 'readonly', innerHeight: 'readonly',
+        NodeFilter: 'readonly', DOMException: 'readonly',
       },
     },
   },

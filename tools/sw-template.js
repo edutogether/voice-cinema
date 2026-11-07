@@ -1,9 +1,12 @@
-// 서비스워커 원본. 아래 두 자리표시자는 빌드 시점에 tools/precache-plugin.js가
+// 서비스워커 원본. 아래 자리표시자는 빌드 시점에 tools/precache-plugin.js가
 // 실제 산출물에서 뽑아 채워 넣는다 — 이 파일에 캐시할 파일 이름을 손으로 적는
 // 자리는 없다(목록 갱신을 잊는 것이 예전 오프라인 장애의 원인이었다).
 
 const PRECACHE_URLS = __PRECACHE_URLS__;
 const CACHE_NAME = 'voice-cinema-' + __CACHE_VERSION__;
+// 엔진(31MB)은 화면과 따로 캐시한다 — 이름이 엔진 내용으로만 정해져, 화면만 바뀐 배포에서는 그대로 남아 부스 기기가 다시 받지 않는다(2026-11-07).
+const ENGINE_FILES = __ENGINE_FILES__;
+const ENGINE_CACHE = 'voice-cinema-engine-' + __ENGINE_VERSION__;
 
 self.addEventListener('message', (event) => {
   if (event.data?.type !== 'CHECK_APP_VERSION' || !Array.isArray(event.data.assets)) return;
@@ -18,6 +21,7 @@ self.addEventListener('install', (event) => {
     caches
       .open(CACHE_NAME)
       .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then(adoptEngine)
       .then(() => self.skipWaiting())
   );
 });
@@ -26,7 +30,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((names) => Promise.all(names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n))))
+      .then((names) => Promise.all(names.filter((n) => n !== CACHE_NAME && n !== ENGINE_CACHE).map((n) => caches.delete(n))))
       .then(() => self.clients.claim())
   );
 });
@@ -34,6 +38,25 @@ self.addEventListener('activate', (event) => {
 const isPrecached = (url) => PRECACHE_URLS.includes(url.pathname);
 const isClip = (url) => url.pathname.startsWith('/clips/');
 const isEngine = (url) => url.pathname.startsWith('/vendor/ffmpeg-core/');
+
+// 옛 캐시에 내용이 정확히 같은 엔진이 있으면 지워지기 전에 엔진 캐시로 옮긴다. 엔진이 화면 캐시에 함께 들어 있던 판(~2026-11-07)에서 넘어오는 기기를
+// 위한 것이고, 그 판에서는 첫 번째로 열 때 옛 캐시가 지워져 두 번째로 열 때 31MB를 다시 받았다. 못 옮기면 아무 일 없이 넘어간다 — 앱이 받을 때 회선으로 받는다.
+async function adoptEngine() {
+  try {
+    const target = await caches.open(ENGINE_CACHE);
+    for (const [path, hash] of Object.entries(ENGINE_FILES)) {
+      if (await target.match(path, { ignoreVary: true })) continue;
+      const old = await caches.match(path, { ignoreVary: true });
+      if (!old) continue;
+      const body = await old.arrayBuffer();
+      const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', body));
+      const hex = Array.from(digest, (byte) => byte.toString(16).padStart(2, '0')).join('');
+      if (hex.startsWith(hash)) await target.put(path, new Response(body, { headers: { 'content-type': old.headers.get('content-type') || 'application/octet-stream' } }));
+    }
+  } catch (error) {
+    console.warn('[엔진 옮기기 실패 — 다음에 회선으로 받습니다]', error);
+  }
+}
 
 // 응답을 캐시에 넣고 그대로 돌려준다. 실패(용량 초과 등)해도 응답 자체는 살린다.
 // 실패 응답(404·500 등)은 절대 캐시하지 않는다 — 부스 와이파이가 잠깐 흔들려
@@ -60,7 +83,7 @@ function passAndCache(key, response) {
       controller.enqueue(chunk);
     },
     flush() {
-      caches.open(CACHE_NAME).then((cache) => cache.put(key, new Response(new Blob(chunks), { headers }))).catch(() => {});
+      caches.open(ENGINE_CACHE).then((cache) => cache.put(key, new Response(new Blob(chunks), { headers }))).catch(() => {});
     },
   });
   return new Response(response.body.pipeThrough(keep), { status: response.status, statusText: response.statusText, headers });
