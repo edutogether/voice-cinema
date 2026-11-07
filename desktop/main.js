@@ -57,6 +57,9 @@ function createWindow() {
   // 시험 전용 VC_TEST_SMALLEST_DISPLAY=1(desktop/e2e · tools의 검사만 넣는다): 처음부터 가장 작은 모니터에 창을 만든다 — 사람이 쓰는 큰 모니터에
   // 시험 창이 한순간도 뜨지 않게(10/28 기준 12). 빌드한 앱은 Node의 «-r» 사전 로드를 무시해 바깥에서 자리를 옮길 수 없었다. 만든 뒤 다른 배율의
   // 모니터로 옮기면 크기가 그 배율만큼 한 번 더 커져(1408×744 → 1760×931) 만들 때부터 그 모니터 좌표를 준다.
+  // 시험 전용 VC_TEST_WINDOW=hidden(tools/verify/viewport-survey.mjs만 넣는다): 창을 보이지 않은 채 크기만 바꾼다 — 재는 크기(최대 3840×2160)가
+  // 시험 모니터보다 커서, 보이면 큰 모니터까지 넘어간다. 숨겨도 그리기가 멈추지 않게 배경 늦춤을 끈다.
+  const testHidden = process.env.VC_TEST_WINDOW === 'hidden';
   const testDisplay = process.env.VC_TEST_SMALLEST_DISPLAY === '1'
     ? screen.getAllDisplays().sort((a, b) => a.size.width * a.size.height - b.size.width * b.size.height)[0]
     : null;
@@ -66,15 +69,14 @@ function createWindow() {
     width: 1366,
     height: 860,
     // 창 안쪽 최소 크기: 현장 노트북(1366×768) 화면 반쪽에 붙여도 들어가게(안쪽 약 667×700 — 11/2 Poster Studio 종합감사 🟠, 예전 1040×540은
-    // 반 화면에 안 들어갔다). public/fit.js는 폭 1024 미만이면 세로 창을 태블릿 세로(768)로, 가로 창을 태블릿 가로(1024)로 맞추고, 짧은 변이 600보다
-    // 작으면 휴대폰 화면 · 맞춤 끔으로 바뀐다(예전 값 창 800×600 · 안쪽 784×561은 그 구간이라 화면이 깨졌다). 600×600으로 두면 세로 스크롤 막대(약 15px)가
-    // 생기는 순간 폭이 586이 되어 휴대폰 화면으로 넘어가 같은 크기에서 화면이 둘로 갈렸다(11/2 창 크기 확인) — 막대가 생겨도 600 아래로 내려가지 않게 640.
+    // 반 화면에 안 들어갔다). public/fit.js는 PC 창을 실제 크기로 두고 폭 768 · 높이 640 아래에서만 통째로 줄인다(11/7) — 640×640이면 0.83배이고,
+    // 짧은 변이 600보다 작은 세로 창은 휴대폰 화면으로 바뀌므로 그 아래로 내려가지 않게 둔다.
     useContentSize: true,
     minWidth: 640,
     minHeight: 640,
     show: false,
     backgroundColor: '#ffffff', // 첫 화면(스플래시)의 바탕 — 화면이 그려지기 전에 다른 색이 번쩍이지 않게
-    webPreferences: { partition: PARTITION, contextIsolation: true, sandbox: true, nodeIntegration: false, spellcheck: false },
+    webPreferences: { partition: PARTITION, contextIsolation: true, sandbox: true, nodeIntegration: false, spellcheck: false, ...(testHidden && { backgroundThrottling: false }) },
   });
   // 창 제목은 앱 이름으로 둔다(웹 탭 제목은 «InKY Voice Cinema»).
   mainWindow.on('page-title-updated', (event) => event.preventDefault());
@@ -86,6 +88,7 @@ function createWindow() {
   // 첫 그림 전까지는 창이 보이지 않는다(그사이 창을 다른 모니터로 옮기면 거기서 최대화된다).
   mainWindow.setBounds((testDisplay ?? screen.getDisplayMatching(mainWindow.getBounds())).workArea);
   mainWindow.once('ready-to-show', () => {
+    if (testHidden) return;
     // 시험 전용: 숨긴 창의 실제 자리가 그 모니터 안인지 본 뒤에만 보인다 — 아니면 보이지 않은 채 끝낸다(10/28 팀장 지시).
     if (testDisplay) {
       const b = mainWindow.getBounds();

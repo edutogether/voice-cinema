@@ -23,7 +23,7 @@ const EXE = process.env.VC_DESKTOP_EXE ?? path.join(DESKTOP, 'release', 'win-unp
 const out = path.resolve(process.argv[2] ?? 'resize-out');
 mkdirSync(out, { recursive: true });
 // 'max' = 최대화, 'restore' = 최대화 풀기(그 전 크기로), 그 밖은 창 안쪽 크기(CSS px)
-// 667×700 = 현장 노트북(1366×768) 반 화면에 붙인 안쪽, 640×640 = 최소(11/2 — 예전 최소 1040×540은 반 화면에 안 들어갔다), 760×660 = 태블릿 가로로 맞추는 창
+// 667×700 = 현장 노트북(1366×768) 반 화면에 붙인 안쪽, 640×640 = 최소(11/2 — 예전 최소 1040×540은 반 화면에 안 들어갔다), 760×660 = 폭 768 아래로 줄어드는 창
 const STEPS = ['max', 'restore', '1100x700', '1100x660', '667x700', '640x640', '760x660', '1250x660', 'max', 'restore'];
 const STAGES = ['1-home', '2-studio', '2-recorded', '3-result'];
 
@@ -39,8 +39,8 @@ const app = await _electron.launch({
 });
 const report = { steps: {}, drag: [], monitors: [] };
 const win = (fn, arg) => app.evaluate(({ BrowserWindow }, [src, a]) => new Function('w', 'a', src)(BrowserWindow.getAllWindows()[0], a), [fn, arg]);
-// 화면 맞춤(public/fit.js)이 지금 크기에서 정할 비율 — fit.js와 같은 셈(폭 = html 폭, 높이 = 100svh 상자). PC(폭 1024 이상 · 가로)는 1366, 그보다 좁거나
-// 세로인 창은 짧은 변이 600 이상이면 태블릿(세로 768 · 가로 1024), PC · 태블릿은 높이 720에도 맞춘다(마우스 창이라 터치 판정은 없다).
+// 화면 맞춤(public/fit.js)이 지금 크기에서 정할 비율 — fit.js와 같은 셈(폭 = html 폭, 높이 = 100svh 상자). 창은 실제 크기로 두고 폭 768 · 높이 640 아래에서만 줄이고,
+// 짧은 변이 600보다 작은 세로 창은 폭 390에 맞춘다(11/7. 마우스 창이라 터치 판정은 없다).
 const sizeNow = () => {
   const probe = document.createElement('div');
   probe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:100svh;visibility:hidden';
@@ -51,10 +51,7 @@ const sizeNow = () => {
   // 비율은 fit.js가 그대로 적어 두는 --fit으로 읽는다 — body.style.zoom 글자는 유효숫자 6자리로 잘려(1.0022223 → «1.00222») 같은 값도 어긋나 보인다
   const zoom = Number(getComputedStyle(document.documentElement).getPropertyValue('--fit').trim() || '1');
   const portrait = h >= w;
-  let base = 1366;
-  if (portrait || w < 1024) base = Math.min(w, h) >= 600 ? (portrait ? 768 : 1024) : (portrait ? 390 : 0);
-  let want = base ? w / base : 1;
-  if (base && base !== 390) want = Math.min(want, h / 720);
+  const want = Math.min(w, h) < 600 && portrait ? w / 390 : Math.min(1, w / 768, h / 640);
   return { w, h, inner: [innerWidth, innerHeight], zoom: +zoom.toFixed(6), want: +want.toFixed(6), fits: Math.abs(zoom - want) < 1e-6 };
 };
 let failures = 0;
