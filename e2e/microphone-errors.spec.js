@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 for (const [name, reason, hint] of [
-  ['NotAllowedError', 'denied', '마이크 접근이 차단'],
+  ['NotAllowedError', 'denied', '마이크를 쓸 수 없게 막혀'],
   ['NotFoundError', 'missing', '연결된 마이크를 찾지'],
-  ['NotReadableError', 'busy', '마이크를 열지'],
+  ['NotReadableError', 'busy', '마이크를 쓰지 못했어요'],
 ]) {
   test(`${name}: 실제 마이크 실패 원인을 표시하고 다시 누르면 녹음한다`, async ({ page }) => {
     await page.addInitScript(errorName => {
@@ -38,7 +38,7 @@ test('녹음 API가 없는 브라우저를 권한 거부로 오인하지 않는�
   await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
   await page.locator('#recBtn').click();
   await expect(page.locator('#hint')).toHaveAttribute('data-mic-error', 'unsupported');
-  await expect(page.locator('#hint')).toContainText('Chrome 또는 Safari');
+  await expect(page.locator('#hint')).toContainText('크롬이나 사파리');
   await expect(page.locator('#recBtn')).toBeEnabled();
 });
 

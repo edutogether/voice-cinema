@@ -188,7 +188,7 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     await expect(page.locator('#done')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('#downloadRow')).toBeVisible();
     await expect(page.locator('#qrbox')).toBeHidden();
-    await expect(page.locator('#doneMsg')).toContainText('인터넷이 잠깐 불안해서');
+    await expect(page.locator('#doneMsg')).toContainText('인터넷 연결이 끊겨');
     // 기기에 저장된 영화는 자동 삭제 대상이 아니다 — 선생님께 지워 달라는 한 줄은 남긴다(아이 목소리 보호)
     await expect(page.locator('#savemode')).toContainText('자동으로 지워지지 않아요');
     expect(callCount).toBeGreaterThanOrEqual(2); // 1차 실패 + 재시도
@@ -224,12 +224,36 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     await page.locator('button', { hasText: '저장하기' }).click();
 
     await expect(page.locator('#errbox')).toBeVisible({ timeout: 30000 });
-    await expect(page.locator('#errbox')).toContainText('영상 합성 중 문제가 생겼어요');
+    await expect(page.locator('#errbox')).toHaveText("영화를 만드는 중 문제가 생겼어요.녹음은 남아 있어요. '돌아가기'를 누른 뒤 다시 저장해 보세요.");
     await expect(page.locator('#done')).toBeHidden();
 
     await page.locator('#errBackBtn').click();
     await expect(page.locator('#studio')).toHaveClass(/active/);
     await expect(page.locator('#afterRow')).toBeVisible();
+  });
+
+  // 11/7 Bumm님(공식 행사, 아이 · 교사가 읽는 화면) — 합성 명령이 실패하면 FFmpeg 기록 8줄이 화면에 그대로 나왔다. 원문은 콘솔로만 남긴다.
+  test('합성 실패 경로: FFmpeg가 실패해도 아이 화면에 오류 원문이 나오지 않고 콘솔에만 남는다', async ({ page }) => {
+    const errors = [];
+    page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+    await page.addInitScript(() => {
+      const originalFetch = window.fetch;
+      window.fetch = (input, init) => {
+        const url = typeof input === 'string' ? input : input.url;
+        if (url.includes('/clips/final/animation.mp4')) return Promise.resolve(new Response(new Uint8Array(2048).fill(7), { status: 200, headers: { 'Content-Type': 'video/mp4' } }));
+        return originalFetch(input, init);
+      };
+    });
+
+    await openStudio(page, '애니메이션');
+    await page.locator('#recBtn').click();
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
+    await page.locator('button', { hasText: '저장하기' }).click();
+
+    await expect(page.locator('#errbox')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('#errbox')).toHaveText("영화를 만드는 중 문제가 생겼어요.녹음은 남아 있어요. '돌아가기'를 누른 뒤 다시 저장해 보세요.");
+    expect(await page.locator('#result').innerText(), '오류 원문이 화면에 나온다').not.toMatch(/실패\n|Invalid|moov|ffmpeg|\[mov/i);
+    expect(errors.some(text => text.includes('[영상 합성 실패]')), '콘솔에 원문이 남지 않았다').toBe(true);
   });
 
   test('다시 녹음을 누르면 초기 상태로 돌아간다', async ({ page }) => {

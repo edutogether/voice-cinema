@@ -31,7 +31,7 @@ const CLIP_FIRST_MAX_MS = 60000;
 const TAKE_PHASES: readonly Phase[] = ['requesting', 'watching', 'cue', 'countdown', 'recording', 'checking', 'continuing'];
 
 const TIMELINE_STATE: Record<Phase, string> = {
-  idle: '장면 대기',
+  idle: '시작 전',
   previewing: '장면 미리보기',
   requesting: '마이크 연결 중',
   watching: '장면 재생',
