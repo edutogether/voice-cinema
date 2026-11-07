@@ -201,7 +201,8 @@ test('재생 중에 «다른 영화 고르기»로 나가면 소리가 바로 �
   await enter(page);
   await expect.poll(async () => (await state(page)).time).toBeGreaterThan(.3);
   await page.locator('#clip').evaluate((v) => { window.__previous = v; });
-  await page.locator('#studioBackBtn').click();
+  // 재생이 끝나기(10초)를 기다렸다 눌러도 통과하면 안 된다 — 재생하는 동안 바로 눌려야 한다
+  await page.locator('#studioBackBtn').click({ timeout: 3000 });
   await expect(page.locator('#home')).toHaveClass(/active/);
   expect(await page.evaluate(() => window.__previous.paused)).toBe(true);
   const count = await page.evaluate(() => window.__plays.length);
