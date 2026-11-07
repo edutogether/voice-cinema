@@ -27,6 +27,7 @@ import http from 'node:http';
 import { Buffer } from 'node:buffer';
 import path from 'node:path';
 import { chromium, _electron } from '@playwright/test';
+import { listenOnSafePort } from '../safe-port.mjs';
 
 const args = process.argv.slice(2);
 const opt = (name, def) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : def; };
@@ -38,8 +39,8 @@ const SNAPSHOT = args.includes('--snapshot');
 const JOBS = Number(opt('--jobs', '3'));
 const delay = (ms) => new Promise((r) => globalThis.setTimeout(r, ms));
 
-// 휴대폰: 앞은 실제 브라우저 높이(주소창 · 아래 막대를 뺀 값), 뒤는 화면 전체. 가로로 눕힌 휴대폰도 잰다.
-const PHONE = ['360x640', '390x664', '430x740', '393x659', '375x553', '360x668', '384x712', '440x763', '390x844', '430x932', '393x852', '360x780', '384x824', '440x956', '320x568', '932x380', '844x340', '780x304'];
+// 휴대폰: 앞은 실제 브라우저 높이(주소창 · 아래 막대를 뺀 값), 뒤는 화면 전체. 가로로 눕힌 휴대폰도 잰다 — 폭 640~760의 작은 가로 휴대폰(아이폰 SE · 360 안드로이드를 눕힌 것)까지(11/8, 완성 화면 그림이 그 폭에서 쪼그라들었다).
+const PHONE = ['360x640', '390x664', '430x740', '393x659', '375x553', '360x668', '384x712', '440x763', '390x844', '430x932', '393x852', '360x780', '384x824', '440x956', '320x568', '932x380', '844x340', '780x304', '740x360', '667x331', '640x300'];
 const TABLET = ['1366x1024', '1024x1366', '1024x768', '768x1024', '820x1180', '1180x820'];
 // PC 앞 일곱은 팀장 목록의 실제 창, 그다음은 Poster Studio 조사 목록, 뒤는 낮은 창과 761~1099 폭 창
 const PC = ['1280x587', '1366x635', '1536x731', '1920x945', '2048x1017', '2560x1305', '3840x2025',
@@ -332,7 +333,7 @@ function serve(root) {
     res.writeHead(200, { 'Content-Type': type, 'Accept-Ranges': 'bytes', 'Content-Length': size });
     fss.createReadStream(file).pipe(res);
   });
-  return new Promise((resolve) => { server.listen(0, '127.0.0.1', () => resolve({ server, url: `http://127.0.0.1:${server.address().port}/` })); });
+  return listenOnSafePort(server, '127.0.0.1').then((port) => ({ server, url: `http://127.0.0.1:${port}/` }));
 }
 
 const isDir = !target.toLowerCase().endsWith('.exe') && fss.existsSync(target) && fss.statSync(target).isDirectory();
