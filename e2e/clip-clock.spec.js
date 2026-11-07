@@ -1,10 +1,14 @@
 import { test, expect } from '@playwright/test';
+import { stopAutoPreview } from './stop-auto-preview.js';
 
 test('대기는 전체 길이, 장면·이어 재생·미리보기는 영상 시계를 표시하고 5.0초 멈춤에서는 05:00에 선다', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
   const clock = page.locator('.clip-time');
+  // 들어가면 장면이 바로 흐르므로(11/7) 영상 시계부터 보이고, 멈추면 대기의 전체 길이로 돌아온다.
+  await expect(clock).toHaveText(/^\d{2}:\d{2} \/ 10:00$/);
+  await stopAutoPreview(page);
   await expect(clock).toHaveText('10:00');
   await page.locator('#recBtn').click();
   await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(0);

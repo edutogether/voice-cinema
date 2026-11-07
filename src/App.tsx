@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { Home } from './components/Home';
 import { Result, type SaveJob } from './components/Result';
 import { Studio } from './components/Studio';
@@ -51,6 +52,8 @@ export function App() {
   // 다시 골랐을 때 이전 녹음이 살아남는 걸 구조적으로 막는다(리셋을 손으로
   // 호출하는 대신 마운트 경계가 보장한다).
   const [studioKey, setStudioKey] = useState(0);
+  // «더빙하기»로 들어온 녹음실만 장면을 저절로 튼다. 앞으로·뒤로 이동으로 다시 그려지는 녹음실은 누름이 없어 틀지 않는다.
+  const [autoPreviewKey, setAutoPreviewKey] = useState<number | null>(null);
   const [entrance, setEntrance] = useState<SceneEntrance | null>(null);
   const [job, setJob] = useState<SaveJob | null>(null);
   const [enginePercent, setEnginePercent] = useState(0);
@@ -68,6 +71,7 @@ export function App() {
   useEffect(() => {
     const onPopState = () => {
       setEntrance(null);
+      setAutoPreviewKey(null);
       navigatingRef.current = false;
       const entry = readScreenHistory();
       const selectedGenre = GENRES.find(g => g.id === entry?.genreId);
@@ -131,13 +135,17 @@ export function App() {
 
   const openStudio = (g: Genre, source?: HTMLElement) => {
     if (navigatingRef.current) return;
-    setEntrance(captureSceneEntrance(source));
     const key = ++studioSequenceRef.current;
     writeScreenHistory({ pageId: pageIdRef.current, view: 'studio', depth: 1, genreId: g.id, studioKey: key });
     lastGenreRef.current = g.id;
-    setGenre(g);
-    setStudioKey(key);
-    setView('studio');
+    // 녹음실을 이 누름 안에서 그린다 — 장면의 play()가 누름과 같은 호출이어야 아이폰이 소리를 허용한다(Studio의 재생 효과).
+    flushSync(() => {
+      setEntrance(captureSceneEntrance(source));
+      setAutoPreviewKey(key);
+      setGenre(g);
+      setStudioKey(key);
+      setView('studio');
+    });
   };
 
   // 홈으로 나갈 때는 스튜디오를 화면에서 숨기는 것으로 끝내지 않고 아예 내린다.
@@ -175,6 +183,7 @@ export function App() {
           active={view === 'studio'}
           genre={genre}
           sampleMode={sampleMode}
+          autoPreview={autoPreviewKey === studioKey}
           onHome={goHome}
           onSave={(recording) => {
             const entry = readScreenHistory();

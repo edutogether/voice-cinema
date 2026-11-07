@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-// 녹음실 미리보기(10/20 대표님): 화면 가운데 재생 단추나 «장면 시작» 옆 «미리보기»를 누르면 녹음·합성 없이 장면 영상을
-// 소리와 함께 처음부터 보여 주고, 끝나거나 멈추면 «준비됐나요 ?»로 돌아간다. 위 가운데는 장르 이름만(«목소리 녹음» 뺌).
+// 녹음실 미리보기(10/20 대표님, 11/7 Bumm님): 들어가면 녹음·합성 없이 장면 영상이 소리와 함께 처음부터 흐르고, 끝나거나 멈추면 «준비됐나요 ?»로
+// 돌아간다. 다시 보고 싶으면 «장면 시작» 옆 작은 «미리보기»로 같은 재생을 한다. 위 가운데는 장르 이름만(«목소리 녹음» 뺌). 자동 재생 자체는 e2e/studio-autoplay.spec.js.
 test.use({ viewport: { width: 1440, height: 900 } });
 
 const clip = (page) => page.locator('#clip');
@@ -22,8 +22,9 @@ test.beforeEach(async ({ page }) => {
 
 test('위 가운데는 장르 이름만이고, «미리보기»는 마이크 없이 소리와 함께 처음부터 재생하며 멈추면 준비 상태로 돌아간다', async ({ page }) => {
   await expect(page.locator('.studio-scene-label')).toHaveText('SF');
-  await expect(page.locator('#screenPlaybackBtn')).toHaveAttribute('aria-label', '장면 미리보기');
   const preview = page.locator('#previewBtn');
+  await expect(preview).toHaveText('미리보기 멈춤');
+  await preview.click();
   await expect(preview).toHaveText('미리보기');
   await preview.click();
   await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'previewing');
@@ -37,8 +38,7 @@ test('위 가운데는 장르 이름만이고, «미리보기»는 마이크 없
   expect(await page.evaluate(() => window.micRequests)).toBe(0);
 });
 
-test('화면 가운데 재생 단추도 미리보기이고, 끝까지 보면 준비 상태로 돌아간다', async ({ page }) => {
-  await page.locator('#screenPlaybackBtn').click();
+test('끝까지 보면 준비 상태로 돌아간다', async ({ page }) => {
   await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'previewing');
   // 10초를 다 기다리지 않고 끝 근처로 넘긴다 — 끝(ended)에서 돌아가는지만 본다
   await expect.poll(async () => (await state(page)).time).toBeGreaterThan(.2);
@@ -49,7 +49,6 @@ test('화면 가운데 재생 단추도 미리보기이고, 끝까지 보면 준
 });
 
 test('미리보기 중에 «장면 시작»을 누르면 미리보기를 접고 바로 녹음 흐름을 시작한다', async ({ page }) => {
-  await page.locator('#previewBtn').click();
   await expect.poll(async () => (await state(page)).time).toBeGreaterThan(1);
   await page.locator('#recBtn').click();
   await expect(page.locator('#studio')).toHaveAttribute('data-phase', /requesting|watching/);

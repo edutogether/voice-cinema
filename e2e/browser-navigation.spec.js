@@ -28,7 +28,8 @@ test('브라우저 뒤로가기는 재생을 멈추고 홈으로, 앞으로가�
   await expect(page.locator('#recBtn')).toBeVisible();
   await expect(page.locator('#afterRow')).toBeHidden();
   await expect(page.locator('#clip')).toHaveJSProperty('paused', true);
-  await expect(page.locator('#screenPlaybackBtn span')).toBeVisible();
+  // 앞으로 가기로 돌아온 녹음실은 누름이 없으므로 저절로 재생하지 않는다(11/7)
+  await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'idle');
 });
 
 test('앱의 다른 영화 고르기도 같은 기록으로 돌아가며 홈에서는 이전 웹페이지로 나갈 수 있다', async ({ page }) => {

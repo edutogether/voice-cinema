@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { stopAutoPreview } from './stop-auto-preview.js';
 
 for (const [width, height] of [[1440, 900], [1920, 1080], [1366, 768], [390, 844], [360, 640], [844, 390]]) {
   test(`녹음 화면 ${width}×${height}: 흰 조작부와 영상이 겹치지 않고 주요 버튼에 접근한다`, async ({ page }) => {
@@ -8,6 +9,7 @@ for (const [width, height] of [[1440, 900], [1920, 1080], [1366, 768], [390, 844
     await page.getByRole('button', { name: '히어로 더빙 시작', exact: true }).click();
     // 화면 진입 애니메이션의 소수점 이동이 끝난 최종 배치를 비교한다.
     await expect(page.locator('.studio-video-frame')).not.toHaveClass(/is-entering/);
+    await stopAutoPreview(page);
     await expect(page.locator('.controls h2')).toHaveText('준비됐나요 ?');
     await expect(page.locator('#hint')).toContainText("'장면 시작'을 누르면");
     const layout = await page.evaluate(() => {

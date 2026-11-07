@@ -6,7 +6,7 @@ test.use({ serviceWorkers: 'block' });
 const GENRES = [['sf', 'SF'], ['fantasy', '판타지'], ['animation', '애니메이션'], ['hero', '히어로'], ['thriller', '스릴러'], ['drama', '드라마'], ['sports', '스포츠'], ['musical', '뮤지컬']];
 
 for (const [genre, name] of GENRES) {
-  test(`${name}: 확대 후 정지 상태로 대기하고 늦게 로딩되어도 크기·재생 상태가 바뀌지 않는다`, async ({ page }) => {
+  test(`${name}: 들어가면 바로 재생을 시작하고, 늦게 받혀도 크기가 바뀌지 않으며 받히는 대로 소리와 함께 흐른다`, async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     let releaseVideo;
     const videoGate = new Promise(resolve => { releaseVideo = resolve; });
@@ -26,17 +26,14 @@ for (const [genre, name] of GENRES) {
       expect(before.x).toBe(0);
       expect(before.width).toBe(1920);
       expect(await clip.evaluate(video => video.readyState)).toBe(0);
-      await expect(clip).toHaveJSProperty('paused', true);
-      await expect(page.locator('#screenPlaybackBtn span')).toBeVisible();
+      await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'previewing');
+      await expect(clip).toHaveJSProperty('muted', false);
+      await expect(page.locator('.studio-buffering')).toBeVisible();
       releaseVideo();
       await expect.poll(() => clip.evaluate(video => video.readyState)).toBeGreaterThanOrEqual(2);
-      await page.waitForTimeout(300);
-      expect(await clip.boundingBox()).toEqual(before);
-      await expect(clip).toHaveJSProperty('paused', true);
-      await expect(clip).toHaveJSProperty('currentTime', 0);
-      // 화면을 누르면 장면이 소리와 함께 시작된다.
-      await page.locator('#screenPlaybackBtn').click();
       await expect.poll(() => clip.evaluate(video => !video.paused && !video.muted && video.currentTime > 0)).toBe(true);
+      await expect(page.locator('.studio-buffering')).toHaveCount(0);
+      expect(await clip.boundingBox()).toEqual(before);
     } finally {
       releaseVideo();
     }

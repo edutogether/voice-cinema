@@ -9,7 +9,7 @@ import { prefetchFinalClip } from '../lib/ffmpeg';
 
 import { ActionIcon } from './ActionIcon';
 import { ClipTimeline } from './ClipTimeline';
-import { SceneCaption } from './SceneCaption';
+import { SceneCaption, SceneTurnCue } from './SceneCaption';
 import { StudioEntrance } from './StudioEntrance';
 import type { SceneEntrance } from '../lib/sceneEntrance';
 import type { RecordingSource } from './Result';
@@ -21,6 +21,8 @@ interface Props {
   onSave: (recording: RecordingSource) => void;
   sampleMode: boolean;
   entrance: SceneEntrance | null;
+  /** «더빙하기»를 눌러 들어온 녹음실 — 장면을 바로 소리와 함께 튼다. 앞으로·뒤로 이동으로 돌아온 녹음실은 false다. */
+  autoPreview: boolean;
 }
 
 // 장면 영상이 이 시간 안에 다 받히지 않아도 뒤에서 받던 엔진을 다시 받게 한다(저장이 마냥 늦어지지 않게)
@@ -43,7 +45,7 @@ const TIMELINE_STATE: Record<Phase, string> = {
 
 const HEADLINE: Record<Phase, string> = {
   idle: '준비됐나요 ?',
-  previewing: '장면을 미리 보고 있어요',
+  previewing: '먼저 장면을 한 번 봐요',
   requesting: '마이크를 연결하고 있어요',
   watching: '장면을 보세요, 곧 내 차례예요',
   cue: '이제 내 차례 !',
@@ -54,14 +56,14 @@ const HEADLINE: Record<Phase, string> = {
   recorded: '내 목소리, 마음에 드나요 ?',
 };
 
-export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: Props) {
+export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, autoPreview }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [buffering, setBuffering] = useState(false);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
   const startButtonRef = useRef<HTMLButtonElement>(null);
   const previousPhaseRef = useRef<Phase>('idle');
-  const dub = useDubbing(genre.id, videoRef, sampleMode);
+  const dub = useDubbing(genre.id, videoRef, sampleMode, autoPreview);
   const { phase } = dub;
   const inTake = TAKE_PHASES.includes(phase);
   const done = phase === 'recorded';
@@ -82,7 +84,8 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
   }, [active, phase]);
 
   // 클립을 바꿀 때마다 로드한다. 장르를 바꿔도 브라우저가 이전 디코드 상태를 들고 있는
-  // 경우가 있어 명시적으로 load()를 부른다. 진입은 첫 장면에서 대기한다.
+  // 경우가 있어 명시적으로 load()를 부른다. «더빙하기»로 들어왔으면 바로 튼다 — App이 그 누름 안에서 이 화면을 동기로 그리므로
+  // (flushSync) 여기까지가 누름과 같은 호출이다. 아이폰은 그래야 소리를 허용한다(e2e/studio-autoplay.spec.js가 고정한다).
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -91,6 +94,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
     v.pause();
     v.currentTime = 0;
     v.muted = true;
+    if (autoPreview) dub.playPreview();
   }, [genre.id]);
 
   // 느린 와이파이에서는 이 장면 영상이 먼저 받히게 뒤에서 받던 엔진은 그동안 쉰다(src/lib/backgroundLoad.ts). 다 받히거나 브라우저가
@@ -150,13 +154,10 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode }: 
                 <strong>{genre.summary}</strong>
                 <p>{genre.name}<span>10초</span></p>
               </div>
-              {/* 화면 가운데 재생 단추는 녹음 없이 장면을 미리 본다(10/20 대표님) — 녹음은 아래 «장면 시작»으로만 시작한다 */}
-              {phase === 'idle' && <button type="button" className="studio-screen-playback" id="screenPlaybackBtn"
-                aria-label="장면 미리보기" onClick={dub.preview}>
-                <span aria-hidden="true"><ActionIcon name="play" /></span>
-              </button>}
               {playing && buffering && <div className="studio-buffering" role="status">영상을 불러오고 있어요</div>}
               <SceneCaption genre={genre} videoRef={videoRef} enabled={phase === 'watching' || previewing} />
+              <SceneTurnCue genre={genre} videoRef={videoRef} enabled={previewing} />
+              {previewing && dub.soundBlocked && <button type="button" className="studio-sound-on" id="soundOnBtn" onClick={dub.soundOn}><ActionIcon name="soundOff" /> 소리 켜기</button>}
               {phase === 'cue' && <div className="studio-cue" role="status" id="cue"><strong>{STUDIO_COPY.yourTurn}</strong></div>}
               {dub.countdown > 0 && <div className="overlay show" id="overlay"><div className="count" id="count" key={dub.countdown} aria-label={`${dub.countdown}초 뒤 녹음 시작`}>{dub.countdown}<span>{STUDIO_COPY.speakNow}</span></div></div>}
               {phase === 'recording' && <>
