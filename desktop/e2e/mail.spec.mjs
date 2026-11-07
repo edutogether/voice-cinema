@@ -132,7 +132,7 @@ async function expectBarClear(page) {
   // 창 크기를 바꾼 직후에는 화면 맞춤이 한두 프레임 뒤에 자리 잡는다 — 자리 잡은 뒤에도 가리면 실패한다
   await expect.poll(() => page.evaluate(() => {
     const bar = document.getElementById('mailBar').getBoundingClientRect();
-    const list = document.querySelectorAll('#home.active h1, #home.active h2, #home.active button, #home.active a, #result.active h2, #result.active p, #result.active button, #result.active input, #result.active label, .festival-header *, .privacylink');
+    const list = document.querySelectorAll('#home.active h1, #home.active h2, #home.active button, #home.active a, #result.active h2, #result.active p, #result.active button, #result.active input, #result.active label, .poster-logo, .festival-header *, .privacylink');
     return [...list].filter((el) => {
       if (el.closest('#mailBar')) return false;
       const r = el.getBoundingClientRect();
