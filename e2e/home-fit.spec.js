@@ -131,6 +131,24 @@ test('PC: 선택한 카드만 경량 영상으로 재생하고 녹음실 진입 
 });
 
 
+// 폭 761~1250: 오른쪽 위 «개인정보처리방침» 줄 바로 아래에 설명 글이 붙지 않고, 어느 폭에서도 가운데 장면에 «더빙하기»가 보인다
+// (11/8 해상도 전수 — 설명 글이 링크 글자에 닿을 듯 붙었고, 761~900 폭에는 단추가 아예 없어 무엇을 눌러야 할지 보이지 않았다)
+for (const [width, height, touch] of [[768, 1024, true], [820, 1180, true], [1024, 768, true], [1180, 820, true], [800, 600, false], [844, 340, true]]) {
+  test(`${width}×${height}: 설명 글이 방침 링크 줄 아래에 있고 «더빙하기»가 보인다`, async ({ browser }) => {
+    const page = await browser.newPage({ viewport: { width, height }, hasTouch: touch, isMobile: touch });
+    await page.goto('/');
+    await page.locator('#splash').waitFor({ state: 'detached' });
+    await expect(page.locator('.scene-shell.is-current .tile-enter')).toBeVisible();
+    // 설명 글(«옆으로 넘겨 고르고…»)은 터치 기기에만 있다
+    if (touch) {
+      const link = await page.locator('.privacylink').boundingBox();
+      const note = await page.locator('.chart-heading > p').boundingBox();
+      expect(note.y, '설명 글이 방침 링크 줄에 붙었다').toBeGreaterThanOrEqual(link.y + link.height - 1);
+    }
+    await page.close();
+  });
+}
+
 // 머리글 로고의 누르는 칸(터치 기기)은 머리글 안에서만 넓힌다 — 위로 화면 끝을 넘거나 아래 단계 표시를 덮으면(그 자리를 누르면 처음 화면으로 돌아간다) 안 된다.
 for (const [width, height] of [[320, 568], [360, 640], [375, 553], [390, 664], [393, 659], [430, 740], [390, 844], [440, 956], [1024, 768], [768, 1024]]) {
   test(`${width}×${height}: 머리글 로고의 누르는 칸이 화면 안에 있고 단계 표시를 덮지 않으며 손가락 크기다`, async ({ browser }) => {
