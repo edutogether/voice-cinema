@@ -7,6 +7,9 @@
  * 화면 종류(data-fit): 짧은 변이 600 미만인 세로 창과 터치 기기의 가로 창은 휴대폰(phone · none), 나머지 터치 기기는 tablet, 마우스는 pc다.
  * 비율은 body의 zoom으로 건다. 크롬은 zoom 안에서 vw·vh까지 함께 키우므로, CSS는 화면 단위 대신 이 스크립트가 주는
  * «기준 화면 크기»(--app-w·--app-h, px)를 쓴다. 화면 크기를 재는 상자는 html 바로 아래(zoom 밖)에 두어 실제 화면을 잰다.
+ * 비율은 창 크기만으로 정하고 세로 스크롤 막대 자리를 미리 뺀다 — 막대가 생기고 사라져도 비율은 그대로이고 --app-w만 따라간다. 화면 폭으로 정하면 막대가 비율을 바꿔
+ * 작은 비율 · 오른쪽 빈 띠로 남거나(10/28 설치판 기준 16에서 발견 — 웹에도 있다), 막대가 앱 폭을 760 아래로 끌어내려 휴대폰 배치가 되고 그 배치에서 막대가 사라져
+ * 창을 건드리지 않아도 끝없이 오갔다(11/8 설치판 640×640 입력 오류 화면). 막대가 없는 기기(휴대폰 · 헤드리스)에서는 막대 자리가 0이다.
  * 인라인 스크립트를 두지 않는 규칙(CSP) 때문에 별도 파일로 두고, body 첫머리에서 읽어 첫 그림부터 맞춘다. */
 (function () {
   var PHONE_W = 390;
@@ -16,51 +19,33 @@
   var body = document.body;
   var probe = document.createElement('div');
   probe.setAttribute('aria-hidden', 'true');
-  probe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:100svh;visibility:hidden;pointer-events:none';
+  probe.style.cssText = 'position:fixed;left:0;top:0;width:100vw;height:100svh;overflow:scroll;visibility:hidden;pointer-events:none';
   root.appendChild(probe);
   var touch = function () {
     if (matchMedia('(pointer: coarse)').matches) return true;
     return navigator.maxTouchPoints > 0 && !matchMedia('(pointer: fine)').matches;
   };
-  var fittedW = 0;
-  var refitted = false;
   var fit = function () {
-    var w = root.clientWidth;
-    fittedW = w;
-    var h = probe.getBoundingClientRect().height || window.innerHeight;
+    var box = probe.getBoundingClientRect();
+    var w = box.width || root.clientWidth;
+    var h = box.height || window.innerHeight;
     if (!w || !h) return;
+    var room = w - (probe.offsetWidth - probe.clientWidth);
     var portrait = h >= w;
     var isTouch = touch();
     var kind = isTouch ? 'tablet' : 'pc';
     if (Math.min(w, h) < 600 && (portrait || isTouch)) kind = portrait ? 'phone' : 'none';
     var z = 1;
-    if (kind === 'phone') z = w / PHONE_W;
-    else if (kind !== 'none') z = Math.min(1, w / MIN_W, h / MIN_H);
+    if (kind === 'phone') z = room / PHONE_W;
+    else if (kind !== 'none') z = Math.min(1, room / MIN_W, h / MIN_H);
     body.style.zoom = z === 1 ? '' : String(z);
     root.style.setProperty('--fit', String(z));
     root.style.setProperty('--fit-undo', String(1 / z));
-    root.style.setProperty('--app-w', w / z + 'px');
+    root.style.setProperty('--app-w', root.clientWidth / z + 'px');
     root.style.setProperty('--app-h', h / z + 'px');
     root.dataset.fit = kind;
   };
   fit();
-  window.addEventListener('resize', function () {
-    refitted = false;
-    fit();
-  });
-  // 스크롤 막대(15px)가 생기거나 사라져 화면 폭이 바뀌면, 그 창 크기에서 한 번만 다시 맞춘다. 그 뒤로는 비율은 두고 화면 폭만 따라간다.
-  // 다시 맞추지 않으면: 창을 줄이는 순간 잠깐 생긴 막대 폭만큼 작은 비율 · 오른쪽 빈 띠로 남고(10/28 설치판 기준 16에서 발견 — 웹에도 있다),
-  // 폭 768인 창에서 막대가 앱 폭을 760 아래로 끌어내려 휴대폰 배치가 된다. 여러 번 다시 맞추면: 비율이 작아져 막대가 사라지고 사라진 폭으로
-  // 맞추면 또 넘쳐, 창을 건드리지 않아도 비율이 끝없이 오간다(11/8 설치판 640×640 입력 오류 화면).
-  if (window.ResizeObserver) {
-    new ResizeObserver(function () {
-      var w = root.clientWidth;
-      if (w !== fittedW && !refitted) {
-        refitted = true;
-        fit();
-      } else {
-        root.style.setProperty('--app-w', w / parseFloat(root.style.getPropertyValue('--fit')) + 'px');
-      }
-    }).observe(root);
-  }
+  window.addEventListener('resize', fit);
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(root);
 })();

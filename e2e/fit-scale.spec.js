@@ -136,47 +136,53 @@ test('내용이 넘쳐 세로 스크롤 막대가 생겨도 가로로 넘치지 
   }
 });
 
-// 640×640은 기준 폭이 768이라 막대(15px)가 생기면 앱 폭이 750이 되어 휴대폰 배치(760 이하)로 바뀐다. 그 배치에서는 내용이 들어가 막대가 사라지고, 사라지면 다시 넘쳐,
-// 창을 건드리지 않아도 비율이 끝없이 오갔다(11/8 설치판 640×640 입력 오류 화면에서 발견 — 웹 공용 코드다).
-test('막대가 생기면 배치가 바뀌어 내용이 들어가는 화면에서도 비율이 오가지 않는다 — 640×640', async ({ playwright }) => {
-  const { baseURL } = test.info().project.use;
-  const browser = await playwright.chromium.launch({ ignoreDefaultArgs: ['--hide-scrollbars'] });
-  try {
-    const page = await browser.newPage({ viewport: { width: 640, height: 640 } });
-    await page.goto(`${baseURL}/`);
-    await page.locator('#splash').waitFor({ state: 'detached' });
-    const seen = await page.evaluate(async () => {
-      const app = document.querySelector('#root');
-      for (const child of app.children) child.style.display = 'none';
-      const style = document.createElement('style');
-      style.textContent = '#tall { height:10px; } @container app (min-width:761px) { #tall { height:776px; } }';
-      document.head.append(style);
-      const tall = document.createElement('div');
-      tall.id = 'tall';
-      app.append(tall);
-      const wait = (ms) => new Promise((done) => window.setTimeout(done, ms));
-      await wait(500);
-      const zooms = new Set();
-      const end = performance.now() + 1500;
-      while (performance.now() < end) {
-        zooms.add(document.body.style.zoom);
-        await new Promise((done) => requestAnimationFrame(done));
-      }
-      return [...zooms];
-    });
-    expect(seen, '창을 건드리지 않았는데 비율이 오간다').toHaveLength(1);
-    const state = await page.evaluate(() => {
-      const d = document.documentElement;
-      const appW = parseFloat(getComputedStyle(d).getPropertyValue('--app-w'));
-      return { over: d.scrollWidth - d.clientWidth, drawn: appW * parseFloat(d.style.getPropertyValue('--fit')), clientW: d.clientWidth, appW };
-    });
-    expect(state.over, '가로 넘침').toBe(0);
-    expect(state.drawn, '오른쪽 빈 띠').toBeCloseTo(state.clientW, 0);
-    expect(state.appW, '휴대폰 배치로 내려가면 안 된다').toBeGreaterThan(760);
-  } finally {
-    await browser.close();
-  }
-});
+// 640×640에서 막대(15px) 자리를 빼지 않고 비율을 정하면 막대가 생길 때 앱 폭이 750이 되어 휴대폰 배치(760 이하)로 바뀐다. 그 배치에서는 내용이 들어가 막대가 사라지고, 사라지면 다시 넘쳐,
+// 창을 건드리지 않아도 비율 · 앱 폭이 끝없이 오갔다(11/8 설치판 640×640 입력 오류 화면에서 발견 — 웹 공용 코드다). 큰 창에서 줄이는 경로는 그 순간 잠깐 생기는 막대까지 겹친다.
+for (const from of [null, { width: 1366, height: 697 }]) {
+  test(`막대가 생기면 배치가 바뀌어 내용이 들어가는 화면에서도 비율 · 앱 폭이 오가지 않는다 — ${from ? `${from.width}×${from.height}에서 줄인 ` : ''}640×640`, async ({ playwright }) => {
+    const { baseURL } = test.info().project.use;
+    const browser = await playwright.chromium.launch({ ignoreDefaultArgs: ['--hide-scrollbars'] });
+    try {
+      const page = await browser.newPage({ viewport: from ?? { width: 640, height: 640 } });
+      await page.goto(`${baseURL}/`);
+      await page.locator('#splash').waitFor({ state: 'detached' });
+      await page.evaluate(() => {
+        const app = document.querySelector('#root');
+        for (const child of app.children) child.style.display = 'none';
+        const style = document.createElement('style');
+        style.textContent = '#tall { height:10px; } @container app (min-width:761px) { #tall { height:776px; } }';
+        document.head.append(style);
+        const tall = document.createElement('div');
+        tall.id = 'tall';
+        app.append(tall);
+      });
+      await page.setViewportSize({ width: 640, height: 640 });
+      await expect.poll(() => page.evaluate(() => window.innerWidth)).toBe(640);
+      const seen = await page.evaluate(async () => {
+        const read = () => `${document.body.style.zoom} ${document.documentElement.style.getPropertyValue('--app-w')}`;
+        await new Promise((done) => window.setTimeout(done, 500));
+        const states = new Set();
+        const end = performance.now() + 1500;
+        while (performance.now() < end) {
+          states.add(read());
+          await new Promise((done) => requestAnimationFrame(done));
+        }
+        return [...states];
+      });
+      expect(seen, '창을 건드리지 않았는데 비율 · 앱 폭이 오간다').toHaveLength(1);
+      const state = await page.evaluate(() => {
+        const d = document.documentElement;
+        const appW = parseFloat(d.style.getPropertyValue('--app-w'));
+        return { over: d.scrollWidth - d.clientWidth, drawn: appW * parseFloat(d.style.getPropertyValue('--fit')), clientW: d.clientWidth, appW };
+      });
+      expect(state.over, '가로 넘침').toBe(0);
+      expect(state.drawn, '오른쪽 빈 띠').toBeCloseTo(state.clientW, 0);
+      expect(state.appW, '휴대폰 배치로 내려가면 안 된다').toBeGreaterThan(760);
+    } finally {
+      await browser.close();
+    }
+  });
+}
 
 test('스크롤 막대가 있는 창을 줄여도 비율이 같은 크기로 새로 연 화면과 같다 — 740×900에서 740×800', async ({ playwright }) => {
   const { baseURL } = test.info().project.use;
