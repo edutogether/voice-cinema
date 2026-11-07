@@ -108,16 +108,55 @@ function scan(dir, needles) {
   return { found, unread, files };
 }
 
-/** 가장 작은 모니터(시험 창이 뜨는 곳)를 운영체제 쪽에서 찍는다 — 제안 목록은 앱 창 밖의 별도 창이라 page.screenshot에 나오지 않는다. */
-function captureSmallestMonitor(file) {
-  // 배율을 아는 프로세스로 찍는다 — 모르면 배율이 다른 모니터의 오른쪽 · 아래가 잘려 거기 뜬 목록을 못 본다
-  const script = `Add-Type -Name Dpi -Namespace Vc -MemberDefinition '[System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool SetProcessDPIAware();'; [void][Vc.Dpi]::SetProcessDPIAware(); `
-    + `Add-Type -AssemblyName System.Windows.Forms,System.Drawing; `
-    + `$s = [System.Windows.Forms.Screen]::AllScreens | Sort-Object { $_.Bounds.Width * $_.Bounds.Height } | Select-Object -First 1; `
-    + `$b = New-Object System.Drawing.Bitmap $s.Bounds.Width, $s.Bounds.Height; `
-    + `$g = [System.Drawing.Graphics]::FromImage($b); $g.CopyFromScreen($s.Bounds.Location, [System.Drawing.Point]::Empty, $s.Bounds.Size); `
-    + `$b.Save('${file}'); $g.Dispose(); $b.Dispose()`;
+/**
+ * 앱 창 안쪽을 운영체제에게 그려 받는다 — 제안 목록은 웹 화면 밖이라 page.screenshot에 나오지 않는다.
+ * 화면 복사(CopyFromScreen)를 쓰지 않는다: 그 자리에 떠 있는 다른 창(사람이 쓰는 브라우저)이 앱 대신 찍힌다.
+ * PrintWindow는 가려져 있어도 이 창만 그려 준다(desktop/tools/installer-probe.ps1과 같은 방식, 2 = PW_RENDERFULLCONTENT, 1 = 창 안쪽만).
+ */
+async function captureWindow(app, file) {
+  const hwnd = await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getNativeWindowHandle().readBigInt64LE(0).toString());
+  const script = `Add-Type -Name W -Namespace Vc -MemberDefinition 'public struct RECT { public int L, T, R, B; }
+[System.Runtime.InteropServices.DllImport("user32.dll")] public static extern System.IntPtr SetThreadDpiAwarenessContext(System.IntPtr value);
+[System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool GetClientRect(System.IntPtr h, out RECT r);
+[System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool PrintWindow(System.IntPtr h, System.IntPtr dc, uint flags);'; `
+    + `[void][Vc.W]::SetThreadDpiAwarenessContext([System.IntPtr]::new(-4)); `
+    + `Add-Type -AssemblyName System.Drawing; `
+    + `$h = [System.IntPtr]::new([long]${hwnd}); $r = New-Object Vc.W+RECT; [void][Vc.W]::GetClientRect($h, [ref]$r); `
+    + `$b = New-Object System.Drawing.Bitmap ($r.R - $r.L), ($r.B - $r.T); $g = [System.Drawing.Graphics]::FromImage($b); $dc = $g.GetHdc(); `
+    + `$ok = [Vc.W]::PrintWindow($h, $dc, 3); $g.ReleaseHdc($dc); $g.Dispose(); if (-not $ok) { throw 'PrintWindow failed' }; `
+    + `$b.Save('${file}'); $b.Dispose()`;
   execFileSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true });
+  return file;
+}
+
+/**
+ * 두 캡처에서 그 칸 바깥의 달라진 화소 수 — 칸 안은 커서 · 초점 테두리 때문에 세지 않는다. 그림을 못 읽으면 0으로 세지 않고 실패한다.
+ * 96보다 크게 달라진 화소만 센다. 초점이 옮겨 갈 때 근처 글자의 가장자리가 다시 그려져 어두운 그림 위 글자에서 100개쯤 잡히고(실측 96),
+ * 제안 목록은 흰 바탕 위 한 줄만 해도 650개쯤이다(실측 두 줄 1,299) — 그래서 NO_POPUP(300) 아래면 «뜨지 않았다»로 본다.
+ */
+const NO_POPUP = 300;
+async function changedOutside(session, before, after, selector) {
+  const box = await session.page.locator(selector).boundingBox();
+  const inner = await session.page.evaluate(() => window.innerWidth);
+  return session.app.evaluate(({ nativeImage }, { before, after, box, inner }) => {
+    const a = nativeImage.createFromPath(before);
+    const b = nativeImage.createFromPath(after);
+    const { width, height } = a.getSize();
+    if (!width || width !== b.getSize().width || height !== b.getSize().height) throw new Error(`캡처 크기가 맞지 않다: ${width}x${height} / ${b.getSize().width}x${b.getSize().height}`);
+    const pa = a.toBitmap();
+    const pb = b.toBitmap();
+    const scale = width / inner;
+    const [left, right, top, bottom] = [(box.x - 6) * scale, (box.x + box.width + 6) * scale, (box.y - 6) * scale, (box.y + box.height + 6) * scale];
+    let changed = 0;
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (x >= left && x <= right && y >= top && y <= bottom) continue;
+        const i = (y * width + x) * 4;
+        if (Math.abs(pa[i] - pb[i]) > 96 || Math.abs(pa[i + 1] - pb[i + 1]) > 96 || Math.abs(pa[i + 2] - pb[i + 2]) > 96) changed++;
+      }
+    }
+    return changed;
+  }, { before, after, box, inner });
 }
 
 async function sizeWindow(app, page, w, h) {
@@ -275,8 +314,8 @@ test('다음 사람의 칸은 비어 있고 이전 주소가 제안되지 않으
   const address = first.page.locator('#mailAddress');
   await expect(first.page.locator('#mailName')).toHaveValue('');
   await expect(address).toHaveValue('');
-  await first.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focus());
-  // 대조군: 제안 목록이 정말 뜨면 이 캡처에 보인다는 것을 먼저 남긴다 — 못 찍은 것을 «없다»로 세지 않게
+  const shot = (name) => captureWindow(first.app, test.info().outputPath(name));
+  // 대조군: 제안 목록이 뜨면 이 캡처에 찍히고 화소로 잡힌다는 것을 먼저 확인한다 — 못 찍은 것을 «없다»로 세지 않게
   await first.page.evaluate(() => {
     const input = document.createElement('input');
     input.id = 'probeInput';
@@ -286,26 +325,33 @@ test('다음 사람의 칸은 비어 있고 이전 주소가 제안되지 않으
     list.id = 'probeList';
     list.innerHTML = '<option value="control-popup-1"><option value="control-popup-2">';
     document.body.append(input, list);
+    document.activeElement?.blur();
   });
+  const controlBefore = await shot('대조군-누르기-전.png');
   await first.page.locator('#probeInput').click();
   await first.page.keyboard.press('ArrowDown');
   await first.page.waitForTimeout(700);
-  captureSmallestMonitor(test.info().outputPath('대조군-제안목록.png'));
-  await first.page.keyboard.press('Escape');
-  await first.page.evaluate(() => { document.getElementById('probeInput').remove(); document.getElementById('probeList').remove(); });
-  await address.click();
-  await first.page.keyboard.press('ArrowDown');
-  await first.page.waitForTimeout(700);
-  captureSmallestMonitor(test.info().outputPath('다음사람-빈칸-아래키.png'));
-  await expect(address).toHaveValue('');
-  await first.page.keyboard.type('p');
-  await first.page.keyboard.press('ArrowDown');
-  await first.page.waitForTimeout(700);
-  captureSmallestMonitor(test.info().outputPath('다음사람-첫글자-아래키.png'));
-  await expect(address).toHaveValue('p');
-  await first.page.keyboard.press('Enter');
-  await expect(address).not.toHaveValue(MAIL);
-  await first.page.locator('#mailAddress').clear();
+  expect(await changedOutside(first, controlBefore, await shot('대조군-제안목록.png'), '#probeInput')).toBeGreaterThan(1000);
+  await first.page.evaluate(() => { document.getElementById('probeInput').remove(); document.getElementById('probeList').remove(); document.activeElement?.blur(); });
+  await first.page.waitForTimeout(500);
+  // 누르기 전과 견준다 — 빈 칸을 누르기만 해도 뜨는 제안까지 잡는다
+  for (const [selector, typed, label] of [['#mailAddress', 'p', '주소'], ['#mailName', NAME_A[0], '이름']]) {
+    const field = first.page.locator(selector);
+    const blank = await shot(`다음사람-${label}-누르기-전.png`);
+    await field.click();
+    await first.page.keyboard.press('ArrowDown');
+    await first.page.waitForTimeout(700);
+    expect(await changedOutside(first, blank, await shot(`다음사람-${label}-빈칸-아래키.png`), selector)).toBeLessThan(NO_POPUP);
+    await expect(field).toHaveValue('');
+    await first.page.keyboard.type(typed);
+    await first.page.keyboard.press('ArrowDown');
+    await first.page.waitForTimeout(700);
+    expect(await changedOutside(first, blank, await shot(`다음사람-${label}-첫글자-아래키.png`), selector)).toBeLessThan(NO_POPUP);
+    await expect(field).toHaveValue(typed);
+    await field.clear();
+    await first.page.evaluate(() => document.activeElement?.blur());
+    await first.page.waitForTimeout(300);
+  }
   await queue(first.page, NAME_B, MAIL.toUpperCase());
   await expect(first.page.locator('#mailQueueChip')).toHaveText('메일 대기 2건');
   // 브라우저 저장소에도 남지 않는다
