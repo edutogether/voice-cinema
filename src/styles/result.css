@@ -122,9 +122,11 @@ body:has(#result.active) { background:#fff; }
  .result-actions { gap:10px; }
  .result-fallback .savemode { padding:16px; }
 }
-/* 낮은 세로 휴대폰(주소창까지 뺀 375×553): 합성 오류 화면의 «돌아가기»가 첫 화면에 들게 안내 상자를 줄인다. */
+/* 낮은 세로 휴대폰(주소창까지 뺀 375×553): 합성 오류 화면의 «돌아가기»가 첫 화면에 들게 그림과 글 사이 · 안내 상자를 줄인다.
+   그림 위 여백(30px)은 방침 링크를 비켜 두는 몫이라 건드리지 않는다(11/8 해상도 전수 — 위 여백을 늘린 뒤 7px 밀렸다). */
 @container app (max-width:600px) and (max-height:600px) {
- .errbox { margin-block:14px; padding-block:14px; }
+ .result-card { gap:12px; }
+ .errbox { margin-block:10px; padding-block:12px; }
 }
 @media (prefers-reduced-motion:reduce) { .spinner { animation:none; } }
 /* 휴대폰에서 직접 체험하면 자기 화면의 QR을 찍을 수 없으므로 같은 공개 주소를 여는 단추를 QR 아래에 둔다(10/17).

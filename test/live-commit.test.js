@@ -8,6 +8,7 @@ import process from 'node:process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { commitFromResponse, readLiveCommit } from '../tools/live-commit.js';
+import { listenOnSafePort } from '../tools/safe-port.mjs';
 
 const SHA = 'd'.repeat(40);
 
@@ -57,7 +58,7 @@ test('명령으로 실행하면 표준출력에 커밋만 쓴다', async () => {
     if (req.url === '/version.json') { res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ commit: SHA })); return; }
     res.statusCode = 404; res.end('Not Found');
   });
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const port = await listenOnSafePort(server, '127.0.0.1');
   const script = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'tools', 'live-commit.js');
   const 실행 = (url) => new Promise((resolve) => {
     const p = spawn(process.execPath, [script, url]);
@@ -66,7 +67,7 @@ test('명령으로 실행하면 표준출력에 커밋만 쓴다', async () => {
     p.on('close', (code) => resolve({ code, out }));
   });
   try {
-    const base = `http://127.0.0.1:${server.address().port}`;
+    const base = `http://127.0.0.1:${port}`;
     expect(await 실행(`${base}/version.json`)).toEqual({ code: 0, out: `${SHA}\n` });
     expect(await 실행(`${base}/없음`)).toEqual({ code: 0, out: '\n' });
   } finally {
