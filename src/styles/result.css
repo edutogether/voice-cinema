@@ -47,7 +47,7 @@ body:has(#result.active) { background:#fff; }
 #result .btn:focus-visible { outline:3px solid #e52320; outline-offset:4px; }
 #downloadRow { margin:28px 0 24px; }
 .result-fallback .savemode { padding:18px 20px; border:1px solid #e5e5e5; border-radius:10px; background:#f7f7f7; }
-.errbox { margin:24px 0; padding:18px 20px; color:#642a26; background:#fff3f2; border:1px solid #f3d2cf; border-radius:10px; font-size:.9375rem; line-height:1.7; overflow-wrap:anywhere; }
+.errbox { margin:24px 0; padding:18px 20px; color:#642a26; background:#fff3f2; border:1px solid #f3d2cf; border-radius:10px; font-size:.9375rem; line-height:1.7; word-break:keep-all; }
 .errbox b { font-weight:700; }
 .spinner { width:44px; height:44px; margin:0 0 26px; border:3px solid #eee; border-top-color:#e52320; border-radius:50%; animation:spin 1s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
@@ -63,6 +63,19 @@ body:has(#result.active) { background:#fff; }
  .result-details { padding:0; }
  .result-symbol { margin-bottom:14px; }
  .qrbox img { width:152px; height:152px; }
+}
+/* 낮은 창(세로 휴대폰 제외): 완성 화면이 스크롤 없이 한 화면에 들게 여백을 줄이고, 그림은 머리글 · 바닥글을 뺀 높이까지만 쓴다. */
+@container app (max-height:700px) and (min-width:601px) {
+ .result-card { margin-block:20px 16px; }
+ .result-poster { max-height:calc(var(--app-h) - 154px); }
+ .result-details { padding:0; }
+ .result-details .result-eyebrow { margin-bottom:10px; }
+ .result-symbol { display:none; }
+ #doneMsg,#loadingSub { margin-bottom:16px; }
+ .qrbox { margin-bottom:0; }
+ .qrbox img { width:152px; height:152px; }
+ .result-actions { margin-top:16px; }
+ #result .workflow-footer { padding-block:8px; }
 }
 /* 넓고 높은 창: 실제 크기 그대로 두면 위쪽에 작게 붙고 아래가 빈다(11/7) — 창 높이만큼 넓히고 세로로 가운데에 둔다. */
 @container app (min-width:901px) and (min-height:801px) {
@@ -100,6 +113,10 @@ body:has(#result.active) { background:#fff; }
  .qrbox { margin-inline:auto; max-width:100%; }
  .result-actions { gap:10px; }
  .result-fallback .savemode { padding:16px; }
+}
+/* 낮은 세로 휴대폰(주소창까지 뺀 375×553): 합성 오류 화면의 «돌아가기»가 첫 화면에 들게 안내 상자를 줄인다. */
+@container app (max-width:600px) and (max-height:600px) {
+ .errbox { margin-block:14px; padding-block:14px; }
 }
 @media (prefers-reduced-motion:reduce) { .spinner { animation:none; } }
 /* 휴대폰에서 직접 체험하면 자기 화면의 QR을 찍을 수 없으므로 같은 공개 주소를 여는 단추를 QR 아래에 둔다(10/17).

@@ -106,10 +106,10 @@ body:not(.app-ready) #splash {
   margin-top: 8px;
 }
 /* PC는 Poster Studio와 같은 값이다(11/7 Bumm님 «포스터랑 똑같이») — 교육청 로고 크기 · 간격을 맞추고, 작은 창에서 화면 전체를 줄일 때도 스플래시는 줄이지 않는다. */
-html[data-fit="1366"] #splash {
+html[data-fit="pc"] #splash {
   zoom: var(--fit-undo);
 }
-html[data-fit="1366"] #splash .splash-education {
+html[data-fit="pc"] #splash .splash-education {
   width: 190px;
   margin-top: 6px;
 }

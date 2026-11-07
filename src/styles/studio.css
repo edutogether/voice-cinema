@@ -7,7 +7,7 @@ body:has(#studio.active) { background:#fff; }
 .studio-workspace,.studio-screen { min-width:0; }
 .stage { display:grid; grid-template-rows:auto minmax(240px,1fr) auto; height:var(--app-h); min-height:640px; background:#fff; }
 .studio-heading { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:24px; padding:16px 28px; border-bottom:1px solid #e8e8e8; background:#fff; }
-.back { display:inline-flex; justify-self:start; align-items:center; gap:10px; min-height:44px; padding:10px 16px; border:1px solid #e4e4e4; border-radius:999px; background:#fff; color:#333; font:inherit; font-size:.9375rem; font-weight:600; cursor:pointer; white-space:nowrap; }
+.back { display:inline-flex; justify-self:start; align-items:center; gap:10px; min-height:var(--touch-min); padding:10px 16px; border:1px solid #e4e4e4; border-radius:999px; background:#fff; color:#333; font:inherit; font-size:.9375rem; font-weight:600; cursor:pointer; white-space:nowrap; }
 .studio-scene-title { text-align:center; min-width:0; }
 .studio-scene-label { display:block; margin-bottom:4px; font-size:.75rem; color:#727272; font-weight:600; }
 .studio-scene-label #chipName { color:#df291f; }
@@ -46,7 +46,7 @@ body:has(#studio.active) { background:#fff; }
  .scene-turn-cue { bottom:calc((100cqh - 56.25cqw) / 2 + 4.5cqw); font-size:max(15px,2.6cqw); }
 }
 /* 브라우저가 소리 재생을 막았을 때만 나온다 — 누르면 소리가 난다 */
-.studio-sound-on { position:absolute; z-index:4; top:16px; right:16px; display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:8px 16px; border:1px solid #ffffff80; border-radius:999px; background:#171717cc; color:#fff; font:inherit; font-size:.9375rem; font-weight:600; cursor:pointer; }
+.studio-sound-on { position:absolute; z-index:4; top:16px; right:16px; display:inline-flex; align-items:center; gap:8px; min-height:var(--touch-min); padding:8px 16px; border:1px solid #ffffff80; border-radius:999px; background:#171717cc; color:#fff; font:inherit; font-size:.9375rem; font-weight:600; cursor:pointer; }
 .studio-sound-on:focus-visible { outline:3px solid #df291f; outline-offset:2px; }
 /* 5.0초에서 멈춘 직후 «이제 당신의 차례입니다 !» — 앱 글씨라 영상·완성본에 굽지 않는다. */
 .studio-cue { position:absolute; inset:0; z-index:3; display:grid; place-items:center; padding:24px; background:#0007; pointer-events:none; animation:countIn .25s ease-out; }
@@ -79,7 +79,7 @@ body:has(#studio.active) { background:#fff; }
 #studio .btn-rec,#studio .btn-save { background:#df291f; color:#fff; border:1px solid #df291f; }
 #studio .btn-rec { min-width:160px; }
 /* «미리보기»는 다시 보고 싶을 때 쓰는 작은 보조 단추다 — 주 단추는 «장면 시작» 하나(11/7 Bumm님) */
-#studio #previewBtn { flex:none; min-width:9.3em; min-height:44px; padding:8px 12px; font-size:.875rem; font-weight:500; white-space:nowrap; }
+#studio #previewBtn { flex:none; min-width:9.3em; min-height:var(--touch-min); padding:8px 12px; font-size:.875rem; font-weight:500; white-space:nowrap; }
 #previewBtn .action-icon { width:16px; height:16px; }
 .record-dot { width:12px; height:12px; border-radius:50%; background:currentColor; }
 #studio .btn-rec:disabled { cursor:default; background:#fff1f0; border-color:#f2c9c5; color:#b72119; }
