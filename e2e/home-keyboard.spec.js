@@ -11,6 +11,8 @@ for (const [이름, 키] of [['엔터', 'Enter'], ['스페이스', 'Space']]) {
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'InKY Film Festival — 처음부터 시작' })).toBeFocused();
     await page.keyboard.press('Tab');
+    await expect(page.getByRole('link', { name: 'Voice Cinema 설치 파일 다운로드' })).toBeFocused();
+    await page.keyboard.press('Tab');
     await expect(page.getByRole('link', { name: '개인정보처리방침 (새 탭)' })).toBeFocused();
     await page.keyboard.press('Tab');
     const 첫장면 = page.getByRole('button', { name: 'SF 더빙 시작', exact: true });

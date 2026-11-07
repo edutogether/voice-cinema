@@ -75,6 +75,8 @@ test('PC: 화살표 키로 마지막 장면을 고른 뒤 녹음실에서 돌아
   await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: 'InKY Film Festival — 처음부터 시작' })).toBeFocused();
   await page.keyboard.press('Tab');
+  await expect(page.getByRole('link', { name: 'Voice Cinema 설치 파일 다운로드' })).toBeFocused();
+  await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: '개인정보처리방침 (새 탭)' })).toBeFocused();
   await page.keyboard.press('Tab');
   const first = page.getByRole('button', { name: 'SF 더빙 시작', exact: true });
