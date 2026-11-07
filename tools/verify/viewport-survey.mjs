@@ -70,6 +70,9 @@ const ROLES = {
 };
 
 /* 페이지 안에서 도는 판정 — 값은 전부 화면 px다(zoom 안의 getBoundingClientRect는 화면 px, 글자 크기는 currentCSSZoom을 곱한다). */
+// 창 크기 하나에서 비율이 바뀌는 횟수의 정상 상한 — 맞춤 한 번 + 막대 때문에 다시 맞춤 한 번. 넘으면 창을 건드리지 않았는데 비율이 오가는 것이다(11/8 설치판 640×640).
+const FLIPS_OK = 2;
+
 function measurePage(roles) {
   const W = document.documentElement.clientWidth, H = innerHeight;
   const vis = (el) => (el.checkVisibility ? el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }) : el.getClientRects().length > 0);
@@ -186,7 +189,7 @@ function measurePage(roles) {
   return { W, H, zoom: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--fit')) || 1, hscroll, off: [...new Set(off)].slice(0, 12), clipped: clipped.slice(0, 12), overlaps: overlaps.slice(0, 12), cutY: cutY.slice(0, 8), bands, crops: [...new Set(crops)].slice(0, 4), small: small.slice(0, 8), cta, below: below.length ? Math.max(...below) : 0, docH: document.documentElement.scrollHeight, type, minFont, minText };
 }
 
-const isBad = (m) => !!(m.hscroll || m.off.length || m.clipped.length || m.overlaps.length || m.cutY.length || m.bands.length || m.crops.length || m.small.length);
+const isBad = (m) => !!(m.flips > FLIPS_OK || m.hscroll || m.off.length || m.clipped.length || m.overlaps.length || m.cutY.length || m.bands.length || m.crops.length || m.small.length);
 
 // 배치 대조용 — 요소의 자리 · 크기 · 글자. 화소가 아니라 배치를 보는 까닭: 영상 · 애니메이션은 찍을 때마다 화소가 다르다.
 function layoutPage() {
@@ -428,6 +431,10 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
   const dir = path.join(out, FOLDER[kind], tag);
   // 짧게 지나가는 화면(«이제 당신의 차례» 0.6초 · 숫자 0.3초)을 찍을 수 있게 그때만 늘린다. 합성 실패는 원판 요청을 페이지 안에서 실패시킨다(<video>는 fetch를 쓰지 않는다).
   await page.addInitScript(() => {
+    let fit = '', flips = 0;
+    window.__fitFlips = () => flips;
+    window.addEventListener('resize', () => { flips = 0; });
+    window.setInterval(() => { const now = document.documentElement?.style.getPropertyValue('--fit') ?? ''; if (now && now !== fit) { fit = now; flips++; } }, 50);
     const realTimeout = window.setTimeout.bind(window);
     window.setTimeout = (fn, ms, ...rest) => realTimeout(fn, window.__stretch && ms === 600 ? 2500 : window.__stretch && ms === 300 ? 1600 : ms, ...rest);
     const realFetch = window.fetch.bind(window);
@@ -440,6 +447,7 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
     if (!want(screen)) return;
     if (touch && !(await page.evaluate(() => matchMedia('(pointer: coarse)').matches))) throw new Error('터치 흉내가 풀렸다 — 조사 도구 문제이며 이 크기의 값은 믿을 수 없다');
     const m = await page.evaluate(measurePage, ROLES);
+    m.flips = await page.evaluate(() => window.__fitFlips?.() ?? 0);
     if (kind === 'phone' && w > h) m.cta = 0;
     const bad = isBad(m) || m.cta > 0;
     report.push({ size: tag, kind, screen, ...m, bad });
@@ -450,7 +458,7 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
       if (m.docH > m.H + 1 && CAPTURE) await take(path.join(dir, `${screen}-전체.png`), true);
     }
     if (SNAPSHOT) { await fs.mkdir(path.join(out, 'snap'), { recursive: true }); await fs.writeFile(path.join(out, 'snap', `${kind}-${tag}-${screen}.json`), JSON.stringify(await page.evaluate(layoutPage))); }
-    console.log(`${kind} ${tag} ${screen}: ${bad ? `가로 ${m.hscroll} · 밖 ${m.off.length} · 잘림 ${m.clipped.length} · 겹침 ${m.overlaps.length} · 아래 ${m.cutY.length} · 띠 ${m.bands.length} · 16:9 ${m.crops.length} · 손가락 ${m.small.length} · 주 단추 아래 ${m.cta}` : '깨끗'} (최소 ${m.minFont}px)`);
+    console.log(`${kind} ${tag} ${screen}: ${bad ? `비율 바뀜 ${m.flips} · 가로 ${m.hscroll} · 밖 ${m.off.length} · 잘림 ${m.clipped.length} · 겹침 ${m.overlaps.length} · 아래 ${m.cutY.length} · 띠 ${m.bands.length} · 16:9 ${m.crops.length} · 손가락 ${m.small.length} · 주 단추 아래 ${m.cta}` : '깨끗'} (최소 ${m.minFont}px)`);
   };
   const phase = (p) => page.locator(`#studio.active[data-phase="${p}"]`).waitFor({ timeout: 30000 });
   // 장면 넘김 움직임이 끝날 때까지 기다린다 — 움직이는 중에 재면 카드가 칸 밖에 있는 것으로 잡힌다
@@ -595,14 +603,14 @@ for (const { kind, tag } of sizes) {
     const r = rs.find((x) => x.screen === s); if (!r) return rs.find((x) => x.error) ? '막힘' : '—';
     const down = r.below ? ` ↓${r.below}` : '';
     if (!r.bad) return '🟢' + down;
-    const k = []; if (r.hscroll) k.push(`가로${r.hscroll}`); if (r.off.length) k.push(`밖${r.off.length}`); if (r.clipped.length) k.push(`잘림${r.clipped.length}`); if (r.overlaps.length) k.push(`겹침${r.overlaps.length}`); if (r.cutY.length) k.push(`아래${r.cutY.length}`); if (r.bands.length) k.push(`띠${r.bands.length}`); if (r.crops.length) k.push(`16:9 ${r.crops.length}`); if (r.small.length) k.push(`손가락${r.small.length}`); if (r.cta) k.push(`주단추↓${r.cta}`);
+    const k = []; if (r.flips > FLIPS_OK) k.push(`비율${r.flips}`); if (r.hscroll) k.push(`가로${r.hscroll}`); if (r.off.length) k.push(`밖${r.off.length}`); if (r.clipped.length) k.push(`잘림${r.clipped.length}`); if (r.overlaps.length) k.push(`겹침${r.overlaps.length}`); if (r.cutY.length) k.push(`아래${r.cutY.length}`); if (r.bands.length) k.push(`띠${r.bands.length}`); if (r.crops.length) k.push(`16:9 ${r.crops.length}`); if (r.small.length) k.push(`손가락${r.small.length}`); if (r.cta) k.push(`주단추↓${r.cta}`);
     return '🔴 ' + k.join(' ') + down;
   };
   const zoom = rs.find((r) => r.zoom)?.zoom;
   lines.push(`| ${tag} | ${FOLDER[kind]} | ${zoom ? zoom.toFixed(3) : '—'} | ${screens.map(cell).join(' | ')} |`);
 }
 const flat = report.filter((r) => r.bad);
-const details = flat.flatMap((r) => (r.error ? [`- ${FOLDER[r.kind]} ${r.size} 막힘: ${r.error}`] : [`- ${FOLDER[r.kind]} ${r.size} ${r.screen}: ` + [...(r.hscroll ? [`가로 넘침 ${r.hscroll}px`] : []), ...r.off, ...r.clipped.map((s) => '잘림 ' + s), ...r.overlaps.map((s) => '겹침 ' + s), ...r.cutY.map((s) => '아래 ' + s), ...r.bands.map((s) => '띠 ' + s), ...r.crops.map((s) => '16:9 ' + s), ...r.small.map((s) => '손가락 ' + s), ...(r.cta ? [`주 단추가 ${r.cta}px 아래`] : [])].join(' / ')]));
+const details = flat.flatMap((r) => (r.error ? [`- ${FOLDER[r.kind]} ${r.size} 막힘: ${r.error}`] : [`- ${FOLDER[r.kind]} ${r.size} ${r.screen}: ` + [...(r.flips > FLIPS_OK ? [`창을 건드리지 않았는데 비율이 ${r.flips}번 바뀜`] : []), ...(r.hscroll ? [`가로 넘침 ${r.hscroll}px`] : []), ...r.off, ...r.clipped.map((s) => '잘림 ' + s), ...r.overlaps.map((s) => '겹침 ' + s), ...r.cutY.map((s) => '아래 ' + s), ...r.bands.map((s) => '띠 ' + s), ...r.crops.map((s) => '16:9 ' + s), ...r.small.map((s) => '손가락 ' + s), ...(r.cta ? [`주 단추가 ${r.cta}px 아래`] : [])].join(' / ')]));
 await fs.writeFile(path.join(out, 'report.md'), lines.join('\n') + '\n\n## 결함 ' + flat.length + '화면\n\n' + details.join('\n') + '\n');
 console.log(lines.join('\n'));
 console.log(`결함 ${flat.length}화면 / ${report.length}화면, 실제 업로드 ${realUploads}건`);
