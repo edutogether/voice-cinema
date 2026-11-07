@@ -16,7 +16,7 @@ export interface Genre {
   summary: string;
   /** 상대 대사 — 앱이 영상 위에 띄우는 넷플릭스식 자막. 영상·완성본에는 굽지 않는다. */
   line: { text: string; start: number; end: number };
-  /** 아이 대사 구간(초) — 미리보기에서 «지금이 대사 치는 구간이에요»가 나오는 자리. 영상을 바꾸면 그 장르의 이 값만 바꾼다. */
+  /** 아이 대사 구간(초) — 미리보기에서 «당신의 목소리가 들어갈 자리예요 !»가 나오는 자리. 영상을 바꾸면 그 장르의 이 값만 바꾼다. */
   turn: { start: number; end: number };
 }
 

@@ -5,7 +5,7 @@ import { watchCountdown, countdownLog } from './countdown-watch.js';
 // 녹음실 자동 재생(11/7 Bumm님 «누르고 들어가면 바로 영상 재생 … 소리도 나오고 … 멈추고 321은 빼고 … 문구만 주고 그냥 쭉 멈춤없이 지나가게 해서 아 ~ 하게»):
 // «더빙하기»를 누르면 장면이 처음부터 끝까지 소리와 함께 흐르고, 아이 대사 구간에는 문구만 나온다. 끝나면 준비 화면이다. «장면 시작» 뒤의 녹음은 그대로 멈춤·3·2·1이다.
 // 소리는 브라우저가 «누름 안에서 부른 play()»에만 허용하므로(아이폰이 가장 엄격하다) 그 순서를 페이지 안에서 기록해 본다.
-const CUE = '지금이 대사 치는 구간이에요';
+const CUE = '당신의 목소리가 들어갈 자리예요 !';
 
 const state = (page) => page.locator('#clip').evaluate((v) => ({ paused: v.paused, muted: v.muted, time: v.currentTime }));
 const phase = (page) => page.locator('#studio');
