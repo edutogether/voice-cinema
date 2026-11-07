@@ -102,3 +102,33 @@ for (const [width, height] of [[932, 380], [844, 340], [780, 304], [667, 331], [
     await page.close();
   });
 }
+
+// 낮은 세로 휴대폰: 합성이 실패한 화면의 «돌아가기»가 첫 화면 안에 든다 — 그림 위 여백을 30px로 늘린 뒤 375×553(주소창까지 뺀 높이)에서 7px 밀려났다(11/8 해상도 전수)
+for (const [width, height] of [[375, 553], [360, 640], [390, 664]]) {
+  test(`${width}×${height} 세로 휴대폰: 합성 실패 화면의 «돌아가기»가 첫 화면에 든다`, async ({ browser }) => {
+    const page = await browser.newPage({ viewport: { width, height }, hasTouch: true, isMobile: true });
+    await page.addInitScript(() => {
+      const originalFetch = window.fetch;
+      window.fetch = (input, init) => {
+        const url = typeof input === 'string' ? input : input.url;
+        if (url.includes('/clips/final/sf.mp4')) return Promise.reject(new Error('시뮬레이션된 네트워크 실패'));
+        return originalFetch(input, init);
+      };
+    });
+    await page.goto('/');
+    await page.locator('#splash').waitFor({ state: 'detached' });
+    await page.locator('.tile', { hasText: 'SF' }).first().click();
+    await page.locator('#recBtn').click();
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: 40000 });
+    await page.locator('#saveBtn').click();
+    await expect(page.locator('#errbox')).toBeVisible({ timeout: 30000 });
+    expect(await page.evaluate(() => window.scrollY), '화면이 첫 화면이 아니다').toBe(0);
+    const back = await page.locator('#errBackBtn').boundingBox();
+    expect(back.y + back.height, '«돌아가기»가 첫 화면 아래로 밀렸다').toBeLessThanOrEqual(height);
+    // 그림 위 여백은 그대로다 — «개인정보처리방침» 글자가 그림 위 가장자리에 닿지 않는다
+    const link = await page.locator('#result .privacylink').boundingBox();
+    const poster = await page.locator('.result-poster').boundingBox();
+    expect(poster.y - (link.y + link.height), '방침 링크가 그림에 붙었다').toBeGreaterThanOrEqual(2);
+    await page.close();
+  });
+}

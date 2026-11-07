@@ -27,6 +27,7 @@ import http from 'node:http';
 import { Buffer } from 'node:buffer';
 import path from 'node:path';
 import { chromium, _electron } from '@playwright/test';
+import { listenOnSafePort } from '../safe-port.mjs';
 
 const args = process.argv.slice(2);
 const opt = (name, def) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : def; };
@@ -332,7 +333,7 @@ function serve(root) {
     res.writeHead(200, { 'Content-Type': type, 'Accept-Ranges': 'bytes', 'Content-Length': size });
     fss.createReadStream(file).pipe(res);
   });
-  return new Promise((resolve) => { server.listen(0, '127.0.0.1', () => resolve({ server, url: `http://127.0.0.1:${server.address().port}/` })); });
+  return listenOnSafePort(server, '127.0.0.1').then((port) => ({ server, url: `http://127.0.0.1:${port}/` }));
 }
 
 const isDir = !target.toLowerCase().endsWith('.exe') && fss.existsSync(target) && fss.statSync(target).isDirectory();
