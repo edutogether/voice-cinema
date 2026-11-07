@@ -61,11 +61,13 @@ test('가운데 미리보기가 재생되기 전에는 6초가 지나도 넘기�
 });
 
 test('멈춤 단추는 없고, 녹음실에 들어가면 장면이 저절로 바뀌지 않는다', async ({ page }) => {
+  // 시계는 페이지를 열기 전에 설치한다. 뒤에 설치하면 그 전에 걸린 진짜 타이머를 가짜 clearTimeout이 지우지 못해,
+  // 앱은 맞게 지웠는데도 진짜 시간으로 넘김이 일어난다(11/7 녹음실 자동 재생으로 runFor가 길어져 드러남).
+  await page.clock.install();
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   // 10/20 대표님 «멈춤을 다 뺀다» — «02 / 08 ⏸»와 그림 띠 ⏸ 모두 없다
   await expect(page.locator('.scene-auto-toggle, .scene-flow-toggle')).toHaveCount(0);
-  await page.clock.install();
   await page.clock.pauseAt(new Date(Date.now() + 1000));
   await page.getByRole('button', { name: '다음 장면', exact: true }).click();
   await page.mouse.move(1, 1);

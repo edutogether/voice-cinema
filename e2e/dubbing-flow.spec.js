@@ -64,7 +64,8 @@ test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
     await watchCountdown(page);
     await openStudio(page, '판타지');
     const clip = page.locator('#clip');
-    await expect(clip).toHaveJSProperty('paused', true);
+    // 들어가면 장면이 바로 흐르고(11/7), 보통은 그 중에 «장면 시작»을 누른다 — 그래도 처음부터 시작한다.
+    await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'previewing');
     await expect(page.locator('#recBtn')).toHaveText(/장면 시작/);
     await page.locator('#recBtn').click();
 

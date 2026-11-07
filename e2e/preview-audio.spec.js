@@ -2,8 +2,8 @@ import { test, expect } from '@playwright/test';
 
 // 장면 더빙 2.0의 소리: 장면은 원판 소리(상대 대사·BGM·효과음)와 함께 재생되고, 녹음 중에는 영상이 5.0초에
 // 멈춰 스피커가 조용하다(스피커 소리가 마이크로 들어가 겹치지 않게). 이어 재생은 원판 소리가 다시 난다.
-// 녹음 전 «미리보기»도 원판 소리와 함께 재생한다(10/20 대표님).
-test('미리보기와 장면은 원판 소리를 내고, 녹음 중에는 조용하며, 이어 재생에서 원판 소리가 다시 난다', async ({ page }) => {
+// 들어가면 저절로 흐르는 미리보기도 원판 소리와 함께 재생한다(11/7 Bumm님).
+test('들어가면 흐르는 미리보기와 장면은 원판 소리를 내고, 녹음 중에는 조용하며, 이어 재생에서 원판 소리가 다시 난다', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   await page.getByRole('button', { name: '드라마 더빙 시작', exact: true }).click();
@@ -23,7 +23,7 @@ test('미리보기와 장면은 원판 소리를 내고, 녹음 중에는 조용
     return !video.muted && !video.paused && samples.some(sample => Math.abs(sample) > .005);
   });
   await page.evaluate(() => window.probe.context.resume());
-  await page.locator('#previewBtn').click();
+  await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'previewing');
   await expect.poll(sounding, { timeout: 8000, intervals: [100] }).toBe(true);
   await page.locator('#recBtn').click();
   await expect.poll(sounding, { timeout: 8000, intervals: [100] }).toBe(true);

@@ -18,9 +18,6 @@ body:has(#studio.active) { background:#fff; }
 .studio-brand em { color:#df291f; font-style:normal; }
 .studio-video-frame { position:relative; min-height:0; background:#f3f3f3; isolation:isolate; }
 .stage video { position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
-.studio-screen-playback { position:absolute; inset:0; width:100%; height:100%; display:grid; place-items:center; border:0; background:transparent; cursor:pointer; color:white; }
-.studio-screen-playback > span { display:grid; place-items:center; width:96px; height:96px; border:1px solid #ffffff80; border-radius:50%; background:#18181866; transition:transform .18s ease-out,background .18s ease-out,border-color .18s ease-out; }
-.studio-screen-playback .action-icon { width:48px; height:48px; fill:currentColor; stroke:none; margin-left:5px; }
 .studio-pause-shade { position:absolute; inset:0; pointer-events:none; opacity:0; background:linear-gradient(180deg,#0002 0%,#0001 40%,#0003 65%,#000b 100%); transition:opacity .18s ease-out; }
 .studio-pause-title { position:absolute; left:clamp(24px,calc(4 * var(--vw)),72px); bottom:clamp(28px,calc(5 * var(--vh)),64px); max-width:calc(100% - 48px); color:#fff; pointer-events:none; opacity:0; transition:opacity .18s ease-out; text-shadow:0 2px 8px #0006; }
 .studio-pause-title small { display:block; margin-bottom:10px; color:#ffffffb8; font-size:.8125rem; font-weight:500; }
@@ -28,12 +25,6 @@ body:has(#studio.active) { background:#fff; }
 .studio-pause-title p { display:flex; align-items:center; gap:14px; margin:12px 0 0; color:#ffffffe0; font-size:.9375rem; }
 .studio-pause-title p span { border-left:1px solid #ffffff5c; padding-left:14px; font-variant-numeric:tabular-nums; }
 .studio-video-frame.is-paused :is(.studio-pause-shade,.studio-pause-title) { opacity:1; }
-.studio-screen-playback:focus-visible > span { border-color:#fff; background:#18181899; transform:scale(1.06); }
-@media (hover:hover) and (pointer:fine) {
- .studio-screen-playback:hover > span { border-color:#fff; background:#18181899; transform:scale(1.06); }
-}
-.studio-screen-playback:active > span { transform:scale(.96); }
-.studio-screen-playback:focus-visible { outline:3px solid #df291f; outline-offset:-4px; }
 /* 세로 휴대폰에서는 인물 양옆이 크게 잘리지 않도록 전체 구도를 유지한다. */
 @media (orientation:landscape) { .stage video { object-fit:cover; } }
 /* 상대 대사 자막 — 넷플릭스식(app-plan §2-3). 흰 글씨·배경 상자 없음·얇은 외곽선과 그림자, 두 줄 이내,
@@ -48,6 +39,15 @@ body:has(#studio.active) { background:#fff; }
 @media (orientation:portrait) {
  .scene-caption { bottom:calc((100cqh - 56.25cqw) / 2 + 4.5cqw); font-size:max(14px,2.8cqw); }
 }
+/* 미리보기의 대사 구간 문구 — 막을 깔지 않고 영상 위에 글자만 얹는다(11/7 Bumm님). 자막과 같은 자리이고 시간이 겹치지 않는다. */
+.scene-turn-cue { position:absolute; z-index:2; left:50%; bottom:8cqh; transform:translateX(-50%); display:flex; align-items:center; gap:.45em; width:max-content; max-width:90cqw; padding:.45em .95em; border-radius:999px; background:#df291f; color:#fff; font-size:max(15px,3.2cqh); font-weight:700; line-height:1.3; word-break:keep-all; pointer-events:none; }
+.scene-turn-cue .action-icon { width:1.15em; height:1.15em; }
+@media (orientation:portrait) {
+ .scene-turn-cue { bottom:calc((100cqh - 56.25cqw) / 2 + 4.5cqw); font-size:max(15px,2.6cqw); }
+}
+/* 브라우저가 소리 재생을 막았을 때만 나온다 — 누르면 소리가 난다 */
+.studio-sound-on { position:absolute; z-index:4; top:16px; right:16px; display:inline-flex; align-items:center; gap:8px; min-height:44px; padding:8px 16px; border:1px solid #ffffff80; border-radius:999px; background:#171717cc; color:#fff; font:inherit; font-size:.9375rem; font-weight:600; cursor:pointer; }
+.studio-sound-on:focus-visible { outline:3px solid #df291f; outline-offset:2px; }
 /* 5.0초에서 멈춘 직후 «이제 당신의 차례입니다 !» — 앱 글씨라 영상·완성본에 굽지 않는다. */
 .studio-cue { position:absolute; inset:0; z-index:3; display:grid; place-items:center; padding:24px; background:#0007; pointer-events:none; animation:countIn .25s ease-out; }
 .studio-cue strong { color:#fff; font-size:clamp(1.75rem,calc(4.2 * var(--vw)),3.5rem); font-weight:700; letter-spacing:-.02em; line-height:1.3; text-align:center; word-break:keep-all; text-shadow:0 4px 24px #0009; }
@@ -78,6 +78,9 @@ body:has(#studio.active) { background:#fff; }
 #studio .btn-ghost { color:#272727; background:#fff; border:1px solid #d7d7d7; }
 #studio .btn-rec,#studio .btn-save { background:#df291f; color:#fff; border:1px solid #df291f; }
 #studio .btn-rec { min-width:160px; }
+/* «미리보기»는 다시 보고 싶을 때 쓰는 작은 보조 단추다 — 주 단추는 «장면 시작» 하나(11/7 Bumm님) */
+#studio #previewBtn { flex:none; min-width:9.3em; min-height:44px; padding:8px 12px; font-size:.875rem; font-weight:500; white-space:nowrap; }
+#previewBtn .action-icon { width:16px; height:16px; }
 .record-dot { width:12px; height:12px; border-radius:50%; background:currentColor; }
 #studio .btn-rec:disabled { cursor:default; background:#fff1f0; border-color:#f2c9c5; color:#b72119; }
 .workflow-footer { margin:auto 0 0; padding:16px 0; color:#bfc2b9; text-align:center; font-size:.875rem; line-height:1.6; }
@@ -161,11 +164,9 @@ body:has(#studio.active) { background:#fff; }
 
 .studio-video-frame.is-entering { transform-origin:center; will-change:transform; }
 @container app (max-width:600px) {
- .studio-screen-playback > span { width:72px; height:72px; }
- .studio-screen-playback .action-icon { width:38px; height:38px; }
  .studio-pause-title { left:20px; bottom:24px; max-width:calc(100% - 40px); }
  .studio-pause-title small { margin-bottom:6px; font-size:.75rem; }
  .studio-pause-title p { margin-top:8px; font-size:.8125rem; }
 }
 @container app (max-height:500px) and (orientation:landscape) { .studio-pause-title { bottom:14px; } .studio-pause-title strong { font-size:1.125rem; } .studio-pause-title p { display:none; } }
-@media (prefers-reduced-motion:reduce) { .studio-pause-shade,.studio-pause-title,.studio-screen-playback > span { transition:none; } }
+@media (prefers-reduced-motion:reduce) { .studio-pause-shade,.studio-pause-title { transition:none; } }

@@ -9,7 +9,8 @@ import { checkTake, liveDecision, rms, type Verdict } from '../lib/voiceCheck';
 //   장면 시작 → 0~5.0초 재생(상대 대사 자막) → 5.0초에서 멈춤 → «이제 당신의 차례입니다 !»
 //   → 3·2·1 «지금 바로 당신의 목소리를 들려주세요 !» → 녹음기가 실제로 켜진 뒤 «녹음 중» → 3.0초(말이 이어지면 3.5초까지)
 //   → 녹음 검사 → 같은 영상을 5.0초부터 이어 재생하며 다듬은 목소리를 5.0초에 맞춰 들려줌 → 다시 녹음·저장.
-// 녹음 전에는 «미리보기»로 장면 전체를 소리와 함께 볼 수 있다(10/20 대표님 — 녹음·합성 없이 보기만, 끝나거나 멈추면 준비 상태로).
+// 녹음실에 들어가면 장면 전체가 소리와 함께 저절로 흐른다(미리보기, 11/7 Bumm님 — 녹음·합성 없이 보기만, 멈춤·3·2·1 없이 대사 구간 문구만, 끝나거나 멈추면 준비 상태로).
+// 다시 보고 싶으면 작은 «미리보기» 단추로 같은 재생을 한다(10/20 대표님).
 // «다시 듣기»는 10/20 대표님 지시로 없앴다(이어 재생이 이미 내 목소리가 들어간 장면을 들려준다).
 // 단계(phase) 하나가 화면 전체를 결정하고, 정리는 effect cleanup이 맡는다.
 export type Phase = 'idle' | 'previewing' | 'requesting' | 'watching' | 'cue' | 'countdown' | 'recording' | 'checking' | 'continuing' | 'recorded';
@@ -30,7 +31,8 @@ const ENGINE_DECODE_WAIT_MS = 20000;
 // 권한 대기·실패 원인을 해당 전환 시점의 안내로 보여준다.
 const HINT = {
   idle: "'장면 시작'을 누르면 장면이 흐르다 가장 긴박한 순간에 멈춰요. 그때 내 목소리로 외쳐 주세요 !",
-  previewing: '녹음 없이 장면을 처음부터 끝까지 보여 줘요. 다 보면 다시 준비 화면으로 돌아와요.',
+  previewing: "문구가 뜨는 곳이 내 대사 자리예요. 바로 녹음하려면 '장면 시작'을 눌러 주세요.",
+  previewMuted: "소리가 꺼진 채 재생 중이에요. 화면의 '소리 켜기'를 눌러 주세요.",
   requesting: '마이크를 준비하고 있어요. 권한 요청이 뜨면 허용해 주세요.',
   watching: '장면을 보세요. 곧 내 차례가 와요 !',
   cue: '장면이 멈췄어요. 이제 내 차례예요 !',
@@ -255,14 +257,21 @@ export interface Dubbing {
   /** 마지막 녹음의 판정 — 저장할 수 없는 것(silent·short)은 준비 상태로 돌아가며 남는다 */
   takeCheck: Verdict | null;
   micError: MicFailure | null;
+  /** 브라우저가 소리를 막아 소리 없이 재생 중이다 — 화면의 «소리 켜기»로 켠다 */
+  soundBlocked: boolean;
   startTake: () => void;
   preview: () => void;
+  /** 준비 상태를 따지지 않고 바로 재생한다 — 들어가는 순간(누름 안에서 동기로) 부르는 자리 */
+  playPreview: () => void;
+  soundOn: () => void;
   reset: () => void;
 }
 
-export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoElement | null>, sampleMode = false): Dubbing {
-  const [phase, setPhase] = useState<Phase>('idle');
-  const [hint, setHint] = useState<string>(HINT.idle);
+export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoElement | null>, sampleMode = false, autoPreview = false): Dubbing {
+  // 저절로 재생할 녹음실은 첫 화면부터 재생 상태로 그린다 — 준비 화면이 한 번 비쳤다 바뀌지 않게.
+  const [phase, setPhase] = useState<Phase>(autoPreview ? 'previewing' : 'idle');
+  const [hint, setHint] = useState<string>(autoPreview ? HINT.previewing : HINT.idle);
+  const [soundBlocked, setSoundBlocked] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [recordLeft, setRecordLeft] = useState(1);
   const [micError, setMicError] = useState<MicFailure | null>(null);
@@ -306,6 +315,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     setCountdown(0);
     setRecordLeft(1);
     setMicError(null);
+    setSoundBlocked(false);
     setHint(HINT.idle);
     setPhase('idle');
   }, [stopClock, discardTake, stopVoice, videoRef]);
@@ -410,6 +420,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     }
     resetVideo(v);
     setMicError(null);
+    setSoundBlocked(false);
     setRecorded(null);
     setTakeCheck(null);
 
@@ -560,11 +571,10 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
   }, [phase, videoRef, sampleMode, audioContext, stopClock, finishTake]);
 
   /**
-   * 녹음 없이 장면 전체(0~10초)를 소리와 함께 본다(10/20 대표님). 끝나거나 멈추면(브라우저가 멈춘 경우도) 준비 상태로 돌아간다.
+   * 녹음 없이 장면 전체를 소리와 함께 본다(10/20 대표님, 11/7부터 들어가면 저절로). 끝나거나 멈추면(브라우저가 멈춘 경우도) 준비 상태로 돌아간다.
    * 미리보기를 접는 쪽(reset·startTake)은 실행 번호를 먼저 올리므로, 그때 생기는 멈춤은 여기서 지난 실행으로 무시된다.
    */
-  const preview = useCallback(() => {
-    if (phase !== 'idle') return;
+  const playPreview = useCallback(() => {
     const v = videoRef.current;
     if (!v) return;
     const myRun = ++runRef.current;
@@ -580,17 +590,41 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
       detach();
       if (myRun === runRef.current) reset();
     }
-    v.muted = false;
-    v.addEventListener('pause', finish);
-    v.addEventListener('ended', finish);
-    void v.play().catch(() => {
+    const failed = () => {
       detach();
       if (myRun !== runRef.current) return;
       resetVideo(v);
+      setSoundBlocked(false);
       setHint(HINT.previewFailed);
       setPhase('idle');
+    };
+    v.muted = false;
+    v.addEventListener('pause', finish);
+    v.addEventListener('ended', finish);
+    void v.play().catch((error: unknown) => {
+      if (myRun !== runRef.current) return;
+      if (!(error instanceof DOMException && error.name === 'NotAllowedError')) {
+        failed();
+        return;
+      }
+      // 브라우저가 소리 재생을 막았다 — 그림과 대사 구간 문구라도 보이게 소리 없이 틀고, 누르면 소리가 나는 «소리 켜기»를 보인다.
+      v.muted = true;
+      setSoundBlocked(true);
+      setHint(HINT.previewMuted);
+      void v.play().catch(failed);
     });
-  }, [phase, videoRef, reset]);
+  }, [videoRef, reset]);
+
+  const preview = useCallback(() => {
+    if (phase === 'idle') playPreview();
+  }, [phase, playPreview]);
+
+  const soundOn = useCallback(() => {
+    const v = videoRef.current;
+    if (v) v.muted = false;
+    setSoundBlocked(false);
+    setHint(HINT.previewing);
+  }, [videoRef]);
 
   // 화면을 벗어날 때 남은 리소스(녹음기·음량 측정, 목소리 재생, 프레임 감시, 오디오 장치)를 확실히 반환한다.
   useEffect(() => () => {
@@ -609,8 +643,11 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     recording: recorded,
     takeCheck,
     micError,
+    soundBlocked,
     startTake,
     preview,
+    playPreview,
+    soundOn,
     reset,
   };
 }

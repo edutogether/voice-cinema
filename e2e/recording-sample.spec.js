@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { countdownLog, watchCountdown } from './countdown-watch.js';
+import { stopAutoPreview } from './stop-auto-preview.js';
 
 test.use({ serviceWorkers: 'block' });
 
@@ -66,6 +67,9 @@ test('카운트다운 도중 뒤로가면 남은 체험이 취소된다', async 
   await expect(page.locator('#recBtn')).toBeEnabled();
   await expect(page.locator('#count')).toHaveCount(0);
   await expect(page.locator('#afterRow')).toHaveCount(0);
+  // 새로 들어가면 장면은 흐르지만(11/7) 앞의 체험은 이어지지 않는다. 미리보기를 멈추면 처음 자리다.
+  await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'previewing');
+  await stopAutoPreview(page);
   await expect.poll(() => page.locator('#clip').evaluate(v => v.paused && v.currentTime === 0)).toBe(true);
   expect(await page.evaluate(() => window.sampleMicRequests)).toBe(0);
 });

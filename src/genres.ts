@@ -6,6 +6,7 @@
 // (10/17 06:40 대표님: 휴대폰도 캐러셀 확정, 장르 색 질문은 끝 — 확정값이라 지우지 않고 둔다). 원작 제목은 앱 화면 어디에도 쓰지 않는다.
 
 import clipVersions from 'virtual:clip-versions';
+import { PAUSE_SECONDS, VOICE_WINDOW_SECONDS } from './config';
 
 export interface Genre {
   id: string;
@@ -15,20 +16,24 @@ export interface Genre {
   summary: string;
   /** 상대 대사 — 앱이 영상 위에 띄우는 넷플릭스식 자막. 영상·완성본에는 굽지 않는다. */
   line: { text: string; start: number; end: number };
+  /** 아이 대사 구간(초) — 미리보기에서 «지금이 대사 치는 구간이에요»가 나오는 자리. 영상을 바꾸면 그 장르의 이 값만 바꾼다. */
+  turn: { start: number; end: number };
 }
 
 // 상대 대사는 모든 장르가 1.6초에 시작해 3.4초 전에 끝난다(스토리보드 §0).
 const line = (text: string) => ({ text, start: 1.6, end: 3.4 });
+// 지금 원판은 모든 장르의 대사 구간이 목소리 칸 그대로다(5.0~8.5초, 합성이 쓰는 값과 같다).
+const turn = () => ({ start: PAUSE_SECONDS, end: PAUSE_SECONDS + VOICE_WINDOW_SECONDS });
 
 export const GENRES: Genre[] = [
-  { id: 'sf', name: 'SF', color: '#3fa7c9', summary: '물의 행성', line: line('저 산… 움직여 !') },
-  { id: 'fantasy', name: '판타지', color: '#8a63d2', summary: '빛의 결투', line: line('나와 겨루겠다고 ?') },
-  { id: 'animation', name: '애니메이션', color: '#d97b3f', summary: '멋지게 떨어지기', line: line('장난감은 못 날아 !') },
-  { id: 'hero', name: '히어로', color: '#c94f5c', summary: '왼쪽을 봐', line: line('왼쪽을 봐. 우리가 왔어 !') },
-  { id: 'thriller', name: '스릴러', color: '#2f9e6e', summary: '레이저 금고', line: line('레이저 바뀐다, 천천히 !') },
-  { id: 'drama', name: '드라마', color: '#c9a24b', summary: '기억의 한마디', line: line('이제… 아무도 몰라보셔.') },
-  { id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '마지막 슛', line: line('너한테 맡긴다 !') },
-  { id: 'musical', name: '뮤지컬', color: '#c4559e', summary: '서커스 첫 무대', line: line('쇼는 계속되어야 해 !') },
+  { id: 'sf', name: 'SF', color: '#3fa7c9', summary: '물의 행성', line: line('저 산… 움직여 !'), turn: turn() },
+  { id: 'fantasy', name: '판타지', color: '#8a63d2', summary: '빛의 결투', line: line('나와 겨루겠다고 ?'), turn: turn() },
+  { id: 'animation', name: '애니메이션', color: '#d97b3f', summary: '멋지게 떨어지기', line: line('장난감은 못 날아 !'), turn: turn() },
+  { id: 'hero', name: '히어로', color: '#c94f5c', summary: '왼쪽을 봐', line: line('왼쪽을 봐. 우리가 왔어 !'), turn: turn() },
+  { id: 'thriller', name: '스릴러', color: '#2f9e6e', summary: '레이저 금고', line: line('레이저 바뀐다, 천천히 !'), turn: turn() },
+  { id: 'drama', name: '드라마', color: '#c9a24b', summary: '기억의 한마디', line: line('이제… 아무도 몰라보셔.'), turn: turn() },
+  { id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '마지막 슛', line: line('너한테 맡긴다 !'), turn: turn() },
+  { id: 'musical', name: '뮤지컬', color: '#c4559e', summary: '서커스 첫 무대', line: line('쇼는 계속되어야 해 !'), turn: turn() },
 ];
 
 /**
