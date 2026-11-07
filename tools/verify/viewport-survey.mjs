@@ -416,6 +416,7 @@ async function openDesktop({ w, h, tag, scale }) {
       };
       if (full) await shotsDown(page, file, grab); else await grab(file);
     },
+    redraw: () => app.evaluate(({ BrowserWindow }) => { BrowserWindow.getAllWindows()[0].webContents.invalidate(); }),
     failNext: (n) => app.evaluate((_e, count) => { globalThis.__survey.failing = count; }, n),
     realUploads: () => leaked,
     close: async () => { const c = await app.evaluate(() => globalThis.__survey); leaked = Math.max(0, c.posts - c.answered); await app.close(); },
@@ -467,8 +468,9 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
   };
   const phase = (p) => page.locator(`#studio.active[data-phase="${p}"]`).waitFor({ timeout: 30000 });
   // 장면 넘김 움직임이 끝날 때까지 기다린다 — 움직이는 중에 재면 카드가 칸 밖에 있는 것으로 잡힌다
-  // 숨긴 설치판 창은 그리기가 초당 1~2번이라 프레임이 아니라 시계로 잰다(자리가 세 번 연달아 같으면 끝) — 2.6초만 기다렸더니 움직이는 중인 카드가 칸 밖으로 잡혔다
-  const settle = kind === 'desktop' ? () => page.evaluate(() => new Promise((done) => { let last = '', same = 0, n = 0; const check = () => { const r = document.querySelector('.scene-shell.is-current')?.getBoundingClientRect(); const now = r ? r.left + ',' + r.width : ''; same = now === last ? same + 1 : 0; last = now; n++; if (same >= 3 || n > 40) done(); else setTimeout(check, 500); }; check(); })) : () => page.evaluate(() => new Promise((done) => { let last = '', same = 0, n = 0; const tick = () => { const r = document.querySelector('.scene-shell.is-current')?.getBoundingClientRect(); const now = r ? r.left + ',' + r.width : ''; same = now === last ? same + 1 : 0; last = now; n++; if (same >= 10 || n > 300) done(); else requestAnimationFrame(tick); }; tick(); }));
+  // 숨긴 설치판 창은 그리기가 초당 1~2번보다 드물어 자리가 잠깐 같아도 움직이는 중일 수 있다(자리가 세 번 연달아 같으면 끝으로 봤더니 넘어가는 도중의 카드가 칸 밖으로 잡혔다).
+  // 다시 그리게 하며 카드가 장면 칸 가운데에 올 때까지 기다린다. 끝내 안 오면 그대로 재서 결함으로 남긴다.
+  const settle = kind === 'desktop' ? async () => { for (let n = 0; n < 40; n++) { await opened.redraw(); await delay(500); if (await page.evaluate(() => { const r = document.querySelector('.scene-shell.is-current')?.getBoundingClientRect(), s = document.querySelector('.scene-stage')?.getBoundingClientRect(); return r && s && Math.abs((r.left + r.right) / 2 - (s.left + s.right) / 2) < 1; })) return; } } : () => page.evaluate(() => new Promise((done) => { let last = '', same = 0, n = 0; const tick = () => { const r = document.querySelector('.scene-shell.is-current')?.getBoundingClientRect(); const now = r ? r.left + ',' + r.width : ''; same = now === last ? same + 1 : 0; last = now; n++; if (same >= 10 || n > 300) done(); else requestAnimationFrame(tick); }; tick(); }));
   const seek = (t) => page.evaluate((s) => { document.getElementById('clip').currentTime = s; }, t);
   let step = '시작';
   try {
