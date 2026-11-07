@@ -325,6 +325,18 @@ let realUploads = 0;
 
 const FAKE_URL = 'https://storage.googleapis.com/inky-voice-cinema.firebasestorage.app/dubs/dub_animation_0000000000000_000000000000.mp4';
 
+// 창보다 긴 문서는 한 화면씩 내려가며 «-전체-1.png, -2.png…»로 찍는다. 문서를 통째로 찍는 캡처(fullPage)는 쓰지 않는다 — 브라우저에서는 그 캡처가
+// 터치 흉내를 풀고(11/8: 내용이 창을 넘는 낮은 휴대폰에서만 다음 화면이 «터치 흉내가 풀렸다»로 막혔다), 숨긴 설치판 창에서는 끝나지 않는다.
+async function shotsDown(page, file, grab) {
+  const { doc, view } = await page.evaluate(() => ({ doc: document.documentElement.scrollHeight, view: innerHeight }));
+  const pages = Math.ceil(doc / (view * 0.9));
+  for (let i = 0; i < pages; i++) {
+    await page.evaluate((y) => { scrollTo(0, y); }, i * view * 0.9);
+    await grab(file.replace(/\.png$/, `-${i + 1}.png`));
+  }
+  await page.evaluate(() => { scrollTo(0, 0); });
+}
+
 // 브라우저 쪽: 크기마다 새 맥락. 업로드와 큰 파일은 도구가 페이지 밖에서 답한다.
 async function openBrowser(browser, { kind, w, h, touch }) {
   const dpr = opt('--dpr') ? Number(opt('--dpr')) : DPR[kind](w, h);
@@ -393,7 +405,7 @@ async function openDesktop({ w, h, tag, scale }) {
     page,
     home: 'https://voice.edutogether.kr/',
     // page.screenshot은 흉내 낸 밀도를 빼고 CSS 크기로 찍고, 숨긴 창에서 움직임이 없는 화면이면 CDP 캡처는 끝나지 않는다(새 그림이 안 나온다).
-    // 창 캡처는 밀도까지 실제 화소로 바로 돌아온다. 창보다 긴 문서도 CDP로 통째로 찍으면 끝나지 않아, 한 화면씩 내려가며 «-전체-1.png, -2.png…»로 찍는다.
+    // 창 캡처는 밀도까지 실제 화소로 바로 돌아온다.
     capture: async (file, full) => {
       const grab = async (to) => {
         // 창 캡처는 마지막으로 그린 그림을 돌려준다 — 숨긴 창은 초당 1~2번 그리므로 다시 그리게 하고 기다려야 지금 화면이 찍힌다(안 그러면 «저장 중»이 «완성» 이름으로 남았다)
@@ -402,14 +414,7 @@ async function openDesktop({ w, h, tag, scale }) {
         const png = await app.evaluate(async ({ BrowserWindow }) => (await BrowserWindow.getAllWindows()[0].webContents.capturePage(undefined, { stayHidden: true, stayAwake: true })).toPNG().toString('base64'));
         await fs.writeFile(to, Buffer.from(png, 'base64'));
       };
-      if (!full) { await grab(file); return; }
-      const { doc, view } = await page.evaluate(() => ({ doc: document.documentElement.scrollHeight, view: innerHeight }));
-      const pages = Math.ceil(doc / (view * 0.9));
-      for (let i = 0; i < pages; i++) {
-        await page.evaluate((y) => { scrollTo(0, y); }, i * view * 0.9);
-        await grab(file.replace(/\.png$/, `-${i + 1}.png`));
-      }
-      await page.evaluate(() => { scrollTo(0, 0); });
+      if (full) await shotsDown(page, file, grab); else await grab(file);
     },
     failNext: (n) => app.evaluate((_e, count) => { globalThis.__survey.failing = count; }, n),
     realUploads: () => leaked,
@@ -425,7 +430,7 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
   } catch (e) {
     report.push({ size: tag, kind, screen: '흐름', error: `열기: ${e.message.split('\n')[0]}`, bad: true });
     console.log(`${kind} ${tag}: 열지 못함 — ${e.message.split('\n')[0]}`);
-    return false;
+    return;
   }
   const { page, home } = opened;
   const dir = path.join(out, FOLDER[kind], tag);
@@ -453,7 +458,7 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
     report.push({ size: tag, kind, screen, ...m, bad });
     if (CAPTURE || bad) {
       await fs.mkdir(dir, { recursive: true });
-      const take = (file, fullPage) => (opened.capture ? opened.capture(file, fullPage) : page.screenshot({ path: file, fullPage }));
+      const take = (file, full) => { if (opened.capture) return opened.capture(file, full); const grab = (to) => page.screenshot({ path: to }); return full ? shotsDown(page, file, grab) : grab(file); };
       await take(path.join(dir, `${screen}.png`), false);
       if (m.docH > m.H + 1 && CAPTURE) await take(path.join(dir, `${screen}-전체.png`), true);
     }
@@ -466,7 +471,6 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
   const settle = kind === 'desktop' ? () => page.evaluate(() => new Promise((done) => { let last = '', same = 0, n = 0; const check = () => { const r = document.querySelector('.scene-shell.is-current')?.getBoundingClientRect(); const now = r ? r.left + ',' + r.width : ''; same = now === last ? same + 1 : 0; last = now; n++; if (same >= 3 || n > 40) done(); else setTimeout(check, 500); }; check(); })) : () => page.evaluate(() => new Promise((done) => { let last = '', same = 0, n = 0; const tick = () => { const r = document.querySelector('.scene-shell.is-current')?.getBoundingClientRect(); const now = r ? r.left + ',' + r.width : ''; same = now === last ? same + 1 : 0; last = now; n++; if (same >= 10 || n > 300) done(); else requestAnimationFrame(tick); }; tick(); }));
   const seek = (t) => page.evaluate((s) => { document.getElementById('clip').currentTime = s; }, t);
   let step = '시작';
-  let touchLost = false;
   try {
     step = '스플래시';
     await page.goto(home);
@@ -570,25 +574,15 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
   } catch (e) {
     report.push({ size: tag, kind, screen: '흐름', error: `${step}: ${e.message.split('\n')[0]}`, bad: true });
     console.log(`${kind} ${tag}: ${step}에서 막힘 — ${e.message.split('\n')[0]}`);
-    touchLost = e.message.includes('터치 흉내가 풀렸다');
   }
   await opened.close();
   realUploads += opened.realUploads();
-  return touchLost;
 }
 
-// 터치 흉내는 가끔 PC 전체에서 한꺼번에 풀린다(11/7 실측: 브라우저를 나눠도 돌던 휴대폰 두 크기가 같은 순간에 풀려, 844×340이 PC 비율 0.53이 되고
-// 375×553에서 «내 영화 열기»가 사라졌다). 실제 기기에는 없는 일이라 그 크기를 처음부터 다시 잰다.
 const browser = EXE ? null : await chromium.launch(LAUNCH);
 const queue = [...sizes];
 await Promise.all(Array.from({ length: JOBS }, async () => {
-  for (let s = queue.shift(); s; s = queue.shift()) {
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      if (!(await surveySize(browser, s)) || attempt === 3) break;
-      console.log(`${s.kind} ${s.tag}: 터치 흉내가 풀려 처음부터 다시 잰다(${attempt}번째)`);
-      for (let i = report.length - 1; i >= 0; i--) if (report[i].size === s.tag && report[i].kind === s.kind) report.splice(i, 1);
-    }
-  }
+  for (let s = queue.shift(); s; s = queue.shift()) await surveySize(browser, s);
 }));
 await browser?.close();
 local?.server.close();
