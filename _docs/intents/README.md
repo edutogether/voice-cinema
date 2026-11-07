@@ -35,6 +35,9 @@
 | 2026-10-24 | [wifi-speed](2026-10-24-wifi-speed/intent.md) | 2 | in-progress | 와이파이에서 느림 — 화질 그대로, 엔진 두 번 받기 없애고 화면에 필요한 것 먼저(엔진 · 원판은 뒤에서), App Check 상한 |
 | 2026-10-24 | [recording-hardening](2026-10-24-recording-hardening/intent.md) | 2 | in-progress | 녹음·합성 품질 보강 — 녹음 3초(말이 이어지면 3.5초)·녹음기 켜진 뒤 신호·무음/끊김 감지·섞은 뒤 리미터·미리 듣기 = 완성본 소리 (**작업 전 의도는 Bumm님 지시문, 이 문서는 작업 중 작성**) |
 | 2026-10-27 | [desktop-installer](2026-10-27-desktop-installer/intent.md) | 2 | in-progress | Windows 설치판 시안(Electron · NSIS, 정본 주소 그대로 · 파일만 설치판 안) — **⏸ 보류(10/27 Bumm님 A: Voice Cinema 완성 뒤)**, 다시 시작할 때의 기준 5가지 기록 (가지 `feat/vc-desktop`) |
+| 2026-11-07 | [studio-autoplay](2026-11-07-studio-autoplay/intent.md) | 2 | done | 녹음실에 들어가면 장면이 멈춤·3·2·1 없이 소리와 함께 한 번 흐르고 대사 구간에 문구만 나온다(Bumm님 11/7, 10/01 «진입 자동재생 금지»를 바꿈) |
+| 2026-11-07 | [pc-fit](2026-11-07-pc-fit/intent.md) | 2 | done | PC 웹 — 큰 창에서 통째로 커지는 것(키우지 않기) · 메인 영상 위아래 잘림(16:9 그대로) · 스플래시를 Poster Studio와 같게. responsive-fit의 PC 부분을 대신한다 |
+| 2026-11-07 | [res-all](2026-11-07-res-all/intent.md) | 2 | in-progress | 모든 해상도 · 설치판 2차 — 2560 화면을 기준으로 휴대폰 · 패드 · PC · 설치판을 맞추고 전체 크기를 자동으로 잰다. 화면 문구 표, 합성 오류 원문 빼기, 엔진 캐시 분리를 함께 낸다 |
 
 ## 폴더 규칙
 

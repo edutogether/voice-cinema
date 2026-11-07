@@ -73,7 +73,7 @@ test('isKakaoInApp: 카카오톡 안 브라우저만 잡고, 다른 브라우저
   expect(isKakaoInApp(UA.kakaoStory)).toBe(false);
 });
 
-test('kakaoExternalUrl: 지금 주소를 통째로 인코딩해 카카오톡의 바깥 브라우저 열기 주소에 싣는다', () => {
+test('kakaoExternalUrl: 지금 주소를 통째로 인코딩해 카카오톡의 다른 브라우저 열기 주소에 싣는다', () => {
   expect(kakaoExternalUrl('https://voice.edutogether.kr/')).toBe('kakaotalk://web/openExternal?url=https%3A%2F%2Fvoice.edutogether.kr%2F');
   // 쿼리·해시가 바깥 주소의 쿼리로 새지 않게 &·#·=까지 인코딩한다
   expect(kakaoExternalUrl('https://voice.edutogether.kr/?a=1&b=2#x')).toBe('kakaotalk://web/openExternal?url=https%3A%2F%2Fvoice.edutogether.kr%2F%3Fa%3D1%26b%3D2%23x');

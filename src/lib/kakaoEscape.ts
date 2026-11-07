@@ -1,13 +1,13 @@
 import { isKakaoInApp, kakaoExternalUrl, kakaoMenuHint } from '../logic';
 
-// 카카오톡 안 브라우저로 열리면 바깥 브라우저(아이폰 사파리·갤럭시 기본 브라우저)로 넘긴다(10/20 대표님) —
+// 카카오톡 안 브라우저로 열리면 다른 브라우저(아이폰 사파리·갤럭시 기본 브라우저)로 넘긴다(10/20 대표님) —
 // 카카오톡 안에서는 녹음 마이크와 영상 저장이 막힐 수 있다. 리액트보다 먼저 돌아 스플래시 위에 덮는다.
 //
 // 카카오톡 안에서는 앱을 띄우지 않는다 — 곧 떠날 탭에서 엔진 31MB·장면 영상·reCAPTCHA를 받지 않게, «여기서 계속하기»를
 // 누를 때만 띄운다. 이동은 이 페이지가 다 뜬 뒤(load)에 한다 — load 전에 이동하면 E2E 도구가 페이지의 load를 끝내 못 받아
 // 1분 시간 초과로 떨어졌다(10/20). 이동이 받던 요청을 끊지는 않는다(10/20 실측: 느린 fetch·그림 모두 끝까지 받음).
 //
-// 자동 이동은 이 탭에서 한 번만 한다. 이동한 뒤에도 카카오톡 안 화면은 그대로 남으므로(바깥 브라우저가 따로 열린다)
+// 자동 이동은 이 탭에서 한 번만 한다. 이동한 뒤에도 카카오톡 안 화면은 그대로 남으므로(다른 브라우저가 따로 열린다)
 // 다시 열리거나 새로고침돼도 같은 이동을 되풀이하지 않고, 손으로 여는 길만 안내한다.
 const TRIED_KEY = 'vc-kakao-external-tried';
 // «브라우저로 여는 중…»을 보여 준 뒤 이동한다
@@ -47,7 +47,7 @@ export function escapeKakaoInApp(startApp: () => void): boolean {
   title.textContent = '브라우저로 여는 중…';
   const why = document.createElement('p');
   why.className = 'kakao-escape-why';
-  why.textContent = '카카오톡 안에서는 녹음과 영상 저장이 안 될 수 있어서, 바깥 브라우저로 엽니다.';
+  why.textContent = '카카오톡 안에서는 녹음과 영상 저장이 안 될 수 있어서, 다른 브라우저로 엽니다.';
   const help = document.createElement('div');
   help.className = 'kakao-escape-help';
   help.hidden = true;
@@ -58,7 +58,7 @@ export function escapeKakaoInApp(startApp: () => void): boolean {
   const open = document.createElement('a');
   open.className = 'kakao-escape-open';
   open.href = target;
-  open.textContent = '바깥 브라우저로 열기';
+  open.textContent = '다른 브라우저로 열기';
   const stay = document.createElement('button');
   stay.type = 'button';
   stay.className = 'kakao-escape-stay';
@@ -73,7 +73,7 @@ export function escapeKakaoInApp(startApp: () => void): boolean {
   document.body.append(box);
 
   const showHelp = () => {
-    title.textContent = '바깥 브라우저에서 열어 주세요';
+    title.textContent = '다른 브라우저에서 열어 주세요';
     help.hidden = false;
     open.focus();
   };

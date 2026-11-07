@@ -53,8 +53,11 @@ test('인증 전 요청은 분당 상한을 넘기면 429', async () => {
   } finally { await 닫기(); }
 }, 60000);
 
-test('인증 전 요청은 학생 업로드 한도를 쓰지 않고, 인증된 업로드는 분당 60에서 막힌다', async () => {
+test('인증 전 요청은 학생 업로드 한도를 쓰지 않고, 인증된 업로드는 분당 60에서 막힌다 — 로그에는 클라이언트 IP가 남지 않는다', async () => {
   const { 보내기, 닫기 } = await 서버();
+  // 개인정보처리방침은 IP를 «서비스에서 별도로 저장하지 않습니다»라고 약속한다 — 한도 초과 로그에 IP를 쓰던 것(10/05)을 11/2에 뺐다
+  const 로그 = [];
+  const 듣기 = vi.spyOn(console, 'warn').mockImplementation((...a) => { 로그.push(a.join(' ')); });
   try {
     // 같은 공인 IP에서 인증 없는 요청이 먼저 100번 와도
     for (let i = 0; i < 100; i++) expect(await 보내기('10.0.0.2', false)).toBe(403);
@@ -64,5 +67,7 @@ test('인증 전 요청은 학생 업로드 한도를 쓰지 않고, 인증된 �
     expect(코드).toHaveLength(업로드한도 + 5);
     expect(new Set(코드.slice(0, 업로드한도)), '인증 전 요청이 업로드 몫을 썼다').toEqual(new Set([400])); // 본문 검증까지 감
     expect(코드.slice(업로드한도), '업로드 한도를 넘겼는데 막히지 않는다').toEqual(Array(5).fill(429));
-  } finally { await 닫기(); }
+    expect(로그.some((l) => l.includes('분당 업로드 한도 초과')), '한도 초과 로그가 없다').toBe(true);
+    expect(로그.filter((l) => l.includes('10.0.0.2')), '로그에 클라이언트 IP가 남았다').toEqual([]);
+  } finally { 듣기.mockRestore(); await 닫기(); }
 }, 60000);

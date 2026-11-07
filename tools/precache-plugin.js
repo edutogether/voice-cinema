@@ -17,7 +17,8 @@ import path from 'node:path';
  *  - 뺀다: clips/**(6개 합쳐 37MB). install에서 한꺼번에 받으면 행사장 와이파이에서
  *    설치 자체가 실패한다 — 실제로 재생한 장르부터 런타임에 쌓는다.
  *  - runtimeDirs(엔진 vendor/ffmpeg-core, 2026-10-24)는 목록에서 빼고 서비스워커가 앱이 받을 때 캐시에 넣는다 — 설치 때 받으면
- *    첫 방문에 화면의 영상과 회선을 다툰다. 다만 그 파일 내용은 캐시 이름에 넣는다: 엔진만 바뀐 배포에서도 옛 엔진이 남지 않게.
+ *    첫 방문에 화면의 영상과 회선을 다툰다. 이 파일들은 화면과 따로 캐시한다(2026-11-07): 캐시 이름이 이 파일 내용으로만 정해져,
+ *    화면만 바뀐 배포에서는 부스 기기가 다시 받지 않고, 엔진이 바뀌면 이름이 달라져 옛 엔진이 지워진다.
  */
 export function precacheSW({ swSource, precacheDirs = ['vendor', 'fonts'], excludeDirs = ['clips'], runtimeDirs = [] }) {
   let outDir;
@@ -55,21 +56,21 @@ export function precacheSW({ swSource, precacheDirs = ['vendor', 'fonts'], exclu
         .map(({ abs, url }) => ({ url, hash: hashFile(abs) }))
         .sort((a, b) => a.url.localeCompare(b.url));
 
-      // 목록이나 내용이 조금이라도 바뀌면 캐시 이름이 바뀌어 옛 캐시가 폐기된다.
-      // 예전처럼 사람이 CACHE_NAME 버전 올리는 걸 잊어 옛 화면이 계속 보이는 일이 없다.
       const runtime = files
         .filter(({ url }) => runtimeDirs.some((d) => url.startsWith(`/${d}/`)))
         .map(({ abs, url }) => ({ url, hash: hashFile(abs) }))
         .sort((a, b) => a.url.localeCompare(b.url));
       if (runtimeDirs.length && !runtime.length) throw new Error(`런타임 캐시 대상(${runtimeDirs.join(', ')})이 산출물에 없습니다.`);
-      const version = createHash('sha256')
-        .update([...manifest, ...runtime].map((e) => e.url + e.hash).join('\n'))
-        .digest('hex')
-        .slice(0, 12);
+      // 목록이나 내용이 조금이라도 바뀌면 캐시 이름이 바뀌어 옛 캐시가 폐기된다.
+      // 예전처럼 사람이 CACHE_NAME 버전 올리는 걸 잊어 옛 화면이 계속 보이는 일이 없다.
+      const versionOf = (list) => createHash('sha256').update(list.map((e) => e.url + e.hash).join('\n')).digest('hex').slice(0, 12);
+      const version = versionOf(manifest);
 
       const source = readFileSync(swSource, 'utf8')
         .replace('__PRECACHE_URLS__', JSON.stringify(manifest.map((e) => e.url), null, 2))
-        .replace('__CACHE_VERSION__', JSON.stringify(version));
+        .replace('__CACHE_VERSION__', JSON.stringify(version))
+        .replace('__ENGINE_FILES__', JSON.stringify(Object.fromEntries(runtime.map((e) => [e.url, e.hash])), null, 2))
+        .replace('__ENGINE_VERSION__', JSON.stringify(versionOf(runtime)));
 
       writeFileSync(path.join(outDir, 'sw.js'), source);
       console.log(`  서비스워커 프리캐시 ${manifest.length}개 (캐시 ${version})`);

@@ -10,7 +10,7 @@ import { installSyntheticMic, recordOnce } from '../../e2e/synthetic-mic.js';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const EXE = process.env.VC_DESKTOP_EXE ?? path.join(HERE, '..', 'release', 'win-unpacked', 'Voice Cinema.exe');
 const ORIGIN = 'https://voice.edutogether.kr';
-const OFFLINE_MSG = '인터넷에 연결되어 있지 않아 QR을 만들 수 없어요. 아래 단추를 눌러 이 기기에 저장한 뒤 선생님께 알려 주세요.';
+const OFFLINE_MSG = '인터넷 연결이 끊겨 QR을 만들지 못했어요. 아래 단추를 눌러 이 기기에 저장한 뒤 선생님께 알려 주세요.';
 
 /** mp4의 mvhd 상자에서 길이(초)를 읽는다. */
 function mp4Duration(buffer) {

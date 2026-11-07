@@ -16,8 +16,8 @@ type Stage =
   | { kind: 'merging' }
   | { kind: 'uploading' }
   | { kind: 'cloud'; qr: string; url: string }
-  | { kind: 'fallback'; blob: Blob; offline?: boolean }
-  | { kind: 'error'; message: string };
+  | { kind: 'fallback'; blob: Blob }
+  | { kind: 'error' };
 
 interface Props {
   active: boolean;
@@ -58,19 +58,16 @@ export function Result({ active, job, onHome, onBack }: Props) {
       try {
         merged = await mergeClip(job.genre.id, await voiceFor(job));
       } catch (e) {
-        if (!cancelled) {
-          setStage({
-            kind: 'error',
-            message: `${e instanceof Error ? e.message : String(e)} (녹음은 남아 있어요, [돌아가기] 후 다시 저장해 보세요)`,
-          });
-        }
+        // 오류 원문(FFmpeg 기록)은 아이 화면에 보이지 않고 개발자 콘솔에만 남긴다
+        console.error('[영상 합성 실패]', e instanceof Error ? e.message : e);
+        if (!cancelled) setStage({ kind: 'error' });
         return;
       }
       if (cancelled) return;
       // 인터넷이 아예 없으면(와이파이 없이 쓰는 설치판 등) 올리지 않는다 — App Check 대기(20초)를 세 번 «저장하고 있어요»로 보내지 않고
       // 바로 이 기기에 저장으로 간다(10/27 설치판, 오프라인일 때는 정직하게 안내).
       if (!navigator.onLine) {
-        setStage({ kind: 'fallback', blob: merged, offline: true });
+        setStage({ kind: 'fallback', blob: merged });
         return;
       }
       setStage({ kind: 'uploading' });
@@ -130,7 +127,7 @@ export function Result({ active, job, onHome, onBack }: Props) {
           <div id="loading" role="status" aria-busy="true">
             <div className="spinner" aria-hidden="true" />
             <h2 id="loadingTitle" tabIndex={-1}>{stage.kind === 'merging' ? '영화를 만들고 있어요' : '내 영화를 저장하고 있어요'}</h2>
-            <p id="loadingSub">{stage.kind === 'merging' ? '목소리를 영상에 입히는 중입니다' : '완성된 영화를 전달 중입니다'}</p>
+            <p id="loadingSub">{stage.kind === 'merging' ? '목소리를 영상에 입히는 중입니다' : '완성된 영화를 저장하고 있어요'}</p>
             <ol className="save-steps" aria-label="저장 진행">
               <li aria-current={stage.kind === 'merging' ? 'step' : undefined}><span>{stage.kind === 'uploading' ? <ActionIcon name="check" /> : '1'}</span> 영상과 목소리 합치기</li>
               <li aria-current={stage.kind === 'uploading' ? 'step' : undefined}><span>2</span> 저장하고 QR 만들기</li>
@@ -146,11 +143,9 @@ export function Result({ active, job, onHome, onBack }: Props) {
             <p id="doneMsg">
               {stage.kind === 'cloud'
                 ? 'QR을 찍으면 내 영화를 받을 수 있어요'
-                : stage.offline
-                  ? '인터넷에 연결되어 있지 않아 QR을 만들 수 없어요. 아래 단추를 눌러 이 기기에 저장한 뒤 선생님께 알려 주세요.'
-                  : isPreviewChannel(window.location.hostname)
-                    ? '미리보기 주소에서는 QR을 만들 수 없어요 — 서버 저장은 실제 주소(voice.edutogether.kr)에서만 돼요. 아래 단추로 이 기기에 저장해 확인해 주세요.'
-                    : '인터넷이 잠깐 불안해서 QR을 만들지 못했어요. 아래 단추를 눌러 이 기기에 저장한 뒤 선생님께 알려 주세요.'}
+                : isPreviewChannel(window.location.hostname)
+                  ? '미리보기 주소에서는 QR을 만들 수 없어요 — 서버 저장은 실제 주소(voice.edutogether.kr)에서만 돼요. 아래 단추로 이 기기에 저장해 확인해 주세요.'
+                  : '인터넷 연결이 끊겨 QR을 만들지 못했어요. 아래 단추를 눌러 이 기기에 저장한 뒤 선생님께 알려 주세요.'}
             </p>
 
             {/* 휴대폰에서 직접 체험하면 자기 화면의 QR을 찍을 수 없다 — 같은 공개 주소를 바로 여는 단추(휴대폰에서만 보임, result.css). 휴대폰 한 화면에 들어오게 QR보다 위에 둔다. 10/17 팀장 임시 진행, 대표님 일요일 확인 */}
@@ -196,9 +191,9 @@ export function Result({ active, job, onHome, onBack }: Props) {
             <span className="result-symbol warning"><ActionIcon name="warning" /></span>
             <h2 tabIndex={-1}>녹음이 남아 있어요</h2>
             <div className="errbox show" id="errbox">
-              <b>영상 합성 중 문제가 생겼어요.</b>
+              <b>영화를 만드는 중 문제가 생겼어요.</b>
               <br />
-              {stage.message}
+              녹음은 남아 있어요. '돌아가기'를 누른 뒤 다시 저장해 보세요.
             </div>
             <div className="row" id="errRow">
               <button className="btn btn-lg btn-ghost" id="errBackBtn" onClick={onBack}><ActionIcon name="back" /> 돌아가기</button>

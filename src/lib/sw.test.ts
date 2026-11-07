@@ -10,7 +10,7 @@ function setup(assets: string[], controlled = true, responds = true) {
   vi.stubEnv('PROD', true);
   const listeners = new Map<string, (event: unknown) => void>();
   const source = readFileSync('tools/sw-template.js', 'utf8')
-    .replace('__PRECACHE_URLS__', JSON.stringify(assets)).replace('__CACHE_VERSION__', '"test"');
+    .replace('__PRECACHE_URLS__', JSON.stringify(assets)).replace('__CACHE_VERSION__', '"test"').replace('__ENGINE_FILES__', '{}').replace('__ENGINE_VERSION__', '"test"');
   vm.runInNewContext(source, { self: { addEventListener: (type: string, fn: (event: unknown) => void) => listeners.set(type, fn) } });
   const controller = { postMessage: vi.fn((data, ports) => {
     if (responds) listeners.get('message')!({ data, ports });

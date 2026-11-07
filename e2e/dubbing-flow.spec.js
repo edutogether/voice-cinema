@@ -4,6 +4,7 @@
 // (a) 실제 프로덕션 Storage에 테스트 파일이 쌓이지 않게, (b) 네트워크 상태에 결과가 좌우되지 않게 한다.
 import { Buffer } from 'node:buffer';
 import { test, expect } from '@playwright/test';
+import { countdownLog, watchCountdown } from './countdown-watch.js';
 
 const UPLOAD_PATTERN = '**/voiceCinema/upload';
 const GENRE_NAMES = ['SF', '판타지', '애니메이션', '히어로', '스릴러', '드라마', '스포츠', '뮤지컬'];
@@ -47,6 +48,20 @@ test.describe('홈 화면', () => {
 
 test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
   test('5.0초에서 정확히 멈추고 문구 → 3·2·1 → 녹음 3초(말이 이어지면 3.5초까지) → 5.0초부터 이어 재생한다', async ({ page }) => {
+    // 녹음 길이는 페이지 안에서 녹음기의 start · stop 이벤트로 잰다. Node 쪽에서 «녹음 중»이 보인 때를 잡으면 재시도 간격만큼
+    // 늦게 찍혀 실제보다 짧게 잰다 — 10/31 동시 16개로 40번 돌렸을 때 최대 0.53초 늦어 4번이 3초 아래로 나왔다(녹음기 기준은 3.001~3.402초).
+    await page.addInitScript(() => {
+      const times = (window.__recorderTimes = {});
+      const Native = window.MediaRecorder;
+      window.MediaRecorder = class extends Native {
+        constructor(...args) {
+          super(...args);
+          this.addEventListener('start', () => { times.start ??= performance.now(); });
+          this.addEventListener('stop', () => { times.stop ??= performance.now(); });
+        }
+      };
+    });
+    await watchCountdown(page);
     await openStudio(page, '판타지');
     const clip = page.locator('#clip');
     // 들어가면 장면이 바로 흐르고(11/7), 보통은 그 중에 «장면 시작»을 누른다 — 그래도 처음부터 시작한다.
@@ -56,23 +71,21 @@ test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
 
     await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'watching');
     await expect.poll(() => clip.evaluate(v => v.currentTime)).toBeGreaterThan(.5);
-    // 멈춘 순간 영상 시각이 5.0초와 한 프레임(1/30초) 안이다.
-    // 문구는 0.6초뿐이다(10/24) — 페이지 안에서 매 화면 확인하는 waitFor로 기다린다
-    await page.locator('#cue').waitFor({ timeout: 10000 });
-    expect(await page.locator('#cue').textContent()).toBe('이제 당신의 차례입니다 !');
+    // 문구(0.6초)와 3·2·1(0.3초씩)은 짧아서, 나타난 뒤 검사가 글자를 따로 읽으러 가면 그 사이 사라질 수 있다 — 10/31 동시 16개로
+    // 100번 돌렸을 때 2번, waitFor 뒤 textContent가 사라진 문구를 기다리다 시간 초과. 페이지 안 기록(countdown-watch.js)으로 본다.
+    await expect(page.locator('#recpill')).toBeVisible({ timeout: 15000 });
+    const log = await countdownLog(page);
+    expect(log.find((e) => e.key === 'cue')?.text).toBe('이제 당신의 차례입니다 !');
+    expect(log.find((e) => e.key.endsWith('녹음 시작'))?.text).toContain('지금 바로 당신의 목소리를 들려주세요 !');
+    // 멈춘 영상 시각이 5.0초와 한 프레임(1/30초) 안이고, 녹음 중에도 그 정지 화면 그대로다.
     const paused = await clip.evaluate(v => ({ paused: v.paused, time: v.currentTime }));
     expect(paused.paused).toBe(true);
     expect(Math.abs(paused.time - 5)).toBeLessThanOrEqual(1 / 30);
-
-    await expect(page.locator('#count')).toContainText('지금 바로 당신의 목소리를 들려주세요 !');
-    await expect(page.locator('#recpill')).toBeVisible({ timeout: 5000 });
-    const recordStart = Date.now();
-    // 녹음 중에는 영상이 5.0초 정지 화면 그대로다.
-    expect(await clip.evaluate(v => ({ p: v.paused, t: Math.round(v.currentTime * 10) / 10 }))).toEqual({ p: true, t: 5 });
     await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'continuing', { timeout: 6000 });
-    const recordMs = Date.now() - recordStart;
-    expect(recordMs).toBeGreaterThan(3000);
-    expect(recordMs).toBeLessThan(5000);
+    const { start, stop } = await page.evaluate(() => window.__recorderTimes);
+    const recordMs = stop - start;
+    expect(recordMs).toBeGreaterThanOrEqual(3000);
+    expect(recordMs).toBeLessThan(4000);
     // 이어 재생은 5.0초부터다.
     await expect.poll(() => clip.evaluate(v => v.currentTime)).toBeGreaterThan(5.2);
     await expect(page.locator('#afterRow')).toBeVisible({ timeout: 10000 });
@@ -175,7 +188,7 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     await expect(page.locator('#done')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('#downloadRow')).toBeVisible();
     await expect(page.locator('#qrbox')).toBeHidden();
-    await expect(page.locator('#doneMsg')).toContainText('인터넷이 잠깐 불안해서');
+    await expect(page.locator('#doneMsg')).toContainText('인터넷 연결이 끊겨');
     // 기기에 저장된 영화는 자동 삭제 대상이 아니다 — 선생님께 지워 달라는 한 줄은 남긴다(아이 목소리 보호)
     await expect(page.locator('#savemode')).toContainText('자동으로 지워지지 않아요');
     expect(callCount).toBeGreaterThanOrEqual(2); // 1차 실패 + 재시도
@@ -208,7 +221,7 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     await page.locator('button', { hasText: '저장하기' }).click();
 
     await expect(page.locator('#downloadRow')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('#doneMsg')).toHaveText('인터넷에 연결되어 있지 않아 QR을 만들 수 없어요. 아래 단추를 눌러 이 기기에 저장한 뒤 선생님께 알려 주세요.');
+    await expect(page.locator('#doneMsg')).toHaveText('인터넷 연결이 끊겨 QR을 만들지 못했어요. 아래 단추를 눌러 이 기기에 저장한 뒤 선생님께 알려 주세요.');
     await expect(page.locator('#savemode')).toContainText('자동으로 지워지지 않아요');
     expect(callCount).toBe(0);
     const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#downloadBtn').click()]);
@@ -237,12 +250,36 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     await page.locator('button', { hasText: '저장하기' }).click();
 
     await expect(page.locator('#errbox')).toBeVisible({ timeout: 30000 });
-    await expect(page.locator('#errbox')).toContainText('영상 합성 중 문제가 생겼어요');
+    await expect(page.locator('#errbox')).toHaveText("영화를 만드는 중 문제가 생겼어요.녹음은 남아 있어요. '돌아가기'를 누른 뒤 다시 저장해 보세요.");
     await expect(page.locator('#done')).toBeHidden();
 
     await page.locator('#errBackBtn').click();
     await expect(page.locator('#studio')).toHaveClass(/active/);
     await expect(page.locator('#afterRow')).toBeVisible();
+  });
+
+  // 11/7 Bumm님(공식 행사, 아이 · 교사가 읽는 화면) — 합성 명령이 실패하면 FFmpeg 기록 8줄이 화면에 그대로 나왔다. 원문은 콘솔로만 남긴다.
+  test('합성 실패 경로: FFmpeg가 실패해도 아이 화면에 오류 원문이 나오지 않고 콘솔에만 남는다', async ({ page }) => {
+    const errors = [];
+    page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+    await page.addInitScript(() => {
+      const originalFetch = window.fetch;
+      window.fetch = (input, init) => {
+        const url = typeof input === 'string' ? input : input.url;
+        if (url.includes('/clips/final/animation.mp4')) return Promise.resolve(new Response(new Uint8Array(2048).fill(7), { status: 200, headers: { 'Content-Type': 'video/mp4' } }));
+        return originalFetch(input, init);
+      };
+    });
+
+    await openStudio(page, '애니메이션');
+    await page.locator('#recBtn').click();
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
+    await page.locator('button', { hasText: '저장하기' }).click();
+
+    await expect(page.locator('#errbox')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('#errbox')).toHaveText("영화를 만드는 중 문제가 생겼어요.녹음은 남아 있어요. '돌아가기'를 누른 뒤 다시 저장해 보세요.");
+    expect(await page.locator('#result').innerText(), '오류 원문이 화면에 나온다').not.toMatch(/실패\n|Invalid|moov|ffmpeg|\[mov/i);
+    expect(errors.some(text => text.includes('[영상 합성 실패]')), '콘솔에 원문이 남지 않았다').toBe(true);
   });
 
   test('다시 녹음을 누르면 초기 상태로 돌아간다', async ({ page }) => {

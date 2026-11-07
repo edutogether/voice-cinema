@@ -52,7 +52,7 @@ export function isKakaoInApp(ua: string): boolean {
   return /\bKAKAOTALK\b/i.test(ua);
 }
 
-// 카카오톡의 «바깥 브라우저로 열기» 주소. 카카오가 문서로 낸 주소는 아니다 — 카카오 데브톡의 카카오 쪽 답은
+// 카카오톡의 «다른 브라우저로 열기» 주소. 카카오가 문서로 낸 주소는 아니다 — 카카오 데브톡의 카카오 쪽 답은
 // «인앱 브라우저는 개발자 문서 범위가 아니다»였고, 이 형식은 개발자들이 널리 쓰는 것이다. 실제 동작은 실기기로 확인한다.
 export function kakaoExternalUrl(href: string): string {
   return `kakaotalk://web/openExternal?url=${encodeURIComponent(href)}`;

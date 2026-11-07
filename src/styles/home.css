@@ -17,6 +17,8 @@ body:has(#home.active) { background:#fff; }
 .festival-header { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:24px; flex-shrink:0; min-height:80px; margin-inline:-16px; padding:14px 28px; background:white; border-bottom:1px solid #ddd; }
 .festival-restart { border:0; padding:0; background:transparent; color:inherit; font-family:inherit; cursor:pointer; width:max-content; max-width:100%; text-align:left; border-radius:4px; }
 .festival-restart:focus-visible { outline:2px solid #ed3124; outline-offset:6px; }
+/* 머리글 로고는 누르면 처음 화면으로 돌아간다. 손가락으로 누르는 기기에서는 모양과 자리를 그대로 두고 누르는 칸만 위아래로 넓힌다. */
+@media (pointer:coarse) { .festival-restart { --tap-grow:calc(12px / var(--fit,1)); padding-block:var(--tap-grow); margin-block:calc(-1 * var(--tap-grow)); } }
 .festival-partners { display:flex; align-items:center; gap:12px; }
 .festival-partners > span { color:#aaa; font-size:1.125rem; }
 .partner-cgv { width:76px; height:auto; }
@@ -35,8 +37,8 @@ body:has(#home.active) { background:#fff; }
 .festival-symbol img { position:absolute; left:-38px; top:0; width:254px; height:auto; max-width:none; }
 
 .festival-header { position:relative; margin-inline:-28px; }
-.chart-layout { --scene-thumbnail-height:clamp(46px,calc(7 * var(--vh)),80px); --scene-strip-height:calc(var(--scene-thumbnail-height) + 68px); display:flex; flex:1; min-height:0; gap:28px; padding-top:26px; }
-.chart-aside { display:flex; flex-direction:column; width:clamp(13rem,calc(15 * var(--vw)),14.5rem); flex-shrink:0; padding-right:24px; border-right:1px solid #ededed; }
+.chart-layout { --chart-aside-width:clamp(13.5rem,calc(15 * var(--vw)),14.5rem); --scene-strip-height:calc(var(--scene-thumbnail-height) + 68px); display:flex; flex:1; min-height:0; gap:28px; padding-top:26px; }
+.chart-aside { display:flex; flex-direction:column; width:var(--chart-aside-width); flex-shrink:0; padding-right:24px; border-right:1px solid #ededed; }
 .chart-app { margin:0; font-size:1.5rem; line-height:1.25; font-weight:750; letter-spacing:-.035em; }
 .chart-app strong { font-weight:750; }
 .chart-app em { color:#df291f; font-style:normal; }
@@ -144,10 +146,10 @@ body:has(#home.active) { background:#fff; }
   .chart-heading { display:block; }
   .chart-eyebrow { display:none; }
   .chart-heading > p { max-width:none; }
-  .cinema-footer { gap:8px; font-size:.625rem; }
+  .cinema-footer { gap:8px; font-size:.6875rem; line-height:1.36; }
   .cinema-footer p span { display:none; }
   .privacylink { right:16px; font-size:.6875rem; }
-  .enginebar { right:136px; top:94px; font-size:.625rem; }
+  .enginebar { right:136px; top:94px; font-size:.6875rem; line-height:1.36; }
 }
 /* 아주 좁은 휴대폰(320px 안팎)에서도 로고 한 줄이 넘치지 않게 한 단계 더 줄인다 */
 @container app (max-width:370px) {
@@ -163,7 +165,7 @@ body:has(#home.active) { background:#fff; }
 
 /* CGV 실사이트의 중앙 확대·양옆 후퇴 구조. 여섯 선택지는 아래에서 모두 보인다. */
 .scene-carousel { display:flex; flex-direction:column; flex:1; min-height:0; }
-.scene-stage { --scene-width:min(64%,820px); --scene-caption-height:94px; position:relative; flex:1; min-height:200px; overflow:hidden; touch-action:pan-y; }
+.scene-stage { --scene-caption-height:94px; position:relative; flex:1; min-height:200px; overflow:hidden; touch-action:pan-y; }
 .scene-shell { position:absolute; left:50%; top:10px; bottom:12px; width:var(--scene-width); transform-origin:50% 42%; will-change:transform,opacity; }
 .scene-shell .tile { width:100%; height:100%; margin:0; padding:0; box-shadow:none; border-radius:16px; background:transparent; }
 .scene-shell .tile-media { border-radius:16px; box-shadow:0 8px 24px #17202c12; }
@@ -180,8 +182,8 @@ body:has(#home.active) { background:#fff; }
 .scene-navigation { display:flex; align-items:center; justify-content:center; gap:22px; height:48px; flex-shrink:0; }
 /* 꺾쇠 중심을 중앙 이미지 바깥으로 24px 띄운다. 넘기는 중에도 입력 영역은 고정한다. */
 .scene-arrow { position:absolute; z-index:20; top:calc(50% - (var(--scene-caption-height) + 2px) / 2); transform:translateY(-50%); width:80px; height:80px; display:grid; place-items:center; padding:0; background:transparent; color:#fff; border:0; border-radius:50%; clip-path:circle(50%); cursor:pointer; }
-.scene-arrow-prev { left:calc((100% - var(--scene-width)) / 2 - 64px); }
-.scene-arrow-next { right:calc((100% - var(--scene-width)) / 2 - 64px); }
+.scene-arrow-prev { left:max(0px,calc((100% - var(--scene-width)) / 2 - 64px)); }
+.scene-arrow-next { right:max(0px,calc((100% - var(--scene-width)) / 2 - 64px)); }
 .scene-arrow svg { width:56px; height:56px; filter:drop-shadow(0 1px 3px #0009); transition:transform .2s ease-out; }
 .scene-arrow { transition:background .2s ease-out; }
 @media (hover:hover) and (pointer:fine) {
@@ -221,15 +223,46 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
 .scene-choice-card[aria-pressed=true] { color:#d9271d; }
 .scene-choice-card[aria-pressed=true] img { outline:2px solid #df291f; outline-offset:3px; }
 .scene-choice-card:focus-visible { outline:3px solid #171717; outline-offset:4px; }
+/* 가운데 장면과 아래 그림 띠는 영화 비율(16:9) 그대로 둔다 — 자르지 않는다(11/7 Bumm님 «위아래로 잘려 있어». 칸이 5:1이라 cover가 위아래를 60% 넘게 잘랐다).
+   카드 폭은 장면 칸의 64%와 «남는 높이에 16:9로 드는 폭» 중 작은 쪽이라 창 크기마다 숫자를 두지 않는다. 높이가 남는 창에서는 장면을 세로 가운데에 둔다.
+   그림 띠의 높이는 칸 폭(여덟 장 + 한 칸)에서 계산한다. «01 / 08»은 구분선 아래로 옮겨 장면에 세로 공간을 더 준다. */
+@container app (min-width:761px) {
+ .chart-layout { --scene-choices-width:calc(var(--app-w) - 64px); --scene-thumbnail-height:calc((var(--scene-choices-width) / 9 - 14px) * 9 / 16); }
+ .scene-stage { --scene-share:64%; --scene-width:min(var(--scene-share),(100cqh - 22px - var(--scene-caption-height)) * 16 / 9); container-type:size; }
+ .scene-shell .tile { justify-content:center; }
+ .scene-shell .tile-media { flex:none; aspect-ratio:16 / 9; }
+ .scene-navigation { height:38px; border-top:1px solid #ececec; }
+ .scene-choice-row { border-top:0; }
+ .scene-choices { padding-top:6px; }
+}
 /* 영화제 두 줄을 장르 이름보다 위에 두고, 안내문과 겹치지 않도록 공간을 확보한다. */
 @container app (min-width:1251px) {
- #home { position:relative; padding-bottom:52px; }
- .chart-layout { --scene-strip-height:calc(var(--scene-thumbnail-height) + 114px); }
- .scene-choices { padding-top:78px; }
- #home .cinema-footer { position:absolute; left:28px; bottom:65px; min-height:0; padding:0; font-size:.875rem; line-height:21px; font-weight:700; letter-spacing:-.025em; color:#535353; }
+ #home { position:relative; padding-bottom:20px; }
+ .chart-layout { --scene-choices-width:calc(var(--app-w) - 92px - var(--chart-aside-width)); --scene-strip-height:calc(var(--scene-thumbnail-height) + 91px); }
+ .scene-choices { padding-top:18px; }
+ #home .cinema-footer { position:absolute; left:28px; bottom:33px; min-height:0; padding:0; font-size:.875rem; line-height:21px; font-weight:700; letter-spacing:-.025em; color:#535353; }
 }
-@container app (max-width:1250px) { .scene-stage { --scene-width:min(68%,820px); } }
-@container app (max-height:700px) and (min-width:761px) { .chart-layout { --scene-thumbnail-height:40px; } .scene-choices img { height:40px; } .scene-stage { --scene-caption-height:76px; } }
+@container app (min-width:761px) and (max-width:1250px) { .scene-stage { --scene-share:68%; } }
+/* 세로 태블릿은 높이가 남으므로 폭으로 크게 둔다. */
+@container app (min-width:761px) and (orientation:portrait) { .scene-stage { --scene-share:88%; } }
+/* 낮은 창: 장면에 세로 공간을 더 주려고 위 여백을 줄이고 영상 아래 설명을 한 줄로 모은다. */
+@container app (min-width:761px) and (max-height:820px) {
+ .chart-layout { padding-top:16px; }
+ .chart-heading { padding-bottom:10px; }
+ .scene-stage { --scene-caption-height:62px; }
+ .scene-shell .tile-body { padding:10px 4px 0; }
+ .scene-shell .tile-copy { display:flex; align-items:baseline; gap:14px; }
+ .scene-shell .gname { font-size:1.5rem; }
+ .scene-shell .gsub { margin-top:0; }
+ .scene-shell .tile-enter { padding-block:11px; }
+ .scene-shell .tile-number { font-size:3.5rem; left:18px; bottom:12px; }
+}
+/* 가로로 눕힌 휴대폰(맞춤 없음 · 높이 700 미만): 남는 높이로 재면 장면이 우표만 해진다 — 폭으로 크기를 정하고 아래로 스크롤한다. */
+@container app (min-width:761px) and (max-height:700px) {
+ html[data-fit="none"] #home { height:auto; }
+ html[data-fit="none"] .scene-stage { --scene-width:calc(var(--app-w) * .5); flex:none; height:calc(var(--scene-width) * 9 / 16 + var(--scene-caption-height) + 22px); }
+ .chart-eyebrow { display:none; }
+}
 /* 휴대폰 폭(10/17 대표님, 10/19 첫 화면 다듬기): PC 왼쪽 안내는 «나만의 더빙 극장 / Voice Cinema» 한 덩어리로 제목 위에 올리고, 제목 자리에는
    «내 목소리로 완성하는 10초의 영화.»를 둔다(아래 설명 줄 없음). 가운데 장면은 화면 폭의 94%·영화 비율(16:9)로 크게 두고(양옆 장면은 살짝만),
    장르 배지와 장면 이름은 그림 오른쪽 아래에 얹어 그림 아래에는 «더빙하기» 단추만 남긴다. 실제 휴대폰 브라우저는 주소창 때문에 화면보다
@@ -254,7 +287,7 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
  .chart-title-phone { display:inline; }
  .chart-heading h1 { font-size:1.3125rem; line-height:1.35; letter-spacing:-.055em; }
  /* 제목이 한 줄을 다 쓰므로 진행률은 제목 아래 오른쪽 한 줄에 둔다 — 자리를 늘 비워 두고 보일 때만 글자를 띄워, 사라져도 장면이 움직이지 않는다 */
- .enginebar { display:block; visibility:hidden; position:static; height:15px; text-align:right; font-size:.625rem; }
+ .enginebar { display:block; visibility:hidden; position:static; height:15px; text-align:right; font-size:.6875rem; }
  .enginebar.show { visibility:visible; }
  /* 카드 폭은 양옆 여백까지 넓힌 장면 칸의 94%(컨테이너 단위, 못 쓰는 브라우저는 화면 폭 기준). 휴대폰은 늘 이 폭이고, 넓고 낮은 창(마우스로 좁힌
     PC 창·가로로 든 휴대폰)에서만 화면 높이가 상한이 된다 — --vc-reserve는 카드 그림 밖의 세로 몫(머리글·안내·제목·단추·번호·바로가기·바닥글)이고,
@@ -279,7 +312,7 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
  .scene-shell .tile-tag b { padding:1px 6px; border-radius:4px; background:#fff; color:#171717; font-size:.6875rem; line-height:1.5; letter-spacing:0; text-shadow:none; }
  .scene-shell:not(.is-current) .tile-tag { opacity:0; }
  .scene-shell .tile:active .tile-enter { background:#b81f16; }
- .scene-arrow { width:44px; height:44px; top:calc(50% - var(--scene-caption-height) / 2); }
+ .scene-arrow { width:var(--touch-min); height:var(--touch-min); top:calc(50% - var(--scene-caption-height) / 2); }
  .scene-arrow-prev { left:calc((100% - var(--scene-width)) / 2 + 2px); }
  .scene-arrow-next { right:calc((100% - var(--scene-width)) / 2 + 2px); }
  .scene-arrow svg { width:32px; height:32px; }
