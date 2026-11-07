@@ -39,19 +39,21 @@ const app = await _electron.launch({
 });
 const report = { steps: {}, drag: [], monitors: [] };
 const win = (fn, arg) => app.evaluate(({ BrowserWindow }, [src, a]) => new Function('w', 'a', src)(BrowserWindow.getAllWindows()[0], a), [fn, arg]);
-// 화면 맞춤(public/fit.js)이 지금 크기에서 정할 비율 — fit.js와 같은 셈(폭 = html 폭, 높이 = 100svh 상자). 창은 실제 크기로 두고 폭 768 · 높이 640 아래에서만 줄이고,
-// 짧은 변이 600보다 작은 세로 창은 폭 390에 맞춘다(11/7. 마우스 창이라 터치 판정은 없다).
+// 화면 맞춤(public/fit.js)이 지금 크기에서 정할 비율 — fit.js와 같은 셈(창 크기에서 스크롤 막대 자리를 미리 뺀다). 창은 실제 크기로 두고 폭 768 · 높이 640 아래에서만 줄이고,
+// 짧은 변이 600보다 작은 세로 창은 폭 390에 맞춘다(11/8. 마우스 창이라 터치 판정은 없다).
 const sizeNow = () => {
   const probe = document.createElement('div');
-  probe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:100svh;visibility:hidden';
+  probe.style.cssText = 'position:fixed;left:0;top:0;width:100vw;height:100svh;overflow:scroll;visibility:hidden;pointer-events:none';
   document.documentElement.appendChild(probe);
-  const h = probe.getBoundingClientRect().height;
+  const box = probe.getBoundingClientRect();
+  const w = box.width;
+  const h = box.height;
+  const room = w - (probe.offsetWidth - probe.clientWidth);
   probe.remove();
-  const w = document.documentElement.clientWidth;
   // 비율은 fit.js가 그대로 적어 두는 --fit으로 읽는다 — body.style.zoom 글자는 유효숫자 6자리로 잘려(1.0022223 → «1.00222») 같은 값도 어긋나 보인다
   const zoom = Number(getComputedStyle(document.documentElement).getPropertyValue('--fit').trim() || '1');
   const portrait = h >= w;
-  const want = Math.min(w, h) < 600 && portrait ? w / 390 : Math.min(1, w / 768, h / 640);
+  const want = Math.min(w, h) < 600 && portrait ? room / 390 : Math.min(1, room / 768, h / 640);
   return { w, h, inner: [innerWidth, innerHeight], zoom: +zoom.toFixed(6), want: +want.toFixed(6), fits: Math.abs(zoom - want) < 1e-6 };
 };
 let failures = 0;
