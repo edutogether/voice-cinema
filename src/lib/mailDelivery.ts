@@ -91,7 +91,7 @@ async function run(): Promise<void> {
         setState({ activity: 'delete' });
         for (const item of group) await bridge.remove(item.id);
         await refresh();
-        setState({ trialSent: [...state.trialSent, { key: ++sentCount, mail, count: group.length, left: state.items.length }] });
+        setState({ trialSent: [...state.trialSent, { key: ++sentCount, mail, count: group.length, left: state.items.filter((rest) => !rest.failed).length }] });
       } catch (e) {
         console.error('[메일 대기열] 이번에는 보내지 못함', e instanceof Error ? e.message : '');
         for (const item of group) await bridge.update(item.id, afterFailure(item, Date.now()));

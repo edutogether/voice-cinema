@@ -14,6 +14,7 @@ export function MailStatus() {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [askDelete, setAskDelete] = useState<string | null>(null);
   const failed = items.filter((item) => item.failed).length;
+  const waiting = items.length - failed;
 
   return (
     <>
@@ -24,7 +25,7 @@ export function MailStatus() {
         {activity && <span id="mailActivity" role="status">{ACTIVITY[activity]}</span>}
         {items.length > 0 && (
           <button type="button" className="mail-queue-chip" id="mailQueueChip" onClick={() => dialogRef.current?.showModal()}>
-            메일 대기 {items.length}건{failed > 0 && ` · 보내지 못함 ${failed}건`}
+            {[waiting > 0 && `메일 대기 ${waiting}건`, failed > 0 && `보내지 못함 ${failed}건`].filter(Boolean).join(' · ')}
           </button>
         )}
       </div>
@@ -56,7 +57,7 @@ export function MailStatus() {
       {trialSent.map(({ key, mail, count, left }) => (
         <section className="mail-sent" key={key} aria-label="보낸 것으로 처리한 메일">
           <h2>보낸 것으로 처리했어요</h2>
-          <p className="mail-sent-note">시험판이라 실제 메일은 가지 않았어요. 실제로는 아래 내용이 인솔 선생님께 갑니다.</p>
+          <p className="mail-sent-note">시험판이라 실제 메일은 가지 않았어요. 실제로는 아래 내용이 인솔 선생님께 갑니다. 영화는 실제로 올라갔고 링크로 열 수 있어요.</p>
           <dl>
             <dt>받는 사람</dt><dd>{mail.to}</dd>
             <dt>제목</dt><dd>{mail.subject}</dd>

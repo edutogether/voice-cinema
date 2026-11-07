@@ -64,7 +64,8 @@ async function openStudio(page, name) {
 }
 async function pickScene(page, name) {
   await page.locator('.scene-carousel').dispatchEvent('pointerdown', { pointerType: 'touch', isPrimary: true });
-  await page.getByRole('button', { name: `${name} 미리보기 선택`, exact: true }).click();
+  // 그림 띠는 흐르다 멈춘 자리에 따라 그 칸이 화면 밖일 수 있다 — 칸의 자리는 이 시험의 대상이 아니므로 누름 이벤트를 바로 보낸다
+  await page.getByRole('button', { name: `${name} 미리보기 선택`, exact: true }).dispatchEvent('click');
   await expect(page.locator('#chipName')).toHaveText(name);
   await expect(page.locator('#clip')).toHaveJSProperty('readyState', 4, { timeout: 20000 });
 }
@@ -109,7 +110,9 @@ function scan(dir, needles) {
 
 /** 가장 작은 모니터(시험 창이 뜨는 곳)를 운영체제 쪽에서 찍는다 — 제안 목록은 앱 창 밖의 별도 창이라 page.screenshot에 나오지 않는다. */
 function captureSmallestMonitor(file) {
-  const script = `Add-Type -AssemblyName System.Windows.Forms,System.Drawing; `
+  // 배율을 아는 프로세스로 찍는다 — 모르면 배율이 다른 모니터의 오른쪽 · 아래가 잘려 거기 뜬 목록을 못 본다
+  const script = `Add-Type -Name Dpi -Namespace Vc -MemberDefinition '[System.Runtime.InteropServices.DllImport("user32.dll")] public static extern bool SetProcessDPIAware();'; [void][Vc.Dpi]::SetProcessDPIAware(); `
+    + `Add-Type -AssemblyName System.Windows.Forms,System.Drawing; `
     + `$s = [System.Windows.Forms.Screen]::AllScreens | Sort-Object { $_.Bounds.Width * $_.Bounds.Height } | Select-Object -First 1; `
     + `$b = New-Object System.Drawing.Bitmap $s.Bounds.Width, $s.Bounds.Height; `
     + `$g = [System.Drawing.Graphics]::FromImage($b); $g.CopyFromScreen($s.Bounds.Location, [System.Drawing.Point]::Empty, $s.Bounds.Size); `
@@ -119,20 +122,37 @@ function captureSmallestMonitor(file) {
 
 async function sizeWindow(app, page, w, h) {
   await app.evaluate(({ BrowserWindow }, [cw, ch]) => { const win = BrowserWindow.getAllWindows()[0]; win.unmaximize(); win.setContentSize(cw, ch); }, [w, h]);
-  await expect.poll(() => page.evaluate(() => innerWidth)).toBe(w);
+  // 시험 모니터의 배율 반올림으로 1~2px 다를 수 있다
+  await expect.poll(async () => Math.abs(await page.evaluate(() => window.innerWidth) - w)).toBeLessThanOrEqual(4);
 }
 
 /** 입력 화면이 그 창에 들어가는가: 가로 넘침 없음 · 단추가 화면 안 · 시험판 표시가 단추를 가리지 않음 */
+/** 시험판 표시가 지금 화면의 글 · 단추 · 칸을 가리지 않는다. */
+async function expectBarClear(page) {
+  const covered = await page.evaluate(() => {
+    const bar = document.getElementById('mailBar').getBoundingClientRect();
+    const list = document.querySelectorAll('#home.active h1, #home.active h2, #home.active button, #home.active a, #result.active h2, #result.active p, #result.active button, #result.active input, #result.active label, .festival-header *, .privacylink');
+    return [...list].filter((el) => {
+      if (el.closest('#mailBar')) return false;
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0 && r.left < bar.right && r.right > bar.left && r.top < bar.bottom && r.bottom > bar.top;
+    }).map((el) => el.id || el.className || el.tagName);
+  });
+  expect(covered, '시험판 표시가 가리는 것').toEqual([]);
+}
+
 async function expectFormFits(page) {
+  // 창 크기가 바뀐 뒤 스크롤 막대 · 화면 맞춤이 자리 잡을 때까지 기다린다(그 뒤에도 넘치면 실패)
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), '가로 넘침').toBe(0);
   const m = await page.evaluate(() => {
     const rect = (el) => el.getBoundingClientRect();
     const bar = rect(document.querySelector('#mailBar'));
     return {
       hscroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      inner: [innerWidth, innerHeight],
+      inner: [window.innerWidth, window.innerHeight],
       controls: ['#mailName', '#mailAddress', '#mailNextBtn', '#mailSaveHereBtn'].map((s) => {
         const r = rect(document.querySelector(s));
-        return { s, inside: r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight, underBar: r.left < bar.right && r.right > bar.left && r.top < bar.bottom && r.bottom > bar.top };
+        return { s, inside: r.left >= 0 && r.right <= window.innerWidth && r.bottom <= window.innerHeight, underBar: r.left < bar.right && r.right > bar.left && r.top < bar.bottom && r.bottom > bar.top };
       }),
     };
   });
@@ -146,6 +166,12 @@ test('끊김 → 입력 → 확인 → 대기 → 복구 → 보낸 것으로 �
   await expect(page.locator('#mailBar')).toContainText('실제 메일을 보내지 않습니다');
   expect(await app.evaluate(({ app: electronApp }) => electronApp.getName())).toBe('Voice Cinema Mail Trial');
   await expect(page.locator('#mailQueueChip')).toHaveCount(0);
+  // 시험판 표시는 메인 화면의 글 · 단추를 가리지 않는다
+  await page.locator('.scene-carousel').dispatchEvent('pointerdown', { pointerType: 'touch', isPrimary: true });
+  for (const [w, h] of [[640, 640], [1000, 600], [1366, 697]]) {
+    await sizeWindow(app, page, w, h);
+    await expectBarClear(page);
+  }
   await openStudio(page, '판타지');
   await page.locator('#mailOfflineToggle').check();
   await recordToEntry(page);
@@ -164,10 +190,13 @@ test('끊김 → 입력 → 확인 → 대기 → 복구 → 보낸 것으로 �
   await expect(page.locator('#mailName')).toBeFocused();
   await expect(page.locator('#mailName')).toHaveAttribute('aria-invalid', 'true');
   await expectFormFits(page);
+  await expectBarClear(page);
   await sizeWindow(app, page, 640, 640);
   await expectFormFits(page);
+  await expectBarClear(page);
   await sizeWindow(app, page, 1366, 697);
   await expectFormFits(page);
+  await expectBarClear(page);
   await page.locator('#mailName').fill(NAME_A);
   await expect(page.locator('#mailNameError')).toHaveCount(0);
   await page.locator('#mailAddress').fill('선생님@school.kr');
@@ -243,6 +272,23 @@ test('다음 사람의 칸은 비어 있고 이전 주소가 제안되지 않으
   await expect(first.page.locator('#mailName')).toHaveValue('');
   await expect(address).toHaveValue('');
   await first.app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focus());
+  // 대조군: 제안 목록이 정말 뜨면 이 캡처에 보인다는 것을 먼저 남긴다 — 못 찍은 것을 «없다»로 세지 않게
+  await first.page.evaluate(() => {
+    const input = document.createElement('input');
+    input.id = 'probeInput';
+    input.setAttribute('list', 'probeList');
+    input.style.cssText = 'position:fixed;left:40px;top:40px;z-index:99;width:300px';
+    const list = document.createElement('datalist');
+    list.id = 'probeList';
+    list.innerHTML = '<option value="control-popup-1"><option value="control-popup-2">';
+    document.body.append(input, list);
+  });
+  await first.page.locator('#probeInput').click();
+  await first.page.keyboard.press('ArrowDown');
+  await first.page.waitForTimeout(700);
+  captureSmallestMonitor(test.info().outputPath('대조군-제안목록.png'));
+  await first.page.keyboard.press('Escape');
+  await first.page.evaluate(() => { document.getElementById('probeInput').remove(); document.getElementById('probeList').remove(); });
   await address.click();
   await first.page.keyboard.press('ArrowDown');
   await first.page.waitForTimeout(700);
@@ -259,7 +305,7 @@ test('다음 사람의 칸은 비어 있고 이전 주소가 제안되지 않으
   await queue(first.page, NAME_B, MAIL.toUpperCase());
   await expect(first.page.locator('#mailQueueChip')).toHaveText('메일 대기 2건');
   // 브라우저 저장소에도 남지 않는다
-  expect(await first.page.evaluate(() => JSON.stringify([{ ...localStorage }, { ...sessionStorage }, history.state]))).not.toMatch(/probe|별님|달님/i);
+  expect(await first.page.evaluate(() => JSON.stringify([{ ...window.localStorage }, { ...window.sessionStorage }, window.history.state]))).not.toMatch(/probe|별님|달님/i);
   await first.app.close();
 
   // 대기 중인 디스크: 이름 · 주소가 어디에도 없고, 영상도 평문이 아니다
@@ -311,7 +357,7 @@ test('올리지 못하면 대기에 남고, «보내지 못함»은 다시 보�
   await setReply(app, { status: 200, body: { ok: true, url: FAKE_URL } });
   await page.reload();
   await page.locator('#splash').waitFor({ state: 'detached', timeout: 60000 });
-  await expect(page.locator('#mailQueueChip')).toHaveText('메일 대기 1건 · 보내지 못함 1건');
+  await expect(page.locator('#mailQueueChip')).toHaveText('보내지 못함 1건');
   await page.locator('#mailQueueChip').click();
   await expect(page.locator('#mailQueue')).toContainText('보내지 못했어요');
   await page.locator('#mailQueue').getByRole('button', { name: '다시 보내기' }).click();

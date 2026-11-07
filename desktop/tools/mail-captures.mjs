@@ -56,12 +56,13 @@ async function shoot({ w, h, scale }) {
   };
   const phase = (p) => page.locator(`#studio.active[data-phase="${p}"]`).waitFor({ timeout: 60000 });
   const seek = (t) => page.evaluate((s) => { document.getElementById('clip').currentTime = s; }, t);
-  const recordToEntry = async () => {
+  const recordToEntry = async (atStudio) => {
     await page.locator('.scene-carousel').dispatchEvent('pointerdown', { pointerType: 'touch', isPrimary: true });
     await page.locator('.scene-shell.is-current .tile').click();
     await phase('previewing');
     await seek(9.75);
     await phase('idle');
+    await atStudio?.();
     await page.locator('#recBtn').click();
     await phase('watching');
     await delay(250);
@@ -75,7 +76,7 @@ async function shoot({ w, h, scale }) {
 
   await page.locator('#mailOfflineToggle').check();
   await shot('01-메인-시험판-표시');
-  await recordToEntry();
+  await recordToEntry(() => shot('01-녹음실-시험판-표시'));
   await shot('02-입력-빈칸');
   await page.locator('#mailNextBtn').click();
   await shot('03-입력-오류');

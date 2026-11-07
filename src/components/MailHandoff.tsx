@@ -116,7 +116,7 @@ export function MailHandoff({ genre, blob, onSaveHere, onHome }: Props) {
           {betterDomain && (
             <p className="mail-typo" id="mailTypo">
               혹시 {betterDomain} 주소인가요 ?
-              <button type="button" className="mail-typo-fix" id="mailTypoFixBtn" onClick={() => setEmail(withDomain(email, betterDomain))}>{betterDomain}로 고치기</button>
+              <button type="button" className="mail-typo-fix" id="mailTypoFixBtn" onClick={() => setEmail(withDomain(email, betterDomain))}>{betterDomain} 주소로 고치기</button>
             </p>
           )}
           <div className="row mail-actions">
@@ -131,7 +131,7 @@ export function MailHandoff({ genre, blob, onSaveHere, onHome }: Props) {
           <span className="result-symbol"><ActionIcon name="check" /></span>
           <h2 tabIndex={-1}>인터넷이 돌아오면 보내 드릴게요</h2>
           <p id="doneMsg">이 기기에 잠시 보관했다가 인터넷이 돌아오면 보내고 바로 지워요. 프로그램을 껐다면 다시 켜야 이어서 보내요.</p>
-          <div className="row result-actions">
+          <div className="row result-actions mail-actions">
             <button type="button" className="btn btn-lg btn-ghost" id="doneHomeBtn" onClick={onHome}><ActionIcon name="clapperboard" /> 다른 더빙 하기</button>
           </div>
         </>
