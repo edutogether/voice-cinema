@@ -47,8 +47,11 @@ async function shoot({ w, h, scale }) {
   await page.locator('#splash').waitFor({ state: 'detached', timeout: 90000 });
 
   const shot = async (name) => {
-    await app.evaluate(({ BrowserWindow }) => { BrowserWindow.getAllWindows()[0].webContents.invalidate(); });
-    await delay(1300);
+    // 숨긴 창은 그리기가 드물어 한 번으로는 직전 화면이 찍힐 때가 있다
+    for (let i = 0; i < 2; i++) {
+      await app.evaluate(({ BrowserWindow }) => { BrowserWindow.getAllWindows()[0].webContents.invalidate(); });
+      await delay(1000);
+    }
     const png = await app.evaluate(async ({ BrowserWindow }) => (await BrowserWindow.getAllWindows()[0].webContents.capturePage(undefined, { stayHidden: true, stayAwake: true })).toPNG().toString('base64'));
     await fs.writeFile(path.join(dir, `${name}.png`), Buffer.from(png, 'base64'));
     const m = await page.evaluate(() => ({ w: innerWidth, h: innerHeight, docW: document.documentElement.scrollWidth, docH: document.documentElement.scrollHeight }));
@@ -124,6 +127,7 @@ async function shoot({ w, h, scale }) {
   await page.locator('#mailQueueChip').click();
   await shot('14-보내지-못함-목록');
   await page.locator('#mailQueue').getByRole('button', { name: '지우기' }).click();
+  await page.locator('#mailQueue').getByRole('button', { name: '영화도 함께 지워져요. 지울까요 ?' }).waitFor();
   await shot('15-지우기-확인');
   await page.locator('#mailQueue').getByRole('button', { name: '영화도 함께 지워져요. 지울까요 ?' }).click();
   await delay(300);

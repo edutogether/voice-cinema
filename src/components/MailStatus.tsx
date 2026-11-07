@@ -19,14 +19,20 @@ export function MailStatus() {
   return (
     <>
       <div className="mail-bar" id="mailBar">
-        <strong>메일 시험판</strong>
-        <span>실제 메일을 보내지 않습니다</span>
-        <label className="mail-offline"><input type="checkbox" id="mailOfflineToggle" checked={trialOffline} onChange={(e) => setTrialOffline(e.target.checked)} /> 인터넷 끊김 시험</label>
-        {activity && <span id="mailActivity" role="status">{ACTIVITY[activity]}</span>}
-        {items.length > 0 && (
-          <button type="button" className="mail-queue-chip" id="mailQueueChip" onClick={() => dialogRef.current?.showModal()}>
-            {[waiting > 0 && `메일 대기 ${waiting}건`, failed > 0 && `보내지 못함 ${failed}건`].filter(Boolean).join(' · ')}
-          </button>
+        <div className="mail-bar-row">
+          <strong>메일 시험판</strong>
+          <span>실제 메일을 보내지 않습니다</span>
+          <label className="mail-offline"><input type="checkbox" id="mailOfflineToggle" checked={trialOffline} onChange={(e) => setTrialOffline(e.target.checked)} /> 인터넷 끊김 시험</label>
+        </div>
+        {(activity || items.length > 0) && (
+          <div className="mail-bar-row">
+            {activity && <span id="mailActivity" role="status">{ACTIVITY[activity]}</span>}
+            {items.length > 0 && (
+              <button type="button" className="mail-queue-chip" id="mailQueueChip" onClick={() => dialogRef.current?.showModal()}>
+                {[waiting > 0 && `메일 대기 ${waiting}건`, failed > 0 && `보내지 못함 ${failed}건`].filter(Boolean).join(' · ')}
+              </button>
+            )}
+          </div>
         )}
       </div>
 

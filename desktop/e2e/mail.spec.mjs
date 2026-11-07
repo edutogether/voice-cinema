@@ -129,7 +129,8 @@ async function sizeWindow(app, page, w, h) {
 /** 입력 화면이 그 창에 들어가는가: 가로 넘침 없음 · 단추가 화면 안 · 시험판 표시가 단추를 가리지 않음 */
 /** 시험판 표시가 지금 화면의 글 · 단추 · 칸을 가리지 않는다. */
 async function expectBarClear(page) {
-  const covered = await page.evaluate(() => {
+  // 창 크기를 바꾼 직후에는 화면 맞춤이 한두 프레임 뒤에 자리 잡는다 — 자리 잡은 뒤에도 가리면 실패한다
+  await expect.poll(() => page.evaluate(() => {
     const bar = document.getElementById('mailBar').getBoundingClientRect();
     const list = document.querySelectorAll('#home.active h1, #home.active h2, #home.active button, #home.active a, #result.active h2, #result.active p, #result.active button, #result.active input, #result.active label, .festival-header *, .privacylink');
     return [...list].filter((el) => {
@@ -137,8 +138,7 @@ async function expectBarClear(page) {
       const r = el.getBoundingClientRect();
       return r.width > 0 && r.height > 0 && r.left < bar.right && r.right > bar.left && r.top < bar.bottom && r.bottom > bar.top;
     }).map((el) => el.id || el.className || el.tagName);
-  });
-  expect(covered, '시험판 표시가 가리는 것').toEqual([]);
+  }), '시험판 표시가 가리는 것').toEqual([]);
 }
 
 async function expectFormFits(page) {
@@ -168,7 +168,7 @@ test('끊김 → 입력 → 확인 → 대기 → 복구 → 보낸 것으로 �
   await expect(page.locator('#mailQueueChip')).toHaveCount(0);
   // 시험판 표시는 메인 화면의 글 · 단추를 가리지 않는다
   await page.locator('.scene-carousel').dispatchEvent('pointerdown', { pointerType: 'touch', isPrimary: true });
-  for (const [w, h] of [[640, 640], [1000, 600], [1366, 697]]) {
+  for (const [w, h] of [[640, 640], [1000, 640], [1366, 697]]) {
     await sizeWindow(app, page, w, h);
     await expectBarClear(page);
   }
@@ -228,6 +228,10 @@ test('끊김 → 입력 → 확인 → 대기 → 복구 → 보낸 것으로 �
   // 대기: 기기에 암호화해 두고, 끊겨 있으면 올리지 않는다. 목록에는 주소를 가려서 보이고 이름은 보이지 않는다
   await expect(page.getByRole('heading', { name: '인터넷이 돌아오면 보내 드릴게요' })).toBeVisible();
   await expect(page.locator('#mailQueueChip')).toHaveText('메일 대기 1건');
+  for (const [w, h] of [[640, 640], [1000, 640], [1366, 697]]) {
+    await sizeWindow(app, page, w, h);
+    await expectBarClear(page);
+  }
   expect(queueFiles(profile)).toHaveLength(3);
   expect(await uploads(app)).toHaveLength(0);
   await page.locator('#mailQueueChip').click();
@@ -358,6 +362,11 @@ test('올리지 못하면 대기에 남고, «보내지 못함»은 다시 보�
   await page.reload();
   await page.locator('#splash').waitFor({ state: 'detached', timeout: 60000 });
   await expect(page.locator('#mailQueueChip')).toHaveText('보내지 못함 1건');
+  await page.locator('.scene-carousel').dispatchEvent('pointerdown', { pointerType: 'touch', isPrimary: true });
+  for (const [w, h] of [[640, 640], [1000, 640], [1366, 697]]) {
+    await sizeWindow(app, page, w, h);
+    await expectBarClear(page);
+  }
   await page.locator('#mailQueueChip').click();
   await expect(page.locator('#mailQueue')).toContainText('보내지 못했어요');
   await page.locator('#mailQueue').getByRole('button', { name: '다시 보내기' }).click();
