@@ -65,8 +65,9 @@ Bumm님이 Voice Cinema에도 같은 것을 넣고, 행사 날(11/14) 0시에 �
 
 ## Bumm님이 직접 하실 것(배포 전 · 뒤)
 
-1. 카카오 디벨로퍼스에서 Poster Studio와 같은 앱에 Redirect URI `https://asia-northeast3-inky-voice-cinema.cloudfunctions.net/voiceCinema/kakao/callback`과 웹 도메인 `https://voice.edutogether.kr`를 더한다.
-2. 배포 직후 `https://asia-northeast3-inky-voice-cinema.cloudfunctions.net/voiceCinema/kakao/start`를 열어 알림을 받을 카카오 계정으로 로그인한다
+1. 카카오 디벨로퍼스의 «Voice Cinema 카카오 앱»에 Redirect URI `https://asia-northeast3-inky-voice-cinema.cloudfunctions.net/voiceCinema/kakao/callback`과 웹 도메인 `https://voice.edutogether.kr`를 넣고,
+   카카오 로그인을 켜고 동의항목 «카카오톡 메시지 전송»을 설정한다. Secret Manager의 `KAKAO_REST_API_KEY` · `KAKAO_CLIENT_SECRET`에 그 앱의 값을 새 판으로 넣는다.
+2. 새 판을 읽는 배포가 나간 뒤 `https://asia-northeast3-inky-voice-cinema.cloudfunctions.net/voiceCinema/kakao/start`를 열어 알림을 받을 카카오 계정으로 로그인한다
    → «카카오톡 알림 연결 완료» 화면 + 나와의 채팅에 시험 알림 한 통이 정상.
 
 ## 넣다가 찾은 것(11/8, 해상도 조사)
