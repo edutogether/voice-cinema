@@ -59,8 +59,9 @@ test('정지 그림 → 영상(소리 없이 한 번) · 영상 두 편을 끝�
   expect(await wait.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(255, 255, 255)');
   await expect(wait.locator('#generationTitle [data-active="true"]')).not.toBeEmpty();
   await expect(wait.locator('.movie-fact h2[data-active="true"]')).not.toBeEmpty();
-  // Voice Cinema에는 AI가 없다 — «AI가 …» 장면은 없다(Poster Studio 설치판과 같은 규칙)
-  await expect(wait).not.toContainText('AI');
+  // 12편 모두 돈다 — 2번 «AI가 당신의 영화를 그리고 있어요»도 그대로(11/9 Bumm님 «로딩 영상 12종하고 문구랑 다 그대로», 팀장 결정 전달)
+  await expect(wait.locator('#generationTitle .generation-copy')).toHaveCount(12);
+  await expect(wait.locator('#generationTitle')).toContainText('AI가 당신의 영화를 그리고 있어요');
   const opened = await page.evaluate(() => window.__wait.opened);
   expect(opened, '처음에는 정지 그림이 보이고 영상은 아직 숨어 있다').toEqual({ still: 'true', video: 'false' });
 
@@ -93,7 +94,7 @@ test('정지 그림 → 영상(소리 없이 한 번) · 영상 두 편을 끝�
 });
 
 // 부스의 인터넷이 끊긴 뒤에 저장해도(영상과 목소리 합치기는 기기 안에서 돈다) 대기 화면에 그림이 보여야 한다 — 그림을 못 받으면 깨진 그림이 된다.
-// 앱은 엔진을 받은 뒤 정지 그림 열한 장을 미리 받고, 서비스워커가 캐시에 둔다(src/lib/waitingVideo.ts · tools/sw-template.js).
+// 앱은 엔진을 받은 뒤 정지 그림 열두 장을 미리 받고, 서비스워커가 캐시에 둔다(src/lib/waitingVideo.ts · tools/sw-template.js).
 test('대기 화면의 그림 주소에 닿지 못해도 미리 받아 둔 정지 그림이 보인다', async ({ page, context }) => {
   test.setTimeout(180000);
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -105,7 +106,7 @@ test('대기 화면의 그림 주소에 닿지 못해도 미리 받아 둔 정�
       for (let i = 1; i <= 12; i += 1) if (await caches.match(`/waiting-v3/${String(i).padStart(2, '0')}.webp`, { ignoreVary: true })) cached += 1;
       return { controlled: Boolean(navigator.serviceWorker.controller), cached };
     }).catch(() => ({ controlled: false, cached: -1 })), { timeout: 150000, intervals: [500, 1000, 2000] });
-    await stills.toEqual({ controlled: true, cached: 11 });
+    await stills.toEqual({ controlled: true, cached: 12 });
     // 그 뒤로 대기 화면의 그림 · 영상 주소는 망에 닿지 못한다(인터넷이 끊긴 것과 같다)
     await context.route('**/waiting-v3/**', (route) => route.abort('internetdisconnected'));
   });

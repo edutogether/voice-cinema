@@ -121,7 +121,7 @@ export function App() {
     let cancelled = false;
     afterFirstMediaReady(BACKGROUND_START_FALLBACK_MS).then(() => {
       if (cancelled) return;
-      // 엔진 다음에 대기 화면 정지 그림 열한 장(2.5MB)을 받아 둔다 — 인터넷이 끊긴 뒤 저장해도 대기 화면에 그림이 보이게(2026-11-09)
+      // 엔진 다음에 대기 화면 정지 그림 열두 장(2.5MB)을 받아 둔다 — 인터넷이 끊긴 뒤 저장해도 대기 화면에 그림이 보이게(2026-11-09)
       loadEngine()
         .catch((e) => console.error('[엔진 준비 실패]', e))
         .then(() => { if (!cancelled) void warmWaitingStills(WAIT_STILLS); });

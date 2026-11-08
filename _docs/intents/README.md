@@ -42,7 +42,7 @@
 | 2026-11-08 | [field-feedback](2026-11-08-field-feedback/intent.md) | 2 | in-progress | 웹 첫 화면 «의견 보내기»를 Poster Studio와 똑같이 — 이름 · 의견 · 판 번호 · 화면 크기 · 기기 · 단계를 Firestore에 저장하고 Bumm님 카카오톡으로 알린다, 90일 자동 삭제 · 내보내기 도구, 2026-11-14 00:00(KST)에 배포 없이 빠진다 |
 | 2026-11-09 | [save-flow-by-device](2026-11-09-save-flow-by-device/intent.md) | 2 | in-progress | 저장 화면 흐름을 기기별로 — 노트북(크롬 · 설치판)은 장애 때 담임교사 메일 칸, «이 기기에 저장»은 휴대폰만, 모든 장애 화면에 «다시 제작하기»(Bumm님 11/8 Q1) |
 | 2026-11-09 | [keep-warm](2026-11-09-keep-warm/intent.md) | 1 | in-progress | 행사 주간 서버 예열 — 11/9~11/14 9~18시 5분마다 GET /, 11/15부터는 부르지 않음, 최소 인스턴스 없이(Bumm님 11/9, Poster Studio와 같은 방식) |
-| 2026-11-09 | [end-screens-and-wait](2026-11-09-end-screens-and-wait/intent.md) | 2 | in-progress | 무음 녹음도 끝까지 흐르고 저장 · «다른 더빙하기»는 모든 끝 화면에서 빨간 주 단추 · 저장 대기 화면은 Poster Studio 로딩 화면 그대로(영상 · 문구, AI 장면 뺌) · 재생 중인 대기 영상은 끝까지 · 녹음실 받는 중 퍼센트(Bumm님 11/9) |
+| 2026-11-09 | [end-screens-and-wait](2026-11-09-end-screens-and-wait/intent.md) | 2 | in-progress | 무음 녹음도 끝까지 흐르고 저장 · «다른 더빙하기»는 모든 끝 화면에서 빨간 주 단추 · 저장 대기 화면은 Poster Studio 로딩 화면 그대로(영상 12편 · 문구) · 재생 중인 대기 영상은 끝까지 · 녹음실 받는 중 퍼센트(Bumm님 11/9) |
 
 ## 폴더 규칙
 
