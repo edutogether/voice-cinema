@@ -53,3 +53,18 @@ test('새 판의 서비스워커가 이 탭을 맡아도 «새 버전» 알림�
   await expect(page.getByText(/새 버전|새로고침/)).toHaveCount(0);
   expect(await page.evaluate(() => window.__같은문서 === true), '저절로 새로고침했다').toBe(true);
 });
+
+// 11/8 전 판의 화면이 이미 열려 있으면, 새 서비스워커가 그 탭을 맡을 때 옛 코드가 «새 판이 있나»를 묻는다 — 답이 없거나 «있음»이면 알림을 띄운다.
+// 옛 화면이 묻던 그대로(지금 서비스워커 목록에 없는 옛 번들 이름을 실어) 물어, 새 서비스워커가 늘 «없음»으로 답하는지 본다(tools/sw-template.js).
+test('옛 판 화면이 새 서비스워커에 «새 판이 있나»를 물으면 «없음»으로 답한다 — 이미 열려 있던 옛 탭에도 알림이 뜨지 않는다', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#splash').waitFor({ state: 'detached' });
+  await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 30000 });
+  const answer = await page.evaluate(() => new Promise((resolve) => {
+    const channel = new window.MessageChannel();
+    const timer = window.setTimeout(() => resolve('답 없음'), 3000);
+    channel.port1.onmessage = (event) => { window.clearTimeout(timer); resolve(event.data); };
+    navigator.serviceWorker.controller.postMessage({ type: 'CHECK_APP_VERSION', assets: ['/assets/main-CHZXOd_S.js', '/assets/main-old.css'] }, [channel.port2]);
+  }));
+  expect(answer).toEqual({ type: 'APP_VERSION_STATUS', updateAvailable: false });
+});

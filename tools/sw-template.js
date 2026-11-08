@@ -8,6 +8,14 @@ const CACHE_NAME = 'voice-cinema-' + __CACHE_VERSION__;
 const ENGINE_FILES = __ENGINE_FILES__;
 const ENGINE_CACHE = 'voice-cinema-engine-' + __ENGINE_VERSION__;
 
+// 2026-11-08 전 판의 화면은 새 서비스워커가 탭을 맡으면(skipWaiting · clients.claim) «새 판이 있나»를 묻고, 답이 없으면 3초 뒤
+// 오른쪽 아래에 «새 버전이 있어요 · 새로고침»을 띄운다. 그 알림은 11/8 Bumm님 지시로 없앴다 — 이미 열려 있던 옛 판 탭에도 뜨지 않게
+// 늘 «없음»으로 답한다. 옛 탭은 다음에 열 때 새 판이 된다(새 판 화면은 묻지 않는다, src/lib/sw.ts). e2e/engine-progress.spec.js가 고정한다
+self.addEventListener('message', (event) => {
+  if (event.data?.type !== 'CHECK_APP_VERSION') return;
+  event.ports[0]?.postMessage({ type: 'APP_VERSION_STATUS', updateAvailable: false });
+});
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
