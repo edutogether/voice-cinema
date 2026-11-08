@@ -48,7 +48,7 @@ test('발화 1·1.5·2·2.7초, 3초 앞뒤, 3.3초까지 — 짧으면 3.0초�
   await openSf(page);
   const results = [];
   for (const [i, plan] of plans.entries()) {
-    const r = await recordOnce(page);
+    const r = await recordOnce(page, i === 0 ? '#recBtn' : '#resetBtn');
     const take = (await takes(page))[i];
     const preview = (await previews(page)).at(-1);
     // 기준은 녹음 파일에 실제로 담긴 말소리 자리다 — 시험이 예약한 때는 부하에 따라 녹음 시작과 수십 ms 어긋난다
@@ -66,8 +66,6 @@ test('발화 1·1.5·2·2.7초, 3초 앞뒤, 3.3초까지 — 짧으면 3.0초�
     // 미리 듣기 목소리: 녹음의 앞부분이 그대로(같은 자리에서 시작) · 영상 5.0초에 맞춰 시작
     expect(Math.abs(preview.onset - raw.start), `미리 듣기 목소리의 시작 ${JSON.stringify({ preview, raw })}`).toBeLessThan(0.02);
     expectPreviewInSync(preview);
-    await page.locator('#resetBtn').click();
-    await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'idle');
   }
   console.log(JSON.stringify(results.map((r) => ({ plannedEnd: +(r.plan.delay + r.plan.dur).toFixed(2), speechEnd: +r.raw.end.toFixed(3), recorded: +r.raw.seconds.toFixed(3), rawStart: +r.raw.start.toFixed(3), previewOnset: r.preview.onset, offset: +r.preview.offset.toFixed(3) }))));
 });
@@ -86,8 +84,7 @@ test('신호(«녹음 중»)보다 먼저 말하면 «앞부분이 빠졌을 수
   await installSyntheticMic(page, [{ early: true, dur: 2 }, { delay: 1.2, dur: 1.5 }]);
   await openSf(page);
   expect(await recordOnce(page)).toMatchObject({ phase: 'recorded', check: 'early' });
-  await page.locator('#resetBtn').click();
-  const late = await recordOnce(page);
+  const late = await recordOnce(page, '#resetBtn');
   expect(late).toMatchObject({ phase: 'recorded', check: 'ok' });
   expect(Math.abs((await previews(page)).at(-1).onset - 1.2)).toBeLessThan(0.05);
 });
@@ -151,14 +148,13 @@ test('녹음 중 마이크가 뽑히면 성공처럼 보이지 않고 준비 화
   await installSyntheticMic(page, [{ delay: 0.3, dur: 2, unplug: 1.2 }, { delay: 0.3, dur: 1.5 }, { delay: 0.3, dur: 2, unplug: 1.2, unplugQuiet: true }, { delay: 0.3, dur: 1.5 }]);
   await openSf(page);
   for (const round of [1, 2]) {
-    const r = await recordOnce(page);
+    const r = await recordOnce(page, round === 1 ? '#recBtn' : '#resetBtn');
     expect(r.phase, `${round}번째 뽑힘`).toBe('idle');
     expect(r.hint).toContain('마이크에 문제가 생겼어요');
     await expect(page.locator('#afterRow')).toHaveCount(0);
     expect(await recordOnce(page)).toMatchObject({ phase: 'recorded', check: 'ok' });
     // 뽑힌 뒤에는 마이크를 새로 연결한다(정상 녹음 뒤 다음 녹음은 연결을 그대로 쓴다): 1회차 2번, 2회차 3번
     expect(await page.evaluate(() => window.__mic.requests)).toBe(round + 1);
-    await page.locator('#resetBtn').click();
   }
 });
 
@@ -196,7 +192,7 @@ test('녹음 중 화면이 가려지면(다른 앱·탭) 반쪽 녹음을 저장
   await installSyntheticMic(page, [{ delay: 0.3, dur: 2 }, { delay: 0.3, dur: 1.5 }]);
   await openSf(page);
   await page.locator('#recBtn').click();
-  await expect(page.locator('#recpill')).toBeVisible({ timeout: 12000 });
+  await expect(page.locator('#recpill')).toBeVisible({ timeout: 20000 });
   await page.evaluate(() => {
     Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
     document.dispatchEvent(new window.Event('visibilitychange'));
@@ -268,8 +264,7 @@ test('다시 녹음을 거듭한 뒤 저장하면 마지막 녹음의 목소리�
   await installSyntheticMic(page, freqs.map((f0) => ({ delay: 0.3, dur: 1.5, f0 })));
   await openSf(page);
   for (const [i] of freqs.entries()) {
-    expect(await recordOnce(page)).toMatchObject({ phase: 'recorded' });
-    if (i < freqs.length - 1) await page.locator('#resetBtn').click();
+    expect(await recordOnce(page, i === 0 ? '#recBtn' : '#resetBtn')).toMatchObject({ phase: 'recorded' });
   }
   const v = await voiceInMovie(page, await saveAndGetMovie(page, uploads), 'sf', freqs);
   console.log(JSON.stringify(v.tones));

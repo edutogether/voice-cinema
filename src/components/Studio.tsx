@@ -168,7 +168,11 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
             </div>
             <div className="studio-player-dock">
               <div className="studio-timeline">
-                <span className="timeline-state">{TIMELINE_STATE[phase]}</span>
+                {/* 단계 이름을 모두 한 칸에 겹쳐 두고 지금 것만 보인다 — 칸 폭이 가장 긴 이름에 고정돼, 단계가 바뀌어도 오른쪽 진행 막대가
+                    좌우로 튀지 않는다(11/8 Bumm님 «시작할 때 버벅임» — «녹음 준비»→«녹음 중»에서 막대가 11px 움직였다). */}
+                <span className="timeline-state">{(Object.keys(TIMELINE_STATE) as Phase[]).map((p) => (
+                  <span key={p} className={p === phase ? 'on' : undefined}>{TIMELINE_STATE[p]}</span>
+                ))}</span>
                 <ClipTimeline phase={phase} videoRef={videoRef} />
               </div>
               <div className={`controls${inTake ? ' is-recording' : ''}${done ? ' is-recorded' : ''}`}>
@@ -185,7 +189,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
                   </button>
                 </div>}
                 {done && <div className="row" id="afterRow">
-                  <button className="btn btn-ghost" id="resetBtn" onClick={dub.reset}><ActionIcon name="retry" /> 다시 녹음</button>
+                  <button className="btn btn-ghost" id="resetBtn" onClick={dub.startTake}><ActionIcon name="retry" /> 다시 녹음</button>
                   <button className="btn btn-save" id="saveBtn" ref={saveButtonRef} onClick={save}>{sampleMode ? '다운로드' : '저장하기'} <ActionIcon name="arrow" /></button>
                 </div>}
               </div>

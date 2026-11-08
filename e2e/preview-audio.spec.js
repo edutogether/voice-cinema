@@ -28,7 +28,7 @@ test('들어가면 흐르는 미리보기와 장면은 원판 소리를 내고, 
   await page.locator('#recBtn').click();
   await expect.poll(sounding, { timeout: 8000, intervals: [100] }).toBe(true);
 
-  await expect(page.locator('#recpill')).toBeVisible({ timeout: 12000 });
+  await expect(page.locator('#recpill')).toBeVisible({ timeout: 20000 });
   await expect(page.locator('#clip')).toHaveJSProperty('paused', true);
   expect(await sounding()).toBe(false);
 

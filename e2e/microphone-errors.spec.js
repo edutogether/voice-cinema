@@ -25,8 +25,8 @@ for (const [name, reason, hint] of [
     await expect(page.locator('#hint')).toContainText(hint);
     await expect(page.locator('#recBtn')).toBeEnabled();
     await page.locator('#recBtn').click();
-    // 숫자 하나가 0.3초라 3·2·1은 e2e/record-countdown.spec.js가 따로 본다 — 여기서는 녹음이 실제로 시작되는지만
-    await expect(page.locator('#recpill')).toBeVisible({ timeout: 12000 });
+    // 3·2·1은 e2e/record-countdown.spec.js가 따로 본다 — 여기서는 녹음이 실제로 시작되는지만
+    await expect(page.locator('#recpill')).toBeVisible({ timeout: 20000 });
     await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
   });
 }
@@ -43,6 +43,7 @@ test('녹음 API가 없는 브라우저를 권한 거부로 오인하지 않는�
 });
 
 test('연결이 끊긴 마이크는 다시 얻어 다음 참가자가 녹음한다', async ({ page }) => {
+  test.setTimeout(120000); // 두 번 녹음한다(한 번에 약 18초)
   await page.addInitScript(() => {
     const request = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
     window.micRequests = 0;
@@ -59,9 +60,9 @@ test('연결이 끊긴 마이크는 다시 얻어 다음 참가자가 녹음한�
   await page.locator('#recBtn').click();
   await expect(page.locator('#afterRow')).toBeVisible({ timeout: 30000 });
   await page.evaluate(() => window.testMic.getTracks().forEach(track => track.stop()));
+  // «다시 녹음»은 곧바로 다음 녹음을 시작한다(11/8) — 끊긴 마이크를 버리고 새로 얻는다
   await page.locator('#resetBtn').click();
-  await page.locator('#recBtn').click();
-  await expect(page.locator('#recpill')).toBeVisible({ timeout: 12000 });
+  await expect(page.locator('#recpill')).toBeVisible({ timeout: 20000 });
   expect(await page.evaluate(() => window.micRequests)).toBe(2);
   await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
 });

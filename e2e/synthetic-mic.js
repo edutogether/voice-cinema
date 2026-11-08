@@ -141,10 +141,10 @@ export const rawTake = (page, n) => page.evaluate(async (n) => {
     speechRms: count ? Math.sqrt(sum / count) : 0 };
 }, n);
 
-/** 녹음 하나를 끝까지: «장면 시작» → 녹음 뒤 화면(저장 가능) 또는 준비 화면(다시 녹음)으로 돌아올 때까지 */
-export async function recordOnce(page) {
+/** 녹음 하나를 끝까지: «장면 시작»(녹음 뒤에는 «다시 녹음» — 11/8부터 같은 흐름) → 녹음 뒤 화면(저장 가능) 또는 준비 화면(다시 녹음)으로 돌아올 때까지 */
+export async function recordOnce(page, button = '#recBtn') {
   const before = await page.evaluate(() => window.__mic.takes.length);
-  await page.locator('#recBtn').click();
+  await page.locator(button).click();
   await page.waitForFunction((n) => {
     const studio = document.querySelector('#studio');
     return window.__mic.takes.length > n && window.__mic.takes[n].stoppedAt && ['recorded', 'idle'].includes(studio?.dataset.phase);
