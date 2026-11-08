@@ -23,7 +23,7 @@ export const GENRE_NAMES = {
 // 업로드가 정한 저장 이름만 받는다(buildServerFilename: dub_<장르>_<시각>_<난수 18자>.mp4)
 const OBJECT_NAME = /^dub_([a-z]+)_\d{13}_[0-9a-f]{18}\.mp4$/;
 // 화면 입력 칸과 같은 모양 검사 + 영문만(한/영 오타는 화면이 먼저 막는다). 주소 하나만 받는다 — 쉼표 · 꺾쇠 · 공백이 들어갈 수 없다
-const MAIL_PATTERN = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
+export const MAIL_PATTERN = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
 // 줄바꿈 · 제어 문자는 이름에 넣지 않는다(메일 본문의 줄을 지어낼 수 없게)
 const CONTROL = /[\p{Cc}\u2028\u2029]/u;
 
