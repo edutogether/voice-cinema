@@ -211,7 +211,8 @@ async function expectNoBadge(page) {
   await expect(page.locator('#mailQueueChip:visible')).toHaveCount(0);
 }
 
-/** 입력 화면이 그 창에 들어가는가: 가로 넘침 없음 · 칸과 단추가 화면 안 · 칸 폭은 적을 글자에 맞춰 이름 < 주소 ≤ 판 안쪽 */
+/** 입력 화면이 그 창에 들어가는가: 가로 넘침 없음 · 칸과 단추가 화면 안 · 두 칸과 «다음»은 같은 폭 · 같은 높이의 한 열이고 판 안쪽을 넘지 않는다
+ *  (11/8 Bumm님 «디자인 왜 이렇게 개촌스러워졌어» — 그 전에는 이름 칸만 짧고 «다음»이 따로 놀았다) */
 async function expectFormFits(page) {
   // 창 크기가 바뀐 뒤 스크롤 막대 · 화면 맞춤이 자리 잡을 때까지 기다린다(그 뒤에도 넘치면 실패)
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), '가로 넘침').toBe(0);
@@ -224,14 +225,19 @@ async function expectFormFits(page) {
         const r = rect(document.querySelector(s));
         return { s, inside: r.left >= 0 && r.right <= window.innerWidth && r.bottom <= window.innerHeight };
       }),
-      widths: ['#mailName', '#mailAddress'].map((s) => rect(document.querySelector(s)).width),
+      boxes: ['#mailName', '#mailAddress', '#mailNextBtn'].map((s) => { const r = rect(document.querySelector(s)); return [r.left, r.width, r.height]; }),
       panel: (() => { const form = document.querySelector('.mail-form'); const style = window.getComputedStyle(form); return rect(form).width * (1 - (parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)) / form.offsetWidth); })(),
     };
   });
   expect(m.hscroll, `가로 넘침 ${m.inner}`).toBe(0);
   for (const c of m.controls) expect(c, `${m.inner}`).toMatchObject({ inside: true });
-  expect(m.widths[0], `이름 칸이 주소 칸보다 좁다 ${m.inner}`).toBeLessThan(m.widths[1]);
-  expect(m.widths[1], `주소 칸은 판 안쪽 폭을 넘지 않는다 ${m.inner}`).toBeLessThanOrEqual(m.panel + 1);
+  const [name, address, next] = m.boxes;
+  for (const [label, box] of [['주소 칸', address], ['«다음»', next]]) {
+    expect(Math.abs(box[0] - name[0]), `${label}의 왼쪽이 이름 칸과 어긋난다 ${m.inner}`).toBeLessThanOrEqual(1);
+    expect(Math.abs(box[1] - name[1]), `${label}의 폭이 이름 칸과 다르다 ${m.inner}`).toBeLessThanOrEqual(1);
+    expect(Math.abs(box[2] - name[2]), `${label}의 높이가 이름 칸과 다르다 ${m.inner}`).toBeLessThanOrEqual(1);
+  }
+  expect(address[1], `칸이 판 안쪽 폭을 넘는다 ${m.inner}`).toBeLessThanOrEqual(m.panel + 1);
 }
 
 test('끊김 → 입력 → 확인 → 대기 → 복구 → 올리기 → 메일 보내기 → 기기에서 삭제', async () => {
@@ -262,7 +268,7 @@ test('끊김 → 입력 → 확인 → 대기 → 복구 → 올리기 → 메�
 
   // 오류는 고치는 방법까지 알리고 첫 오류 칸으로 간다
   await page.locator('#mailNextBtn').click();
-  await expect(page.locator('#mailNameError')).toHaveText('이름 또는 별명을 적어 주세요.');
+  await expect(page.locator('#mailNameError')).toHaveText('이름을 적어 주세요.');
   await expect(page.locator('#mailAddressError')).toHaveText('메일 주소를 적어 주세요.');
   await expect(page.locator('#mailName')).toBeFocused();
   await expect(page.locator('#mailName')).toHaveAttribute('aria-invalid', 'true');
