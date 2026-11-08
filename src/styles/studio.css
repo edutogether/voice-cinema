@@ -55,7 +55,7 @@ body:has(#studio.active) { background:#fff; }
 .overlay { position:absolute; inset:0; z-index:3; display:grid; place-items:center; background:#0008; }
 /* 3·2·1은 숫자만, 굵게(11/8 Bumm님 «좀 더 굵은 글씨로 그냥 숫자만») */
 .count { color:#fff; font-size:clamp(6rem,calc(14 * var(--vw)),12rem); font-weight:800; line-height:1; text-align:center; font-variant-numeric:tabular-nums; text-shadow:0 4px 32px #0008; animation:countIn .25s ease-out; }
-/* «1» 다음 녹음기가 켜지면 «이제 당신의 목소리를 들려주세요 !» — 숫자의 어두운 막(.overlay)을 그대로 이어받아 막은 다시 나타나지 않고 글자만 나타난다(밝은 화면이 비치지 않게).
+/* «1» 다음 녹음기가 켜지면 «이제 당신의 목소리를 들려주세요 !»가 숫자 하나만큼(1초) 뜬다 — 숫자의 어두운 막(.overlay)을 그대로 이어받아 막은 다시 나타나지 않고 글자만 나타난다(밝은 화면이 비치지 않게).
    «녹음 중»(.recpill)과 남은 시간 막대(.record-left)는 이 막 위(z-index 4)에 둔다 */
 .studio-speak { background:#0008; animation:none; }
 @keyframes cueShade { from { opacity:0; } }

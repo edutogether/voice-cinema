@@ -3,7 +3,7 @@ import { maskMail } from '../lib/mailAddress';
 import { getMailState, removeMail, retryMail, subscribeMail } from '../lib/mailDelivery';
 
 /**
- * 첫 화면 노란 «인터넷 없이 쓰는 설치판» 표시 옆의 «메일 대기 N건» 단추와 그 목록(11/8 — 화면 위에 늘 떠 있던 시험판 표시줄을 없애며 옮겼다).
+ * 첫 화면 노란 «설치판 · 녹음하고 로컬에 저장» 표시 옆의 «메일 대기 N건» 단추와 그 목록(11/8 — 화면 위에 늘 떠 있던 시험판 표시줄을 없애며 옮겼다).
  * 기다리는 메일이 있을 때만 보인다. 목록에는 주소를 가려서 보이고 이름은 보이지 않는다 — 다음 사람이 볼 수 있는 화면이다.
  */
 export function MailQueueChip() {

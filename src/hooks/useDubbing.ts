@@ -7,7 +7,7 @@ import { checkTake, liveDecision, rms, type Verdict } from '../lib/voiceCheck';
 
 // 장면 더빙 2.0 흐름(대표님 10/11 확정, app-plan §1 — 녹음 시간은 10/24, 안내 박자는 11/8 Bumm님 지시로 고침):
 //   장면 시작 → 0~5.0초 재생(상대 대사 자막) → 5.0초에서 멈춤 → «이제 당신의 차례입니다 !» 1초
-//   → 3·2·1 1초씩(숫자만) → 녹음기가 실제로 켜진 뒤 «녹음 중»과 «이제 당신의 목소리를 들려주세요 !» → 3.0초(말이 이어지면 3.5초까지)
+//   → 3·2·1 1초씩(숫자만) → 녹음기가 실제로 켜진 뒤 «녹음 중»과 «이제 당신의 목소리를 들려주세요 !»(숫자 하나처럼 1초) → 3.0초(말이 이어지면 3.5초까지)
 //   → 녹음 검사 → 같은 영상을 5.0초부터 이어 재생하며 다듬은 목소리를 5.0초에 맞춰 들려줌 → 다시 녹음(곧바로 장면 시작과 같은 흐름)·저장.
 // 녹음실에 들어가면 장면 전체가 소리와 함께 저절로 흐른다(미리보기, 11/7 Bumm님 — 녹음·합성 없이 보기만, 멈춤·3·2·1 없이 대사 구간 문구만, 끝나거나 멈추면 준비 상태로).
 // 다시 보고 싶으면 작은 «미리보기» 단추로 같은 재생을 한다(10/20 대표님).
@@ -255,6 +255,8 @@ export interface Dubbing {
   countdown: number;
   /** 기본 녹음 3.0초 중 남은 몫(1 → 0). 녹음 중에만 의미가 있다. */
   recordLeft: number;
+  /** «이제 당신의 목소리를 들려주세요 !»를 보일 때 — 녹음기가 켜진 때부터 숫자 하나와 같은 COUNT_MS 동안(11/8 Bumm님 «321하고 똑같이만큼») */
+  speakNow: boolean;
   recording: Recording | null;
   /** 마지막 녹음의 판정 — 저장할 수 없는 것(silent·short)은 준비 상태로 돌아가며 남는다 */
   takeCheck: Verdict | null;
@@ -276,6 +278,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
   const [soundBlocked, setSoundBlocked] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [recordLeft, setRecordLeft] = useState(1);
+  const [speakNow, setSpeakNow] = useState(false);
   const [micError, setMicError] = useState<MicFailure | null>(null);
   const [recorded, setRecorded] = useState<Recording | null>(null);
   const [takeCheck, setTakeCheck] = useState<Verdict | null>(null);
@@ -514,6 +517,9 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
       setRecordLeft(1);
       setHint(sampleMode ? '샘플 체험이라 목소리는 녹음하지 않아요.' : HINT.recording);
       setPhase('recording');
+      // 말할 차례 문구는 «녹음 중»과 같은 그림에 떠 숫자 하나만큼(1초) 있다가 사라진다 — 녹음은 그대로 이어진다(11/8 Bumm님 «멈춤 시간이 길어 … 321하고 똑같이만큼»)
+      setSpeakNow(true);
+      window.setTimeout(() => setSpeakNow(false), COUNT_MS);
       const startedAt = performance.now();
       let frame = 0;
       const tickLeft = () => {
@@ -647,6 +653,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     hint: sampleMode ? `샘플 체험 · 마이크 녹음 없음. ${hint}` : hint,
     countdown,
     recordLeft,
+    speakNow,
     recording: recorded,
     takeCheck,
     micError,

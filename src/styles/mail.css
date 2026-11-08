@@ -38,7 +38,7 @@
  .mail-form .mail-actions { flex-wrap:wrap; }
 }
 
-/* 메일 대기 단추 — 첫 화면 오른쪽 위(설치판은 노란 «인터넷 없이 쓰는 설치판» 표시 옆, 웹은 설치 파일 아이콘 옆), 기다리는 메일이 있을 때만(11/8). 표시와 같은 높이(20px)다. */
+/* 메일 대기 단추 — 첫 화면 오른쪽 위(설치판은 노란 «설치판 · 녹음하고 로컬에 저장» 표시 옆, 웹은 설치 파일 아이콘 옆), 기다리는 메일이 있을 때만(11/8). 표시와 같은 높이(20px)다. */
 .mail-queue-chip { position:relative; flex-shrink:0; padding:0 9px; border:1px solid #c9c9c9; border-radius:999px; background:#fff; color:#262626; font:inherit; font-size:12px; font-weight:700; line-height:18px; white-space:nowrap; cursor:pointer; }
 /* 손가락으로 누르는 기기는 누르는 칸만 넓힌다(모양 · 자리는 그대로) */
 @media (pointer:coarse) {
