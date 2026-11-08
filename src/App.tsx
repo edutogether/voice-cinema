@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Home } from './components/Home';
-import { MailStatus } from './components/MailStatus';
 import { Result, type SaveJob } from './components/Result';
 import { Studio } from './components/Studio';
 import { GENRES, type Genre } from './genres';
 import { afterFirstMediaReady } from './lib/backgroundLoad';
 import { loadEngine } from './lib/ffmpeg';
-import { mailEnabled } from './lib/mailDelivery';
 import { installServiceWorker } from './lib/sw';
 import { initAppCheck } from './lib/upload';
 import { captureSceneEntrance, type SceneEntrance } from './lib/sceneEntrance';
@@ -214,7 +212,6 @@ export function App() {
           }}
         />
       )}
-      {mailEnabled && <MailStatus />}
     </div>
   );
 }

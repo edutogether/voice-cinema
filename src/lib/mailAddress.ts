@@ -1,4 +1,6 @@
 // 메일 입력 칸의 판정 — 화면과 떼어 검사한다. 기준: GOV.UK 메일 주소 패턴(두 번 입력 없음 · 도메인 오타는 경고만 · 최대 254자).
+// 모양 검사 · 길이는 서버(functions/mail.js)와 같다 — 화면이 받아 준 주소를 서버가 거절하면 메일이 «보내지 못함»에 묶인다(test/contract.test.js가 대조한다).
+export const MAIL_PATTERN = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
 export const MAIL_MAX = 254;
 export const NAME_MAX = 40;
 
@@ -9,7 +11,7 @@ export function checkMail(value: string): MailProblem | null {
   if (!mail) return 'empty';
   // 한/영 키가 한글에 놓인 채 적는 일이 가장 흔하다 — 고치는 방법을 따로 알린다
   if (/[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(mail)) return 'notLatin';
-  if (mail.length > MAIL_MAX || !/^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(mail)) return 'format';
+  if (mail.length > MAIL_MAX || !MAIL_PATTERN.test(mail)) return 'format';
   return null;
 }
 

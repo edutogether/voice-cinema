@@ -7,9 +7,8 @@ const { ORIGIN, isBundleUrl, hostingHeaders, serveBundle } = require('./bundle')
 const { uniqueSavePath } = require('./save-path');
 const { createMailStore } = require('./mail-store');
 
-// 메일 시험판: 설치된 Voice Cinema와 섞이지 않게 이름이 따로이고(앱 데이터 폴더는 package.json의 dist:trial이 정한다), 창 제목으로 시험판임을 알린다.
-const APP_ID = 'kr.edutogether.voicecinema.mailtrial';
-const APP_NAME = 'Voice Cinema 메일 시험판';
+const APP_ID = 'kr.edutogether.voicecinema';
+const APP_NAME = 'Voice Cinema';
 // 설치판은 resources/web(웹 산출물)과 resources/firebase.json(보안 헤더)을 싣는다(electron-builder.yml). 개발 실행은 저장소의 것을 쓴다.
 const RESOURCES = app.isPackaged ? process.resourcesPath : path.join(__dirname, '..');
 const WEB_ROOT = path.resolve(RESOURCES, app.isPackaged ? 'web' : 'dist');

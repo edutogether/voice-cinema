@@ -44,14 +44,5 @@
 .mail-queue-to { font-weight:700; word-break:break-all; }
 .mail-queue-state { color:#626262; font-size:.875rem; }
 .mail-queue-buttons { display:flex; gap:8px; margin-left:auto; }
-.mail-queue button,.mail-sent button { padding:6px 12px; border:1px solid #d8d8d8; border-radius:8px; background:#fff; color:#262626; font:inherit; font-size:.875rem; font-weight:650; cursor:pointer; }
+.mail-queue button { padding:6px 12px; border:1px solid #d8d8d8; border-radius:8px; background:#fff; color:#262626; font:inherit; font-size:.875rem; font-weight:650; cursor:pointer; }
 .mail-queue button:disabled { opacity:.5; cursor:default; }
-/* 시험판의 «보낸 것으로 처리» 안내 — 가짜 발송임을 숨기지 않는다(오른쪽 아래, 어느 화면에서든). */
-.mail-sent { position:fixed; right:12px; bottom:12px; z-index:41; width:min(560px,calc(100% - 24px)); max-height:calc(100% - 24px); padding:20px 22px; box-sizing:border-box; overflow:auto; overscroll-behavior:contain; border:2px solid #171717; border-radius:12px; background:#fff; color:#171717; box-shadow:0 12px 40px #00000052; }
-.mail-sent h2 { margin:0 0 6px; font-size:1.25rem; font-weight:750; }
-.mail-sent-note { margin:0 0 12px; color:#c91b19; font-size:.875rem; font-weight:650; line-height:1.5; word-break:keep-all; }
-.mail-sent dl { display:grid; grid-template-columns:auto minmax(0,1fr); gap:6px 12px; margin:0 0 12px; font-size:.875rem; line-height:1.5; }
-.mail-sent dt { color:#626262; }
-.mail-sent dd { margin:0; word-break:keep-all; overflow-wrap:anywhere; }
-.mail-sent-body { white-space:pre-wrap; }
-.mail-sent-done { margin:0 0 12px; font-size:.875rem; font-weight:700; color:#047857; }

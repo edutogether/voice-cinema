@@ -1,11 +1,12 @@
 // 설치판의 메일 전달: 인터넷이 돌아오면 영상을 올리고 → 인솔 교사에게 메일을 보내고 → 기기에서 지운다.
-// 업로드에 App Check 토큰이 필요해 화면 쪽에서 돈다. 보관은 메인 프로세스(desktop/mail-store.js)가 암호화해서 한다.
-// 이 판은 시험판이다: 영상 올리기까지는 실제로 하고, 메일은 보내지 않고 «보낸 것으로 처리»를 화면에 보인다(가짜임을 그 안내가 밝힌다).
-// 끊김은 Windows가 알리는 것(navigator.onLine)만 본다 — 화면의 «인터넷 끊김 시험» 표시는 11/8 Bumm님 지시로 없앴고, 시험은 끊김을 흉내 낸다(desktop/e2e/mail.spec.mjs).
+// 업로드 · 메일 모두 App Check 토큰이 필요해 화면 쪽에서 돈다. 보관은 메인 프로세스(desktop/mail-store.js)가 암호화해서 한다.
+// 메일은 서버(functions/index.js의 /mail)가 정한 틀로 Resend를 거쳐 보낸다 — 여기서는 받는 주소 · 이름 · 영화 링크만 넘긴다(2026-11-08 실제 발송).
+// 끊김은 Windows가 알리는 것(navigator.onLine)만 본다 — 시험은 끊김을 흉내 낸다(desktop/e2e/mail.spec.mjs).
 // 🔴 이 파일의 로그에 메일 주소 · 이름을 넣지 않는다.
+import { API_BASE } from '../config';
 import { buildUploadFilename } from '../logic';
-import { afterFailure, buildMail, dueGroups, type MailItem, type MailMessage } from './mailQueue';
-import { uploadToCloud } from './upload';
+import { afterFailure, dueGroups, type MailItem } from './mailQueue';
+import { boothHeaders, uploadToCloud } from './upload';
 
 type MailInfo = Pick<MailItem, 'name' | 'email' | 'genreId' | 'genreName'>;
 
@@ -25,28 +26,20 @@ declare global {
 
 const bridge = window.vcDesktop?.mail ?? null;
 const POLL_MS = 15_000;
-const TRIAL_SEND_MS = 1500;
+// 서버는 Resend를 15초까지 기다린다 — 그보다 넉넉히 기다리고, 넘으면 이번에는 실패로 세어 나중에 다시 보낸다
+const MAIL_TIMEOUT_MS = 30_000;
 
 /** 웹에는 다리가 없다 — 이 값이 거짓이면 메일 화면을 하나도 그리지 않는다. */
 export const mailEnabled = bridge !== null;
 
 export type MailActivity = 'upload' | 'send' | 'delete';
 
-/** «보낸 것으로 처리»한 기록 — 화면에만 보이고 저장하지 않는다. */
-export interface TrialSent {
-  key: number;
-  mail: MailMessage;
-  count: number;
-  left: number;
-}
-
 export interface MailState {
   items: MailItem[];
   activity: MailActivity | null;
-  trialSent: TrialSent[];
 }
 
-let state: MailState = { items: [], activity: null, trialSent: [] };
+let state: MailState = { items: [], activity: null };
 const listeners = new Set<() => void>();
 const setState = (patch: Partial<MailState>) => {
   state = { ...state, ...patch };
@@ -74,8 +67,20 @@ async function upload(item: MailItem): Promise<string> {
   return url;
 }
 
+/** 한 선생님 몫을 한 통으로 보낸다. 서버가 { ok: true }로 답해야 보낸 것이다 — 그 밖은 모두 실패로 세어 나중에 다시 보낸다. */
+async function send(group: MailItem[]): Promise<void> {
+  const resp = await fetch(`${API_BASE}/mail`, {
+    method: 'POST',
+    headers: await boothHeaders(),
+    body: JSON.stringify({ to: group[0].email.trim(), items: group.map((item) => ({ name: item.name.trim(), url: item.url })) }),
+    signal: AbortSignal.timeout(MAIL_TIMEOUT_MS),
+  });
+  let json: { ok?: boolean } = {};
+  try { json = await resp.json(); } catch { /* 응답이 JSON이 아니면 실패로 센다 */ }
+  if (!resp.ok || json.ok !== true) throw new Error(`메일 서버 응답 ${resp.status}`);
+}
+
 let running = false;
-let sentCount = 0;
 async function run(): Promise<void> {
   if (!bridge || running || !isOnline()) return;
   running = true;
@@ -86,12 +91,10 @@ async function run(): Promise<void> {
         setState({ activity: 'upload' });
         for (const item of group) item.url ??= await upload(item);
         setState({ activity: 'send' });
-        const mail = buildMail(group);
-        await new Promise((done) => setTimeout(done, TRIAL_SEND_MS));
+        await send(group);
         setState({ activity: 'delete' });
         for (const item of group) await bridge.remove(item.id);
         await refresh();
-        setState({ trialSent: [...state.trialSent, { key: ++sentCount, mail, count: group.length, left: state.items.filter((rest) => !rest.failed).length }] });
       } catch (e) {
         console.error('[메일 대기열] 이번에는 보내지 못함', e instanceof Error ? e.message : '');
         for (const item of group) await bridge.update(item.id, afterFailure(item, Date.now()));
@@ -137,8 +140,4 @@ export async function retryMail(id: string): Promise<void> {
 export async function removeMail(id: string): Promise<void> {
   await bridge!.remove(id);
   await refresh();
-}
-
-export function dismissTrialSent(key: number): void {
-  setState({ trialSent: state.trialSent.filter((sent) => sent.key !== key) });
 }

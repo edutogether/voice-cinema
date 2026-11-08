@@ -1,7 +1,7 @@
-// 메일 시험판(11/8) — 빌드한 exe로 끊김 → 입력 → 확인 → 대기 → 복구 → «보낸 것으로 처리» → 삭제를 끝까지 돌린다.
+// 설치판 메일 전달(11/8) — 빌드한 exe로 끊김 → 입력 → 확인 → 대기 → 복구 → 올리기 → 메일 보내기(/mail) → 삭제를 끝까지 돌린다.
 // 끊김은 Windows가 연결 없음을 알리는 것과 같은 상태(navigator.onLine이 거짓)를 흉내 낸다 — 화면의 «인터넷 끊김 시험» 표시는 11/8 Bumm님 지시로 없앴다.
 // 흉내 중에도 설치판 안의 파일(화면 · 엔진 · 장면)은 그대로 뜬다(11/8 확인).
-// 업로드는 앱의 세션에서 답하고, 닿지 않는 프록시로 그 밖의 바깥 요청을 모두 막는다 — 시험에서 운영 저장소로 나가는 것이 없다.
+// 업로드 · 메일은 앱의 세션에서 답하고, 닿지 않는 프록시로 그 밖의 바깥 요청을 모두 막는다 — 시험에서 운영 저장소 · 메일 서버로 나가는 것이 없다.
 import { test, expect, _electron } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { installSyntheticMic, recordOnce } from '../../e2e/synthetic-mic.js';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const EXE = process.env.VC_DESKTOP_EXE ?? path.join(HERE, '..', 'release', 'win-unpacked', 'Voice Cinema Mail Trial.exe');
+const EXE = process.env.VC_DESKTOP_EXE ?? path.join(HERE, '..', 'release', 'win-unpacked', 'Voice Cinema.exe');
 const ORIGIN = 'https://voice.edutogether.kr';
 const FAKE_URL = 'https://storage.googleapis.com/test/dub.mp4';
 // 디스크 · 로그에서 찾을 표시 — 이 시험 말고는 나올 일이 없는 글자
@@ -36,26 +36,34 @@ async function launch(profile) {
   return { app, page, logs };
 }
 
-/** 업로드를 앱의 세션에서 답한다(desktop.spec.mjs와 같은 자리). reply를 나중에 바꿀 수 있다. */
+/** 업로드와 메일(/mail)을 앱의 세션에서 답한다(desktop.spec.mjs와 같은 자리). 답은 나중에 바꿀 수 있다. */
 async function routeUpload(app, reply) {
   await app.evaluate(({ session }, { reply, origin }) => {
     const ses = session.fromPartition('persist:voice-cinema');
     const original = ses.fetch.bind(ses);
     globalThis.__uploads = [];
+    globalThis.__mails = [];
     globalThis.__reply = reply;
+    globalThis.__mailReply = { status: 200, body: { ok: true } };
     const cors = { 'Access-Control-Allow-Origin': origin, Vary: 'Origin' };
     ses.fetch = async (request, options) => {
-      if (!request.url.endsWith('/voiceCinema/upload')) return original(request, options);
+      const kind = ['upload', 'mail'].find((k) => request.url.endsWith(`/voiceCinema/${k}`));
+      if (!kind) return original(request, options);
       if (request.method === 'OPTIONS') {
         return new Response(null, { status: 204, headers: { ...cors, 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': request.headers.get('access-control-request-headers') ?? '' } });
       }
-      globalThis.__uploads.push(await request.text());
-      return new Response(JSON.stringify(globalThis.__reply.body), { status: globalThis.__reply.status, headers: { ...cors, 'Content-Type': 'application/json' } });
+      const text = await request.text();
+      const answer = kind === 'upload' ? globalThis.__reply : globalThis.__mailReply;
+      (kind === 'upload' ? globalThis.__uploads : globalThis.__mails).push({ text, headers: Object.fromEntries(request.headers) });
+      return new Response(JSON.stringify(answer.body), { status: answer.status, headers: { ...cors, 'Content-Type': 'application/json' } });
     };
   }, { reply, origin: ORIGIN });
 }
-const uploads = (app) => app.evaluate(() => globalThis.__uploads.map((text) => JSON.parse(text)));
+const uploads = (app) => app.evaluate(() => globalThis.__uploads.map(({ text }) => JSON.parse(text)));
+/** 앱이 보낸 메일 요청 — 본문과 인증 헤더 */
+const mails = (app) => app.evaluate(() => globalThis.__mails.map(({ text, headers }) => ({ ...JSON.parse(text), headers })));
 const setReply = (app, reply) => app.evaluate((_e, r) => { globalThis.__reply = r; }, reply);
+const setMailReply = (app, reply) => app.evaluate((_e, r) => { globalThis.__mailReply = r; }, reply);
 
 /** 인터넷 끊김 흉내 — navigator.onLine과 online/offline 이벤트가 실제 끊김과 같다 */
 const offline = (app, on) => app.context().setOffline(on);
@@ -177,7 +185,7 @@ async function sizeWindow(app, page, w, h) {
 
 /**
  * 첫 화면 오른쪽 위 한 줄: 노란 «인터넷 없이 쓰는 설치판» · (기다리는 메일이 있으면) «메일 대기» 단추 · 방침 링크가 차례로 겹치지 않고 같은 높이에 있다.
- * 이 줄 말고는 시험판 표시가 화면 어디에도 없다(11/8 Bumm님 «노란 표시 하나만»).
+ * 이 줄 말고는 설치판 표시가 화면 어디에도 없다(11/8 Bumm님 «노란 표시 하나만»).
  */
 async function expectHeaderRow(page, chip) {
   await expect(page.locator('#mailBar')).toHaveCount(0);
@@ -225,10 +233,10 @@ async function expectFormFits(page) {
   expect(m.widths[1], `주소 칸은 판 안쪽 폭을 넘지 않는다 ${m.inner}`).toBeLessThanOrEqual(m.panel + 1);
 }
 
-test('끊김 → 입력 → 확인 → 대기 → 복구 → 보낸 것으로 처리 → 기기에서 삭제', async () => {
+test('끊김 → 입력 → 확인 → 대기 → 복구 → 올리기 → 메일 보내기 → 기기에서 삭제', async () => {
   const profile = test.info().outputPath('profile');
   const { app, page } = await launch(profile);
-  expect(await app.evaluate(({ app: electronApp }) => electronApp.getName())).toBe('Voice Cinema Mail Trial');
+  expect(await app.evaluate(({ app: electronApp }) => electronApp.getName())).toBe('Voice Cinema');
   // 첫 화면: 노란 표시 하나, 기다리는 메일이 없으니 메일 대기 단추도 없다
   await page.locator('.scene-carousel').dispatchEvent('pointerdown', { pointerType: 'touch', isPrimary: true });
   for (const [w, h] of [[640, 640], [1000, 640], [1366, 697]]) {
@@ -306,17 +314,15 @@ test('끊김 → 입력 → 확인 → 대기 → 복구 → 보낸 것으로 �
   await expect(page.locator('#mailQueue')).not.toContainText(NAME_A);
   await page.locator('#mailQueue').getByRole('button', { name: '닫기' }).click();
 
-  // 복구 → 올리기 → 보낸 것으로 처리 → 지움
+  // 복구 → 올리기 → 메일 보내기 → 지움. 메일 서버에는 받는 주소 · 이름 · 올린 영화 주소만 가고, 업로드와 같은 인증 헤더가 붙는다
   await offline(app, false);
-  const sent = page.locator('.mail-sent');
-  await expect(sent).toBeVisible({ timeout: 60000 });
-  await expect(sent).toContainText('보낸 것으로 처리했어요');
-  await expect(sent).toContainText('시험판이라 실제 메일은 가지 않았어요');
-  await expect(sent).toContainText(MAIL);
-  await expect(sent).toContainText('[제4회 인천어린이청소년영화제] Voice Cinema 완성 영화 안내');
-  await expect(sent).toContainText(`· ${NAME_A} — 판타지`);
-  await expect(sent.getByRole('link', { name: FAKE_URL })).toBeVisible();
-  await expect(sent.locator('.mail-sent-done')).toHaveText('영화 1편을 이 기기에서 지웠어요. 남은 대기 0건');
+  await expect(page.locator('#mailQueueChip')).toHaveCount(0, { timeout: 60000 });
+  const [mail] = await mails(app);
+  expect({ to: mail.to, items: mail.items }).toEqual({ to: MAIL, items: [{ name: NAME_A, url: FAKE_URL }] });
+  expect(mail.headers['x-booth-token']).toMatch(/^[0-9a-f]{48}$/);
+  expect(mail.headers).toHaveProperty('x-firebase-appcheck');
+  expect(await mails(app)).toHaveLength(1);
+  await expect(page.locator('.mail-sent')).toHaveCount(0);
   const [uploaded] = await uploads(app);
   expect(uploaded.filename).toMatch(/^dub_fantasy_\d+_[0-9a-f]+\.mp4$/);
   expect(Buffer.from(uploaded.dataBase64, 'base64').subarray(4, 8).toString()).toBe('ftyp');
@@ -397,12 +403,12 @@ test('다음 사람의 칸은 비어 있고 이전 주소가 제안되지 않으
 
   // 다시 켜면 이어서 보내고 한 통으로 묶는다
   const second = await launch(profile);
-  const sent = second.page.locator('.mail-sent');
-  await expect(sent).toBeVisible({ timeout: 90000 });
-  await expect(sent).toHaveCount(1);
-  await expect(sent).toContainText(`· ${NAME_A} — 판타지`);
-  await expect(sent).toContainText(`· ${NAME_B} — SF`);
-  await expect(sent.locator('.mail-sent-done')).toHaveText('영화 2편을 이 기기에서 지웠어요. 남은 대기 0건');
+  await expect.poll(() => mails(second.app), { timeout: 90000 }).toHaveLength(1);
+  const [mail] = await mails(second.app);
+  expect(mail.to.toLowerCase()).toBe(MAIL);
+  expect(mail.items.map((item) => item.name).sort()).toEqual([NAME_A, NAME_B].sort());
+  await expect.poll(() => queueFiles(profile), { timeout: 30000 }).toEqual(['queue.key']);
+  expect(await mails(second.app)).toHaveLength(1);
   expect(await uploads(second.app)).toHaveLength(2);
   expect(queueFiles(profile)).toEqual(['queue.key']);
   await second.app.close();
@@ -426,12 +432,13 @@ test('인터넷이 있어도 올리지 못하면 메일 화면으로 가고, 대
   await expect.poll(() => page.evaluate(async () => (await window.vcDesktop.mail.list())[0].attempts), { timeout: 150000 }).toBe(1);
   const [item] = await page.evaluate(() => window.vcDesktop.mail.list());
   expect(item.nextAt).toBeGreaterThan(Date.now());
-  await expect(page.locator('.mail-sent')).toHaveCount(0);
+  expect(await mails(app)).toHaveLength(0);
   expect(queueFiles(profile)).toHaveLength(3);
 
-  // 여러 번 실패해 빠진 건: 자동으로는 보내지 않고 운영자가 다시 보낸다
+  // 여러 번 실패해 빠진 건: 자동으로는 보내지 않고 운영자가 다시 보낸다. 이번에는 올리기는 되고 메일 서버가 실패한다
   await page.evaluate((id) => window.vcDesktop.mail.update(id, { failed: true }), item.id);
   await setReply(app, { status: 200, body: { ok: true, url: FAKE_URL } });
+  await setMailReply(app, { status: 503, body: { ok: false } });
   await page.reload();
   await page.locator('#splash').waitFor({ state: 'detached', timeout: 60000 });
   await expect(page.locator('#mailQueueChip')).toHaveText('보내지 못함 1건');
@@ -444,8 +451,18 @@ test('인터넷이 있어도 올리지 못하면 메일 화면으로 가고, 대
   await expect(page.locator('#mailQueue')).toContainText('보내지 못했어요');
   await page.locator('#mailQueue').getByRole('button', { name: '다시 보내기' }).click();
   await page.locator('#mailQueue').getByRole('button', { name: '닫기' }).click();
-  await expect(page.locator('.mail-sent')).toBeVisible({ timeout: 60000 });
-  await page.locator('.mail-sent').getByRole('button', { name: '닫기' }).click();
+  // 메일 서버가 실패하면 지우지 않고 대기에 남는다. 올린 영화 주소는 기억해 두어 다음에는 다시 올리지 않는다
+  await expect.poll(() => mails(app), { timeout: 60000 }).toHaveLength(1);
+  await expect.poll(() => page.evaluate(async () => (await window.vcDesktop.mail.list())[0]), { timeout: 30000 }).toMatchObject({ attempts: 1, failed: false, url: FAKE_URL });
+  await expect(page.locator('#mailQueueChip')).toHaveText('메일 대기 1건');
+  expect(queueFiles(profile)).toHaveLength(3);
+  const uploadedOnce = (await uploads(app)).length;
+  // 30초 뒤 다시 보낸다 — 이번에는 메일 서버가 받는다
+  await setMailReply(app, { status: 200, body: { ok: true } });
+  await expect(page.locator('#mailQueueChip')).toHaveCount(0, { timeout: 90000 });
+  expect(await mails(app)).toHaveLength(2);
+  expect((await uploads(app)).length, '메일만 다시 보내고 영화는 다시 올리지 않는다').toBe(uploadedOnce);
+  expect(queueFiles(profile)).toEqual(['queue.key']);
 
   // 지우기는 두 번 눌러야 하고, 영상 · 정보가 함께 사라진다
   await offline(app, true);
@@ -462,6 +479,7 @@ test('인터넷이 있어도 올리지 못하면 메일 화면으로 가고, 대
   await expect(page.locator('#mailQueue')).toContainText('기다리는 메일이 없어요.');
   await expect.poll(() => queueFiles(profile)).toEqual(['queue.key']);
   expect((await uploads(app)).length).toBe(before);
+  expect(await mails(app)).toHaveLength(2);
   await app.close();
 });
 

@@ -11,7 +11,7 @@ describe('checkMail', () => {
   it.each(['ㅅㄷㅁ촏ㄱ@ㅜㅁㅍㄷㄱ.채ㅡ', '선생님@ice.go.kr'])('%s는 한/영 키 안내', (mail) => {
     expect(checkMail(mail)).toBe('notLatin');
   });
-  it.each(['teacher', 'teacher@', '@ice.go.kr', 'teacher@ice', 'a b@ice.go.kr', 'a@@ice.go.kr', 'teacher@ice..kr', `${'a'.repeat(250)}@ice.go.kr`])('%s는 형식 오류', (mail) => {
+  it.each(['teacher', 'teacher@', '@ice.go.kr', 'teacher@ice', 'a b@ice.go.kr', 'a@@ice.go.kr', 'teacher@ice..kr', `${'a'.repeat(250)}@ice.go.kr`, 'josé@school.kr', 'a"b@school.kr', 'X <a@school.kr>', 'a@school.kr,b@school.kr'])('%s는 형식 오류', (mail) => {
     expect(checkMail(mail)).toBe('format');
   });
 });

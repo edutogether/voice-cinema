@@ -1,4 +1,4 @@
-// 메일 대기열의 규칙(화면 · 저장과 떼어 검사한다) — 언제 다시 보내고, 무엇을 한 통으로 묶고, 메일에 무엇을 적는가.
+// 메일 대기열의 규칙(화면 · 저장과 떼어 검사한다) — 언제 다시 보내고, 무엇을 한 통으로 묶는가. 메일에 무엇을 적는지는 서버(functions/mail.js)가 정한다.
 export interface MailItem {
   id: string;
   name: string;
@@ -35,30 +35,4 @@ export function dueGroups(items: MailItem[], now: number): MailItem[][] {
     groups.set(key, [...(groups.get(key) ?? []), item]);
   }
   return [...groups.values()];
-}
-
-export interface MailMessage {
-  to: string;
-  subject: string;
-  body: string;
-}
-
-/** 제목에는 아동 이름을 넣지 않는다. 링크는 QR과 같은 주소이고 2026-12-01 00:00에 서버가 지운다. */
-export function buildMail(group: MailItem[]): MailMessage {
-  const lines = group.map((item) => `· ${item.name} — ${item.genreName}\n  ${item.url}`);
-  return {
-    to: group[0].email.trim(),
-    subject: '[제4회 인천어린이청소년영화제] Voice Cinema 완성 영화 안내',
-    body: [
-      '선생님, 안녕하세요.',
-      '제4회 인천어린이청소년영화제 Voice Cinema 부스에서 학생들이 만든 영화를 보내 드립니다.',
-      '',
-      ...lines,
-      '',
-      '아래 내용을 확인해 주세요.',
-      '· 링크는 2026년 11월 30일까지 열리고, 그 뒤에는 자동으로 지워집니다.',
-      '· 링크를 아는 사람은 누구나 볼 수 있으니 해당 학생에게만 전해 주세요.',
-      '· 이 메일은 보내기 전용입니다.',
-    ].join('\n'),
-  };
 }

@@ -36,7 +36,8 @@ function blobToBase64(blob: Blob): Promise<string> {
   });
 }
 
-async function uploadOnce(dataBase64: string, filename: string): Promise<string> {
+/** 업로드 서버가 보는 헤더 — 공개 부스 토큰과 App Check 토큰. 업로드와 설치판의 메일 전달(/mail)이 같이 쓴다. */
+export async function boothHeaders(): Promise<Record<string, string>> {
   // 토큰 발급 자체가 실패해도(reCAPTCHA 차단 등) 여기서 미리 포기하지 않고 헤더 없이
   // 그대로 보낸다 — 실제 보안 판단은 서버가 하므로, 클라이언트가 먼저 던지든 서버가
   // 401을 주든 최종적으로 겪는 재시도·폴백 결과는 같다.
@@ -49,17 +50,17 @@ async function uploadOnce(dataBase64: string, filename: string): Promise<string>
   } catch (e) {
     console.warn('[App Check 토큰 발급 실패]', e instanceof Error ? e.message : e);
   }
+  return { 'Content-Type': 'application/json', 'x-booth-token': BOOTH_TOKEN, 'X-Firebase-AppCheck': token };
+}
 
+async function uploadOnce(dataBase64: string, filename: string): Promise<string> {
+  const headers = await boothHeaders();
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), UPLOAD_TIMEOUT_MS);
   try {
     const resp = await fetch(`${API_BASE}/upload`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-booth-token': BOOTH_TOKEN,
-        'X-Firebase-AppCheck': token,
-      },
+      headers,
       body: JSON.stringify({ filename, mimeType: 'video/mp4', dataBase64 }),
       signal: ctrl.signal,
     });

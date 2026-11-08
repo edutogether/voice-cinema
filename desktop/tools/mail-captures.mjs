@@ -1,14 +1,14 @@
 #!/usr/bin/env node
-// 메일 시험판의 단계별 캡처 — 숨긴 창(큰 모니터로 넘어가지 않는다)에서 실제 흐름을 지나며 창의 실제 화소로 찍는다.
-//   node tools/mail-captures.mjs <시험판 exe> <결과 폴더> [가로x세로@배율,…]
-// 업로드는 앱의 세션에서 답하고 바깥 요청은 닿지 않는 프록시로 막는다 — 운영 저장소에 아무것도 올라가지 않는다. 받는 주소는 보기용 글자이고 메일은 어디로도 가지 않는다.
+// 설치판 메일 전달의 단계별 캡처 — 숨긴 창(큰 모니터로 넘어가지 않는다)에서 실제 흐름을 지나며 창의 실제 화소로 찍는다.
+//   node tools/mail-captures.mjs <설치판 exe> <결과 폴더> [가로x세로@배율,…]
+// 업로드 · 메일은 앱의 세션에서 답하고 바깥 요청은 닿지 않는 프록시로 막는다 — 운영 저장소에 아무것도 올라가지 않고 메일은 어디로도 가지 않는다. 받는 주소는 보기용 글자다.
 // 인터넷 끊김은 Windows가 연결 없음을 알리는 것과 같은 상태(navigator.onLine 거짓)로 흉내 낸다 — 화면에는 시험용 단추가 없다(11/8).
 import { _electron } from '@playwright/test';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
 const [exe, outArg, sizesArg = '2560x1369@1,1366x697@2,640x640@2'] = process.argv.slice(2);
-if (!exe || !outArg) throw new Error('사용법: node tools/mail-captures.mjs <시험판 exe> <결과 폴더> [가로x세로@배율,…]');
+if (!exe || !outArg) throw new Error('사용법: node tools/mail-captures.mjs <설치판 exe> <결과 폴더> [가로x세로@배율,…]');
 const out = path.resolve(outArg);
 const delay = (ms) => new Promise((done) => setTimeout(done, ms));
 const NAME = '별님';
@@ -28,10 +28,11 @@ async function shoot({ w, h, scale }) {
     const original = ses.fetch.bind(ses);
     const cors = { 'Access-Control-Allow-Origin': 'https://voice.edutogether.kr', Vary: 'Origin' };
     ses.fetch = async (request, options) => {
-      if (!request.url.endsWith('/voiceCinema/upload')) return original(request, options);
+      const kind = ['upload', 'mail'].find((k) => request.url.endsWith(`/voiceCinema/${k}`));
+      if (!kind) return original(request, options);
       if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: { ...cors, 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': request.headers.get('access-control-request-headers') ?? '*' } });
       await request.text();
-      return new Response(JSON.stringify({ ok: true, url }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify(kind === 'upload' ? { ok: true, url } : { ok: true }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
     };
   }, MOVIE_URL);
   const page = await app.firstWindow();
@@ -102,14 +103,11 @@ async function shoot({ w, h, scale }) {
   await shot('09-대기-목록');
   await page.locator('#mailQueue').getByRole('button', { name: '닫기' }).click();
   await offline(false);
-  await page.locator('.mail-sent').waitFor({ timeout: 90000 });
-  await shot('10-보낸-것으로-처리-삭제-완료');
-  await page.locator('.mail-sent').getByRole('button', { name: '닫기' }).click();
-  await page.locator('#mailQueueChip').waitFor({ state: 'detached' });
-  await shot('11-처리-뒤-메인-대기-없음');
+  await page.locator('#mailQueueChip').waitFor({ state: 'detached', timeout: 90000 });
+  await shot('10-보낸-뒤-메인-대기-없음');
   await offline(true);
   await recordToEntry();
-  await shot('12-다음-사람-빈칸');
+  await shot('11-다음-사람-빈칸');
   await page.locator('#mailName').fill('달님');
   await page.locator('#mailAddress').fill('teacher@example.com');
   await page.locator('#mailNextBtn').click();
@@ -120,10 +118,10 @@ async function shoot({ w, h, scale }) {
   await page.reload();
   await page.locator('#splash').waitFor({ state: 'detached', timeout: 90000 });
   await page.locator('#mailQueueChip').click();
-  await shot('13-보내지-못함-목록');
+  await shot('12-보내지-못함-목록');
   await page.locator('#mailQueue').getByRole('button', { name: '지우기' }).click();
   await page.locator('#mailQueue').getByRole('button', { name: '영화도 함께 지워져요. 지울까요 ?' }).waitFor();
-  await shot('14-지우기-확인');
+  await shot('13-지우기-확인');
   await page.locator('#mailQueue').getByRole('button', { name: '영화도 함께 지워져요. 지울까요 ?' }).click();
   await delay(300);
   await app.close();

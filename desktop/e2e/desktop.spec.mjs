@@ -89,7 +89,7 @@ async function captureDialogs(app, downloads) {
 test('설치판 안의 화면이 정본 주소 · 앱 이름 창으로 뜨고, 서비스워커 없이 엔진을 곧바로 준비한다', async () => {
   const { app, page } = await launch();
   expect(page.url()).toBe(`${ORIGIN}/`);
-  expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getTitle())).toBe('Voice Cinema 메일 시험판');
+  expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getTitle())).toBe('Voice Cinema');
   await expect(page.locator('.tile')).toHaveCount(8);
   // 글꼴 · 그림은 설치판 안의 것(Pretendard · 장면 그림)
   expect(await page.evaluate(async () => { await document.fonts.ready; return [...document.fonts].filter((f) => f.status === 'loaded' && f.family === 'Pretendard').length; })).toBeGreaterThan(0);
