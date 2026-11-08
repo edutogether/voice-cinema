@@ -254,7 +254,8 @@ test('끊김 → 입력 → 확인 → 대기 → 복구 → 올리기 → 메�
   await expect(page.locator('#mailAddress')).toHaveValue('');
   await expect(page.locator('#doneMsg')).toHaveText('인터넷이 돌아오면 인솔 선생님 메일로 영화 링크를 보내요.');
   await expect(page.locator('#mailSaveHereBtn')).toHaveCount(0);
-  await expect(page.locator('#result.active button')).toHaveCount(1);
+  // 결과 카드 안만 센다 — 머리글 로고 두 개도 «처음부터 시작» 단추다(11/8 화면 수정)
+  await expect(page.locator('#result.active .result-details button')).toHaveCount(1);
   await expect(page.locator('#mailAddress')).toHaveAttribute('type', 'email');
   await expect(page.locator('#mailAddress')).toHaveAttribute('autocomplete', 'off');
 
