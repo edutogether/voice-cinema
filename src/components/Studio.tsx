@@ -159,8 +159,10 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
               <SceneTurnCue genre={genre} videoRef={videoRef} enabled={previewing} />
               {previewing && dub.soundBlocked && <button type="button" className="studio-sound-on" id="soundOnBtn" onClick={dub.soundOn}><ActionIcon name="soundOff" /> 소리 켜기</button>}
               {phase === 'cue' && <div className="studio-cue" role="status" id="cue"><strong>{STUDIO_COPY.yourTurn}</strong></div>}
-              {dub.countdown > 0 && <div className="overlay show" id="overlay"><div className="count" id="count" key={dub.countdown} aria-label={`${dub.countdown}초 뒤 녹음 시작`}>{dub.countdown}<span>{STUDIO_COPY.speakNow}</span></div></div>}
+              {/* 3·2·1은 숫자만(11/8 Bumm님 «뭘 3·2·1에 계속 밑에 주저리 나오냐»), 말할 차례 문구는 녹음기가 켜질 때 «녹음 중»과 함께 뜬다 */}
+              {dub.countdown > 0 && <div className="overlay show" id="overlay"><div className="count" id="count" key={dub.countdown} aria-label={`${dub.countdown}초 뒤 녹음 시작`}>{dub.countdown}</div></div>}
               {phase === 'recording' && <>
+                <div className="studio-cue studio-speak" role="status" id="speakCue"><strong>{STUDIO_COPY.speakNow}</strong></div>
                 <div className="recpill show" id="recpill"><span className="d" /> {sampleMode ? '샘플 녹음 체험 중' : '녹음 중'}</div>
                 <div className="record-left" role="progressbar" aria-label={`녹음 ${RECORD_BASE_SECONDS}초 중 남은 시간`} aria-valuemin={0} aria-valuemax={100}
                   aria-valuenow={Math.round(dub.recordLeft * 100)}><i style={{ transform: `scaleX(${dub.recordLeft})` }} /></div>

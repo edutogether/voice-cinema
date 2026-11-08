@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { countdownLog, watchCountdown } from './countdown-watch.js';
 
-// 5.0초 멈춤 뒤 «이제 당신의 차례입니다 !» → 3·2·1 «지금 바로 당신의 목소리를 들려주세요 !»가 화면 가운데 보이고
-// 다른 요소에 가려지지 않는다. 그동안 영상은 5.0초 정지 화면 그대로다. 녹음기가 실제로 켜진 뒤에 «녹음 중»이 보인다.
+// 5.0초 멈춤 뒤 «이제 당신의 차례입니다 !» → 3·2·1(숫자만, 11/8 Bumm님)이 화면 가운데 보이고 다른 요소에 가려지지 않는다.
+// 그동안 영상은 5.0초 정지 화면 그대로다. 녹음기가 실제로 켜진 뒤에 «녹음 중»과 «이제 당신의 목소리를 들려주세요 !»가 함께 보인다.
 // 문구와 숫자는 정확히 1초에 하나씩 넘어가고, 절정(멈춤)에서 «녹음 중»까지 4초다(11/8 Bumm님 «너무 빠르다» — 10/24에는 1.5초, 그 전에는 3.9초).
 // 나타나는 순간은 화면에서 기록해 두고 본다(e2e/countdown-watch.js).
 for (const [label, viewport] of [
@@ -19,17 +19,22 @@ for (const [label, viewport] of [
 
     await expect(page.locator('#recpill')).toBeVisible({ timeout: 20000 });
     const log = await countdownLog(page);
-    expect(log.map((e) => e.key)).toEqual(['cue', '3초 뒤 녹음 시작', '2초 뒤 녹음 시작', '1초 뒤 녹음 시작', 'recording']);
+    expect(log.map((e) => e.key)).toEqual(['cue', '3초 뒤 녹음 시작', '2초 뒤 녹음 시작', '1초 뒤 녹음 시작', 'recording', 'speak']);
     expect(log[0].text).toBe('이제 당신의 차례입니다 !');
     for (const entry of log) {
       expect(entry.inViewport, entry.key).toBe(true);
       // 문구·숫자·«녹음 중» 내내 영상은 5.0초 정지 화면이다
       expect(entry).toMatchObject({ paused: true, time: 5 });
     }
-    for (const entry of log.slice(1, 4)) {
-      expect(entry.text).toContain('지금 바로 당신의 목소리를 들려주세요 !');
+    // 3·2·1에는 숫자 말고 아무 글도 없다(11/8 Bumm님 «뭘 3·2·1에 계속 밑에 주저리 나오냐»)
+    for (const [i, entry] of log.slice(1, 4).entries()) {
+      expect(entry.text).toBe(String(3 - i));
       expect(entry.uncovered, entry.key).toBe(true);
     }
+    // 말할 차례 문구는 녹음기가 켜질 때 «녹음 중»과 같은 그림에 뜨고, «녹음 중»은 그 막 위에 가려지지 않는다
+    expect(log[5].text).toBe('이제 당신의 목소리를 들려주세요 !');
+    expect(log[5].at - log[4].at).toBeLessThan(50);
+    expect(log[4].uncovered, '«녹음 중»이 문구 막에 가려졌다').toBe(true);
     // 문구 → 3 → 2 → 1은 1초씩이다. 한 기준 시각에서 재므로 한 칸이 늦게 그려져도 다음 칸이 밀리지 않는다 —
     // 칸마다는 그리기 지연만큼 흔들려도(병렬 부하) 문구에서 «1»까지는 3초 그대로다.
     const steps = log.slice(1, 4).map((entry, i) => entry.at - log[i].at);

@@ -1,38 +1,41 @@
 /* 메일 전달 화면(설치판 · 웹, 11/8) — 완성 화면(result.css)의 흰색/빨간색을 그대로 쓴다. 메일 대기열이 없는 브라우저에서는 이 요소들이 그려지지 않는다. */
-/* 적는 칸과 확인을 옅은 판 하나에 모은다(11/8 Bumm님 «아래쪽이 너무 비어 보입니다 … 허술해 보이지 않게») — 판 모서리는 왼쪽 그림과 같은 16px이다. */
-.mail-form { max-width:30rem; margin-top:24px; padding:24px; box-sizing:border-box; border-radius:16px; background:#f5f5f5; }
-.mail-field { margin:0 0 16px; }
-.mail-field-address { margin-bottom:0; }
-.mail-field label { display:block; margin-bottom:6px; font-size:.875rem; font-weight:650; color:#262626; }
-/* 칸 폭은 적을 글자 길이에 맞춘다(11/8 Bumm님 «입력 칸이 너무 깁니다») — 이름은 짧고 주소는 길다. 좁은 창에서는 판 폭에 맞춰 줄어든다.
-   테두리는 판 바탕(#f5f5f5)과 3:1 이상이다(#8c8c8c — 입력 칸 경계가 보여야 한다). */
+/* 적는 칸과 단추를 한 열(폭 26rem, 좁은 창에서는 카드 폭)에 세운다(11/8 Bumm님 «디자인 왜 이렇게 개촌스러워졌어» — 이름 칸만 짧고 메일 칸만 길어 들쭉날쭉,
+   회색 판 안의 두꺼운 빨간 초점 테두리, 따로 노는 «다음» 단추였다). 두 칸은 같은 폭 · 같은 높이(48px), 라벨과 칸 사이 6px · 칸과 칸 사이 16px,
+   단추는 칸과 같은 폭 · 같은 높이다. 판 없이 흰 카드 위에 두는 것은 의견 창 · 완성 화면과 같은 결이다. */
+.mail-form { width:100%; max-width:26rem; margin-top:24px; }
+.mail-field + .mail-field { margin-top:16px; }
+.mail-field label { display:block; margin-bottom:6px; font-size:.875rem; font-weight:700; color:#262626; }
+/* 테두리 #8c8c8c는 흰 바탕과 3.4:1(입력 칸 경계가 보여야 한다). 초점은 테두리를 강조색으로 바꾸고 바깥 1px을 더한 2px 둘레다(흰 바탕과 4.6:1) —
+   투명 outline은 고대비 모드에서 그림자가 사라져도 초점 둘레가 남게 한다. */
 .mail-field input { display:block; width:100%; height:48px; padding:0 14px; box-sizing:border-box; border:1px solid #8c8c8c; border-radius:10px; background:#fff; color:#171717; font:inherit; font-size:1rem; }
-.mail-field-name input { max-width:16rem; }
-.mail-field-address input { max-width:26rem; }
-.mail-field input:focus-visible { outline:3px solid #e52320; outline-offset:1px; }
+.mail-field input:focus-visible { outline:2px solid transparent; border-color:#e52320; box-shadow:0 0 0 1px #e52320; }
 .mail-field input[aria-invalid="true"] { border-color:#e52320; }
 .result-details p.mail-error { margin:6px 0 0; color:#c91b19; font-size:.875rem; line-height:1.5; }
 .mail-actions { justify-content:flex-start; margin-top:20px; }
-.mail-form .mail-actions { margin-top:24px; }
+.mail-form .mail-actions { margin-top:24px; flex-wrap:nowrap; gap:8px; }
 #result .mail-actions .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; flex:0 1 auto; max-width:100%; padding-inline:22px; }
+/* 열 안의 단추는 칸과 같은 높이로, 주 단추가 남는 폭을 다 채운다(«다음»은 칸 폭 그대로, 확인 화면은 «맞아요, 보내 주세요»가 넓고 «고치기»는 글자만큼) */
+#result .mail-form .mail-actions .btn { min-width:0; min-height:48px; padding-block:0; }
+#result .mail-form .mail-actions .btn-save { flex:1 1 auto; max-width:none; }
 #result .btn:disabled { opacity:.6; cursor:default; }
-.result-details p.mail-address { margin:0 0 10px; padding:14px 16px; border:1px solid #e0e0e0; border-radius:10px; background:#fff; font-size:1.25rem; font-weight:750; line-height:1.4; word-break:break-all; }
+.result-details p.mail-address { margin:0 0 10px; padding:12px 14px; border:1px solid #e0e0e0; border-radius:10px; background:#fff; font-size:1.25rem; font-weight:750; line-height:1.4; word-break:break-all; }
 .result-details p.mail-name-shown { margin:0; color:#262626; }
 .result-details p.mail-typo { margin:14px 0 0; padding:12px 14px; border:1px solid #f3d2cf; border-radius:10px; background:#fff3f2; color:#642a26; font-size:.9375rem; }
 .mail-typo-fix { display:block; margin-top:4px; padding:0; border:0; background:none; color:#c91b19; font:inherit; font-weight:700; text-decoration:underline; cursor:pointer; }
 /* 웹 대기 화면의 조건 두 가지 — 적는 칸과 같은 옅은 판(11/8) */
 .mail-conditions { max-width:30rem; margin:0; padding:18px 22px 18px 40px; box-sizing:border-box; border-radius:16px; background:#f5f5f5; color:#262626; font-size:.9375rem; line-height:1.6; word-break:keep-all; }
 .mail-conditions li + li { margin-top:6px; }
-@container app (max-width:900px) {
- .mail-form { padding:20px; }
-}
 @container app (max-height:700px) and (min-width:601px) {
- .mail-form { margin-top:18px; padding:18px 20px; }
- .mail-field { margin-bottom:10px; }
- .mail-field-address { margin-bottom:0; }
- .mail-field input { height:42px; }
+ .mail-form { margin-top:18px; }
+ .mail-field + .mail-field { margin-top:12px; }
+ .mail-field input,#result .mail-form .mail-actions .btn { height:44px; min-height:44px; }
  .mail-form .mail-actions,.mail-actions { margin-top:16px; }
  #result .mail-actions .btn { padding-block:12px; }
+ #result .mail-form .mail-actions .btn { padding-block:0; }
+}
+/* 휴대폰은 단추가 카드 폭 그대로라(result.css) 확인 화면의 두 단추를 위아래로 쌓는다 */
+@container app (max-width:600px) {
+ .mail-form .mail-actions { flex-wrap:wrap; }
 }
 
 /* 메일 대기 단추 — 첫 화면 오른쪽 위(설치판은 노란 «인터넷 없이 쓰는 설치판» 표시 옆, 웹은 설치 파일 아이콘 옆), 기다리는 메일이 있을 때만(11/8). 표시와 같은 높이(20px)다. */

@@ -76,7 +76,8 @@ test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
     await expect(page.locator('#recpill')).toBeVisible({ timeout: 15000 });
     const log = await countdownLog(page);
     expect(log.find((e) => e.key === 'cue')?.text).toBe('이제 당신의 차례입니다 !');
-    expect(log.find((e) => e.key.endsWith('녹음 시작'))?.text).toContain('지금 바로 당신의 목소리를 들려주세요 !');
+    expect(log.find((e) => e.key.endsWith('녹음 시작'))?.text).toBe('3');
+    expect(log.find((e) => e.key === 'speak')?.text).toBe('이제 당신의 목소리를 들려주세요 !');
     // 멈춘 영상 시각이 5.0초와 한 프레임(1/30초) 안이고, 녹음 중에도 그 정지 화면 그대로다.
     const paused = await clip.evaluate(v => ({ paused: v.paused, time: v.currentTime }));
     expect(paused.paused).toBe(true);
@@ -296,7 +297,7 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     // 장면은 처음부터 다시 흐른다
     await expect.poll(() => page.locator('#clip').evaluate(v => !v.paused && v.currentTime > .3 && v.currentTime < 4.5)).toBe(true);
     await expect(page.locator('#recpill')).toBeVisible({ timeout: 20000 });
-    expect((await countdownLog(page)).slice(firstTake).map((e) => e.key)).toEqual(['cue', '3초 뒤 녹음 시작', '2초 뒤 녹음 시작', '1초 뒤 녹음 시작', 'recording']);
+    expect((await countdownLog(page)).slice(firstTake).map((e) => e.key)).toEqual(['cue', '3초 뒤 녹음 시작', '2초 뒤 녹음 시작', '1초 뒤 녹음 시작', 'recording', 'speak']);
     await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
     // 마우스로 눌렀으면 다음 단추로 초점을 옮기지 않는다 — 옮기면 빨간 초점 띠가 남는다(10/20, src/lib/inputModality.ts)
     await expect(page.locator('#saveBtn')).not.toBeFocused();

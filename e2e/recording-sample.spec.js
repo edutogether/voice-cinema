@@ -32,7 +32,8 @@ test('마이크 없이 장면·5.0초 멈춤·321·3초·이어 재생·원본 �
   await page.locator('#recBtn').click();
   await page.locator('#cue').waitFor({ timeout: 10000 });
   await expect(page.locator('#recpill')).toContainText('샘플 녹음 체험 중');
-  expect((await countdownLog(page)).map((e) => e.key)).toEqual(['cue', '3초 뒤 녹음 시작', '2초 뒤 녹음 시작', '1초 뒤 녹음 시작', 'recording']);
+  // 3·2·1 다음 «녹음 중»과 «이제 당신의 목소리를 들려주세요 !»가 함께 뜬다(11/8 Bumm님) — 샘플 체험도 같다
+  expect((await countdownLog(page)).map((e) => e.key)).toEqual(['cue', '3초 뒤 녹음 시작', '2초 뒤 녹음 시작', '1초 뒤 녹음 시작', 'recording', 'speak']);
   await expect(page.locator('#recBtn')).toBeDisabled();
   await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
   // «다시 듣기»는 없다(10/20 대표님) — 녹음 뒤에는 «다시 녹음»·«저장하기»만

@@ -18,11 +18,12 @@ export async function watchCountdown(page) {
       const cue = document.querySelector('#cue');
       const count = document.querySelector('#count');
       const pill = document.querySelector('#recpill');
-      const keys = [cue && 'cue', count && count.getAttribute('aria-label'), pill && 'recording'].filter(Boolean);
+      const speak = document.querySelector('#speakCue');
+      const keys = [cue && 'cue', count && count.getAttribute('aria-label'), pill && 'recording', speak && 'speak'].filter(Boolean);
       for (const key of keys) {
         if (seen.has(key)) continue;
         seen.add(key);
-        note(key, key === 'cue' ? cue : key === 'recording' ? pill : count);
+        note(key, { cue, recording: pill, speak }[key] ?? count);
       }
       if (!cue && !count && !pill && seen.has('recording')) seen.clear();
     }).observe(document, { subtree: true, childList: true, attributes: true });
