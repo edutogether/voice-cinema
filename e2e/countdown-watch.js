@@ -4,6 +4,9 @@ export async function watchCountdown(page) {
   await page.addInitScript(() => {
     const log = [];
     window.__countdown = log;
+    // 말할 차례 문구가 사라진 순간과 그때 «녹음 중»이 아직 있었는지(문구는 숫자 하나만큼만 뜨고 녹음은 이어진다, 11/8 Bumm님)
+    const ends = [];
+    window.__countdownEnds = ends;
     const seen = new Set();
     const note = (key, el) => {
       const r = el.getBoundingClientRect();
@@ -25,9 +28,14 @@ export async function watchCountdown(page) {
         seen.add(key);
         note(key, { cue, recording: pill, speak }[key] ?? count);
       }
+      if (seen.has('speak') && !speak && !seen.has('speak-end')) {
+        seen.add('speak-end');
+        ends.push({ key: 'speak', at: performance.now(), recording: Boolean(pill) });
+      }
       if (!cue && !count && !pill && seen.has('recording')) seen.clear();
     }).observe(document, { subtree: true, childList: true, attributes: true });
   });
 }
 
 export const countdownLog = (page) => page.evaluate(() => window.__countdown);
+export const countdownEnds = (page) => page.evaluate(() => window.__countdownEnds);

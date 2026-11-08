@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
-import { countdownLog, watchCountdown } from './countdown-watch.js';
+import { countdownEnds, countdownLog, watchCountdown } from './countdown-watch.js';
 
 // 5.0초 멈춤 뒤 «이제 당신의 차례입니다 !» → 3·2·1(숫자만, 11/8 Bumm님)이 화면 가운데 보이고 다른 요소에 가려지지 않는다.
-// 그동안 영상은 5.0초 정지 화면 그대로다. 녹음기가 실제로 켜진 뒤에 «녹음 중»과 «이제 당신의 목소리를 들려주세요 !»가 함께 보인다.
+// 그동안 영상은 5.0초 정지 화면 그대로다. 녹음기가 실제로 켜진 뒤에 «녹음 중»과 «이제 당신의 목소리를 들려주세요 !»가 함께 보이고,
+// 그 문구는 숫자 하나처럼 1초 뒤 사라지며 녹음은 이어진다(11/8 Bumm님 «321하고 똑같이만큼»).
 // 문구와 숫자는 정확히 1초에 하나씩 넘어가고, 절정(멈춤)에서 «녹음 중»까지 4초다(11/8 Bumm님 «너무 빠르다» — 10/24에는 1.5초, 그 전에는 3.9초).
 // 나타나는 순간은 화면에서 기록해 두고 본다(e2e/countdown-watch.js).
 for (const [label, viewport] of [
@@ -50,5 +51,12 @@ for (const [label, viewport] of [
     expect(wait).toBeLessThan(4.8);
     await expect(page.locator('#count')).toHaveCount(0);
     await expect(page.locator('.record-left')).toBeVisible();
+    // 말할 차례 문구는 숫자 하나와 같은 1초 뒤 사라지고, 그때 녹음은 아직 이어진다(«녹음 중»이 남아 있다)
+    await expect.poll(async () => (await countdownEnds(page)).length).toBe(1);
+    const [end] = await countdownEnds(page);
+    expect(end.recording, '문구가 사라질 때 녹음도 끝나 있었다').toBe(true);
+    const shown = end.at - log[5].at;
+    expect(shown).toBeGreaterThan(850);
+    expect(shown).toBeLessThan(1250);
   });
 }
