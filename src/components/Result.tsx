@@ -73,7 +73,7 @@ export function Result({ active, job, onHome, onBack }: Props) {
   // 지금 이 화면이 맡은 작업 — 다시 제작하기가 끝났을 때 그사이 다른 작업으로 바뀌었으면 화면을 건드리지 않는다
   const jobRef = useRef(job);
   jobRef.current = job;
-  // 대기 화면이 걸어 두는 «지금 재생 중인 대기 영상이 끝날 때까지 기다리기» — 결과(QR · 메일 칸 · 이 기기에 저장 · 오류)는 그 뒤에 보인다(GenerationWait.tsx)
+  // 대기 화면이 걸어 두는 «대기 장면 두 편이 끝나고, 재생 중인 대기 영상도 끝날 때까지 기다리기» — 결과(QR · 메일 칸 · 이 기기에 저장 · 오류)는 그 뒤에 보인다(GenerationWait.tsx)
   const sceneEndRef = useRef<SceneEnd | null>(null);
 
   useEffect(() => {
@@ -87,7 +87,8 @@ export function Result({ active, job, onHome, onBack }: Props) {
       return;
     }
     let cancelled = false;
-    // 대기 화면에서 결과로 넘어갈 때는 재생 중인 대기 영상을 끝까지 보인다(11/9 Bumm님 «이왕 틀던건 다 고대로 보여주고 결과 보여줘라», 팀장 전달)
+    // 대기 화면에서 결과로 넘어갈 때는 대기 영상 두 편을 다 보이고, 그 뒤 재생 중인 편도 끝까지 보인다
+    // (11/9 Bumm님 «2개는 로딩영상이 재생되게 해 그게 최소» · «이왕 틀던건 다 고대로 보여주고 결과 보여줘라», 팀장 전달)
     const finish = async (next: Stage) => {
       await sceneEndRef.current?.();
       if (!cancelled) setStage(next);
