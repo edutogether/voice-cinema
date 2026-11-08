@@ -8,7 +8,7 @@
 
 ### 2026-10-31 GitHub 복구 — master = 라이브 줄, 배포는 다시 master push → CI로
 
-- 🟢 **라이브 = master 끝**(CI 배포, 11/7 19:50 표시 `82f4846`, 번들 `main-CzHXtMlj.js`). 이 PC에서 직접 배포하지 않는다 — master에 push하면 CI가 배포한다.
+- 🟢 **라이브 = master 끝**(CI 배포, 11/8 표시 `fece3fe`, 번들 `main-BFrkAMTb.js`). 이 PC에서 직접 배포하지 않는다 — master에 push하면 CI가 배포한다.
 - 🔴 **풀린 뒤 push보다 예약 «배포 대조»가 먼저 돌았다** — 41108974767(10/30 18:41Z)이 master `510228c`(1.0)를 배포해 라이브가
   **10/31 03:43~09:42(KST) 1.0**이었다. 09:17 master를 `feat/vc2-release` 끝 `2fb73a8`로 빨리감기 push → CI 배포로 복구. 경위 · 재발 방지는 `app.md` «배포 대조».
 - 배포 뒤 스모크의 엔진 항목을 10/24 설계(엔진은 앱이 받을 때 캐시)에 맞췄다(`bf81bfd`) — 로컬로만 나간 줄이라 CI 검사를 처음 거치며 걸렸다.
@@ -849,13 +849,13 @@ PC는 큰 중앙 장면·입체 슬라이드·아래 여섯 썸네일 바로가�
 - 🟡 아이폰 스플래시 덜컹거림의 실기기 원인 — 데스크톱 측정으로는 증명되지 않았다
 - 🟡 클라우드 환경의 E2E — `claude/cloud-session-setup` 기록상 클라우드 네트워크가 `cdn.playwright.dev`를 막아 브라우저를 못 받았다
 
-## 8. 배포 상태 (2026-10-10 확인)
+## 8. 배포 상태 (2026-11-08 확인)
 
-- **master와 라이브가 같다** — 라이브 `/version.json`과 함수 `GET /`의 `commit`이 `bc92b2d`(배포 38040045783). 미배포 화면 작업은 없다.
+- **master와 라이브가 같다** — 라이브 `/version.json`과 함수 `GET /`의 `commit`이 `fece3fe`(배포 42434064600, 손 대조 42434301768 «라이브가 이미 이 커밋»).
 - 배포는 `master` push → CI → `deploy.yml`. 같은 파일이 예약 실행(몇 시간에 한 번꼴)으로 라이브를 master 끝과 대조한다(`app.md` "배포 대조").
-- 화면 번들 `main-Dy5jp6f1.js`, 서비스워커 캐시 이름 `80042aad331d` — 10/7 파비콘 배포 이후 그대로다(부스 기기 캐시 기준).
-- smoke: `node D:/Projects/_shared/ops/smoke-check.mjs _docs/ops/smoke.json` PASS(10/10).
-- 2026-11-07 마지막 배포 이후 행사 종료까지 동결한다.
+- 화면 번들 `main-BFrkAMTb.js`, 서비스워커 캐시 `b0b9c0f560f9` · 엔진 캐시 `3a3682eeb407`(부스 기기 캐시 기준 — 이 PC 빌드의 캐시 이름은 줄바꿈 차이로 다르다, `app.md` «엔진 캐시»).
+- 설치 파일: 첫 화면 아이콘 → `/download/VoiceCinema-Setup.exe` → 버킷 `inky-voice-cinema-download`의 객체 하나(`fabfecd` 빌드). 교체 절차는 `app.md` «첫 화면 설치 파일 아이콘».
+- 동결(11/7~11/14) 중이지만 11/8 `fece3fe`는 팀장 확인(Bumm님 지시 전달)으로 나갔다 — 이 배포 앞에 예열한 부스 기기는 다시 연다(화면이 바뀌어 한 번 새로 받고, 엔진은 그대로).
 
 ## 9. 로컬(집 PC)에만 있는 필수 환경 — 값은 적지 않는다
 
