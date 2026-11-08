@@ -1,6 +1,13 @@
 import { test, expect } from '@playwright/test';
 import { pauseScenes } from './pause-scenes.js';
 
+// 스플래시의 보이는 크기(등장 애니메이션이 끝난 뒤)와 스플래시 배율
+const splashSize = (page) => page.evaluate(async () => {
+  await Promise.all(document.querySelector('#splash .logo').getAnimations().map(animation => animation.finished));
+  const size = (selector) => { const r = document.querySelector(selector).getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; };
+  return { scale: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--splash-scale')), logo: size('#splash .logo img'), nameHeight: size('#splash .name')[1], bar: size('#splash .sbar')[0], education: size('#splash .splash-education')[0] };
+});
+
 // 해상도별 화면 맞춤(public/fit.js, 11/7 Bumm님 «2560 화면을 기준으로 모든 해상도를 그것처럼», Poster Studio 방식): 세로 휴대폰은 폭 390에 맞춰 줄이고 키운다.
 // PC · 태블릿은 실제 크기 그대로 쓰고 키우지 않으며, 폭 768 · 높이 640 아래에서만 그만큼 줄여 한 화면짜리 화면이 스크롤 없이 다 든다.
 // 옛 방식은 1280×587 · 1366×635 창에서 첫 페이지 · 녹음실이 640px로 넘쳤다(옛 빌드 조사 12건).
@@ -57,20 +64,21 @@ test('마우스로 쓰는 좁은 창(세로)은 휴대폰 규칙(폭 390)을 쓴
   await page.close();
 });
 
-// PC 웹(11/7 Bumm님 «640 480 화면으로 해상도 깨진 윈도우마냥 다 커져 있네» · «위아래로 잘려 있어» · «포스터랑 똑같이 맞춰»).
+// PC 웹(11/7 Bumm님 «640 480 화면으로 해상도 깨진 윈도우마냥 다 커져 있네» · «위아래로 잘려 있어» · «포스터랑 똑같이 맞춰», 스플래시는 11/8 «PC 2560 정도의 비율로»).
 // 창 크기는 흔한 화면 · Windows 배율에서 크롬 탭 · 주소창 · 작업 표시줄(135)을 뺀 실제 값이다.
 for (const [width, height] of [[1280, 585], [1366, 633], [1536, 729], [1707, 825], [1920, 945], [2048, 1017], [2560, 1305], [3840, 2025]]) {
-  test(`PC ${width}×${height}: 키우지 않고, 스플래시는 Poster Studio와 같고, 가운데 영상과 그림 띠는 16:9 그대로다`, async ({ browser }) => {
+  test(`PC ${width}×${height}: 키우지 않고, 스플래시는 2560×1305 기준 비율이고, 가운데 영상과 그림 띠는 16:9 그대로다`, async ({ browser }) => {
     const page = await browser.newPage({ viewport: { width, height } });
     await page.goto('/');
     await page.locator('#splash .logo img').waitFor();
-    // Poster Studio PC 스플래시를 잰 값: 아이콘 72 · 이름 높이 45 · 로딩바 190 · 교육청 로고 190. 작은 창에서도 줄이지 않는다.
-    const splash = await page.evaluate(async () => {
-      await Promise.all(document.querySelector('#splash .logo').getAnimations().map(animation => animation.finished));
-      const size = (selector) => { const r = document.querySelector(selector).getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; };
-      return { logo: size('#splash .logo img'), nameHeight: size('#splash .name')[1], bar: size('#splash .sbar')[0], education: size('#splash .splash-education')[0] };
-    });
-    expect(splash).toEqual({ logo: [72, 72], nameHeight: 45, bar: 190, education: 190 });
+    // 스플래시는 웹 PC 2560×1305 창의 크기(Poster Studio PC와 같은 아이콘 72 · 이름 높이 45 · 로딩바 190 · 교육청 로고 190)를 창 넓이 비율로 줄이고 키운다
+    // (11/8 Bumm님 «PC 2560 정도의 비율로») — 고정 크기였을 때는 작은 창(설치판 1280×587)에서 화면의 두 배 남짓을 차지했다
+    const splash = await splashSize(page);
+    const k = Math.sqrt((width * height) / (2560 * 1305));
+    expect(splash.scale).toBeCloseTo(k, 3);
+    for (const [label, got, base] of [['아이콘 폭', splash.logo[0], 72], ['아이콘 높이', splash.logo[1], 72], ['이름 높이', splash.nameHeight, 45], ['로딩바', splash.bar, 190], ['교육청 로고', splash.education, 190]]) {
+      expect(Math.abs(got - base * k), `${label}: ${got}, 기대 ${(base * k).toFixed(1)}`).toBeLessThanOrEqual(1);
+    }
 
     await page.locator('#splash').waitFor({ state: 'detached' });
     await pauseScenes(page);
@@ -104,6 +112,33 @@ test('창 크기가 바뀌면 다시 맞춘다 — 2560에서 1280×587로 줄�
   await page.setViewportSize({ width: 1280, height: 587 });
   await expect.poll(() => page.evaluate(() => Math.round(parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--app-w'))))).toBe(1396);
   expect(await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight)).toBe(0);
+  await page.close();
+});
+
+// 패드도 2560×1305 기준 비율이다(11/8 Bumm님 «PC · 패드 다른 비율도») — 창 넓이로 재므로 같은 패드를 가로 · 세로로 돌려도 스플래시 크기가 같다
+for (const [width, height] of [[1280, 800], [800, 1280], [1024, 768], [768, 1024]]) {
+  test(`패드 ${width}×${height}: 스플래시는 2560×1305 기준 비율이다`, async ({ browser }) => {
+    const page = await browser.newPage({ viewport: { width, height }, hasTouch: true, isMobile: true });
+    await page.goto('/');
+    await page.locator('#splash .logo img').waitFor();
+    expect(await page.evaluate(() => document.documentElement.dataset.fit)).toBe('tablet');
+    const splash = await splashSize(page);
+    const k = Math.sqrt((width * height) / (2560 * 1305));
+    for (const [label, got, base] of [['아이콘', splash.logo[0], 72], ['이름 높이', splash.nameHeight, 45], ['로딩바', splash.bar, 190], ['교육청 로고', splash.education, 190]]) {
+      expect(Math.abs(got - base * k), `${label}: ${got}, 기대 ${(base * k).toFixed(1)}`).toBeLessThanOrEqual(1);
+    }
+    await page.close();
+  });
+}
+
+// 설치판은 창이 열린 뒤 작업 영역 크기로 커진다(desktop/main.js) — 스플래시가 떠 있는 동안 창 크기가 바뀌어도 새 크기의 비율을 따른다
+test('스플래시가 떠 있는 동안 창 크기가 바뀌면 스플래시도 새 비율로 맞춘다 — 1366×860에서 1280×587', async ({ browser }) => {
+  const page = await browser.newPage({ viewport: { width: 1366, height: 860 } });
+  await page.goto('/');
+  await page.locator('#splash .logo img').waitFor();
+  await page.setViewportSize({ width: 1280, height: 587 });
+  const k = Math.sqrt((1280 * 587) / (2560 * 1305));
+  await expect.poll(async () => (await splashSize(page)).bar).toBe(Math.round(190 * k));
   await page.close();
 });
 
