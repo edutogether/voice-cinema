@@ -84,7 +84,8 @@ async function pickScene(page, name) {
 }
 /** 녹음 · 저장해 입력 화면까지(끊겨 있으면 곧바로, 올리지 못하면 세 번 시도한 뒤) */
 async function recordToEntry(page, timeout = 90000) {
-  await expect(page.locator('#engineProg')).toHaveText('100%', { timeout: 30000 });
+  // 엔진을 다 받은 뒤 녹음한다(첫 화면의 «N%» 표시는 11/8에 없앴다 — 화면이 직접 받는 자원 기록을 본다)
+  await expect.poll(() => page.evaluate(() => performance.getEntriesByType('resource').some((e) => e.name.endsWith('/vendor/ffmpeg-core/ffmpeg-core.wasm') && e.responseEnd > 0)), { timeout: 30000 }).toBe(true);
   expect(await recordOnce(page)).toMatchObject({ phase: 'recorded' });
   await page.locator('#saveBtn').click();
   await expect(page.locator('#mailName')).toBeVisible({ timeout });
@@ -316,7 +317,14 @@ test('끊김 → 입력 → 확인 → 대기 → 복구 → 올리기 → 메�
   await page.locator('#mailQueue').getByRole('button', { name: '닫기' }).click();
 
   // 복구 → 올리기 → 메일 보내기 → 지움. 메일 서버에는 받는 주소 · 이름 · 올린 영화 주소만 가고, 업로드와 같은 인증 헤더가 붙는다
+  // 첫 화면에서 인터넷이 돌아오면 시작 창이 «보낼 메일 1건»을 보내고 끝을 알린다 — [완료]를 누르면 평소 첫 화면이다
   await offline(app, false);
+  const startup = page.locator('#mailStartup');
+  await expect(startup).toHaveAttribute('data-phase', 'done', { timeout: 60000 });
+  await expect(startup.getByRole('heading')).toHaveText('1건 모두 보냈어요. 이제 꺼도 돼요.');
+  await startup.getByRole('button', { name: '완료' }).click();
+  await expect(startup).not.toBeVisible();
+  await expect(page.locator('#home')).toHaveClass(/active/);
   await expect(page.locator('#mailQueueChip')).toHaveCount(0, { timeout: 60000 });
   const [mail] = await mails(app);
   expect({ to: mail.to, items: mail.items }).toEqual({ to: MAIL, items: [{ name: NAME_A, url: FAKE_URL }] });
@@ -402,8 +410,10 @@ test('다음 사람의 칸은 비어 있고 이전 주소가 제안되지 않으
     expect(readFileSync(path.join(profile, 'mail-queue', file)).subarray(0, 64).includes(Buffer.from('ftyp'))).toBe(false);
   }
 
-  // 다시 켜면 이어서 보내고 한 통으로 묶는다
+  // 다시 켜면 시작 창이 «보낼 메일 2건»을 이어서 보내고 한 통으로 묶는다
   const second = await launch(profile);
+  await expect(second.page.locator('#mailStartup')).toHaveAttribute('data-phase', 'done', { timeout: 90000 });
+  await expect(second.page.locator('#mailStartup').getByRole('heading')).toHaveText('2건 모두 보냈어요. 이제 꺼도 돼요.');
   await expect.poll(() => mails(second.app), { timeout: 90000 }).toHaveLength(1);
   const [mail] = await mails(second.app);
   expect(mail.to.toLowerCase()).toBe(MAIL);
@@ -436,33 +446,66 @@ test('인터넷이 있어도 올리지 못하면 메일 화면으로 가고, 대
   expect(await mails(app)).toHaveLength(0);
   expect(queueFiles(profile)).toHaveLength(3);
 
-  // 여러 번 실패해 빠진 건: 자동으로는 보내지 않고 운영자가 다시 보낸다. 이번에는 올리기는 되고 메일 서버가 실패한다
+  // 다시 켜면(여기서는 다시 열기) 시작 창이 «보내지 못함»까지 처음부터 다시 보낸다(11/8 Bumm님 — 켜 두면 다 나가게). 이번에는 올리기는 되고 메일 서버가 실패한다
   await page.evaluate((id) => window.vcDesktop.mail.update(id, { failed: true }), item.id);
   await setReply(app, { status: 200, body: { ok: true, url: FAKE_URL } });
   await setMailReply(app, { status: 503, body: { ok: false } });
   await page.reload();
   await page.locator('#splash').waitFor({ state: 'detached', timeout: 60000 });
-  await expect(page.locator('#mailQueueChip')).toHaveText('보내지 못함 1건');
+  const startup = page.locator('#mailStartup');
+  await expect(startup).toHaveAttribute('data-phase', 'partial', { timeout: 60000 });
+  await expect(startup.getByRole('heading')).toHaveText('1건을 못 보냈어요');
+  // 메일 서버가 실패하면 지우지 않고 대기에 남는다. 올린 영화 주소는 기억해 두어 다음에는 다시 올리지 않는다
+  expect(await mails(app)).toHaveLength(1);
+  await expect.poll(() => page.evaluate(async () => (await window.vcDesktop.mail.list())[0]), { timeout: 30000 }).toMatchObject({ attempts: 1, failed: false, url: FAKE_URL });
+  expect(queueFiles(profile)).toHaveLength(3);
+  const uploadedOnce = (await uploads(app)).length;
+  // [다시 보내기] — 이번에는 메일 서버가 받는다. 끝을 알리고 [완료]를 누르면 평소 첫 화면이다
+  await setMailReply(app, { status: 200, body: { ok: true } });
+  await startup.getByRole('button', { name: '다시 보내기' }).click();
+  await expect(startup).toHaveAttribute('data-phase', 'done', { timeout: 60000 });
+  await expect(startup.getByRole('heading')).toHaveText('1건 모두 보냈어요. 이제 꺼도 돼요.');
+  expect(await mails(app)).toHaveLength(2);
+  expect((await uploads(app)).length, '메일만 다시 보내고 영화는 다시 올리지 않는다').toBe(uploadedOnce);
+  expect(queueFiles(profile)).toEqual(['queue.key']);
+  await startup.getByRole('button', { name: '완료' }).click();
+  await expect(startup).not.toBeVisible();
+  await expect(page.locator('#mailQueueChip')).toHaveCount(0);
+
+  // 켜 둔 채 여러 번(8번) 실패하면 «보내지 못함»으로 빠져 자동으로는 보내지 않고, 첫 화면 단추의 목록에서 운영자가 다시 보낸다
+  await offline(app, true);
+  await pickScene(page, 'SF');
+  await recordToEntry(page);
+  await queue(page, NAME_B, MAIL);
+  await home(page);
+  await setMailReply(app, { status: 503, body: { ok: false } });
+  await offline(app, false);
+  await expect(startup).toHaveAttribute('data-phase', 'partial', { timeout: 60000 });
+  await expect(startup.getByRole('heading')).toHaveText('1건을 못 보냈어요');
+  // [나중에]를 누르면 창만 닫히고 남은 건은 대기에 그대로다
+  await startup.getByRole('button', { name: '나중에' }).click();
+  await expect(startup).not.toBeVisible();
+  await expect(page.locator('#mailQueueChip')).toHaveText('메일 대기 1건');
+  const uploadedTwice = (await uploads(app)).length;
+  // 여덟 번째 실패를 기다리는 대신 일곱 번 실패한 상태로 두고 다음 차례(15초마다)가 여덟 번째로 실패하게 한다
+  await page.evaluate(async () => { const [waiting] = await window.vcDesktop.mail.list(); await window.vcDesktop.mail.update(waiting.id, { attempts: 7, nextAt: 0 }); });
+  await expect(page.locator('#mailQueueChip')).toHaveText('보내지 못함 1건', { timeout: 60000 });
+  await expect(startup).not.toBeVisible();
   await page.locator('.scene-carousel').dispatchEvent('pointerdown', { pointerType: 'touch', isPrimary: true });
   for (const [w, h] of [[640, 640], [1000, 640], [1366, 697]]) {
     await sizeWindow(app, page, w, h);
     await expectHeaderRow(page, true);
   }
+  await setMailReply(app, { status: 200, body: { ok: true } });
+  const mailsBefore = (await mails(app)).length;
   await page.locator('#mailQueueChip').click();
   await expect(page.locator('#mailQueue')).toContainText('보내지 못했어요');
   await page.locator('#mailQueue').getByRole('button', { name: '다시 보내기' }).click();
   await page.locator('#mailQueue').getByRole('button', { name: '닫기' }).click();
-  // 메일 서버가 실패하면 지우지 않고 대기에 남는다. 올린 영화 주소는 기억해 두어 다음에는 다시 올리지 않는다
-  await expect.poll(() => mails(app), { timeout: 60000 }).toHaveLength(1);
-  await expect.poll(() => page.evaluate(async () => (await window.vcDesktop.mail.list())[0]), { timeout: 30000 }).toMatchObject({ attempts: 1, failed: false, url: FAKE_URL });
-  await expect(page.locator('#mailQueueChip')).toHaveText('메일 대기 1건');
-  expect(queueFiles(profile)).toHaveLength(3);
-  const uploadedOnce = (await uploads(app)).length;
-  // 30초 뒤 다시 보낸다 — 이번에는 메일 서버가 받는다
-  await setMailReply(app, { status: 200, body: { ok: true } });
-  await expect(page.locator('#mailQueueChip')).toHaveCount(0, { timeout: 90000 });
-  expect(await mails(app)).toHaveLength(2);
-  expect((await uploads(app)).length, '메일만 다시 보내고 영화는 다시 올리지 않는다').toBe(uploadedOnce);
+  await expect(page.locator('#mailQueueChip')).toHaveCount(0, { timeout: 60000 });
+  expect(await mails(app)).toHaveLength(mailsBefore + 1);
+  const mailCount = mailsBefore + 1;
+  expect((await uploads(app)).length, '메일만 다시 보내고 영화는 다시 올리지 않는다').toBe(uploadedTwice);
   expect(queueFiles(profile)).toEqual(['queue.key']);
 
   // 지우기는 두 번 눌러야 하고, 영상 · 정보가 함께 사라진다
@@ -480,7 +523,7 @@ test('인터넷이 있어도 올리지 못하면 메일 화면으로 가고, 대
   await expect(page.locator('#mailQueue')).toContainText('기다리는 메일이 없어요.');
   await expect.poll(() => queueFiles(profile)).toEqual(['queue.key']);
   expect((await uploads(app)).length).toBe(before);
-  expect(await mails(app)).toHaveLength(2);
+  expect(await mails(app)).toHaveLength(mailCount);
   await app.close();
 });
 
@@ -494,7 +537,8 @@ test('대기열을 열 수 없으면(키 손상) 메일 화면 없이 지금까�
   await expect(page.locator('#mailQueueChip')).toHaveCount(0);
   await setReply(app, { status: 500, body: { ok: false } });
   await openStudio(page, '판타지');
-  await expect(page.locator('#engineProg')).toHaveText('100%', { timeout: 30000 });
+  // 대기열이 없으면 시작 창도 없다
+  await expect(page.locator('#mailStartup')).toHaveCount(0);
   expect(await recordOnce(page)).toMatchObject({ phase: 'recorded' });
   await page.locator('#saveBtn').click();
   await expect(page.locator('#downloadRow')).toBeVisible({ timeout: 200000 });

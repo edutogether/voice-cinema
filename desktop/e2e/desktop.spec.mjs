@@ -55,6 +55,9 @@ async function routeUpload(app, reply) {
 }
 const uploads = (app) => app.evaluate(() => globalThis.__uploads.map((text) => JSON.parse(text)));
 
+/** 이 화면이 엔진(ffmpeg-core.wasm)을 끝까지 받았는가 — 첫 화면의 «N%» 표시는 11/8 Bumm님 지시로 없앴다. 화면이 직접 받으므로(src/lib/ffmpeg.ts) 그 자원 기록을 본다 */
+const engineLoaded = (page) => page.evaluate(() => performance.getEntriesByType('resource').some((e) => e.name.endsWith('/vendor/ffmpeg-core/ffmpeg-core.wasm') && e.responseEnd > 0));
+
 /** 시험용 마이크(제품 코드에는 아무것도 넣지 않는다)를 깔고 다시 연 뒤 장면 녹음실로 */
 async function openStudio(page, name) {
   await installSyntheticMic(page, [{ delay: 0.3, dur: 1.5 }]);
@@ -95,7 +98,7 @@ test('설치판 안의 화면이 정본 주소 · 앱 이름 창으로 뜨고, �
   expect(await page.evaluate(async () => { await document.fonts.ready; return [...document.fonts].filter((f) => f.status === 'loaded' && f.family === 'Pretendard').length; })).toBeGreaterThan(0);
   expect(await page.locator('.tile img.thumb').first().evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
   // 엔진(31MB)은 서비스워커를 기다리지 않고 받는다 — 전에는 20초 동안 «0%»였다(10/27)
-  await expect(page.locator('#engineProg')).toHaveText('100%', { timeout: 15000 });
+  await expect.poll(() => engineLoaded(page), { timeout: 15000 }).toBe(true);
   expect(await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length)).toBe(0);
   await app.close();
 });
@@ -168,7 +171,7 @@ test('인터넷이 없어도 첫 화면 · 녹음 · 합성이 되고, 올리지
   await routeUpload(app, 'fail');
   await openStudio(page, '스포츠');
   expect(await page.evaluate(() => fetch('https://voice-cinema.web.app/').then(() => 'online', (e) => e.name))).toBe('TypeError');
-  await expect(page.locator('#engineProg')).toHaveText('100%', { timeout: 15000 });
+  await expect.poll(() => engineLoaded(page), { timeout: 15000 }).toBe(true);
   expect(await recordOnce(page)).toMatchObject({ phase: 'recorded' });
   // Windows가 연결 없음을 알리는 것과 같은 상태(navigator.onLine === false)
   await page.evaluate(() => {
