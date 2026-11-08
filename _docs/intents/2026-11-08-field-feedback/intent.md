@@ -36,14 +36,16 @@ Bumm님이 Voice Cinema에도 같은 것을 넣고, 행사 날(11/14) 0시에 �
 - 웹 첫 화면. 녹음 · 저장 화면 · 설치판은 바뀌지 않는다.
 - Functions: `POST /feedback` · `GET /kakao/start` · `GET /kakao/callback`, 예약 함수 `feedbackMaintenance`(매일 04:00 KST).
 - Firestore `(default)`(asia-northeast3, 무료 범위 — 11/8 만듦): `feedback`(의견) · `kakaoAuth`(`owner` 토큰 · `pending` 연결 대기). 규칙은 모두 막음.
-- Secret Manager: `KAKAO_REST_API_KEY` · `KAKAO_CLIENT_SECRET`(Poster Studio와 같은 카카오 앱의 값을 옮겨 만듦 — 값은 어디에도 출력하지 않았다).
+- Secret Manager: `KAKAO_REST_API_KEY` · `KAKAO_CLIENT_SECRET` — **«Voice Cinema 카카오 앱»의 값**(11/8 Bumm님 결정, 팀장 전달). 처음(판 1)에는 Poster Studio 앱의 값을 옮겨 만들었고,
+  Bumm님이 Voice Cinema 앱의 값을 새 판으로 직접 넣으신다(세션은 값을 다루지 않는다 — 어디에도 출력하지 않았다).
+  🟠 함수는 배포할 때 비밀의 판 번호를 고정한다 — 새 판을 넣은 뒤에 배포가 한 번 나가야 읽는다.
   배포 계정 `secretmanager.viewer`, 실행 계정 `secretAccessor`(Poster Studio 11/5 결정과 같다).
 - 배포: `deploy.yml`이 `firestore:rules`도 함께 낸다.
 - 개인정보처리방침: 이름 · 의견 수집, 목적, Firestore 보관 · 90일, 카카오 알림, 11/14 닫힘.
 
 ## 제약
 
-- 키 · 토큰을 코드 · 문서 · 로그 · 출력에 남기지 않는다. 새 카카오 앱을 만들지 않는다(Poster Studio 앱에 주소만 더한다 — Bumm님이 직접).
+- 키 · 토큰을 코드 · 문서 · 로그 · 출력에 남기지 않는다. 새 카카오 앱을 만들지 않는다 — Bumm님 콘솔에 이미 있는 «Voice Cinema 카카오 앱»을 쓰고, 리다이렉트 URI · 웹 도메인 · 카카오 로그인 · 동의항목 «카카오톡 메시지 전송»은 Bumm님이 직접 넣으신다(11/8 결정, 처음에는 Poster Studio 앱에 주소만 더하려 했다).
 - 로그에 이름 · 의견을 남기지 않는다(문서 번호 · 결과만).
 - 동결 기간이다 — 시험 → «배포 직전 한 줄» → 팀장 OK → master push → CI로만 낸다. 11/10 현장 시험 전에 끝낸다.
 - Poster Studio 저장소는 읽기만 한다.

@@ -1084,7 +1084,10 @@ Claude in Chrome은 여분의 브라우저가 아니라 **대표 본인의 크�
   배포는 `deploy.yml`의 `--only firestore:rules,storage,functions`로 함께 나간다 — 빼면 콘솔의 처음 규칙이 그대로 남는다(계약 검사)
 - **카카오 연결**: `GET /kakao/start` → 카카오 로그인 → `/kakao/callback`이 토큰을 Firestore `kakaoAuth/owner`에 둔다. 한 번 쓰는 `state`(10분 · 해시로 저장 · 거래로 지움)로 연결을 위조하지 못하고,
   🔴 **이미 연결된 카카오 계정과 다른 계정으로 다시 연결하면 403이고 덮어쓰지 않는다**(Poster Studio와 같다) — 그래서 배포 직후 Bumm님 계정으로 먼저 연결한다(먼저 연결한 계정이 받는다)
-- 키는 Secret Manager `KAKAO_REST_API_KEY` · `KAKAO_CLIENT_SECRET`(Poster Studio의 값과 같은 카카오 앱)만 쓴다 — 출력 · 커밋 · `.env` 어디에도 두지 않는다.
+- 키는 Secret Manager `KAKAO_REST_API_KEY` · `KAKAO_CLIENT_SECRET`(**«Voice Cinema 카카오 앱»**의 값 — 11/8 Bumm님 결정, Poster Studio 앱이 아니다)만 쓴다 — 출력 · 커밋 · `.env` 어디에도 두지 않는다.
+  그 앱의 리다이렉트 URI(`…/voiceCinema/kakao/callback`) · 웹 도메인(`https://voice.edutogether.kr`) · 카카오 로그인 · 동의항목 «카카오톡 메시지 전송»은 Bumm님이 콘솔에서 직접 넣는다.
+  🟠 **함수는 배포할 때 비밀의 판 번호를 고정한다**(라이브 `RESEND_API_KEY`가 판 1로 고정된 것을 확인) — 키에 새 판을 넣으면 배포가 한 번 나가야 읽는다(문서만 바뀐 커밋은 배포를 건너뛰므로 빈 커밋).
+  판 번호는 `gcloud run services describe voicecinema --region asia-northeast3`의 `secretKeyRef.key`로 본다(값은 보이지 않는다)
   배포 계정은 그 두 비밀에 `secretmanager.viewer`만 있다(Poster Studio 11/5 결정 — admin을 주지 않는다), 실행 계정은 `secretAccessor`
 - **예약 함수 `feedbackMaintenance`**(매일 04:00 KST): 받은 지 90일 지난 의견을 지우고(500건씩) 카카오 토큰을 갱신한다. 둘은 따로 돌고 하나라도 실패하면 실행이 실패로 끝난다
 - **내보내기 · 지우기**: `node tools/feedback-export.mjs export <폴더>`(CSV · JSON) → `delete <json> --confirm`(그 json에 적힌 문서만). 결과 폴더를 저장소 안에 두지 않는다
