@@ -20,6 +20,7 @@ const TYPES = {
   '.wasm': 'application/wasm',
   '.mp4': 'video/mp4',
   '.avif': 'image/avif',
+  '.webp': 'image/webp', // 저장 대기 화면의 정지 그림(2026-11-09, waiting-v3)
   '.jpg': 'image/jpeg',
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
