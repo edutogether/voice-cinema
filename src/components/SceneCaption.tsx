@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { watchVideoTime } from '../lib/videoClock';
 import { STUDIO_COPY } from '../copy';
-import { ActionIcon } from './ActionIcon';
 import type { Genre } from '../genres';
 
 type VideoRef = React.RefObject<HTMLVideoElement | null>;
@@ -33,9 +32,10 @@ export function SceneCaption({ genre, videoRef, enabled }: { genre: Genre; video
 
 /**
  * 미리보기의 아이 대사 구간 문구(11/7 Bumm님 «멈추고 321은 빼고 … 문구만 주고 그냥 쭉 멈춤없이 지나가게 해서 아 ~ 하게»).
- * 영상을 멈추거나 어둡게 하지 않고 글자만 얹는다. 구간은 장르 값(genre.turn)이다.
+ * 영상은 멈추지 않는다. 화면을 살짝 어둡게 하고 큰 흰 글씨로 띄운다 — 녹음 때의 3·2·1 화면과 같은 모양이다
+ * (11/8 Bumm님 «빨간 둥근 막대는 없앱니다»). 구간은 장르 값(genre.turn)이다.
  */
 export function SceneTurnCue({ genre, videoRef, enabled }: { genre: Genre; videoRef: VideoRef; enabled: boolean }) {
   if (!useVideoWindow(videoRef, genre.turn.start, genre.turn.end, enabled)) return null;
-  return <div className="scene-turn-cue" role="status"><ActionIcon name="mic" /><span>{STUDIO_COPY.lineNow}</span></div>;
+  return <div className="scene-turn-cue" role="status"><strong>{STUDIO_COPY.lineNow}</strong></div>;
 }

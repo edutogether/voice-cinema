@@ -8,15 +8,17 @@ body:has(#result.active) { background:#fff; }
 .result-poster { position:relative; aspect-ratio:5 / 4; overflow:hidden; border-radius:16px; background:#191919; color:white; }
 .result-poster > .pic > img { position:absolute; width:100%; height:100%; inset:0; object-fit:cover; }
 .result-poster::after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(0,0,0,.25),transparent 28%,rgba(0,0,0,.06) 48%,rgba(0,0,0,.82)); }
-/* 왼쪽 위 InKY Film Festival, 오른쪽 위 인천광역시교육청 — 내려받는 영상에 구운 로고 띠(tools/video-logos.png)와 같은 모양이다.
-   교육청 로고 글자가 남색이라 머리글처럼 흰 바탕 위에 둔다(공식 파일 그대로, 색을 바꾸지 않는다). */
-.poster-logo { position:absolute; z-index:1; top:18px; display:flex; align-items:center; gap:7px; height:36px; padding:0 14px; box-sizing:border-box; border-radius:999px; background:#fff; color:#171717; box-shadow:0 2px 8px #00000047; font-size:.9375rem; line-height:1; letter-spacing:-.4px; white-space:nowrap; }
-.poster-logo-inky { left:18px; }
-.poster-logo-education { right:18px; }
+/* 왼쪽 위 InKY Film Festival, 오른쪽 위 인천광역시교육청 — 방송국 로고처럼 바탕 없이 흰 로고만 그림 위에 얹는다(11/8 Bumm님 «흰 둥근 바탕을 없앱니다»).
+   InKY는 공식 로고(`/brands/inky.png`, 흰 글씨판)의 카메라 + 머리글과 같은 «InKY Film Festival», 교육청은 공식 CI 벡터의 반전(흰색) 표기
+   (`/brands/education-white.svg`). 색 · 모양을 새로 만들지 않는다. 위쪽 그림자 띠가 밝은 장면에서도 흰 로고를 받친다. */
+.result-poster::before { content:''; position:absolute; z-index:1; inset:0 0 auto; height:96px; background:linear-gradient(180deg,rgba(0,0,0,.42),rgba(0,0,0,.18) 55%,transparent); pointer-events:none; }
+.poster-logo { position:absolute; z-index:2; top:22px; display:flex; align-items:center; gap:8px; height:28px; color:#fff; font-size:1rem; line-height:1; letter-spacing:-.4px; white-space:nowrap; text-shadow:0 1px 3px #00000059; }
+.poster-logo-inky { left:24px; }
+.poster-logo-education { right:24px; }
 .poster-logo strong { font-weight:800; }
-.poster-logo .festival-symbol { width:33px; height:24px; }
-.poster-logo .festival-symbol img { left:-28.5px; width:190.5px; }
-.poster-logo-education img { display:block; width:auto; height:25px; }
+.poster-logo .festival-symbol { width:36px; height:26px; }
+.poster-logo .festival-symbol img { left:-31.1px; width:207.8px; }
+.poster-logo-education img { display:block; width:auto; height:27px; }
 .poster-credit { position:absolute; z-index:1; bottom:36px; left:32px; right:32px; }
 .poster-credit p { margin:0 0 12px; font-size:.9375rem; line-height:1.6; }
 .poster-credit strong { display:block; font-size:clamp(36px,calc(3.5 * var(--vw)),56px); font-weight:750; line-height:1.2; letter-spacing:-.045em; }
@@ -84,17 +86,25 @@ body:has(#result.active) { background:#fff; }
  .result-details .result-eyebrow { margin-bottom:10px; }
  .result-symbol { display:none; }
 }
-/* 넓고 높은 창: 실제 크기 그대로 두면 위쪽에 작게 붙고 아래가 빈다(11/7) — 창 높이만큼 넓히고 세로로 가운데에 둔다. */
+/* 넓고 높은 창: 실제 크기 그대로 두면 위쪽에 작게 붙고 아래가 빈다(11/7) — 창 높이만큼 넓힌다. */
 @container app (min-width:901px) and (min-height:801px) {
- .result-card { width:min(calc(100% - 80px),max(1280px,calc(var(--app-h) * 1.3))); margin-block:auto; }
+ .result-card { width:min(calc(100% - 80px),max(1280px,calc(var(--app-h) * 1.3))); }
+}
+/* 세로로는 머리글과 바닥글 사이 가운데에 둔다(11/8 Bumm님 «아래쪽이 너무 비어 보입니다») — 바닥글의 위 여백도 auto라 남는 높이를 셋으로 나눠
+   카드 위에 1몫, 아래에 2몫이 갔다(2560×1369: 위 170px · 아래 340px). 남는 높이가 없으면 auto가 0이 되고, 그때의 위아래 간격은 안쪽 여백이 맡는다
+   (높이 701~800의 위 40px과 같은 값). 휴대폰(600 이하) · 낮은 창(700 이하)은 그대로 위에서 시작한다. */
+@container app (min-width:601px) and (min-height:701px) {
+ .result-card { margin-block:auto; padding-block:40px 24px; }
+ #result .workflow-footer { margin-top:0; }
 }
 /* 900 이하(패드 세로 768 등)는 그림 칸을 PC와 같은 비율로 두고 로고를 휴대폰 크기로 — 그림 칸을 .85로 줄였을 때 폭 318px에 두 로고(좌우 18px)가
    들어가지 않아 교육청 로고가 «InKY Film Festival» 끝을 가렸다(11/2 해상도 전수 · 라이브에도 있던 것). */
 @container app (max-width:900px) {
  .result-card { width:calc(100% - 48px); gap:28px; }
- .poster-logo { top:12px; height:30px; padding:0 11px; font-size:.8125rem; gap:5px; }
- .poster-logo-inky { left:12px; }
- .poster-logo-education { right:12px; }
+ .result-poster::before { height:72px; }
+ .poster-logo { top:14px; height:22px; font-size:.8125rem; gap:6px; }
+ .poster-logo-inky { left:16px; }
+ .poster-logo-education { right:16px; }
  .poster-logo .festival-symbol { width:28px; height:20px; }
  .poster-logo .festival-symbol img { left:-23.75px; width:158.75px; }
  .poster-logo-education img { height:21px; }

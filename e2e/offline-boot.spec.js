@@ -19,6 +19,7 @@ const REQUIRED = [
   '/icons/favicon-inky.png',
   '/brands/cgv.svg',
   '/brands/education.png',
+  '/brands/education-white.svg', // 완성 화면 그림 위 로고(11/8) — 설치판은 인터넷 없이 완성 화면까지 간다
   '/brands/inky.png',
   '/vendor/firebase/firebase-app-check.js',
   '/vendor/ffmpeg/index.js',

@@ -8,7 +8,7 @@ import { countdownLog, watchCountdown } from './countdown-watch.js';
 
 const UPLOAD_PATTERN = '**/voiceCinema/upload';
 const GENRE_NAMES = ['SF', '판타지', '애니메이션', '히어로', '스릴러', '드라마', '스포츠', '뮤지컬'];
-// 장면 5초 + 문구 0.6초 + 3·2·1 0.9초 + 녹음 3~3.5초 + 녹음 확인 + 이어 재생 5초 ≈ 15초. 느린 러너 여유를 둔다.
+// 장면 5초 + 문구 1초 + 3·2·1 3초 + 녹음 3~3.5초 + 녹음 확인 + 이어 재생 5초 ≈ 18초. 느린 러너 여유를 둔다.
 const TAKE_MS = 40000;
 
 /** mp4의 mvhd 상자에서 길이(초)를 읽는다 — 완성본이 정확히 10.0초인지 본다. */
@@ -71,7 +71,7 @@ test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
 
     await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'watching');
     await expect.poll(() => clip.evaluate(v => v.currentTime)).toBeGreaterThan(.5);
-    // 문구(0.6초)와 3·2·1(0.3초씩)은 짧아서, 나타난 뒤 검사가 글자를 따로 읽으러 가면 그 사이 사라질 수 있다 — 10/31 동시 16개로
+    // 문구와 3·2·1(1초씩, 10/31에는 0.6초 · 0.3초씩)은 짧아서, 나타난 뒤 검사가 글자를 따로 읽으러 가면 그 사이 사라질 수 있다 — 10/31 동시 16개로
     // 100번 돌렸을 때 2번, waitFor 뒤 textContent가 사라진 문구를 기다리다 시간 초과. 페이지 안 기록(countdown-watch.js)으로 본다.
     await expect(page.locator('#recpill')).toBeVisible({ timeout: 15000 });
     const log = await countdownLog(page);
@@ -282,18 +282,27 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     expect(errors.some(text => text.includes('[영상 합성 실패]')), '콘솔에 원문이 남지 않았다').toBe(true);
   });
 
-  test('다시 녹음을 누르면 초기 상태로 돌아간다', async ({ page }) => {
+  test('다시 녹음을 누르면 «장면 시작»을 누른 것처럼 곧바로 처음부터 장면 → 멈춤 → 3·2·1 → 녹음이 다시 돈다', async ({ page }) => {
+    test.setTimeout(120000); // 두 번 녹음한다(한 번에 약 18초)
+    // 11/8 Bumm님 «지금은 멈춘 화면으로 돌아간다 — 누르면 장면 시작처럼 바로 카운트다운» (그 전에는 준비 화면으로 돌아갔다)
+    await watchCountdown(page);
     await openStudio(page, '스포츠');
     await page.locator('#recBtn').click();
     await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
+    const firstTake = (await countdownLog(page)).length;
 
     await page.locator('button', { hasText: '다시 녹음' }).click();
-    await expect(page.locator('#recBtn')).toBeVisible();
     await expect(page.locator('#afterRow')).toBeHidden();
-    await expect(page.locator('#hint')).toContainText("'장면 시작'을 누르면");
-    // 마우스로 눌렀으면 «장면 시작»으로 초점을 옮기지 않는다 — 옮기면 빨간 초점 띠가 남는다(10/20, src/lib/inputModality.ts)
-    await expect(page.locator('#recBtn')).not.toBeFocused();
-    await expect(page.locator('#clip')).toHaveJSProperty('currentTime', 0);
+    await expect(page.locator('#studio')).toHaveAttribute('data-phase', /requesting|watching/);
+    await expect(page.locator('#previewBtn')).toHaveCount(0);
+    await expect(page.locator('#recBtn')).toBeDisabled();
+    // 장면은 처음부터 다시 흐른다
+    await expect.poll(() => page.locator('#clip').evaluate(v => !v.paused && v.currentTime > .3 && v.currentTime < 4.5)).toBe(true);
+    await expect(page.locator('#recpill')).toBeVisible({ timeout: 20000 });
+    expect((await countdownLog(page)).slice(firstTake).map((e) => e.key)).toEqual(['cue', '3초 뒤 녹음 시작', '2초 뒤 녹음 시작', '1초 뒤 녹음 시작', 'recording']);
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
+    // 마우스로 눌렀으면 다음 단추로 초점을 옮기지 않는다 — 옮기면 빨간 초점 띠가 남는다(10/20, src/lib/inputModality.ts)
+    await expect(page.locator('#saveBtn')).not.toBeFocused();
   });
 });
 

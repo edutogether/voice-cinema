@@ -463,14 +463,22 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
   }
   const { page, home } = opened;
   const dir = path.join(out, FOLDER[kind], tag);
-  // 짧게 지나가는 화면(«이제 당신의 차례» 0.6초 · 숫자 0.3초)을 찍을 수 있게 그때만 늘린다. 합성 실패는 원판 요청을 페이지 안에서 실패시킨다(<video>는 fetch를 쓰지 않는다).
+  // 짧게 지나가는 화면(«이제 당신의 차례» · 숫자 3·2·1, 1초씩)을 찍을 수 있게 그때만 페이지 시계를 세 배로 늦춘다. 앱은 문구 · 숫자를 한 기준 시각에서 재므로(useDubbing.ts의 waitUntil)
+  // 타이머만 늘리면 다음 숫자가 건너뛰어진다 — performance.now와 setTimeout을 함께 늦춘다. 합성 실패는 원판 요청을 페이지 안에서 실패시킨다(<video>는 fetch를 쓰지 않는다).
   await page.addInitScript(() => {
     let fit = '', flips = 0;
     window.__fitFlips = () => flips;
     window.addEventListener('resize', () => { flips = 0; });
     window.setInterval(() => { const style = document.documentElement?.style; const now = style ? style.getPropertyValue('--fit') + ' ' + style.getPropertyValue('--app-w') : ''; if (now.trim() && now !== fit) { fit = now; flips++; } }, 50);
+    const SLOW = 3;
+    const clock = window.performance;
+    const realNow = clock.now.bind(clock);
+    let baseReal = 0, baseVirtual = 0, rate = 1, stretched = false;
+    clock.now = () => baseVirtual + (realNow() - baseReal) * rate;
+    Object.defineProperty(window, '__stretch', { configurable: true, get: () => stretched,
+      set: (on) => { baseVirtual = clock.now(); baseReal = realNow(); rate = on ? 1 / SLOW : 1; stretched = !!on; } });
     const realTimeout = window.setTimeout.bind(window);
-    window.setTimeout = (fn, ms, ...rest) => realTimeout(fn, window.__stretch && ms === 600 ? 2500 : window.__stretch && ms === 300 ? 1600 : ms, ...rest);
+    window.setTimeout = (fn, ms, ...rest) => realTimeout(fn, (Number(ms) || 0) / rate, ...rest);
     const realFetch = window.fetch.bind(window);
     window.fetch = (input, init) => { const u = String((input && input.url) || input); if (window.__failFinal && u.includes('/clips/final/')) return Promise.reject(new Error('시험용 합성 실패')); return realFetch(input, init); };
     const media = navigator.mediaDevices, gum = media.getUserMedia.bind(media);
@@ -561,9 +569,10 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
     await page.locator('#overlay').waitFor({ timeout: 8000 });
     await delay(400);
     await shot('10-녹음실-숫자');
+    // 녹음 시간(3.0~3.5초)까지 늦추지 않게 숫자를 찍은 뒤 곧바로 되돌린다
+    await page.evaluate(() => { window.__stretch = false; });
     await page.locator('#recpill').waitFor({ timeout: 12000 });
     await shot('11-녹음실-녹음중');
-    await page.evaluate(() => { window.__stretch = false; });
     await phase('continuing');
     await delay(400);
     await shot('12-녹음실-이어보기');

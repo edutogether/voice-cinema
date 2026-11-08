@@ -99,6 +99,8 @@ body:has(#home.active) { background:#fff; }
 .download-link:focus-visible { outline:2px solid #ed3124; outline-offset:2px; }
 @media (pointer:coarse) { .download-link { min-height:44px; padding:0 6px 0 12px; margin:-10px -6px -10px -12px; } }
 html[data-fit="none"] .download-link { display:none; }
+/* 설치판 안에서 같은 자리에 두는 표시(11/8 Bumm님) — Poster Studio 설치판의 «설치판 · AI 없이» 표시와 같은 값(InKY 노랑 #FFE700 바탕) */
+.installer-badge { flex-shrink:0; padding:0 9px; border-radius:999px; background:#ffe700; color:#2b2300; font-size:12px; font-weight:700; line-height:20px; white-space:nowrap; }
 /* 진행률이 사라져도 카드 높이가 바뀌지 않게 헤더 아래에 독립 표시한다. */
 .enginebar { display:none; position:absolute; right:160px; top:82px; color:#626262; font-size:.6875rem; line-height:1.5; }
 .enginebar.show { display:block; }

@@ -38,7 +38,13 @@ for (const [width, height] of [[1440, 900], [768, 1024], [390, 664]]) {
 
     await expect(poster.locator('.poster-logo-inky')).toContainText('InKY Film Festival');
     await expect(poster.locator('.poster-logo-inky img')).toHaveAttribute('src', '/brands/inky.png');
-    await expect(poster.locator('.poster-logo-education img')).toHaveAttribute('src', '/brands/education.png');
+    await expect(poster.locator('.poster-logo-education img')).toHaveAttribute('src', '/brands/education-white.svg');
+    // 두 로고는 흰 둥근 바탕 없이 흰 로고만 얹는다(11/8 Bumm님 «방송국 로고처럼») — 교육청은 공식 CI를 모양 그대로 흰색으로 반전한 벡터
+    for (const logo of ['.poster-logo-inky', '.poster-logo-education']) {
+      expect(await poster.locator(logo).evaluate((el) => getComputedStyle(el).backgroundColor), logo).toBe('rgba(0, 0, 0, 0)');
+    }
+    expect(await poster.locator('.poster-logo-inky').evaluate((el) => getComputedStyle(el).color)).toBe('rgb(255, 255, 255)');
+    expect(await poster.locator('.poster-logo-education img').evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
     await expect(poster).not.toContainText('Voice');
     await expect(poster.locator('.poster-credit strong')).toHaveText(title);
     await expect(poster.locator('.poster-credit > span')).toHaveText('SF');
@@ -70,6 +76,19 @@ for (const [width, height] of [[1440, 900], [768, 1024], [390, 664]]) {
       });
       expect((await home.boundingBox()).width).toBeLessThan(details.width * .6);
       expect(Math.abs(after.height - details.content)).toBeLessThanOrEqual(40);
+    }
+    if (width > 600 && height > 700) {
+      // 그림 · 글 덩어리는 머리글과 바닥글 글자 사이 세로 가운데에 있다 — 카드 위 1몫 · 아래 2몫으로 나뉘어 아래가 비었다
+      // (11/8 Bumm님 «아래쪽이 너무 비어 보입니다», 2560×1369에서 위 170 · 아래 340px). 휴대폰 · 낮은 창은 위에서 시작한다
+      const gap = await page.evaluate(() => {
+        const r = (sel) => document.querySelector(sel).getBoundingClientRect();
+        const footer = document.querySelector('#result .workflow-footer');
+        const top = Math.min(r('#result .result-poster').top, r('#result .result-details').top);
+        const bottom = Math.max(r('#result .result-poster').bottom, r('#result .result-details').bottom);
+        return { above: top - r('#result .festival-header').bottom, below: footer.getBoundingClientRect().top + parseFloat(getComputedStyle(footer).paddingTop) - bottom };
+      });
+      expect(gap.above, '머리글 아래 간격').toBeGreaterThan(20);
+      expect(Math.abs(gap.above - gap.below), `위 ${gap.above} · 아래 ${gap.below}`).toBeLessThanOrEqual(12);
     }
   });
 }

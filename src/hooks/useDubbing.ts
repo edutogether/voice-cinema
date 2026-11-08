@@ -5,20 +5,20 @@ import { decodeTake, engineReady, processVoice, type VoicePlan } from '../lib/ff
 import { stopVideoAt, watchVideoTime } from '../lib/videoClock';
 import { checkTake, liveDecision, rms, type Verdict } from '../lib/voiceCheck';
 
-// 장면 더빙 2.0 흐름(대표님 10/11 확정, app-plan §1 — 녹음 시간·안내 박자는 10/24 대표님 지시로 고침):
-//   장면 시작 → 0~5.0초 재생(상대 대사 자막) → 5.0초에서 멈춤 → «이제 당신의 차례입니다 !»
-//   → 3·2·1 «지금 바로 당신의 목소리를 들려주세요 !» → 녹음기가 실제로 켜진 뒤 «녹음 중» → 3.0초(말이 이어지면 3.5초까지)
-//   → 녹음 검사 → 같은 영상을 5.0초부터 이어 재생하며 다듬은 목소리를 5.0초에 맞춰 들려줌 → 다시 녹음·저장.
+// 장면 더빙 2.0 흐름(대표님 10/11 확정, app-plan §1 — 녹음 시간은 10/24, 안내 박자는 11/8 Bumm님 지시로 고침):
+//   장면 시작 → 0~5.0초 재생(상대 대사 자막) → 5.0초에서 멈춤 → «이제 당신의 차례입니다 !» 1초
+//   → 3·2·1 1초씩 «지금 바로 당신의 목소리를 들려주세요 !» → 녹음기가 실제로 켜진 뒤 «녹음 중» → 3.0초(말이 이어지면 3.5초까지)
+//   → 녹음 검사 → 같은 영상을 5.0초부터 이어 재생하며 다듬은 목소리를 5.0초에 맞춰 들려줌 → 다시 녹음(곧바로 장면 시작과 같은 흐름)·저장.
 // 녹음실에 들어가면 장면 전체가 소리와 함께 저절로 흐른다(미리보기, 11/7 Bumm님 — 녹음·합성 없이 보기만, 멈춤·3·2·1 없이 대사 구간 문구만, 끝나거나 멈추면 준비 상태로).
 // 다시 보고 싶으면 작은 «미리보기» 단추로 같은 재생을 한다(10/20 대표님).
 // «다시 듣기»는 10/20 대표님 지시로 없앴다(이어 재생이 이미 내 목소리가 들어간 장면을 들려준다).
 // 단계(phase) 하나가 화면 전체를 결정하고, 정리는 effect cleanup이 맡는다.
 export type Phase = 'idle' | 'previewing' | 'requesting' | 'watching' | 'cue' | 'countdown' | 'recording' | 'checking' | 'continuing' | 'recorded';
 
-/** 5.0초 멈춤 뒤 «이제 당신의 차례입니다 !»를 보여 주는 시간 — 절정에서 녹음까지 1.5초(10/24 대표님, 전에는 3.9초) */
-export const CUE_MS = 600;
+/** 5.0초 멈춤 뒤 «이제 당신의 차례입니다 !»를 보여 주는 시간 — 문구 1초 + 숫자 셋 1초씩, 절정에서 녹음까지 4초(11/8 Bumm님 «정확히 1초에 한 번씩», 10/24에는 1.5초) */
+export const CUE_MS = 1000;
 /** 3·2·1 숫자 하나의 시간 */
-export const COUNT_MS = 300;
+export const COUNT_MS = 1000;
 /** 녹음기가 이 안에 켜지지 않으면 녹음을 시작하지 못한 것으로 본다 */
 const RECORDER_START_MS = 2000;
 /** 녹음 중 음량을 재는 간격(src/lib/voiceCheck.ts의 한 칸과 같다) */
@@ -78,6 +78,8 @@ function resetVideo(v: HTMLVideoElement | null): void {
 }
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+/** 정해 둔 시각까지 기다린다 — 문구 · 숫자를 한 기준 시각에서 재어, 타이머가 조금씩 늦어도 쌓이지 않는다 */
+const waitUntil = (at: number) => wait(Math.max(0, at - performance.now()));
 const within = <T,>(promise: Promise<T>, ms: number) => Promise.race([
   promise, new Promise<never>((_, reject) => setTimeout(() => reject(new Error('시간 초과')), ms)),
 ]);
@@ -403,8 +405,11 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
 
   const startTake = useCallback(() => {
     // 미리보기 중에 «장면 시작»을 누르면 미리보기를 접고 바로 시작한다(아래 resetVideo의 멈춤은 미리보기 쪽에서 지난 실행으로 무시된다).
-    if (phase !== 'idle' && phase !== 'previewing') return;
+    // 녹음 뒤 «다시 녹음»도 이 흐름을 바로 시작한다(11/8 Bumm님 — 준비 화면에 한 번 멈췄다 다시 누르게 하지 않는다).
+    if (phase !== 'idle' && phase !== 'previewing' && phase !== 'recorded') return;
     const myRun = ++runRef.current;
+    stopClock();
+    stopVoice();
     const stale = () => myRun !== runRef.current;
     const v = videoRef.current;
     if (!v) return;
@@ -474,7 +479,8 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
       cancelClockRef.current = null;
       if (stale()) return;
 
-      // 2) 멈춤 → «이제 당신의 차례입니다 !» → 3·2·1. 녹음기는 지금 만들어 두어 숫자가 끝나자마자 켠다.
+      // 2) 멈춤 → «이제 당신의 차례입니다 !» 1초 → 3·2·1 1초씩. 녹음기는 지금 만들어 두어 숫자가 끝나자마자 켠다.
+      const cueAt = performance.now();
       setHint(HINT.cue);
       setPhase('cue');
       if (stream && ctx) {
@@ -485,25 +491,26 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
           return;
         }
       }
-      await wait(CUE_MS);
+      await waitUntil(cueAt + CUE_MS);
       if (stale()) return;
       setHint(HINT.countdown);
       setPhase('countdown');
       for (let n = 3; n > 0; n--) {
         setCountdown(n);
-        await wait(COUNT_MS);
+        await waitUntil(cueAt + CUE_MS + (4 - n) * COUNT_MS);
         if (stale()) return;
       }
-      setCountdown(0);
 
       // 3) 녹음 — 영상은 5.0초 정지 화면 그대로, 소리 없음(스피커 소리가 마이크로 들어가 겹치지 않게).
       //    «녹음 중»은 녹음기가 실제로 켜진 뒤에 보인다 — 신호를 보고 바로 외친 첫 음절이 빠지지 않게.
+      //    숫자 «1»의 어두운 막은 «녹음 중»과 같은 때 걷는다 — 먼저 걷으면 녹음기가 켜지는 동안(수십 ms) 밝은 화면이 한 번 비친다.
       const take = takeRef.current;
       if (take && !(await take.start())) {
         if (!stale()) fail(HINT.recordFailed, { mic: true });
         return;
       }
       if (stale()) return;
+      setCountdown(0);
       setRecordLeft(1);
       setHint(sampleMode ? '샘플 체험이라 목소리는 녹음하지 않아요.' : HINT.recording);
       setPhase('recording');
@@ -568,7 +575,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
       // 다듬은 목소리가 아직 없으면 처리 전 녹음에 같은 보정 음량만 걸어 들려준다(완성본은 저장할 때 다듬은 소리다).
       finishTake(preview ? { buffer: preview, gain: 1 } : { buffer: decoded, gain: 10 ** (plan.gainDb / 20) }, check.verdict, myRun);
     })();
-  }, [phase, videoRef, sampleMode, audioContext, stopClock, finishTake]);
+  }, [phase, videoRef, sampleMode, audioContext, stopClock, stopVoice, finishTake]);
 
   /**
    * 녹음 없이 장면 전체를 소리와 함께 본다(10/20 대표님, 11/7부터 들어가면 저절로). 끝나거나 멈추면(브라우저가 멈춘 경우도) 준비 상태로 돌아간다.

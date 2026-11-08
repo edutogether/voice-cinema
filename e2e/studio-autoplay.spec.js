@@ -4,6 +4,7 @@ import { watchCountdown, countdownLog } from './countdown-watch.js';
 
 // 녹음실 자동 재생(11/7 Bumm님 «누르고 들어가면 바로 영상 재생 … 소리도 나오고 … 멈추고 321은 빼고 … 문구만 주고 그냥 쭉 멈춤없이 지나가게 해서 아 ~ 하게»):
 // «더빙하기»를 누르면 장면이 처음부터 끝까지 소리와 함께 흐르고, 아이 대사 구간에는 문구만 나온다. 끝나면 준비 화면이다. «장면 시작» 뒤의 녹음은 그대로 멈춤·3·2·1이다.
+// 대사 구간 문구는 3·2·1과 같은 모양이다 — 영상을 살짝 어둡게 하고 큰 흰 글씨(11/8 Bumm님, 그 전에는 빨간 둥근 막대).
 // 소리는 브라우저가 «누름 안에서 부른 play()»에만 허용하므로(아이폰이 가장 엄격하다) 그 순서를 페이지 안에서 기록해 본다.
 const CUE = '당신의 목소리가 들어갈 자리예요 !';
 
@@ -44,7 +45,7 @@ const enter = async (page, name = 'SF') => {
   await page.getByRole('button', { name: `${name} 더빙 시작`, exact: true }).click();
 };
 
-test('누르면 그 누름 안에서 소리를 켠 채 재생을 부르고, 멈춤·3·2·1·어두운 막 없이 끝까지 흐른 뒤 준비 화면으로 돌아온다', async ({ page }) => {
+test('누르면 그 누름 안에서 소리를 켠 채 재생을 부르고, 멈춤·3·2·1·멈춤 화면의 막 없이 끝까지 흐른 뒤 준비 화면으로 돌아온다', async ({ page }) => {
   test.setTimeout(45000);
   await recordFrames(page);
   await enter(page);
@@ -84,7 +85,7 @@ test('누르면 그 누름 안에서 소리를 켠 채 재생을 부르고, 멈�
   // 5.0초에서 멈추지 않았다 — 앞뒤 프레임 시각이 끊기지 않는다
   const around = playing.filter((f) => f.time > 4.8 && f.time < 5.5);
   expect(around.length).toBeGreaterThan(5);
-  // 3·2·1·문구·녹음 표시·어두운 막이 한 번도 나오지 않았다
+  // 3·2·1·멈춤 문구·녹음 표시·멈춤 화면의 막(.studio-pause-shade)이 한 번도 나오지 않았다 — 대사 구간의 살짝 어두운 막은 문구 자신의 것이다(11/8)
   expect(frames.filter((f) => f.turnOverlay)).toEqual([]);
   expect(frames.filter((f) => f.shade > .01)).toEqual([]);
   // 문구는 대사 구간(5.0~8.5초)에만 나온다
@@ -104,18 +105,62 @@ test('누르면 그 누름 안에서 소리를 켠 채 재생을 부르고, 멈�
   await expect(page.locator('#previewBtn')).toHaveText('미리보기');
 });
 
-test('화면 가운데 큰 재생 단추는 없고, 주 단추는 «장면 시작» 하나이며 «미리보기»는 그보다 작다', async ({ page }) => {
+// «미리보기 멈춤»과 «장면 시작»의 크기가 달랐다(11/8 Bumm님 «미리보기 단추를 장면 시작 단추와 같은 크기로») — 재생 중 · 준비 화면 모두, PC · 휴대폰 모두 같다
+for (const [width, height] of [[1366, 768], [2560, 1305], [390, 844], [360, 640]]) {
+  test(`${width}×${height}: 화면 가운데 큰 재생 단추는 없고, «미리보기 멈춤»·«미리보기»는 «장면 시작»과 같은 크기다`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await enter(page);
+    await expect(page.locator('#screenPlaybackBtn')).toHaveCount(0);
+    await expect(page.locator('.studio-screen-playback')).toHaveCount(0);
+    const sizes = async () => {
+      const [preview, start] = await Promise.all([page.locator('#previewBtn').boundingBox(), page.locator('#recBtn').boundingBox()]);
+      return { preview, start, text: await page.locator('#previewBtn').textContent() };
+    };
+    await expect(page.locator('#previewBtn')).toHaveText('미리보기 멈춤');
+    const playing = await sizes();
+    await page.locator('#previewBtn').click();
+    await expect(phase(page)).toHaveAttribute('data-phase', 'idle');
+    await expect(page.locator('#screenPlaybackBtn')).toHaveCount(0);
+    const idle = await sizes();
+    for (const { preview, start, text } of [playing, idle]) {
+      expect(Math.abs(preview.width - start.width), text).toBeLessThanOrEqual(1);
+      expect(Math.abs(preview.height - start.height), text).toBeLessThanOrEqual(1);
+      expect(preview.height).toBeGreaterThanOrEqual(44);
+    }
+    // 글자가 바뀌어도(«미리보기 멈춤» ↔ «미리보기») 두 단추 모두 제자리다
+    expect(idle.preview).toEqual(playing.preview);
+    expect(idle.start).toEqual(playing.start);
+  });
+}
+
+test('대사 구간 문구는 3·2·1의 «이제 당신의 차례입니다 !»와 같은 모양이다 — 영상 전체를 살짝 어둡게, 큰 흰 글씨, 빨간 둥근 막대 없음', async ({ page }) => {
+  test.setTimeout(45000);
   await page.setViewportSize({ width: 1366, height: 768 });
+  await watchCountdown(page);
   await enter(page);
-  await expect(page.locator('#screenPlaybackBtn')).toHaveCount(0);
-  await expect(page.locator('.studio-screen-playback')).toHaveCount(0);
-  await page.locator('#previewBtn').click();
-  await expect(phase(page)).toHaveAttribute('data-phase', 'idle');
-  await expect(page.locator('#screenPlaybackBtn')).toHaveCount(0);
-  const [small, main] = await Promise.all([page.locator('#previewBtn').boundingBox(), page.locator('#recBtn').boundingBox()]);
-  expect(small.height).toBeGreaterThanOrEqual(44);
-  expect(small.height).toBeLessThan(main.height);
-  expect(small.width).toBeLessThan(main.width);
+  await expect(phase(page)).toHaveAttribute('data-phase', 'previewing');
+  await expect.poll(async () => (await state(page)).time).toBeGreaterThan(.2);
+  await page.locator('#clip').evaluate((v) => { v.currentTime = 5.2; });
+  const cue = page.locator('.scene-turn-cue');
+  await expect(cue).toHaveText(CUE);
+  const look = await cue.evaluate((el) => {
+    const strong = el.querySelector('strong');
+    const r = el.getBoundingClientRect();
+    const f = document.querySelector('.studio-video-frame').getBoundingClientRect();
+    return { background: getComputedStyle(el).backgroundColor, strongBackground: getComputedStyle(strong).backgroundColor,
+      color: getComputedStyle(strong).color, size: parseFloat(getComputedStyle(strong).fontSize), icons: el.querySelectorAll('svg').length,
+      covers: Math.abs(r.left - f.left) < 1 && Math.abs(r.right - f.right) < 1 && Math.abs(r.top - f.top) < 1 && Math.abs(r.bottom - f.bottom) < 1 };
+  });
+  expect(look).toMatchObject({ strongBackground: 'rgba(0, 0, 0, 0)', color: 'rgb(255, 255, 255)', icons: 0, covers: true });
+  const alpha = (rgba) => Number((rgba.match(/rgba\(0, 0, 0, ([\d.]+)\)/) || [])[1] ?? NaN);
+  expect(alpha(look.background)).toBeGreaterThan(.2);
+  expect(alpha(look.background)).toBeLessThan(.6);
+  // 녹음 흐름의 «이제 당신의 차례입니다 !»와 글자 크기가 같다
+  await page.locator('#recBtn').click();
+  await expect(page.locator('#recpill')).toBeVisible({ timeout: 20000 });
+  const turn = (await countdownLog(page)).find((e) => e.key === 'cue');
+  expect(look.size).toBe(turn.size);
+  expect(alpha(turn.background)).toBeGreaterThanOrEqual(alpha(look.background));
 });
 
 for (const [id, name] of [['sf', 'SF'], ['fantasy', '판타지'], ['animation', '애니메이션'], ['hero', '히어로'], ['thriller', '스릴러'], ['drama', '드라마'], ['sports', '스포츠'], ['musical', '뮤지컬']]) {
@@ -149,7 +194,7 @@ test('재생 중에 «장면 시작»을 누르면 재생을 끊고 처음부터
   await expect(page.locator('.scene-turn-cue')).toHaveCount(0);
   await expect(phase(page)).toHaveAttribute('data-phase', 'watching');
   expect((await state(page)).time).toBeLessThan(1);
-  await expect(page.locator('#recpill')).toBeVisible({ timeout: 12000 });
+  await expect(page.locator('#recpill')).toBeVisible({ timeout: 20000 });
   const keys = (await countdownLog(page)).map((entry) => entry.key);
   expect(keys[0]).toBe('cue');
   expect(keys.filter((key) => /초 뒤 녹음 시작/.test(key)).length).toBe(3);
@@ -159,7 +204,7 @@ test('재생 중에 «장면 시작»을 누르면 재생을 끊고 처음부터
   await expect(page.locator('.scene-turn-cue')).toHaveCount(0);
 });
 
-test('다시 녹음이나 저장 뒤 돌아올 때는 저절로 재생하지 않고, 새로 들어가면 다시 재생한다', async ({ page }) => {
+test('다시 녹음은 «장면 시작»처럼 곧바로 처음부터 녹음 흐름이 돌고, 저장 뒤 돌아올 때는 저절로 재생하지 않으며, 새로 들어가면 다시 재생한다', async ({ page }) => {
   test.setTimeout(120000);
   await page.route('**/voiceCinema/upload', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, url: 'https://storage.googleapis.com/fake/dub_e2e.mp4' }) }));
   await recordFrames(page);
@@ -168,14 +213,15 @@ test('다시 녹음이나 저장 뒤 돌아올 때는 저절로 재생하지 않
   await page.locator('#recBtn').click();
   await expect(page.locator('#afterRow')).toBeVisible({ timeout: 40000 });
 
+  // «다시 녹음»(11/8 Bumm님 «멈춘 화면으로 돌아간다 — 누르면 장면 시작처럼 바로 카운트다운»): 준비 화면에 서지 않고 처음부터 장면 → 멈춤 → 3·2·1 → 녹음
+  const beforeRetry = await plays();
   await page.locator('#resetBtn').click();
-  await expect(phase(page)).toHaveAttribute('data-phase', 'idle');
-  const afterRetry = await plays();
-  await page.waitForTimeout(800);
-  expect(await plays()).toBe(afterRetry);
-  expect(await state(page)).toMatchObject({ paused: true, muted: true, time: 0 });
-
-  await page.locator('#recBtn').click();
+  await expect(phase(page)).toHaveAttribute('data-phase', /requesting|watching/);
+  await expect(page.locator('#afterRow')).toHaveCount(0);
+  await expect.poll(plays).toBeGreaterThan(beforeRetry);
+  await expect.poll(async () => (await state(page)).time).toBeGreaterThan(.3);
+  expect((await state(page)).paused).toBe(false);
+  await page.locator('#cue').waitFor({ timeout: 10000 });
   await expect(page.locator('#afterRow')).toBeVisible({ timeout: 40000 });
   await page.locator('#saveBtn').click();
   await expect(page.locator('#result')).toHaveClass(/active/);
