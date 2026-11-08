@@ -1,8 +1,10 @@
 // 메일 시험판(11/8) — 빌드한 exe로 끊김 → 입력 → 확인 → 대기 → 복구 → «보낸 것으로 처리» → 삭제를 끝까지 돌린다.
+// 끊김은 Windows가 연결 없음을 알리는 것과 같은 상태(navigator.onLine이 거짓)를 흉내 낸다 — 화면의 «인터넷 끊김 시험» 표시는 11/8 Bumm님 지시로 없앴다.
+// 흉내 중에도 설치판 안의 파일(화면 · 엔진 · 장면)은 그대로 뜬다(11/8 확인).
 // 업로드는 앱의 세션에서 답하고, 닿지 않는 프록시로 그 밖의 바깥 요청을 모두 막는다 — 시험에서 운영 저장소로 나가는 것이 없다.
 import { test, expect, _electron } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installSyntheticMic, recordOnce } from '../../e2e/synthetic-mic.js';
@@ -55,6 +57,9 @@ async function routeUpload(app, reply) {
 const uploads = (app) => app.evaluate(() => globalThis.__uploads.map((text) => JSON.parse(text)));
 const setReply = (app, reply) => app.evaluate((_e, r) => { globalThis.__reply = r; }, reply);
 
+/** 인터넷 끊김 흉내 — navigator.onLine과 online/offline 이벤트가 실제 끊김과 같다 */
+const offline = (app, on) => app.context().setOffline(on);
+
 /** 시험용 마이크를 깔고 다시 연 뒤 장면 녹음실로 */
 async function openStudio(page, name) {
   await installSyntheticMic(page, [{ delay: 0.3, dur: 1.5 }]);
@@ -69,12 +74,12 @@ async function pickScene(page, name) {
   await expect(page.locator('#chipName')).toHaveText(name);
   await expect(page.locator('#clip')).toHaveJSProperty('readyState', 4, { timeout: 20000 });
 }
-/** 끊긴 상태로 녹음 · 저장해 입력 화면까지 */
-async function recordToEntry(page) {
+/** 녹음 · 저장해 입력 화면까지(끊겨 있으면 곧바로, 올리지 못하면 세 번 시도한 뒤) */
+async function recordToEntry(page, timeout = 90000) {
   await expect(page.locator('#engineProg')).toHaveText('100%', { timeout: 30000 });
   expect(await recordOnce(page)).toMatchObject({ phase: 'recorded' });
   await page.locator('#saveBtn').click();
-  await expect(page.locator('#mailName')).toBeVisible({ timeout: 90000 });
+  await expect(page.locator('#mailName')).toBeVisible({ timeout });
 }
 async function queue(page, name, email) {
   await page.locator('#mailName').fill(name);
@@ -82,6 +87,11 @@ async function queue(page, name, email) {
   await page.locator('#mailNextBtn').click();
   await page.locator('#mailSendBtn').click();
   await expect(page.getByRole('heading', { name: '인터넷이 돌아오면 보내 드릴게요' })).toBeVisible();
+}
+/** 대기 화면에서 «다른 더빙 하기»로 첫 화면에 — 메일 대기 단추는 첫 화면에만 있다 */
+async function home(page) {
+  await page.locator('#doneHomeBtn').click();
+  await expect(page.locator('#home')).toHaveClass(/active/);
 }
 const queueFiles = (profile) => readdirSync(path.join(profile, 'mail-queue')).sort();
 
@@ -165,60 +175,78 @@ async function sizeWindow(app, page, w, h) {
   await expect.poll(async () => Math.abs(await page.evaluate(() => window.innerWidth) - w)).toBeLessThanOrEqual(4);
 }
 
-/** 입력 화면이 그 창에 들어가는가: 가로 넘침 없음 · 단추가 화면 안 · 시험판 표시가 단추를 가리지 않음 */
-/** 시험판 표시가 지금 화면의 글 · 단추 · 칸을 가리지 않는다. */
-async function expectBarClear(page) {
-  // 창 크기를 바꾼 직후에는 화면 맞춤이 한두 프레임 뒤에 자리 잡는다 — 자리 잡은 뒤에도 가리면 실패한다
+/**
+ * 첫 화면 오른쪽 위 한 줄: 노란 «인터넷 없이 쓰는 설치판» · (기다리는 메일이 있으면) «메일 대기» 단추 · 방침 링크가 차례로 겹치지 않고 같은 높이에 있다.
+ * 이 줄 말고는 시험판 표시가 화면 어디에도 없다(11/8 Bumm님 «노란 표시 하나만»).
+ */
+async function expectHeaderRow(page, chip) {
+  await expect(page.locator('#mailBar')).toHaveCount(0);
+  await expect(page.locator('.installer-badge')).toHaveText('인터넷 없이 쓰는 설치판');
+  await expect(page.locator('#mailQueueChip')).toHaveCount(chip ? 1 : 0);
+  // 창 크기를 바꾼 직후에는 화면 맞춤이 한두 프레임 뒤에 자리 잡는다 — 자리 잡은 뒤에도 어긋나면 실패한다
   await expect.poll(() => page.evaluate(() => {
-    const bar = document.getElementById('mailBar').getBoundingClientRect();
-    const list = document.querySelectorAll('#home.active h1, #home.active h2, #home.active button, #home.active a, #result.active h2, #result.active p, #result.active button, #result.active input, #result.active label, .poster-logo, .festival-header *, .privacylink');
-    return [...list].filter((el) => {
-      if (el.closest('#mailBar')) return false;
-      const r = el.getBoundingClientRect();
-      return r.width > 0 && r.height > 0 && r.left < bar.right && r.right > bar.left && r.top < bar.bottom && r.bottom > bar.top;
-    }).map((el) => el.id || el.className || el.tagName);
-  }), '시험판 표시가 가리는 것').toEqual([]);
+    const row = ['.installer-badge', '#mailQueueChip', '.privacylink'].map((s) => document.querySelector(s)).filter(Boolean).map((el) => el.getBoundingClientRect());
+    const problems = [];
+    row.forEach((r, i) => {
+      if (r.left < 0 || r.right > window.innerWidth) problems.push(`${i} 화면 밖`);
+      if (i && r.left < row[i - 1].right + 4) problems.push(`${i} 겹침`);
+      if (i && Math.abs((r.top + r.bottom) / 2 - (row[0].top + row[0].bottom) / 2) > 2) problems.push(`${i} 높이 어긋남`);
+    });
+    return problems;
+  }), '첫 화면 머리글 줄').toEqual([]);
 }
 
+/** 녹음 · 미리보기 · 저장 화면에는 노란 표시도 메일 대기 단추도 보이지 않는다 — 첫 화면은 숨은 채 문서에 남으므로 개수가 아니라 보이는 것을 센다 */
+async function expectNoBadge(page) {
+  await expect(page.locator('.installer-badge:visible')).toHaveCount(0);
+  await expect(page.locator('#mailQueueChip:visible')).toHaveCount(0);
+}
+
+/** 입력 화면이 그 창에 들어가는가: 가로 넘침 없음 · 칸과 단추가 화면 안 · 칸 폭은 적을 글자에 맞춰 이름 < 주소 ≤ 판 안쪽 */
 async function expectFormFits(page) {
   // 창 크기가 바뀐 뒤 스크롤 막대 · 화면 맞춤이 자리 잡을 때까지 기다린다(그 뒤에도 넘치면 실패)
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), '가로 넘침').toBe(0);
   const m = await page.evaluate(() => {
     const rect = (el) => el.getBoundingClientRect();
-    const bar = rect(document.querySelector('#mailBar'));
     return {
       hscroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       inner: [window.innerWidth, window.innerHeight],
-      controls: ['#mailName', '#mailAddress', '#mailNextBtn', '#mailSaveHereBtn'].map((s) => {
+      controls: ['#mailName', '#mailAddress', '#mailNextBtn'].map((s) => {
         const r = rect(document.querySelector(s));
-        return { s, inside: r.left >= 0 && r.right <= window.innerWidth && r.bottom <= window.innerHeight, underBar: r.left < bar.right && r.right > bar.left && r.top < bar.bottom && r.bottom > bar.top };
+        return { s, inside: r.left >= 0 && r.right <= window.innerWidth && r.bottom <= window.innerHeight };
       }),
+      widths: ['#mailName', '#mailAddress'].map((s) => rect(document.querySelector(s)).width),
+      panel: (() => { const form = document.querySelector('.mail-form'); const style = window.getComputedStyle(form); return rect(form).width * (1 - (parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)) / form.offsetWidth); })(),
     };
   });
   expect(m.hscroll, `가로 넘침 ${m.inner}`).toBe(0);
-  for (const c of m.controls) expect(c, `${m.inner}`).toMatchObject({ inside: true, underBar: false });
+  for (const c of m.controls) expect(c, `${m.inner}`).toMatchObject({ inside: true });
+  expect(m.widths[0], `이름 칸이 주소 칸보다 좁다 ${m.inner}`).toBeLessThan(m.widths[1]);
+  expect(m.widths[1], `주소 칸은 판 안쪽 폭을 넘지 않는다 ${m.inner}`).toBeLessThanOrEqual(m.panel + 1);
 }
 
 test('끊김 → 입력 → 확인 → 대기 → 복구 → 보낸 것으로 처리 → 기기에서 삭제', async () => {
   const profile = test.info().outputPath('profile');
   const { app, page } = await launch(profile);
-  await expect(page.locator('#mailBar')).toContainText('실제 메일을 보내지 않습니다');
   expect(await app.evaluate(({ app: electronApp }) => electronApp.getName())).toBe('Voice Cinema Mail Trial');
-  await expect(page.locator('#mailQueueChip')).toHaveCount(0);
-  // 시험판 표시는 메인 화면의 글 · 단추를 가리지 않는다
+  // 첫 화면: 노란 표시 하나, 기다리는 메일이 없으니 메일 대기 단추도 없다
   await page.locator('.scene-carousel').dispatchEvent('pointerdown', { pointerType: 'touch', isPrimary: true });
   for (const [w, h] of [[640, 640], [1000, 640], [1366, 697]]) {
     await sizeWindow(app, page, w, h);
-    await expectBarClear(page);
+    await expectHeaderRow(page, false);
   }
   await openStudio(page, '판타지');
-  await page.locator('#mailOfflineToggle').check();
+  await expectNoBadge(page);
+  await offline(app, true);
   await recordToEntry(page);
+  await expectNoBadge(page);
 
-  // 입력: 칸은 비어 있고, 왜 받는지 한 줄이 있다
+  // 입력: 칸은 비어 있고, 왜 받는지 한 줄이 있다. 메일 없이 저장하는 단추는 없다(설치판은 메일로 전한다, 11/8 Bumm님)
   await expect(page.locator('#mailName')).toHaveValue('');
   await expect(page.locator('#mailAddress')).toHaveValue('');
-  await expect(page.locator('#doneMsg')).toHaveText('선생님이 적어 주세요. 인터넷이 돌아오면 인솔 선생님 메일로 영화 링크를 보내요.');
+  await expect(page.locator('#doneMsg')).toHaveText('인터넷이 돌아오면 인솔 선생님 메일로 영화 링크를 보내요.');
+  await expect(page.locator('#mailSaveHereBtn')).toHaveCount(0);
+  await expect(page.locator('#result.active button')).toHaveCount(1);
   await expect(page.locator('#mailAddress')).toHaveAttribute('type', 'email');
   await expect(page.locator('#mailAddress')).toHaveAttribute('autocomplete', 'off');
 
@@ -229,13 +257,10 @@ test('끊김 → 입력 → 확인 → 대기 → 복구 → 보낸 것으로 �
   await expect(page.locator('#mailName')).toBeFocused();
   await expect(page.locator('#mailName')).toHaveAttribute('aria-invalid', 'true');
   await expectFormFits(page);
-  await expectBarClear(page);
   await sizeWindow(app, page, 640, 640);
   await expectFormFits(page);
-  await expectBarClear(page);
   await sizeWindow(app, page, 1366, 697);
   await expectFormFits(page);
-  await expectBarClear(page);
   await page.locator('#mailName').fill(NAME_A);
   await expect(page.locator('#mailNameError')).toHaveCount(0);
   await page.locator('#mailAddress').fill('선생님@school.kr');
@@ -266,10 +291,12 @@ test('끊김 → 입력 → 확인 → 대기 → 복구 → 보낸 것으로 �
 
   // 대기: 기기에 암호화해 두고, 끊겨 있으면 올리지 않는다. 목록에는 주소를 가려서 보이고 이름은 보이지 않는다
   await expect(page.getByRole('heading', { name: '인터넷이 돌아오면 보내 드릴게요' })).toBeVisible();
+  await expectNoBadge(page);
+  await home(page);
   await expect(page.locator('#mailQueueChip')).toHaveText('메일 대기 1건');
   for (const [w, h] of [[640, 640], [1000, 640], [1366, 697]]) {
     await sizeWindow(app, page, w, h);
-    await expectBarClear(page);
+    await expectHeaderRow(page, true);
   }
   expect(queueFiles(profile)).toHaveLength(3);
   expect(await uploads(app)).toHaveLength(0);
@@ -280,7 +307,7 @@ test('끊김 → 입력 → 확인 → 대기 → 복구 → 보낸 것으로 �
   await page.locator('#mailQueue').getByRole('button', { name: '닫기' }).click();
 
   // 복구 → 올리기 → 보낸 것으로 처리 → 지움
-  await page.locator('#mailOfflineToggle').uncheck();
+  await offline(app, false);
   const sent = page.locator('.mail-sent');
   await expect(sent).toBeVisible({ timeout: 60000 });
   await expect(sent).toContainText('보낸 것으로 처리했어요');
@@ -302,11 +329,10 @@ test('다음 사람의 칸은 비어 있고 이전 주소가 제안되지 않으
   const profile = test.info().outputPath('profile');
   const first = await launch(profile);
   await openStudio(first.page, '판타지');
-  await first.page.locator('#mailOfflineToggle').check();
+  await offline(first.app, true);
   await recordToEntry(first.page);
   await queue(first.page, NAME_A, MAIL);
-  await first.page.locator('#doneHomeBtn').click();
-  await expect(first.page.locator('#home')).toHaveClass(/active/);
+  await home(first.page);
 
   // 다음 사람
   await pickScene(first.page, 'SF');
@@ -353,6 +379,7 @@ test('다음 사람의 칸은 비어 있고 이전 주소가 제안되지 않으
     await first.page.waitForTimeout(300);
   }
   await queue(first.page, NAME_B, MAIL.toUpperCase());
+  await home(first.page);
   await expect(first.page.locator('#mailQueueChip')).toHaveText('메일 대기 2건');
   // 브라우저 저장소에도 남지 않는다
   expect(await first.page.evaluate(() => JSON.stringify([{ ...window.localStorage }, { ...window.sessionStorage }, window.history.state]))).not.toMatch(/probe|별님|달님/i);
@@ -386,16 +413,16 @@ test('다음 사람의 칸은 비어 있고 이전 주소가 제안되지 않으
   expect([...first.logs, ...second.logs].join('\n')).not.toMatch(/probe-7731|별님시험|달님시험/i);
 });
 
-test('올리지 못하면 대기에 남고, «보내지 못함»은 다시 보낼 수 있고, 운영자가 지우면 영상까지 사라진다', async () => {
+test('인터넷이 있어도 올리지 못하면 메일 화면으로 가고, 대기에 남고, «보내지 못함»은 다시 보낼 수 있고, 운영자가 지우면 영상까지 사라진다', async () => {
   const profile = test.info().outputPath('profile');
   const { app, page } = await launch(profile);
   await setReply(app, { status: 500, body: { ok: false } });
   await openStudio(page, '판타지');
-  await page.locator('#mailOfflineToggle').check();
-  await recordToEntry(page);
+  // 처음 + 다시 2번(MAX_UPLOAD_ATTEMPTS) 올리지 못하면 이 기기에 저장이 아니라 메일 화면이다
+  await recordToEntry(page, 200000);
+  expect(await uploads(app)).toHaveLength(3);
   await queue(page, NAME_A, MAIL);
-  await page.locator('#mailOfflineToggle').uncheck();
-  // 처음 + 다시 2번까지 실패한 뒤 대기로 남고 다음 시도 시각이 뒤로 밀린다
+  // 대기에 넣자마자 다시 올려 보고, 처음 + 다시 2번까지 실패한 뒤 대기로 남고 다음 시도 시각이 뒤로 밀린다
   await expect.poll(() => page.evaluate(async () => (await window.vcDesktop.mail.list())[0].attempts), { timeout: 150000 }).toBe(1);
   const [item] = await page.evaluate(() => window.vcDesktop.mail.list());
   expect(item.nextAt).toBeGreaterThan(Date.now());
@@ -411,7 +438,7 @@ test('올리지 못하면 대기에 남고, «보내지 못함»은 다시 보�
   await page.locator('.scene-carousel').dispatchEvent('pointerdown', { pointerType: 'touch', isPrimary: true });
   for (const [w, h] of [[640, 640], [1000, 640], [1366, 697]]) {
     await sizeWindow(app, page, w, h);
-    await expectBarClear(page);
+    await expectHeaderRow(page, true);
   }
   await page.locator('#mailQueueChip').click();
   await expect(page.locator('#mailQueue')).toContainText('보내지 못했어요');
@@ -421,12 +448,13 @@ test('올리지 못하면 대기에 남고, «보내지 못함»은 다시 보�
   await page.locator('.mail-sent').getByRole('button', { name: '닫기' }).click();
 
   // 지우기는 두 번 눌러야 하고, 영상 · 정보가 함께 사라진다
-  await page.locator('#mailOfflineToggle').check();
+  await offline(app, true);
   await pickScene(page, 'SF');
   await recordToEntry(page);
   await queue(page, NAME_B, MAIL);
   const before = (await uploads(app)).length;
   expect(queueFiles(profile)).toHaveLength(3);
+  await home(page);
   await page.locator('#mailQueueChip').click();
   await page.locator('#mailQueue').getByRole('button', { name: '지우기' }).click();
   expect(queueFiles(profile)).toHaveLength(3);
@@ -443,7 +471,8 @@ test('대기열을 열 수 없으면(키 손상) 메일 화면 없이 지금까�
   writeFileSync(path.join(profile, 'mail-queue', 'queue.key'), 'not-a-sealed-key');
   const { app, page } = await launch(profile);
   expect(await page.evaluate(() => typeof window.vcDesktop)).toBe('undefined');
-  await expect(page.locator('#mailBar')).toHaveCount(0);
+  await expect(page.locator('.installer-badge')).toHaveText('인터넷 없이 쓰는 설치판');
+  await expect(page.locator('#mailQueueChip')).toHaveCount(0);
   await setReply(app, { status: 500, body: { ok: false } });
   await openStudio(page, '판타지');
   await expect(page.locator('#engineProg')).toHaveText('100%', { timeout: 30000 });
@@ -451,21 +480,5 @@ test('대기열을 열 수 없으면(키 손상) 메일 화면 없이 지금까�
   await page.locator('#saveBtn').click();
   await expect(page.locator('#downloadRow')).toBeVisible({ timeout: 200000 });
   await expect(page.locator('#mailName')).toHaveCount(0);
-  await app.close();
-});
-
-test('«메일 없이 이 기기에 저장»을 고를 수 있다 — 아무것도 대기열에 남지 않는다', async () => {
-  const profile = test.info().outputPath('profile');
-  const { page, app } = await launch(profile);
-  await openStudio(page, '판타지');
-  await page.locator('#mailOfflineToggle').check();
-  await recordToEntry(page);
-  await page.locator('#mailName').fill(NAME_A);
-  await page.locator('#mailSaveHereBtn').click();
-  await expect(page.locator('#downloadBtn')).toBeVisible();
-  await expect(page.locator('#savemode')).toContainText('학생에게 전달한 뒤 꼭 지워 주세요');
-  expect(existsSync(path.join(profile, 'mail-queue', 'queue.key'))).toBe(true);
-  expect(queueFiles(profile)).toEqual(['queue.key']);
-  expect(statSync(path.join(profile, 'mail-queue', 'queue.key')).size).toBeGreaterThan(0);
   await app.close();
 });

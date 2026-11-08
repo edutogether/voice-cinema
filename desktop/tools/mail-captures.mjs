@@ -2,6 +2,7 @@
 // 메일 시험판의 단계별 캡처 — 숨긴 창(큰 모니터로 넘어가지 않는다)에서 실제 흐름을 지나며 창의 실제 화소로 찍는다.
 //   node tools/mail-captures.mjs <시험판 exe> <결과 폴더> [가로x세로@배율,…]
 // 업로드는 앱의 세션에서 답하고 바깥 요청은 닿지 않는 프록시로 막는다 — 운영 저장소에 아무것도 올라가지 않는다. 받는 주소는 보기용 글자이고 메일은 어디로도 가지 않는다.
+// 인터넷 끊김은 Windows가 연결 없음을 알리는 것과 같은 상태(navigator.onLine 거짓)로 흉내 낸다 — 화면에는 시험용 단추가 없다(11/8).
 import { _electron } from '@playwright/test';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -30,16 +31,11 @@ async function shoot({ w, h, scale }) {
       if (!request.url.endsWith('/voiceCinema/upload')) return original(request, options);
       if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: { ...cors, 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': request.headers.get('access-control-request-headers') ?? '*' } });
       await request.text();
-      await new Promise((done) => setTimeout(done, 6000)); // «영화를 올리고 있어요»를 찍을 시간
       return new Response(JSON.stringify({ ok: true, url }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
     };
   }, MOVIE_URL);
   const page = await app.firstWindow();
-  await page.addInitScript(() => {
-    const realTimeout = window.setTimeout.bind(window);
-    // «보내는 것으로 처리»(1.5초)를 찍을 시간
-    window.setTimeout = (fn, ms, ...rest) => realTimeout(fn, ms === 1500 ? 6000 : ms, ...rest);
-  });
+  const offline = (on) => app.context().setOffline(on);
   await app.evaluate(({ BrowserWindow }, [cw, ch]) => { BrowserWindow.getAllWindows()[0].setContentSize(cw, ch); }, [w, h]);
   const cdp = await page.context().newCDPSession(page);
   await cdp.send('Emulation.setDeviceMetricsOverride', { width: 0, height: 0, deviceScaleFactor: scale, mobile: false });
@@ -77,9 +73,9 @@ async function shoot({ w, h, scale }) {
     await page.locator('#mailName').waitFor({ timeout: 180000 });
   };
 
-  await page.locator('#mailOfflineToggle').check();
-  await shot('01-메인-시험판-표시');
-  await recordToEntry(() => shot('01-녹음실-시험판-표시'));
+  await offline(true);
+  await shot('01-메인-설치판-표시');
+  await recordToEntry(() => shot('01-녹음실-표시-없음'));
   await shot('02-입력-빈칸');
   await page.locator('#mailNextBtn').click();
   await shot('03-입력-오류');
@@ -97,24 +93,23 @@ async function shoot({ w, h, scale }) {
   await page.locator('#mailSendBtn').click();
   await page.getByRole('heading', { name: '인터넷이 돌아오면 보내 드릴게요' }).waitFor();
   await shot('07-대기');
-  await page.locator('#mailQueueChip').click();
-  await shot('08-대기-목록');
-  await page.locator('#mailQueue').getByRole('button', { name: '닫기' }).click();
-  await page.locator('#mailOfflineToggle').uncheck();
-  await page.locator('#mailActivity', { hasText: '영화를 올리고' }).waitFor({ timeout: 30000 });
-  await shot('09-복구-영화-올리기');
-  await page.locator('#mailActivity', { hasText: '보내는 것으로' }).waitFor({ timeout: 90000 });
-  await shot('10-발송-처리-중');
-  await page.locator('.mail-sent').waitFor({ timeout: 30000 });
-  await shot('11-보낸-것으로-처리-삭제-완료');
-  await page.locator('.mail-sent').getByRole('button', { name: '닫기' }).click();
   await page.locator('#doneHomeBtn').click();
   await page.locator('#home.active').waitFor();
+  await page.locator('.scene-carousel').dispatchEvent('pointerdown', { pointerType: 'touch', isPrimary: true });
   await delay(800);
-  await shot('12-처리-뒤-메인-대기-없음');
-  await page.locator('#mailOfflineToggle').check();
+  await shot('08-메인-메일-대기');
+  await page.locator('#mailQueueChip').click();
+  await shot('09-대기-목록');
+  await page.locator('#mailQueue').getByRole('button', { name: '닫기' }).click();
+  await offline(false);
+  await page.locator('.mail-sent').waitFor({ timeout: 90000 });
+  await shot('10-보낸-것으로-처리-삭제-완료');
+  await page.locator('.mail-sent').getByRole('button', { name: '닫기' }).click();
+  await page.locator('#mailQueueChip').waitFor({ state: 'detached' });
+  await shot('11-처리-뒤-메인-대기-없음');
+  await offline(true);
   await recordToEntry();
-  await shot('13-다음-사람-빈칸');
+  await shot('12-다음-사람-빈칸');
   await page.locator('#mailName').fill('달님');
   await page.locator('#mailAddress').fill('teacher@example.com');
   await page.locator('#mailNextBtn').click();
@@ -125,10 +120,10 @@ async function shoot({ w, h, scale }) {
   await page.reload();
   await page.locator('#splash').waitFor({ state: 'detached', timeout: 90000 });
   await page.locator('#mailQueueChip').click();
-  await shot('14-보내지-못함-목록');
+  await shot('13-보내지-못함-목록');
   await page.locator('#mailQueue').getByRole('button', { name: '지우기' }).click();
   await page.locator('#mailQueue').getByRole('button', { name: '영화도 함께 지워져요. 지울까요 ?' }).waitFor();
-  await shot('15-지우기-확인');
+  await shot('14-지우기-확인');
   await page.locator('#mailQueue').getByRole('button', { name: '영화도 함께 지워져요. 지울까요 ?' }).click();
   await delay(300);
   await app.close();

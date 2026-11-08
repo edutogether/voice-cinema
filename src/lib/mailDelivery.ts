@@ -1,6 +1,7 @@
 // 설치판의 메일 전달: 인터넷이 돌아오면 영상을 올리고 → 인솔 교사에게 메일을 보내고 → 기기에서 지운다.
 // 업로드에 App Check 토큰이 필요해 화면 쪽에서 돈다. 보관은 메인 프로세스(desktop/mail-store.js)가 암호화해서 한다.
-// 이 판은 시험판이다: 영상 올리기까지는 실제로 하고, 메일은 보내지 않고 «보낸 것으로 처리»를 화면에 보인다.
+// 이 판은 시험판이다: 영상 올리기까지는 실제로 하고, 메일은 보내지 않고 «보낸 것으로 처리»를 화면에 보인다(가짜임을 그 안내가 밝힌다).
+// 끊김은 Windows가 알리는 것(navigator.onLine)만 본다 — 화면의 «인터넷 끊김 시험» 표시는 11/8 Bumm님 지시로 없앴고, 시험은 끊김을 흉내 낸다(desktop/e2e/mail.spec.mjs).
 // 🔴 이 파일의 로그에 메일 주소 · 이름을 넣지 않는다.
 import { buildUploadFilename } from '../logic';
 import { afterFailure, buildMail, dueGroups, type MailItem, type MailMessage } from './mailQueue';
@@ -42,11 +43,10 @@ export interface TrialSent {
 export interface MailState {
   items: MailItem[];
   activity: MailActivity | null;
-  trialOffline: boolean;
   trialSent: TrialSent[];
 }
 
-let state: MailState = { items: [], activity: null, trialOffline: false, trialSent: [] };
+let state: MailState = { items: [], activity: null, trialSent: [] };
 const listeners = new Set<() => void>();
 const setState = (patch: Partial<MailState>) => {
   state = { ...state, ...patch };
@@ -59,8 +59,8 @@ export const subscribeMail = (listener: () => void) => {
 };
 export const getMailState = () => state;
 
-/** 시험판의 «인터넷 끊김 시험»까지 본다. 진짜 끊김은 navigator.onLine이 알린다. */
-export const isOnline = () => navigator.onLine && !state.trialOffline;
+/** Windows가 연결 없음을 알리면 거짓이다. */
+export const isOnline = () => navigator.onLine;
 
 const refresh = async () => {
   if (bridge) setState({ items: await bridge.list() });
@@ -137,11 +137,6 @@ export async function retryMail(id: string): Promise<void> {
 export async function removeMail(id: string): Promise<void> {
   await bridge!.remove(id);
   await refresh();
-}
-
-export function setTrialOffline(trialOffline: boolean): void {
-  setState({ trialOffline });
-  if (!trialOffline) void retryAll();
 }
 
 export function dismissTrialSent(key: number): void {

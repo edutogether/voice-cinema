@@ -1,16 +1,13 @@
 import { useRef, useState, useSyncExternalStore } from 'react';
 import { maskMail } from '../lib/mailAddress';
-import { dismissTrialSent, getMailState, removeMail, retryMail, setTrialOffline, subscribeMail, type MailActivity } from '../lib/mailDelivery';
+import { dismissTrialSent, getMailState, removeMail, retryMail, subscribeMail } from '../lib/mailDelivery';
 
-const ACTIVITY: Record<MailActivity, string> = {
-  upload: '영화를 올리고 있어요',
-  send: '메일을 보내는 것으로 처리하고 있어요',
-  delete: '기기에서 지우고 있어요',
-};
-
-/** 모든 화면 위에 뜨는 시험판 표시 · 메일 대기 목록 · «보낸 것으로 처리» 안내. 목록에는 주소를 가려서 보이고 이름은 보이지 않는다 — 다음 사람이 볼 수 있는 화면이다. */
-export function MailStatus() {
-  const { items, activity, trialOffline, trialSent } = useSyncExternalStore(subscribeMail, getMailState);
+/**
+ * 첫 화면 노란 «인터넷 없이 쓰는 설치판» 표시 옆의 «메일 대기 N건» 단추와 그 목록(11/8 — 화면 위에 늘 떠 있던 시험판 표시줄을 없애며 옮겼다).
+ * 기다리는 메일이 있을 때만 보인다. 목록에는 주소를 가려서 보이고 이름은 보이지 않는다 — 다음 사람이 볼 수 있는 화면이다.
+ */
+export function MailQueueChip() {
+  const { items, activity } = useSyncExternalStore(subscribeMail, getMailState);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [askDelete, setAskDelete] = useState<string | null>(null);
   const failed = items.filter((item) => item.failed).length;
@@ -18,24 +15,11 @@ export function MailStatus() {
 
   return (
     <>
-      <div className="mail-bar" id="mailBar">
-        <div className="mail-bar-row">
-          <strong>메일 시험판</strong>
-          <span>실제 메일을 보내지 않습니다</span>
-          <label className="mail-offline"><input type="checkbox" id="mailOfflineToggle" checked={trialOffline} onChange={(e) => setTrialOffline(e.target.checked)} /> 인터넷 끊김 시험</label>
-        </div>
-        {(activity || items.length > 0) && (
-          <div className="mail-bar-row">
-            {activity && <span id="mailActivity" role="status">{ACTIVITY[activity]}</span>}
-            {items.length > 0 && (
-              <button type="button" className="mail-queue-chip" id="mailQueueChip" onClick={() => dialogRef.current?.showModal()}>
-                {[waiting > 0 && `메일 대기 ${waiting}건`, failed > 0 && `보내지 못함 ${failed}건`].filter(Boolean).join(' · ')}
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
+      {items.length > 0 && (
+        <button type="button" className="mail-queue-chip" id="mailQueueChip" onClick={() => dialogRef.current?.showModal()}>
+          {[waiting > 0 && `메일 대기 ${waiting}건`, failed > 0 && `보내지 못함 ${failed}건`].filter(Boolean).join(' · ')}
+        </button>
+      )}
       <dialog className="mail-queue" id="mailQueue" ref={dialogRef} aria-labelledby="mailQueueTitle">
         <h2 id="mailQueueTitle">기다리는 메일</h2>
         {items.length === 0 && <p>기다리는 메일이 없어요.</p>}
@@ -59,7 +43,15 @@ export function MailStatus() {
         </ul>
         <button type="button" className="mail-queue-close" onClick={() => dialogRef.current?.close()}>닫기</button>
       </dialog>
+    </>
+  );
+}
 
+/** 시험판의 «보낸 것으로 처리» 안내 — 실제 메일이 가지 않았다는 것을 숨기지 않는다. 어느 화면에서든 오른쪽 아래에 뜬다. */
+export function MailStatus() {
+  const { trialSent } = useSyncExternalStore(subscribeMail, getMailState);
+  return (
+    <>
       {trialSent.map(({ key, mail, count, left }) => (
         <section className="mail-sent" key={key} aria-label="보낸 것으로 처리한 메일">
           <h2>보낸 것으로 처리했어요</h2>

@@ -2,7 +2,7 @@
 // 바깥 주소 · 인터넷 없음)를 본다. 업로드는 routeUpload로 가로챈다(운영 저장소에 시험 파일을 쌓지 않는다). 자동화로 띄운 창은
 // App Check가 거절하므로(웹의 헤드리스와 같다) 실제 업로드는 여기서 보지 않는다 — 사람이 연 설치판은 App Check를 통과한다(10/27 확인).
 import { test, expect, _electron } from '@playwright/test';
-import { readFileSync, readdirSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installSyntheticMic, recordOnce } from '../../e2e/synthetic-mic.js';
@@ -67,6 +67,16 @@ async function openStudio(page, name) {
   await expect(page.locator('#clip')).toHaveJSProperty('readyState', 4, { timeout: 20000 });
 }
 
+/**
+ * 메일 대기열을 열 수 없게 해 두고 띄운다 — 메일 화면 없이 «이 기기에 저장»으로 가는 길(대기열을 못 열 때의 설치판)을 본다.
+ * 메일 설치판은 그 밖에는 이 길로 가지 않는다(«메일 없이 이 기기에 저장» 단추는 11/8 Bumm님 지시로 없앴다). 메일 화면은 mail.spec.mjs가 본다.
+ */
+function withoutMail() {
+  const dir = path.join(test.info().outputPath('profile'), 'mail-queue');
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(path.join(dir, 'queue.key'), 'not-a-sealed-key');
+}
+
 /** 저장 알림 창은 사람이 닫아야 하는 창이라 검사에서는 내용만 받아 둔다(main.js가 부르는 dialog를 바꿔 끼운다). */
 async function captureDialogs(app, downloads) {
   await app.evaluate(({ app: electronApp, dialog }, dir) => {
@@ -127,6 +137,7 @@ test('녹음 → 합성 → 업로드가 되면 QR이 뜨고, 올린 것은 10�
 });
 
 test('업로드가 안 되면 «이 기기에 저장»이 다운로드 폴더에 10초 영화를 두고, 저장했다고 알린다(같은 이름은 덮어쓰지 않는다)', async () => {
+  withoutMail();
   const { app, page } = await launch();
   const downloads = test.info().outputPath('downloads');
   await captureDialogs(app, downloads);
@@ -134,8 +145,7 @@ test('업로드가 안 되면 «이 기기에 저장»이 다운로드 폴더에
   await openStudio(page, '히어로');
   expect(await recordOnce(page)).toMatchObject({ phase: 'recorded' });
   await page.locator('button', { hasText: '저장하기' }).click();
-  await page.locator('#mailSaveHereBtn').click({ timeout: 200000 });
-  await expect(page.locator('#downloadRow')).toBeVisible();
+  await expect(page.locator('#downloadRow')).toBeVisible({ timeout: 200000 });
   expect(await uploads(app)).toHaveLength(3); // 처음 + 다시 2번(MAX_UPLOAD_ATTEMPTS)
   await page.locator('#downloadBtn').click();
   await expect.poll(() => app.evaluate(() => globalThis.__dialogs.length), { timeout: 30000 }).toBe(1);
@@ -151,6 +161,7 @@ test('업로드가 안 되면 «이 기기에 저장»이 다운로드 폴더에
 
 test('인터넷이 없어도 첫 화면 · 녹음 · 합성이 되고, 올리지 않고 곧바로 이 기기에 저장으로 간다', async () => {
   // 닿지 않는 프록시로 바깥 요청을 모두 막는다(reCAPTCHA · 업로드 서버 · 옛 주소). 설치판 안의 파일은 영향을 받지 않는다.
+  withoutMail();
   const { app, page } = await launch(['--proxy-server=http://127.0.0.1:9']);
   const downloads = test.info().outputPath('downloads');
   await captureDialogs(app, downloads);
@@ -165,8 +176,7 @@ test('인터넷이 없어도 첫 화면 · 녹음 · 합성이 되고, 올리지
     window.dispatchEvent(new Event('offline'));
   });
   await page.locator('button', { hasText: '저장하기' }).click();
-  await page.locator('#mailSaveHereBtn').click({ timeout: 90000 });
-  await expect(page.locator('#doneMsg')).toHaveText(OFFLINE_MSG);
+  await expect(page.locator('#doneMsg')).toHaveText(OFFLINE_MSG, { timeout: 90000 });
   await page.locator('#downloadBtn').click();
   await expect.poll(() => app.evaluate(() => globalThis.__dialogs.length), { timeout: 30000 }).toBe(1);
   expect(Math.abs(mp4Duration(readFileSync(path.join(downloads, 'Voice Cinema_스포츠.mp4'))) - 10)).toBeLessThanOrEqual(0.05);

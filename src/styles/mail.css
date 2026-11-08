@@ -1,35 +1,42 @@
 /* 설치판 메일 전달 화면 — 완성 화면(result.css)의 흰색/빨간색을 그대로 쓴다. 웹에서는 이 요소들이 그려지지 않는다. */
-.mail-field { margin:0 0 14px; }
+/* 적는 칸과 확인을 옅은 판 하나에 모은다(11/8 Bumm님 «아래쪽이 너무 비어 보입니다 … 허술해 보이지 않게») — 판 모서리는 왼쪽 그림과 같은 16px이다. */
+.mail-form { max-width:30rem; margin-top:24px; padding:24px; box-sizing:border-box; border-radius:16px; background:#f5f5f5; }
+.mail-field { margin:0 0 16px; }
+.mail-field-address { margin-bottom:0; }
 .mail-field label { display:block; margin-bottom:6px; font-size:.875rem; font-weight:650; color:#262626; }
-.mail-field input { display:block; width:100%; height:48px; padding:0 14px; box-sizing:border-box; border:1px solid #b5b5b5; border-radius:10px; background:#fff; color:#171717; font:inherit; font-size:1rem; }
+/* 칸 폭은 적을 글자 길이에 맞춘다(11/8 Bumm님 «입력 칸이 너무 깁니다») — 이름은 짧고 주소는 길다. 좁은 창에서는 판 폭에 맞춰 줄어든다.
+   테두리는 판 바탕(#f5f5f5)과 3:1 이상이다(#8c8c8c — 입력 칸 경계가 보여야 한다). */
+.mail-field input { display:block; width:100%; height:48px; padding:0 14px; box-sizing:border-box; border:1px solid #8c8c8c; border-radius:10px; background:#fff; color:#171717; font:inherit; font-size:1rem; }
+.mail-field-name input { max-width:16rem; }
+.mail-field-address input { max-width:26rem; }
 .mail-field input:focus-visible { outline:3px solid #e52320; outline-offset:1px; }
 .mail-field input[aria-invalid="true"] { border-color:#e52320; }
 .result-details p.mail-error { margin:6px 0 0; color:#c91b19; font-size:.875rem; line-height:1.5; }
 .mail-actions { justify-content:flex-start; margin-top:20px; }
+.mail-form .mail-actions { margin-top:24px; }
 #result .mail-actions .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; flex:0 1 auto; max-width:100%; padding-inline:22px; }
 #result .btn:disabled { opacity:.6; cursor:default; }
-.result-details p.mail-address { margin:0 0 10px; padding:14px 16px; border:1px solid #e5e5e5; border-radius:10px; background:#f7f7f7; font-size:1.25rem; font-weight:750; line-height:1.4; word-break:break-all; }
-.result-details p.mail-name-shown { margin:0 0 14px; color:#262626; }
-.result-details p.mail-typo { margin:0 0 4px; padding:12px 14px; border:1px solid #f3d2cf; border-radius:10px; background:#fff3f2; color:#642a26; font-size:.9375rem; }
+.result-details p.mail-address { margin:0 0 10px; padding:14px 16px; border:1px solid #e0e0e0; border-radius:10px; background:#fff; font-size:1.25rem; font-weight:750; line-height:1.4; word-break:break-all; }
+.result-details p.mail-name-shown { margin:0; color:#262626; }
+.result-details p.mail-typo { margin:14px 0 0; padding:12px 14px; border:1px solid #f3d2cf; border-radius:10px; background:#fff3f2; color:#642a26; font-size:.9375rem; }
 .mail-typo-fix { display:block; margin-top:4px; padding:0; border:0; background:none; color:#c91b19; font:inherit; font-weight:700; text-decoration:underline; cursor:pointer; }
+@container app (max-width:900px) {
+ .mail-form { padding:20px; }
+}
 @container app (max-height:700px) and (min-width:601px) {
+ .mail-form { margin-top:18px; padding:18px 20px; }
  .mail-field { margin-bottom:10px; }
+ .mail-field-address { margin-bottom:0; }
  .mail-field input { height:42px; }
- .mail-actions { margin-top:14px; }
+ .mail-form .mail-actions,.mail-actions { margin-top:16px; }
  #result .mail-actions .btn { padding-block:12px; }
 }
 
-/* 시험판 표시 · 대기 목록 · «보낸 것으로 처리» 안내 — 모든 화면 위에 뜬다. 표시는 머리글 바로 아래에 두되, 메인은 오른쪽, 완성 화면은 왼쪽(그림 위 빈자리 — 오른쪽은 낮은 창에서 글이 바로 시작한다)이다. */
-.mail-bar-row { display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:4px 12px; }
-.mail-bar { position:fixed; top:90px; right:140px; z-index:40; display:flex; flex-direction:column; align-items:flex-end; gap:3px; max-width:calc(100% - 300px); padding:5px 12px; box-sizing:border-box; border-radius:8px; background:#171717; color:#fff; font-size:.8125rem; line-height:1.4; box-shadow:0 4px 14px #0000003d; }
-@container app (max-width:900px) { .mail-bar { top:96px; right:120px; } }
-body:has(#result.active) .mail-bar { top:84px; right:auto; left:40px; flex-direction:row; flex-wrap:wrap; align-items:center; gap:3px 12px; max-width:calc(100% - 64px); }
-@container app (max-width:900px) { body:has(#result.active) .mail-bar { top:88px; left:24px; } }
-.mail-bar strong { font-weight:750; color:#ffd24a; }
-.mail-offline { display:flex; align-items:center; gap:5px; cursor:pointer; }
-.mail-offline input { width:15px; height:15px; margin:0; accent-color:#e52320; }
-.mail-queue-chip { padding:1px 10px; border:1px solid #fff; border-radius:6px; background:#fff; color:#171717; font:inherit; font-weight:700; cursor:pointer; }
-.mail-queue { width:min(560px,calc(100% - 48px)); padding:24px; border:0; border-radius:14px; color:#171717; box-shadow:0 18px 50px #00000059; }
+/* 메일 대기 단추 — 첫 화면 노란 «인터넷 없이 쓰는 설치판» 표시 옆, 기다리는 메일이 있을 때만(11/8). 표시와 같은 높이(20px)다. */
+.mail-queue-chip { flex-shrink:0; padding:0 9px; border:1px solid #c9c9c9; border-radius:999px; background:#fff; color:#262626; font:inherit; font-size:12px; font-weight:700; line-height:18px; white-space:nowrap; cursor:pointer; }
+@media (hover:hover) { .mail-queue-chip:hover { border-color:#8c8c8c; } }
+.mail-queue-chip:focus-visible { outline:2px solid #ed3124; outline-offset:2px; }
+.mail-queue { width:min(560px,calc(100% - 48px)); padding:24px; border:0; border-radius:14px; color:#171717; box-shadow:0 18px 50px #00000059; overscroll-behavior:contain; }
 .mail-queue::backdrop { background:#00000059; }
 .mail-queue h2 { margin:0 0 12px; font-size:1.25rem; font-weight:750; }
 .mail-queue ul { margin:0 0 16px; padding:0; list-style:none; }
@@ -39,7 +46,8 @@ body:has(#result.active) .mail-bar { top:84px; right:auto; left:40px; flex-direc
 .mail-queue-buttons { display:flex; gap:8px; margin-left:auto; }
 .mail-queue button,.mail-sent button { padding:6px 12px; border:1px solid #d8d8d8; border-radius:8px; background:#fff; color:#262626; font:inherit; font-size:.875rem; font-weight:650; cursor:pointer; }
 .mail-queue button:disabled { opacity:.5; cursor:default; }
-.mail-sent { position:fixed; right:12px; bottom:12px; z-index:41; width:min(560px,calc(100% - 24px)); max-height:calc(100% - 24px); padding:20px 22px; box-sizing:border-box; overflow:auto; border:2px solid #171717; border-radius:12px; background:#fff; color:#171717; box-shadow:0 12px 40px #00000052; }
+/* 시험판의 «보낸 것으로 처리» 안내 — 가짜 발송임을 숨기지 않는다(오른쪽 아래, 어느 화면에서든). */
+.mail-sent { position:fixed; right:12px; bottom:12px; z-index:41; width:min(560px,calc(100% - 24px)); max-height:calc(100% - 24px); padding:20px 22px; box-sizing:border-box; overflow:auto; overscroll-behavior:contain; border:2px solid #171717; border-radius:12px; background:#fff; color:#171717; box-shadow:0 12px 40px #00000052; }
 .mail-sent h2 { margin:0 0 6px; font-size:1.25rem; font-weight:750; }
 .mail-sent-note { margin:0 0 12px; color:#c91b19; font-size:.875rem; font-weight:650; line-height:1.5; word-break:keep-all; }
 .mail-sent dl { display:grid; grid-template-columns:auto minmax(0,1fr); gap:6px 12px; margin:0 0 12px; font-size:.875rem; line-height:1.5; }
