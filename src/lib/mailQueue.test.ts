@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { afterFailure, dueGroups, MAX_ATTEMPTS, retryDelay, type MailItem } from './mailQueue';
+import { afterFailure, batchStatus, dueGroups, MAX_ATTEMPTS, retryDelay, type MailItem } from './mailQueue';
 
 const item = (over: Partial<MailItem>): MailItem => ({
   id: 'a', name: '민수', email: 'teacher@ice.go.kr', genreId: 'fantasy', genreName: '판타지', createdAt: 1, attempts: 0, nextAt: 0, failed: false, url: 'https://example.test/a.mp4', ...over,
@@ -23,5 +23,21 @@ describe('dueGroups', () => {
   it('기다리는 중이거나 «보내지 못함»인 건은 뺀다', () => {
     const groups = dueGroups([item({ id: 'a', nextAt: 11 }), item({ id: 'b', failed: true }), item({ id: 'c', nextAt: 10 })], 10);
     expect(groups.map((g) => g.map((i) => i.id))).toEqual([['c']]);
+  });
+});
+
+describe('batchStatus — 설치판 시작 창 한 묶음', () => {
+  it('목록에서 사라진 건은 보낸 것, 다음 차례를 기다리거나 «보내지 못함»이면 못 보낸 것, 나머지는 아직 보내 보지 않은 것이다', () => {
+    const items = [
+      item({ id: 'b', nextAt: 0, url: undefined }),
+      item({ id: 'c', nextAt: 0 }),
+      item({ id: 'd', nextAt: 31_000, url: undefined }),
+      item({ id: 'e', failed: true }),
+      item({ id: 'x' }), // 묶음 밖(창을 띄운 뒤에 생긴 건)은 세지 않는다
+    ];
+    expect(batchStatus(['a', 'b', 'c', 'd', 'e'], items)).toEqual({ total: 5, sent: 1, uploaded: 2, failed: 2, pending: 2 });
+  });
+  it('다 보내면 남은 것도 못 보낸 것도 없다', () => {
+    expect(batchStatus(['a', 'b'], [item({ id: 'x' })])).toEqual({ total: 2, sent: 2, uploaded: 0, failed: 0, pending: 0 });
   });
 });

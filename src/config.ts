@@ -15,11 +15,6 @@ export const VOICE_WINDOW_SECONDS = 3.5;
 export const RECORD_BASE_SECONDS = 3;
 export const RECORD_MAX_SECONDS = VOICE_WINDOW_SECONDS;
 
-// 엔진 wasm(public/vendor/ffmpeg-core/ffmpeg-core.wasm)의 실제 크기 — «영상 저장 준비 중…» 진행률의 분모.
-// Hosting이 brotli로 압축해 보내 Content-Length(약 7.3MB)가 받는 바이트보다 작아서, 그것을 분모로 쓰면
-// 100%를 넘었다(10/20 «177%»). test/contract.test.js가 실제 파일 크기와 대조한다.
-export const ENGINE_WASM_BYTES = 32_232_419;
-
 export const API_BASE =
   'https://asia-northeast3-inky-voice-cinema.cloudfunctions.net/voiceCinema';
 
@@ -58,3 +53,7 @@ export const UPLOAD_TIMEOUT_MS = 110000;
 // 타임아웃(AbortError)은 shouldRetryUpload()가 재시도 대상에서 빼므로
 // 느린 회선에서 대기 시간이 배로 늘어나지는 않는다.
 export const MAX_UPLOAD_ATTEMPTS = 3;
+
+// 웹에서 보내지 못한 메일 대기분(src/lib/mailStoreWeb.ts)을 지우는 때 — 서버가 영상을 지우는 때(functions/index.js의 CUTOFF_DATE)와 같다.
+// 링크도 그때 사라져 보낼 까닭이 없고, 개인정보처리방침의 보관 기한과 같다(test/contract.test.js가 대조한다). 설치판은 desktop/main.js가 같은 값을 쓴다.
+export const MAIL_PURGE_AT = Date.parse('2026-12-01T00:00:00+09:00');

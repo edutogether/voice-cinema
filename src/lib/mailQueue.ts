@@ -26,6 +26,35 @@ export function afterFailure(item: Pick<MailItem, 'attempts'>, now: number): Pic
   return { attempts, nextAt: now + retryDelay(attempts), failed: attempts >= MAX_ATTEMPTS };
 }
 
+export interface BatchStatus {
+  total: number;
+  /** 보내고 지운 건 — 묶음에 있었는데 목록에서 사라졌다 */
+  sent: number;
+  /** 아직 남은 건 중 영상을 이미 올린 건(진행률에 반만 친다) */
+  uploaded: number;
+  /** 이번에 보내지 못한 건 — 다음 차례를 기다리거나(nextAt) 여덟 번 실패했다 */
+  failed: number;
+  /** 아직 보내 보지 않은 건 */
+  pending: number;
+}
+
+/**
+ * 설치판 시작 창(«보낼 메일 N건») 한 묶음의 상태. 묶음은 창을 띄울 때 남아 있던 건이고, 보내기 전에 전부 처음부터(nextAt 0)로 되돌린다
+ * (mailDelivery.ts의 retryAll) — 그래서 남은 건 중 nextAt이 있거나 failed면 이번에 보내지 못한 것이다.
+ */
+export function batchStatus(ids: string[], items: MailItem[]): BatchStatus {
+  const byId = new Map(items.map((item) => [item.id, item]));
+  const status: BatchStatus = { total: ids.length, sent: 0, uploaded: 0, failed: 0, pending: 0 };
+  for (const id of ids) {
+    const item = byId.get(id);
+    if (!item) status.sent++;
+    else if (item.failed || item.nextAt > 0) status.failed++;
+    else status.pending++;
+    if (item?.url) status.uploaded++;
+  }
+  return status;
+}
+
 /** 지금 보낼 차례인 건을 교사별로 묶는다 — 한 교사에게는 한 통만 간다. */
 export function dueGroups(items: MailItem[], now: number): MailItem[][] {
   const groups = new Map<string, MailItem[]>();

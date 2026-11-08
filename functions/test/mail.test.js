@@ -1,11 +1,27 @@
 // 메일 전달 서버 규칙(functions/mail.js) — 검사 · 내용 · Resend 요청 모양 · 오류 처리(2026-11-08).
 import { test, expect } from 'vitest';
+import { initializeApp, deleteApp } from 'firebase-admin/app';
+import { getStorage } from 'firebase-admin/storage';
 import { validateMailRequest, buildMailMessage, mailIdempotencyKey, sendViaResend, MAIL_FROM, MAIL_REPLY_TO, MAIL_SUBJECT, RESEND_URL, MAX_ITEMS, NAME_MAX, GENRE_NAMES } from '../mail.js';
 import { GENRE_IDS } from '../validate.js';
 
 const BUCKET = 'inky-voice-cinema.firebasestorage.app';
+const OBJECT = 'dub_fantasy_1762560000000_abcdefabcdefabcdef.mp4';
 const link = (genre = 'fantasy', random = 'abcdefabcdefabcdef') => `https://storage.googleapis.com/${BUCKET}/dubs/dub_${genre}_1762560000000_${random}.mp4`;
 const body = (patch = {}) => ({ to: 'teacher@ice.go.kr', items: [{ name: '민준', url: link() }], ...patch });
+
+// 업로드(index.js)가 돌려주는 링크는 file.publicUrl()이다 — 저장 이름을 감싸 «dubs/»가 «dubs%2F»가 된다. 화면은 그 링크를 맡겨 두었다가
+// 그대로 보내므로 메일 검사가 이 모양을 받아야 한다. 11/8 실제 발송에서 이 모양을 거절해 메일이 400이었다 — 시험의 링크가 모두 «/» 그대로라 몰랐다.
+test('업로드가 돌려주는 링크(진짜 publicUrl, «/»가 %2F)를 그대로 받는다', async () => {
+  const app = initializeApp({ projectId: 'mail-contract', storageBucket: BUCKET }, 'mail-contract');
+  try {
+    const url = getStorage(app).bucket().file(`dubs/${OBJECT}`).publicUrl();
+    expect(validateMailRequest(body({ items: [{ name: '민준', url }] }), BUCKET))
+      .toEqual({ ok: true, to: 'teacher@ice.go.kr', items: [{ name: '민준', url, object: OBJECT, genre: '판타지' }] });
+  } finally {
+    await deleteApp(app);
+  }
+});
 
 test('맞는 요청은 주소를 다듬고, 링크에서 장르 이름을 서버가 정한다', () => {
   const r = validateMailRequest(body({ to: '  teacher@ice.go.kr  ', items: [{ name: ' 민준 ', url: link('hero') }, { name: '별', url: link('dub', '0123456789abcdef01') }] }), BUCKET);
@@ -49,6 +65,14 @@ test.each([
   ['다른 사이트', { items: [{ name: '민준', url: 'https://evil.example/dub_fantasy_1762560000000_abcdefabcdefabcdef.mp4' }] }, '영화 링크가 올바르지 않습니다.'],
   ['dubs 밖', { items: [{ name: '민준', url: `https://storage.googleapis.com/${BUCKET}/other/dub_fantasy_1762560000000_abcdefabcdefabcdef.mp4` }] }, '영화 링크가 올바르지 않습니다.'],
   ['경로 넘기', { items: [{ name: '민준', url: `https://storage.googleapis.com/${BUCKET}/dubs/../x/dub_fantasy_1762560000000_abcdefabcdefabcdef.mp4` }] }, '영화 링크가 올바르지 않습니다.'],
+  ['%2F로 경로 넘기', { items: [{ name: '민준', url: `https://storage.googleapis.com/${BUCKET}/dubs%2F..%2Fx%2F${OBJECT}` }] }, '영화 링크가 올바르지 않습니다.'],
+  // 풀고 나면 dubs/ 로 시작하므로 앞 검사는 지나간다 — 남은 이름의 «..» · «/»는 저장 이름 모양(OBJECT_NAME)만이 막는다
+  ['%2E%2E로 감싼 경로 넘기(..만)', { items: [{ name: '민준', url: `https://storage.googleapis.com/${BUCKET}/dubs%2F%2E%2E%2F${OBJECT}` }] }, '영화 링크가 올바르지 않습니다.'],
+  ['dubs 안 하위 폴더(/만)', { items: [{ name: '민준', url: `https://storage.googleapis.com/${BUCKET}/dubs%2Fx%2F${OBJECT}` }] }, '영화 링크가 올바르지 않습니다.'],
+  ['이름 뒤 경로 넘기', { items: [{ name: '민준', url: `https://storage.googleapis.com/${BUCKET}/dubs%2F${OBJECT}%2F..%2F${OBJECT}` }] }, '영화 링크가 올바르지 않습니다.'],
+  ['두 번 감싼 링크', { items: [{ name: '민준', url: `https://storage.googleapis.com/${BUCKET}/dubs%252F${OBJECT}` }] }, '영화 링크가 올바르지 않습니다.'],
+  ['풀 수 없는 링크', { items: [{ name: '민준', url: `https://storage.googleapis.com/${BUCKET}/dubs%2F${OBJECT}%E0%A4%A` }] }, '영화 링크가 올바르지 않습니다.'],
+  ['같은 영화를 두 모양으로', { items: [{ name: '민준', url: link() }, { name: '서연', url: `https://storage.googleapis.com/${BUCKET}/dubs%2F${OBJECT}` }] }, '같은 영화가 두 번 들어 있습니다.'],
   ['업로드 이름 모양 아님', { items: [{ name: '민준', url: `https://storage.googleapis.com/${BUCKET}/dubs/movie.mp4` }] }, '영화 링크가 올바르지 않습니다.'],
   ['뒤에 쿼리', { items: [{ name: '민준', url: `${link()}?x=1` }] }, '영화 링크가 올바르지 않습니다.'],
   ['같은 영화 두 번', { items: [{ name: '민준', url: link() }, { name: '서연', url: link() }] }, '같은 영화가 두 번 들어 있습니다.'],

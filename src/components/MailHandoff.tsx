@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Genre } from '../genres';
 import { checkMail, MAIL_MAX, NAME_MAX, suggestDomain, withDomain, type MailProblem } from '../lib/mailAddress';
-import { queueMail } from '../lib/mailDelivery';
+import { mailInBrowser, queueMail } from '../lib/mailDelivery';
 import { ActionIcon } from './ActionIcon';
 
 const MAIL_ERROR: Record<MailProblem, string> = {
@@ -18,10 +18,11 @@ interface Props {
 }
 
 /**
- * 설치판에서 영상을 올리지 못했을 때 교사 · 운영자가 이름(또는 별명)과 인솔 교사 메일을 적는다.
- * 🔴 값은 이 화면의 상태에만 있다 — 제출 양식(form) · 자동 완성 · 브라우저 저장소를 쓰지 않아 다음 사람에게 이전 주소가 뜨지 않는다.
+ * 영상을 올리지 못했을 때(설치판 · 웹 모두, 11/8) 교사 · 운영자가 이름(또는 별명)과 인솔 교사 메일을 적는다.
+ * 🔴 적는 동안 값은 이 화면의 상태에만 있다 — 제출 양식(form) · 자동 완성을 쓰지 않아 다음 사람에게 이전 주소가 뜨지 않는다.
+ * «맞아요, 보내 주세요»를 누른 뒤에만 보내기 대기열(설치판은 암호화 파일, 웹은 이 사이트의 IndexedDB)에 맡긴다.
  * 주소를 두 번 적게 하지 않고 다음 화면에서 다시 보여 고치게 한다(GOV.UK 메일 주소 패턴).
- * 설치판을 쓴다는 것이 곧 인터넷이 없다는 뜻이라 «메일 없이 이 기기에 저장»은 두지 않는다(11/8 Bumm님) — 기기에 보관하지 못했을 때만 이 기기에 저장으로 간다.
+ * «메일 없이 이 기기에 저장»은 두지 않는다(11/8 Bumm님, 설치판과 같은 화면) — 대기열에 맡기지 못했을 때만 이 기기에 저장으로 간다.
  * 적는 칸과 확인은 옅은 판 하나에 모은다(11/8 Bumm님 «아래쪽이 너무 비어 보입니다 … 허술해 보이지 않게», src/styles/mail.css).
  */
 export function MailHandoff({ genre, blob, onSaveHere, onHome }: Props) {
@@ -135,7 +136,18 @@ export function MailHandoff({ genre, blob, onSaveHere, onHome }: Props) {
         <>
           <span className="result-symbol"><ActionIcon name="check" /></span>
           <h2 tabIndex={-1}>인터넷이 돌아오면 보내 드릴게요</h2>
-          <p id="doneMsg">이 기기에 잠시 보관했다가 인터넷이 돌아오면 보내고 바로 지워요. 프로그램을 껐다면 다시 켜야 이어서 보내요.</p>
+          {mailInBrowser ? (
+            <>
+              <p id="doneMsg">이 브라우저에 잠시 보관했다가 인터넷이 돌아오면 보내고 바로 지워요.</p>
+              {/* 웹 보관의 조건 두 가지(11/8 Bumm님 지시 — 짧게). 창을 닫으면 다시 열 때 이어서 보낸다 */}
+              <ul className="mail-conditions" id="mailConditions">
+                <li>인터넷이 돌아올 때 이 창이 열려 있어야 보내져요.</li>
+                <li>크롬 기록(사이트 데이터)을 지우면 보내기 전 영화도 지워져요.</li>
+              </ul>
+            </>
+          ) : (
+            <p id="doneMsg">이 기기에 잠시 보관했다가 인터넷이 돌아오면 보내고 바로 지워요. 프로그램을 껐다면 다시 켜야 이어서 보내요.</p>
+          )}
           <div className="row result-actions mail-actions">
             <button type="button" className="btn btn-lg btn-ghost" id="doneHomeBtn" onClick={onHome}><ActionIcon name="clapperboard" /> 다른 더빙 하기</button>
           </div>

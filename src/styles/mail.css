@@ -1,4 +1,4 @@
-/* 설치판 메일 전달 화면 — 완성 화면(result.css)의 흰색/빨간색을 그대로 쓴다. 웹에서는 이 요소들이 그려지지 않는다. */
+/* 메일 전달 화면(설치판 · 웹, 11/8) — 완성 화면(result.css)의 흰색/빨간색을 그대로 쓴다. 메일 대기열이 없는 브라우저에서는 이 요소들이 그려지지 않는다. */
 /* 적는 칸과 확인을 옅은 판 하나에 모은다(11/8 Bumm님 «아래쪽이 너무 비어 보입니다 … 허술해 보이지 않게») — 판 모서리는 왼쪽 그림과 같은 16px이다. */
 .mail-form { max-width:30rem; margin-top:24px; padding:24px; box-sizing:border-box; border-radius:16px; background:#f5f5f5; }
 .mail-field { margin:0 0 16px; }
@@ -20,6 +20,9 @@
 .result-details p.mail-name-shown { margin:0; color:#262626; }
 .result-details p.mail-typo { margin:14px 0 0; padding:12px 14px; border:1px solid #f3d2cf; border-radius:10px; background:#fff3f2; color:#642a26; font-size:.9375rem; }
 .mail-typo-fix { display:block; margin-top:4px; padding:0; border:0; background:none; color:#c91b19; font:inherit; font-weight:700; text-decoration:underline; cursor:pointer; }
+/* 웹 대기 화면의 조건 두 가지 — 적는 칸과 같은 옅은 판(11/8) */
+.mail-conditions { max-width:30rem; margin:0; padding:18px 22px 18px 40px; box-sizing:border-box; border-radius:16px; background:#f5f5f5; color:#262626; font-size:.9375rem; line-height:1.6; word-break:keep-all; }
+.mail-conditions li + li { margin-top:6px; }
 @container app (max-width:900px) {
  .mail-form { padding:20px; }
 }
@@ -32,8 +35,14 @@
  #result .mail-actions .btn { padding-block:12px; }
 }
 
-/* 메일 대기 단추 — 첫 화면 노란 «인터넷 없이 쓰는 설치판» 표시 옆, 기다리는 메일이 있을 때만(11/8). 표시와 같은 높이(20px)다. */
-.mail-queue-chip { flex-shrink:0; padding:0 9px; border:1px solid #c9c9c9; border-radius:999px; background:#fff; color:#262626; font:inherit; font-size:12px; font-weight:700; line-height:18px; white-space:nowrap; cursor:pointer; }
+/* 메일 대기 단추 — 첫 화면 오른쪽 위(설치판은 노란 «인터넷 없이 쓰는 설치판» 표시 옆, 웹은 설치 파일 아이콘 옆), 기다리는 메일이 있을 때만(11/8). 표시와 같은 높이(20px)다. */
+.mail-queue-chip { position:relative; flex-shrink:0; padding:0 9px; border:1px solid #c9c9c9; border-radius:999px; background:#fff; color:#262626; font:inherit; font-size:12px; font-weight:700; line-height:18px; white-space:nowrap; cursor:pointer; }
+/* 손가락으로 누르는 기기는 누르는 칸만 넓힌다(모양 · 자리는 그대로) */
+@media (pointer:coarse) {
+ .mail-queue-chip::after { content:''; position:absolute; inset:-12px -4px; }
+ /* 설치 파일 아이콘의 넓힌 칸(home.css, 왼쪽으로 12px)과 겹치지 않게 */
+ .mail-queue-chip + .download-link { margin-left:-4px; }
+}
 @media (hover:hover) { .mail-queue-chip:hover { border-color:#8c8c8c; } }
 .mail-queue-chip:focus-visible { outline:2px solid #ed3124; outline-offset:2px; }
 .mail-queue { width:min(560px,calc(100% - 48px)); padding:24px; border:0; border-radius:14px; color:#171717; box-shadow:0 18px 50px #00000059; overscroll-behavior:contain; }
@@ -46,3 +55,19 @@
 .mail-queue-buttons { display:flex; gap:8px; margin-left:auto; }
 .mail-queue button { padding:6px 12px; border:1px solid #d8d8d8; border-radius:8px; background:#fff; color:#262626; font:inherit; font-size:.875rem; font-weight:650; cursor:pointer; }
 .mail-queue button:disabled { opacity:.5; cursor:default; }
+
+/* 설치판 시작 창 «보낼 메일 N건이 있어요»(11/8 Bumm님) — 대기 목록 창과 같은 판, 단추만 크게 */
+.mail-startup { width:min(520px,calc(100% - 48px)); padding:28px; }
+.mail-startup h2 { margin-bottom:10px; font-size:1.375rem; line-height:1.4; word-break:keep-all; }
+.mail-startup p { margin:0; color:#262626; font-size:1rem; line-height:1.6; word-break:keep-all; }
+.mail-startup-bar { height:8px; margin-top:18px; overflow:hidden; border-radius:999px; background:#ececec; }
+.mail-startup-bar i { display:block; height:100%; border-radius:inherit; background:#e52320; }
+@media (prefers-reduced-motion:no-preference) { .mail-startup-bar i { transition:width .3s ease-out; } }
+.mail-startup-buttons { display:flex; justify-content:flex-end; gap:8px; margin-top:22px; }
+.mail-startup .mail-startup-buttons button { padding:10px 20px; border-radius:10px; font-size:1rem; }
+.mail-startup .mail-startup-buttons button.primary { border-color:#e52320; background:#e52320; color:#fff; }
+@media (hover:hover) {
+ .mail-startup .mail-startup-buttons button:hover { border-color:#aaa; background:#f5f5f5; }
+ .mail-startup .mail-startup-buttons button.primary:hover { border-color:#c91b19; background:#c91b19; }
+}
+.mail-startup button:focus-visible { outline:2px solid #ed3124; outline-offset:2px; }

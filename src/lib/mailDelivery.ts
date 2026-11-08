@@ -1,45 +1,48 @@
-// 설치판의 메일 전달: 인터넷이 돌아오면 영상을 올리고 → 인솔 교사에게 메일을 보내고 → 기기에서 지운다.
-// 업로드 · 메일 모두 App Check 토큰이 필요해 화면 쪽에서 돈다. 보관은 메인 프로세스(desktop/mail-store.js)가 암호화해서 한다.
+// 메일 전달: 인터넷이 돌아오면 영상을 올리고 → 인솔 교사에게 메일을 보내고 → 기기에서 지운다.
+// 업로드 · 메일 모두 App Check 토큰이 필요해 화면 쪽에서 돈다. 보관은 설치판이면 메인 프로세스(desktop/mail-store.js)가 암호화해서 하고,
+// 웹(크롬)이면 이 사이트의 IndexedDB(src/lib/mailStoreWeb.ts)에 한다(2026-11-08 Bumm님 «웹도 끊기면 메일 칸을 띄움»).
 // 메일은 서버(functions/index.js의 /mail)가 정한 틀로 Resend를 거쳐 보낸다 — 여기서는 받는 주소 · 이름 · 영화 링크만 넘긴다(2026-11-08 실제 발송).
-// 끊김은 Windows가 알리는 것(navigator.onLine)만 본다 — 시험은 끊김을 흉내 낸다(desktop/e2e/mail.spec.mjs).
+// 끊김은 기기가 알리는 것(navigator.onLine)만 본다 — 시험은 끊김을 흉내 낸다(e2e/web-mail.spec.js, desktop/e2e/mail.spec.mjs).
 // 🔴 이 파일의 로그에 메일 주소 · 이름을 넣지 않는다.
 import { API_BASE } from '../config';
 import { buildUploadFilename } from '../logic';
+import { IN_INSTALLER } from './installer';
 import { afterFailure, dueGroups, type MailItem } from './mailQueue';
+import { webMailStore, type MailInfo, type MailStore } from './mailStoreWeb';
 import { boothHeaders, uploadToCloud } from './upload';
-
-type MailInfo = Pick<MailItem, 'name' | 'email' | 'genreId' | 'genreName'>;
 
 declare global {
   interface Window {
-    vcDesktop?: {
-      mail: {
-        add(info: MailInfo, bytes: ArrayBuffer): Promise<string>;
-        list(): Promise<MailItem[]>;
-        video(id: string): Promise<Uint8Array>;
-        update(id: string, patch: Partial<MailItem>): Promise<void>;
-        remove(id: string): Promise<void>;
-      };
-    };
+    vcDesktop?: { mail: MailStore };
   }
 }
 
-const bridge = window.vcDesktop?.mail ?? null;
+// 설치판은 암호화 보관(다리)만 쓴다 — 다리를 열지 못하면(키 손상 등) 웹 보관으로 넘어가지 않고 지금까지처럼 이 기기에 저장으로 간다.
+// 웹은 IndexedDB가 있을 때만 — 없으면 메일 화면을 그리지 않고 이 기기에 저장으로 간다.
+const bridge: MailStore | null = IN_INSTALLER
+  ? window.vcDesktop?.mail ?? null
+  : typeof indexedDB === 'undefined' ? null : webMailStore;
 const POLL_MS = 15_000;
 // 서버는 Resend를 15초까지 기다린다 — 그보다 넉넉히 기다리고, 넘으면 이번에는 실패로 세어 나중에 다시 보낸다
 const MAIL_TIMEOUT_MS = 30_000;
+// 창(탭)이 여러 개여도 한 창만 보낸다 — 같은 영화를 두 번 올리거나 메일이 두 통 가지 않게
+const DELIVERY_LOCK = 'voice-cinema-mail';
 
-/** 웹에는 다리가 없다 — 이 값이 거짓이면 메일 화면을 하나도 그리지 않는다. */
+/** 이 값이 거짓이면 메일 화면을 하나도 그리지 않는다. */
 export const mailEnabled = bridge !== null;
+/** 웹 보관이면 참이다 — 대기 화면이 «이 창이 열려 있어야» · «크롬 기록을 지우면»을 알린다. */
+export const mailInBrowser = bridge === webMailStore;
 
 export type MailActivity = 'upload' | 'send' | 'delete';
 
 export interface MailState {
   items: MailItem[];
   activity: MailActivity | null;
+  /** 보관한 목록을 한 번이라도 읽었는가 — 그 전의 빈 목록은 «남은 메일 없음»이 아니다(설치판 시작 창이 이것을 기다린다). */
+  loaded: boolean;
 }
 
-let state: MailState = { items: [], activity: null };
+let state: MailState = { items: [], activity: null, loaded: false };
 const listeners = new Set<() => void>();
 const setState = (patch: Partial<MailState>) => {
   state = { ...state, ...patch };
@@ -52,11 +55,17 @@ export const subscribeMail = (listener: () => void) => {
 };
 export const getMailState = () => state;
 
-/** Windows가 연결 없음을 알리면 거짓이다. */
+/** 기기가 연결 없음을 알리면 거짓이다. */
 export const isOnline = () => navigator.onLine;
 
+// 보관을 읽지 못해도(브라우저가 저장소를 막는 등) 화면을 멈추지 않는다 — 목록만 그대로 둔다
 const refresh = async () => {
-  if (bridge) setState({ items: await bridge.list() });
+  if (!bridge) return;
+  try {
+    setState({ items: await bridge.list(), loaded: true });
+  } catch (e) {
+    console.error('[메일 대기열] 목록을 읽지 못함', e instanceof Error ? e.message : '');
+  }
 };
 
 async function upload(item: MailItem): Promise<string> {
@@ -81,11 +90,25 @@ async function send(group: MailItem[]): Promise<void> {
 }
 
 let running = false;
+// 도는 중에 다시 불리면(다시 보내기 · 인터넷이 돌아옴) 지금 차례가 끝난 뒤 한 번 더 돈다 — 그 사이 다시 보낼 차례가 된 건을 15초 기다리게 하지 않는다
+let again = false;
 async function run(): Promise<void> {
-  if (!bridge || running || !isOnline()) return;
+  if (!bridge || !isOnline()) return;
+  if (running) { again = true; return; }
   running = true;
   try {
-    for (const group of dueGroups(await bridge.list(), Date.now())) {
+    // 다른 창이 보내는 중이면 기다리지 않고 목록만 새로 읽는다 — 그 창이 끝내면 다음 차례에 이 창도 지워진 것을 본다
+    if (navigator.locks) await navigator.locks.request(DELIVERY_LOCK, { ifAvailable: true }, (lock) => (lock ? deliver(bridge!) : refresh()));
+    else await deliver(bridge);
+  } finally {
+    running = false;
+    if (again) { again = false; void run(); }
+  }
+}
+
+async function deliver(store: MailStore): Promise<void> {
+  try {
+    for (const group of dueGroups(await store.list(), Date.now())) {
       if (!isOnline()) break;
       try {
         setState({ activity: 'upload' });
@@ -93,26 +116,29 @@ async function run(): Promise<void> {
         setState({ activity: 'send' });
         await send(group);
         setState({ activity: 'delete' });
-        for (const item of group) await bridge.remove(item.id);
+        for (const item of group) await store.remove(item.id);
         await refresh();
       } catch (e) {
         console.error('[메일 대기열] 이번에는 보내지 못함', e instanceof Error ? e.message : '');
-        for (const item of group) await bridge.update(item.id, afterFailure(item, Date.now()));
+        for (const item of group) await store.update(item.id, afterFailure(item, Date.now()));
         await refresh();
       }
     }
   } catch (e) {
     console.error('[메일 대기열] 처리 중단', e instanceof Error ? e.message : '');
   } finally {
-    running = false;
     setState({ activity: null });
   }
 }
 
-/** 인터넷이 돌아왔다 — 기다리던 건과 «보내지 못함»을 전부 처음부터 다시 시도한다. */
-async function retryAll(): Promise<void> {
+/** 인터넷이 돌아왔다(또는 설치판이 켜졌다 · 시작 창의 «다시 보내기») — 기다리던 건과 «보내지 못함»을 전부 처음부터 다시 시도한다. */
+export async function retryAll(): Promise<void> {
   if (!bridge) return;
-  for (const item of await bridge.list()) await bridge.update(item.id, { attempts: 0, nextAt: 0, failed: false });
+  try {
+    for (const item of await bridge.list()) await bridge.update(item.id, { attempts: 0, nextAt: 0, failed: false });
+  } catch (e) {
+    console.error('[메일 대기열] 다시 시도를 준비하지 못함', e instanceof Error ? e.message : '');
+  }
   await refresh();
   await run();
 }
@@ -122,7 +148,8 @@ export function startMailDelivery(): void {
   if (!bridge) return;
   window.addEventListener('online', () => { void retryAll(); });
   setInterval(() => { void run(); }, POLL_MS);
-  void refresh().then(run);
+  // 설치판은 켤 때 남은 건을 전부 처음부터 보낸다 — 시작 창(MailStartup)이 «보낼 메일 N건»을 그 자리에서 다 보내고 끝을 알린다(11/8 Bumm님)
+  void (IN_INSTALLER ? retryAll() : refresh().then(run));
 }
 
 export async function queueMail(info: MailInfo, blob: Blob): Promise<void> {

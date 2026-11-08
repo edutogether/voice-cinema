@@ -101,10 +101,6 @@ body:has(#home.active) { background:#fff; }
 html[data-fit="none"] .download-link { display:none; }
 /* 설치판 안에서 같은 자리에 두는 표시(11/8 Bumm님) — Poster Studio 설치판의 «설치판 · AI 없이» 표시와 같은 값(InKY 노랑 #FFE700 바탕) */
 .installer-badge { flex-shrink:0; padding:0 9px; border-radius:999px; background:#ffe700; color:#2b2300; font-size:12px; font-weight:700; line-height:20px; white-space:nowrap; }
-/* 진행률이 사라져도 카드 높이가 바뀌지 않게 헤더 아래에 독립 표시한다. */
-.enginebar { display:none; position:absolute; right:160px; top:82px; color:#626262; font-size:.6875rem; line-height:1.5; }
-.enginebar.show { display:block; }
-.enginebar.err b { color:#a2202b; }
 @media (hover:hover) and (pointer:fine) {
   /* 카드·영상 표면의 위치와 크기를 고정한다. 호버 시 재생과 버튼 색만 바뀐다. */
   .tile:is(:hover,:focus-visible) .tile-enter { color:white; background:#df291f; border-color:#df291f; }
@@ -129,7 +125,6 @@ html[data-fit="none"] .download-link { display:none; }
   .partner-cgv { width:58px; }
   .partner-education { width:145px; }
   .chart-heading > p { max-width:230px; }
-  .enginebar { top:98px; }
   .cinema-steps { gap:20px; }
   .cinema-header { flex-wrap:wrap; padding:20px 0 0; gap:16px; }
   .cinema-steps { flex-basis:100%; justify-content:space-between; }
@@ -161,7 +156,6 @@ html[data-fit="none"] .download-link { display:none; }
   .header-links { right:16px; }
   .privacylink { font-size:.6875rem; }
   .download-link { display:none; }
-  .enginebar { right:136px; top:94px; font-size:.6875rem; line-height:1.36; }
 }
 /* 아주 좁은 휴대폰(320px 안팎)에서도 로고 한 줄이 넘치지 않게 한 단계 더 줄인다 */
 @container app (max-width:370px) {
@@ -298,13 +292,10 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
  .chart-heading h1 > :not(.chart-title-phone),.chart-heading > p { display:none; }
  .chart-title-phone { display:inline; }
  .chart-heading h1 { font-size:1.3125rem; line-height:1.35; letter-spacing:-.055em; }
- /* 제목이 한 줄을 다 쓰므로 진행률은 제목 아래 오른쪽 한 줄에 둔다 — 자리를 늘 비워 두고 보일 때만 글자를 띄워, 사라져도 장면이 움직이지 않는다 */
- .enginebar { display:block; visibility:hidden; position:static; height:15px; text-align:right; font-size:.6875rem; }
- .enginebar.show { visibility:visible; }
  /* 카드 폭은 양옆 여백까지 넓힌 장면 칸의 94%(컨테이너 단위, 못 쓰는 브라우저는 화면 폭 기준). 휴대폰은 늘 이 폭이고, 넓고 낮은 창(마우스로 좁힌
     PC 창·가로로 든 휴대폰)에서만 화면 높이가 상한이 된다 — --vc-reserve는 카드 그림 밖의 세로 몫(머리글·안내·제목·단추·번호·바로가기·바닥글)이고,
     안내를 접는 높이 구간에서 아래가 같이 줄인다. 아주 낮으면 장면 칸의 50% 아래로는 줄이지 않고 스크롤을 허용한다. */
- .scene-carousel { flex:2 0 auto; --vc-reserve:408px; }
+ .scene-carousel { flex:2 0 auto; --vc-reserve:393px; }
  .scene-choice-row { margin-block:auto; }
  .scene-stage { --scene-caption-height:62px; --scene-width:max(calc(50 * var(--vw)), min(calc(94 * var(--vw)), (var(--app-h) - var(--vc-reserve)) * 16 / 9)); flex:none; min-height:0; margin-inline:-16px; height:calc(var(--scene-width) * 9 / 16 + var(--scene-caption-height) + 8px); }
  @supports (width:1cqw) and (height:1svh) {
@@ -362,7 +353,7 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
 @container app (max-width:760px) and (max-height:599px) {
  .chart-aside { display:none; }
  .chart-layout { padding-top:28px; }
- .scene-carousel { --vc-reserve:347px; }
+ .scene-carousel { --vc-reserve:332px; }
 }
 /* 움직임 줄이기에서는 바로가기 줄이 흐르지 않으므로 손가락으로 밀어 볼 수 있게 한다. */
 @media (prefers-reduced-motion:reduce) { @container app (max-width:760px) { .scene-choices { overflow-x:auto; } } }

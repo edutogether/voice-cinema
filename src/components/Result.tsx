@@ -67,10 +67,12 @@ export function Result({ active, job, onHome, onBack }: Props) {
         return;
       }
       if (cancelled) return;
-      // 올리지 못했을 때: 설치판(메일 대기열이 있을 때)은 인솔 교사 메일을 받고, 그 밖에는 이 기기에 저장으로 간다
-      const cannotUpload = () => setStage(mailEnabled ? { kind: 'mail', blob: merged } : { kind: 'fallback', blob: merged });
-      // 인터넷이 아예 없으면(와이파이 없이 쓰는 설치판 등) 올리지 않는다 — App Check 대기(20초)를 세 번 «저장하고 있어요»로 보내지 않고
-      // 바로 이 기기에 저장으로 간다(10/27 설치판, 오프라인일 때는 정직하게 안내).
+      // 올리지 못했을 때: 메일 대기열이 있으면(설치판 · 웹 모두, 11/8 Bumm님 «웹도 끊기면 메일 칸을 띄움») 인솔 교사 메일을 받고, 그 밖에는 이 기기에 저장으로 간다.
+      // 미리보기 주소는 서버가 받지 않아(허용 출처 밖) 맡겨 두어도 영영 보내지지 않는다 — 이 기기에 저장으로 간다.
+      const useMail = mailEnabled && !isPreviewChannel(window.location.hostname);
+      const cannotUpload = () => setStage(useMail ? { kind: 'mail', blob: merged } : { kind: 'fallback', blob: merged });
+      // 인터넷이 아예 없으면 올리지 않는다 — App Check 대기(20초)를 세 번 «저장하고 있어요»로 보내지 않고
+      // 바로 메일 칸(없으면 이 기기에 저장)으로 간다(10/27 설치판, 오프라인일 때는 정직하게 안내).
       if (!isOnline()) {
         cannotUpload();
         return;

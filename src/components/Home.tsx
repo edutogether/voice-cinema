@@ -5,16 +5,13 @@ import { SceneCarousel } from './SceneCarousel';
 
 interface Props {
   active: boolean;
-  enginePercent: number;
-  engineLoading: boolean;
-  engineFailed: boolean;
   onSelect: (genre: Genre, source?: HTMLElement) => void;
 }
 
 // 휴대폰·태블릿(터치)도 PC와 같은 2.0 캐러셀을 쓴다 — 옛 격자(여덟 장 동시 재생)는 없앴다(10/17 대표님,
 // «보는 중에 왜 옛날식으로 허접하게 화면이 바뀌냐»). 휴대폰 폭에서는 왼쪽 안내가 제목 위로 올라온다(home.css) —
 // 그때 줄바꿈(<br>)을 지우므로 줄 끝마다 띄어쓰기를 둔다(PC에서는 줄 끝 공백이라 보이지 않는다).
-export function Home({ active, enginePercent, engineLoading, engineFailed, onSelect }: Props) {
+export function Home({ active, onSelect }: Props) {
   return (
     <section id="home" className={`view${active ? ' active' : ''}`}>
       <FestivalHeader />
@@ -38,15 +35,6 @@ export function Home({ active, enginePercent, engineLoading, engineFailed, onSel
             {/* 휴대폰 폭에서는 제목 자리에 «내 목소리로 완성하는 10초의 영화.»를 두고 아래 설명 줄은 접는다(10/19 대표님, home.css) */}
             <div><p className="chart-eyebrow">오늘, 내가 출연할 영화</p><h1><b className="chart-title"><em>더빙</em>할 영화 고르기</b> <span>{GENRES.length}</span><b className="chart-title chart-title-phone">내 목소리로 완성하는 <em>10초의 영화.</em></b></h1></div>
             {!SUPPORTS_HOVER && <p>옆으로 넘겨 고르고, 가운데 장면을 누르면 녹음실로 들어가요.</p>}
-          </div>
-
-          {/* 준비 상태가 장면 선택을 가로막지 않게 같은 배너에서 진행률만 갱신한다. */}
-          <div
-            id="enginebar"
-            role="status"
-            className={`enginebar${engineLoading || engineFailed ? ' show' : ''}${engineFailed ? ' err' : ''}`}
-          >
-            영상 저장 준비 중… <b id="engineProg">{engineFailed ? '저장할 때 다시 시도할게요' : `${enginePercent}%`}</b>
           </div>
 
           <SceneCarousel active={active} onSelect={onSelect} />

@@ -3,7 +3,7 @@
 import { test, expect } from 'vitest';
 import {
   pickAudioExtension, buildUploadFilename, pickSupportedMime, shouldRetryUpload,
-  progressPercent, isKakaoInApp, kakaoExternalUrl, kakaoMenuHint, isPreviewChannel,
+  isKakaoInApp, kakaoExternalUrl, kakaoMenuHint, isPreviewChannel,
 } from './logic';
 
 test('pickAudioExtension: mp4 계열은 m4a, 그 외(webm/opus)는 webm', () => {
@@ -44,14 +44,6 @@ test('shouldRetryUpload: AbortError는 재시도하지 않는다 (이미 타임�
 test('shouldRetryUpload: 그 외 에러(네트워크 순간 끊김 등)는 재시도한다', () => {
   expect(shouldRetryUpload(new Error('network blip'))).toBe(true);
   expect(shouldRetryUpload(new TypeError('failed to fetch'))).toBe(true);
-});
-
-test('progressPercent: 받은 바이트를 실제 파일 크기로 나누고 100%에서 멈춘다', () => {
-  expect(progressPercent(0, 32_232_419)).toBe(0);
-  expect(progressPercent(16_116_210, 32_232_419)).toBe(50);
-  expect(progressPercent(32_232_419, 32_232_419)).toBe(100);
-  // 10/20 라이브: Hosting이 brotli로 보내 Content-Length(7,280,522)를 분모로 쓰면 다 받았을 때 443%였다
-  expect(progressPercent(32_232_419, 7_280_522)).toBe(100);
 });
 
 // 실제 기기에서 쓰는 모양의 UA(카카오톡은 끝에 «KAKAOTALK 버전»을 붙인다 — 안드로이드는 앞에 띄어쓰기 없이 «;»)

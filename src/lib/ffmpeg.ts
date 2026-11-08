@@ -1,6 +1,6 @@
-import { ENGINE_WASM_BYTES, PAUSE_SECONDS, VOICE_WINDOW_SECONDS } from '../config';
+import { PAUSE_SECONDS, VOICE_WINDOW_SECONDS } from '../config';
 import { finalClipUrl } from '../genres';
-import { pickAudioExtension, progressPercent } from '../logic';
+import { pickAudioExtension } from '../logic';
 import { readInBackground } from './backgroundLoad';
 import { serviceWorkerRegistering } from './sw';
 import { loadFFmpegModule, loadFFmpegUtil, type FFmpegInstance } from './vendor';
@@ -9,29 +9,19 @@ const SW_CONTROL_WAIT_MS = 20000;
 
 // @ffmpeg/util의 toBlobURL(progress=true)은 스트림 리더가 도중에 실패하면 이미 읽은
 // Response.body를 다시 arrayBuffer()로 읽으려다 "body stream already read" 오류를
-// 낸다(라이브에서 재현 확인됨). 그 경로를 피해 직접 fetch + 진행률을 구현한다.
-// 진행률은 받은(압축을 푼) 바이트로만 알린다 — Content-Length는 압축된 크기라 분모로 쓰면 100%를 넘는다(10/20).
+// 낸다(라이브에서 재현 확인됨). 그 경로를 피해 직접 fetch한다.
 // 받는 동안 녹음실 장면 영상이 받히고 있으면 잠시 쉰다(src/lib/backgroundLoad.ts) — 장면이 먼저 재생돼야 한다.
-async function toBlobURLWithProgress(
-  url: string,
-  mimeType: string,
-  onProgress?: (received: number) => void
-): Promise<string> {
+async function fetchBlobURL(url: string, mimeType: string): Promise<string> {
   const resp = await fetch(url);
   if (!resp.ok) throw new Error(`엔진 파일 다운로드 실패: ${resp.status} ${url}`);
   const chunks: Uint8Array[] = [];
-  let received = 0;
-  await readInBackground(resp, (chunk) => {
-    chunks.push(chunk);
-    received += chunk.length;
-    onProgress?.(received);
-  });
+  await readInBackground(resp, (chunk) => { chunks.push(chunk); });
   return URL.createObjectURL(new Blob(chunks as BlobPart[], { type: mimeType }));
 }
 
 // 첫 방문에서는 서비스워커가 이 탭을 맡기 전에 엔진을 받기 시작하면 서비스워커가 그 받기를 못 봐 캐시에 넣지 못한다 —
 // 그러면 다음에 열 때 31MB를 또 받는다. 서비스워커가 맡을 때까지 잠깐(최대 waitMs) 기다린다. 서비스워커가 없거나 등록이 실패하면
-// 바로 받는다 — Windows 설치판은 서비스워커를 등록하지 않아, 기다리면 매번 20초 동안 «영상 저장 준비 중… 0%»였다(10/27).
+// 바로 받는다 — Windows 설치판은 서비스워커를 등록하지 않아, 기다리면 매번 20초 늦게 받기 시작했다(10/27).
 async function whenServiceWorkerControls(waitMs: number): Promise<void> {
   if (!import.meta.env.PROD || !('serviceWorker' in navigator) || navigator.serviceWorker.controller) return;
   await new Promise<void>((resolve) => {
@@ -50,19 +40,15 @@ let engine: FFmpegInstance | null = null;
 let loading: Promise<FFmpegInstance> | null = null;
 
 /** 엔진(31MB)을 한 번만 받아 재사용한다. 첫 저장 전에 미리 백그라운드로 준비해 둔다. */
-export function loadEngine(onProgress?: (percent: number) => void): Promise<FFmpegInstance> {
+export function loadEngine(): Promise<FFmpegInstance> {
   if (engine) return Promise.resolve(engine);
   if (loading) return loading;
   loading = (async () => {
     await whenServiceWorkerControls(SW_CONTROL_WAIT_MS);
     const { FFmpeg } = await loadFFmpegModule();
     const inst = new FFmpeg();
-    const coreURL = await toBlobURLWithProgress('/vendor/ffmpeg-core/ffmpeg-core.js', 'text/javascript');
-    const wasmURL = await toBlobURLWithProgress(
-      '/vendor/ffmpeg-core/ffmpeg-core.wasm',
-      'application/wasm',
-      (received) => onProgress?.(progressPercent(received, ENGINE_WASM_BYTES))
-    );
+    const coreURL = await fetchBlobURL('/vendor/ffmpeg-core/ffmpeg-core.js', 'text/javascript');
+    const wasmURL = await fetchBlobURL('/vendor/ffmpeg-core/ffmpeg-core.wasm', 'application/wasm');
     await inst.load({ coreURL, wasmURL });
     engine = inst;
     return inst;
