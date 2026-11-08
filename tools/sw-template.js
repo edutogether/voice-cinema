@@ -38,6 +38,8 @@ self.addEventListener('activate', (event) => {
 const isPrecached = (url) => PRECACHE_URLS.includes(url.pathname);
 const isClip = (url) => url.pathname.startsWith('/clips/');
 const isEngine = (url) => url.pathname.startsWith('/vendor/ffmpeg-core/');
+// 저장 대기 화면의 정지 그림(2026-11-09) — 인터넷이 끊겨도 대기 화면에 그림이 남게 캐시에 둔다. 앱이 엔진을 받은 뒤 열한 장을 미리 받는다(src/lib/waitingVideo.ts).
+const isWaitingStill = (url) => url.pathname.startsWith('/waiting-v3/') && url.pathname.endsWith('.webp');
 
 // 옛 캐시에 내용이 정확히 같은 엔진이 있으면 지워지기 전에 엔진 캐시로 옮긴다. 엔진이 화면 캐시에 함께 들어 있던 판(~2026-11-07)에서 넘어오는 기기를
 // 위한 것이고, 그 판에서는 첫 번째로 열 때 옛 캐시가 지워져 두 번째로 열 때 31MB를 다시 받았다. 못 옮기면 아무 일 없이 넘어간다 — 앱이 받을 때 회선으로 받는다.
@@ -147,7 +149,8 @@ self.addEventListener('fetch', (event) => {
 
   // 클립(장르당 약 6MB): 실제로 한 번 불러온 것부터 캐시에 쌓인다.
   // install에서 37MB를 한꺼번에 받으면 느린 와이파이에서 설치가 실패한다.
-  if (isClip(url)) {
+  // 대기 화면 정지 그림(열한 장 2.5MB)도 같은 길이다 — 설치 목록에 넣으면 첫 방문에 화면의 영상과 회선을 다툰다.
+  if (isClip(url) || isWaitingStill(url)) {
     event.respondWith(
       caches
         .match(request, { ignoreVary: true })

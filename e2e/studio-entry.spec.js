@@ -18,9 +18,17 @@ for (const [genre, name] of GENRES) {
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
     await pauseScenes(page);
+    // 카드에서 녹음실로 커지는 동안(메인 화면처럼 보이는 때)에는 «영상을 불러오고 있어요»를 띄우지 않는다(11/9 Bumm님 «메인화면에선 띄우지말고»)
+    await page.evaluate(() => {
+      window.__bufferDuringEntrance = false;
+      new MutationObserver(() => {
+        if (document.querySelector('.studio-video-frame.is-entering .studio-buffering')) window.__bufferDuringEntrance = true;
+      }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    });
     try {
       await page.locator('.scene-choice').filter({ hasText: name }).first().click();
       await expect(page.locator('.studio-video-frame')).not.toHaveClass(/is-entering/);
+      expect(await page.evaluate(() => window.__bufferDuringEntrance), '커지는 동안 받는 중 표시가 떴다').toBe(false);
       const clip = page.locator('#clip');
       const before = await clip.boundingBox();
       expect(before.x).toBe(0);
@@ -28,7 +36,8 @@ for (const [genre, name] of GENRES) {
       expect(await clip.evaluate(video => video.readyState)).toBe(0);
       await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'previewing');
       await expect(clip).toHaveJSProperty('muted', false);
-      await expect(page.locator('.studio-buffering')).toBeVisible();
+      // 녹음실이 다 열린 뒤 받는 동안에는 얼마나 받았는지 퍼센트로 보인다(11/9 Bumm님 «영상 골라서 누른 화면에서는 … 퍼센트까지»)
+      await expect(page.locator('.studio-buffering')).toHaveText(/^영상을 불러오고 있어요 \d{1,3}%$/);
       releaseVideo();
       await expect.poll(() => clip.evaluate(video => video.readyState)).toBeGreaterThanOrEqual(2);
       await expect.poll(() => clip.evaluate(video => !video.paused && !video.muted && video.currentTime > 0)).toBe(true);

@@ -1,14 +1,17 @@
-import { useLayoutEffect } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import type { SceneEntrance } from '../lib/sceneEntrance';
 import { fitScale } from '../lib/fit';
 
-export function StudioEntrance({ entry }: { entry: SceneEntrance }) {
+// onDone: 확대가 끝났을 때(또는 확대할 수 없을 때) 한 번 — 녹음실이 그때부터 «영상을 불러오고 있어요»를 띄운다(Studio.tsx)
+export function StudioEntrance({ entry, onDone }: { entry: SceneEntrance; onDone: () => void }) {
+  const doneRef = useRef(onDone);
+  useEffect(() => { doneRef.current = onDone; });
   useLayoutEffect(() => {
     const frame = document.querySelector<HTMLElement>('.studio-video-frame');
-    if (!frame) return;
+    if (!frame) { doneRef.current(); return; }
     const target = frame.getBoundingClientRect();
     const source = entry.rect;
-    if (!target.width || !target.height) return;
+    if (!target.width || !target.height) { doneRef.current(); return; }
     // 실제 플레이어 하나를 균일 확대한다. 화면을 교체하거나 두 레이어를 역보정하지 않는다.
     // 시작 위치는 누른 카드의 중심, 비율은 처음부터 최종 영상 비율로 고정한다.
     const scale = Math.min(source.width / target.width, source.height / target.height, 1);
@@ -23,6 +26,7 @@ export function StudioEntrance({ entry }: { entry: SceneEntrance }) {
     const finish = () => {
       animation.cancel();
       frame.classList.remove('is-entering');
+      doneRef.current();
     };
     animation.finished.then(finish).catch(() => {});
     window.addEventListener('resize', finish, { once: true });

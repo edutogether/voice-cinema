@@ -126,7 +126,7 @@ test('끊긴 채 더빙을 마치면 메일 칸이 뜨고, 인터넷이 돌아�
   await expect(page.locator('#doneMsg')).toHaveText('이 브라우저에 잠시 보관했다가 인터넷이 돌아오면 보내고 바로 지워요.');
   await expect(page.locator('#mailConditions li')).toHaveText(CONDITIONS);
   expect(await stored(page)).toEqual({ items: 1, videos: 1 });
-  // 맡긴 뒤 화면의 단추는 «다른 더빙 하기» 하나이고 빨간 주 단추다(11/9 Bumm님 «다른 더빙하기 버튼도 빨간색인 게 나을 듯 ?»)
+  // 맡긴 뒤 화면의 단추는 «다른 더빙하기» 하나이고 빨간 주 단추다(11/9 Bumm님 «다른 더빙하기 버튼도 빨간색인 게 나을 듯 ?»)
   // 마우스는 방금 누른 «맞아요, 보내 주세요» 자리에 있어 새 단추 위에 올라간 색이 된다 — 비켜 둔다
   await expect(page.locator('#mailHandoff button')).toHaveCount(1);
   await page.mouse.move(1, 1);

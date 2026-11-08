@@ -1,6 +1,7 @@
 // 녹음·합성 품질(10/24 대표님 지시) — 시험용 마이크로 아이가 말하는 때와 길이를 정해 놓고, 녹음 길이·판정·미리 듣기·완성본을 잰다.
 //   녹음: 기본 3.0초, 3.0초에 말이 이어지면 말이 끝날 때까지(최대 3.5초). 3.5초에도 이어지면 «말끝이 잘렸을 수 있어요».
-//   무음·녹음기 오류·마이크 뽑힘은 저장으로 넘어가지 않고 준비 화면으로 돌아간다. 속삭임은 무음으로 버리지 않는다.
+//   녹음기 오류·마이크 뽑힘은 저장으로 넘어가지 않고 준비 화면으로 돌아간다. 속삭임은 무음으로 버리지 않는다.
+//   무음(아무 말도 안 함)은 11/9부터 장면을 끝까지 잇고 저장할 수 있다(Bumm님 — 아이가 머뭇거려도 영화가 만들어져야 한다).
 //   합성: 목소리는 완성본 5.0초 + (녹음 안에서 말한 때)에 들어가고 8.5초를 넘지 않으며, 원판 소리는 목소리 칸 밖에서 그대로다.
 import { Buffer } from 'node:buffer';
 import { test, expect } from '@playwright/test';
@@ -91,7 +92,7 @@ test('신호(«녹음 중»)보다 먼저 말하면 «앞부분이 빠졌을 수
 
 // 안내 글 칸은 두 줄 몫이다 — 알림 문구가 넘치면 휴대폰에서 영상·단추가 움직인다(e2e/studio-phone-fill.spec.js의 규칙)
 // 알림마다 새 페이지에서 본다 — 한 페이지에서 시험용 마이크 계획을 잇달아 바꾸면 병렬 부하에서 다른 계획의 소리가 담긴 적이 있다(앱은 받은 소리대로 판정했다)
-for (const [expected, plan] of [['cut', { delay: 0.2, dur: 4 }], ['quiet', { delay: 0.3, dur: 1.5, amp: 0.006 }], ['early', { early: true, dur: 2 }]]) {
+for (const [expected, plan] of [['cut', { delay: 0.2, dur: 4 }], ['quiet', { delay: 0.3, dur: 1.5, amp: 0.006 }], ['early', { early: true, dur: 2 }], ['silent', { silent: true }]]) {
   test(`휴대폰 360×640: «${expected}» 알림도 안내 칸 두 줄 안이라 영상·단추가 움직이지 않는다`, async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 640 });
     await installSyntheticMic(page, [plan]);
@@ -110,15 +111,41 @@ for (const [expected, plan] of [['cut', { delay: 0.2, dur: 4 }], ['quiet', { del
   });
 }
 
-test('완전 무음은 저장으로 넘어가지 않고 준비 화면에서 다시 녹음하게 한다', async ({ page }) => {
+// 아이가 머뭇거려 3·2·1 뒤에 아무 말도 하지 않아도 장면은 끝까지 흐르고, 저장하면 영화가 만들어진다
+// (11/9 Bumm님 «321 한담에 말 안하니 다음 영상하고 완성영상 안만들어주고 중간에 끊어져버림 이럼 안돼» — 10/24 «무음이면 저장으로 넘어가지 않는다»를 바꾼 결정)
+for (const [name, plan] of [['완전 무음', { silent: true }], ['아주 작은 소리(−66dBFS)', { delay: 0.3, dur: 1.5, amp: 0.0005 }]]) {
+  test(`${name}이어도 장면이 끝까지 이어지고, 저장하면 10초 완성 영화가 만들어진다(목소리 칸에 소음을 키워 넣지 않는다)`, async ({ page }) => {
+    const uploads = await captureUpload(page);
+    await installSyntheticMic(page, [plan]);
+    await openSf(page);
+    const r = await recordOnce(page);
+    expect(r).toMatchObject({ phase: 'recorded', check: 'silent' });
+    expect(r.hint).toContain('목소리가 들리지 않았어요');
+    // 5.0초에서 멈춘 장면이 끝까지 이어졌다
+    expect(await page.locator('#clip').evaluate((v) => v.ended || v.currentTime > 9.5)).toBe(true);
+    await expect(page.locator('#afterRow button')).toHaveText([/다시 녹음/, /저장하기/]);
+    const movie = await saveAndGetMovie(page, uploads);
+    const bytes = Buffer.from(movie, 'base64');
+    expect(Math.abs(duration(bytes) - 10)).toBeLessThanOrEqual(0.01);
+    const v = await voiceInMovie(page, movie, 'sf');
+    console.log(JSON.stringify(v));
+    // 원판 소리 그대로(목소리 칸까지) — 남은 차이는 소리를 다시 인코딩한 차이뿐이다
+    expect(v.voiceStart).toBeNull();
+    expect(v.outsideVoice).toBeLessThan(0.003);
+  });
+}
+
+test('첫 녹음만 무음이고 «다시 녹음»에서 말하면, 저장한 영화에는 그 목소리가 들어간다', async ({ page }) => {
+  const uploads = await captureUpload(page);
   await installSyntheticMic(page, [{ silent: true }, { delay: 0.3, dur: 1.5 }]);
   await openSf(page);
-  const r = await recordOnce(page);
-  expect(r).toMatchObject({ phase: 'idle', check: 'silent' });
-  expect(r.hint).toContain('목소리가 들리지 않았어요');
-  await expect(page.locator('#afterRow')).toHaveCount(0);
-  await expect(page.locator('#recBtn')).toBeEnabled();
-  expect(await recordOnce(page)).toMatchObject({ phase: 'recorded', check: 'ok' });
+  expect(await recordOnce(page)).toMatchObject({ phase: 'recorded', check: 'silent' });
+  expect(await recordOnce(page, '#resetBtn')).toMatchObject({ phase: 'recorded', check: 'ok' });
+  const v = await voiceInMovie(page, await saveAndGetMovie(page, uploads), 'sf');
+  console.log(JSON.stringify(v));
+  expect(v.voiceStart).toBeGreaterThan(5.2);
+  expect(v.voiceStart).toBeLessThan(5.45);
+  expect(v.voiceEnd).toBeLessThanOrEqual(8.5);
 });
 
 test('아주 작은 목소리(−40dBFS 안팎)는 무음으로 버리지 않고 정해진 만큼 키워 들려준다', async ({ page }) => {

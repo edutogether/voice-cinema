@@ -41,11 +41,13 @@ const HINT = {
   checking: '목소리를 확인하고 있어요…',
   continuing: '내 목소리가 들어간 장면을 이어 보는 중이에요…',
   recorded: '잘했어요 ! 마음에 들면 저장하세요',
-  // 아래 셋은 저장할 수 있는 녹음의 알림이다 — 휴대폰에서도 안내 칸 두 줄 안에 들게 짧게 둔다(넘치면 영상·단추가 움직인다)
+  // 아래 넷은 저장할 수 있는 녹음의 알림이다 — 휴대폰에서도 안내 칸 두 줄 안에 들게 짧게 둔다(넘치면 영상·단추가 움직인다)
   takeQuiet: '목소리가 아주 작게 담겼어요. 들어 보고 마음에 들면 저장하세요.',
   takeCut: '말끝이 잘렸을 수 있어요. 들어 보고 마음에 들면 저장하세요.',
   takeEarly: '앞부분이 빠졌을 수 있어요. 들어 보고 마음에 들면 저장하세요.',
-  takeSilent: '목소리가 들리지 않았어요. 마이크 가까이에서 다시 외쳐 주세요.',
+  // 아무 말도 안 해도 말했을 때와 같은 흐름으로 장면을 끝까지 잇고 저장할 수 있다(11/9 Bumm님 «321 한담에 말 안하니 … 중간에 끊어져버림 이럼 안돼»).
+  // 고르게 하는 화면을 따로 끼우지 않는다 — 이 한 줄은 흐름을 막지 않는 알림이다(팀장 11/9 «흐름을 막지 않는 짧은 표시만»)
+  takeSilent: '목소리가 들리지 않았어요. 마음에 들면 저장하세요.',
   takeBroken: '녹음이 제대로 담기지 않았어요. 다시 눌러 주세요.',
   hidden: '화면을 벗어나서 녹음을 멈췄어요. 다시 눌러 주세요.',
   micDenied: '마이크를 쓸 수 없게 막혀 있어요. 브라우저 설정에서 마이크를 허용한 뒤 다시 눌러 주세요.',
@@ -60,9 +62,9 @@ const HINT = {
   previewFailed: '영상을 재생하지 못했어요. 미리보기를 다시 눌러 주세요.',
 } as const;
 
-/** 저장할 수 있는 녹음의 판정별 안내 — 작음·잘림·일찍 말함은 들어 보고 아이·선생님이 정한다 */
+/** 저장할 수 있는 녹음의 판정별 안내 — 무음·작음·잘림·일찍 말함은 들어 보고 아이·선생님이 정한다 */
 const RECORDED_HINT: Partial<Record<Verdict, string>> = {
-  quiet: HINT.takeQuiet, cut: HINT.takeCut, early: HINT.takeEarly,
+  silent: HINT.takeSilent, quiet: HINT.takeQuiet, cut: HINT.takeCut, early: HINT.takeEarly,
 };
 
 const MIME_CANDIDATES = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
@@ -258,7 +260,7 @@ export interface Dubbing {
   /** «이제 당신의 목소리를 들려주세요 !»를 보일 때 — 녹음기가 켜진 때부터 숫자 하나와 같은 COUNT_MS 동안(11/8 Bumm님 «321하고 똑같이만큼») */
   speakNow: boolean;
   recording: Recording | null;
-  /** 마지막 녹음의 판정 — 저장할 수 없는 것(silent·short)은 준비 상태로 돌아가며 남는다 */
+  /** 마지막 녹음의 판정 — 저장할 수 없는 것(short: 녹음이 깨짐)은 준비 상태로 돌아가며 남는다 */
   takeCheck: Verdict | null;
   micError: MicFailure | null;
   /** 브라우저가 소리를 막아 소리 없이 재생 중이다 — 화면의 «소리 켜기»로 켠다 */
@@ -563,8 +565,10 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
         return;
       }
       const check = checkTake(mono(decoded), decoded.sampleRate, result.reachedMax);
-      if (check.verdict === 'silent' || check.verdict === 'short') {
-        fail(check.verdict === 'silent' ? HINT.takeSilent : HINT.takeBroken, { verdict: check.verdict });
+      // 1초도 안 담긴 녹음만 깨진 것으로 다시 녹음한다. 무음은 아이가 머뭇거린 것이라 장면을 끝까지 잇고 저장할 수 있게 둔다
+      // (11/9 Bumm님 — 10/24 «무음이면 저장으로 넘어가지 않는다»를 바꿨다). 무음의 보정 음량은 0dB라 소음을 키우지 않는다.
+      if (check.verdict === 'short') {
+        fail(HINT.takeBroken, { verdict: check.verdict });
         return;
       }
       const plan: VoicePlan = { gainDb: check.gainDb, seconds: Math.min(decoded.duration, VOICE_WINDOW_SECONDS), channels: decoded.numberOfChannels };
