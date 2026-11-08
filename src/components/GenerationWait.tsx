@@ -15,10 +15,10 @@ export const SCENE_MS = 8_000;
 /** 결과가 준비됐을 때 부른다 — 지금 재생 중인 대기 영상이 끝날 때까지 기다린다(아래 sceneEndRef). */
 export type SceneEnd = () => Promise<void>;
 
-// Voice Cinema에는 AI가 없다 — «AI가 …» 제목 장면은 뺀다. Poster Studio 설치판(AI 없이 사진 그대로)과 같은 규칙이다(«AI가 없는데 그렇게 쓰면 거짓 표시»).
-const SETS = waitingSets.filter((set) => !set.title.includes('AI'));
+// 12편 모두 그대로 쓴다 — 2번 «AI가 당신의 영화를 그리고 있어요»도 뺄지 여쭸고, Bumm님 지시 «로딩 영상 12종하고 문구랑 다 그대로»대로 12편이다
+// (11/9 팀장 결정 전달 — «포스터 안으로» 문구도 그대로 둔 것과 기준을 하나로 맞춘다).
 /** 대기 화면이 쓰는 정지 그림 — 앱이 미리 받아 둔다(App.tsx · warmWaitingStills) */
-export const WAIT_STILLS = SETS.map((set) => set.image);
+export const WAIT_STILLS = waitingSets.map((set) => set.image);
 let lastOpeningId = -1;
 
 /* 자리마다 균등한 32비트 난수 열쇠를 하나씩 뽑아 그 크기 순서로 늘어놓는다 — 나누거나 곱해 범위를 줄이지 않아 치우침이 없다(Poster Studio와 같다). */
@@ -30,7 +30,7 @@ function shuffled(length: number) {
 export function createWaitSequence() {
   let previous = lastOpeningId;
   try { previous = Number(sessionStorage.getItem(OPENING_KEY) ?? previous); } catch { /* 저장소가 막히면 메모리 기록을 쓴다 */ }
-  const sequence = shuffled(SETS.length).map((index) => SETS[index]);
+  const sequence = shuffled(waitingSets.length).map((index) => waitingSets[index]);
   if (sequence[0].id === previous) [sequence[0], sequence[1]] = [sequence[1], sequence[0]];
   lastOpeningId = sequence[0].id;
   try { sessionStorage.setItem(OPENING_KEY, String(lastOpeningId)); } catch { /* 이 탭 안에서는 메모리 기록을 쓴다 */ }
