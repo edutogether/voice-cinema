@@ -92,7 +92,7 @@ async function shoot({ w, h, scale }) {
   await page.locator('#mailTypo').waitFor({ state: 'detached' });
   await shot('06-확인');
   await page.locator('#mailSendBtn').click();
-  await page.getByRole('heading', { name: '인터넷이 돌아오면 보내 드릴게요' }).waitFor();
+  await page.getByRole('heading', { name: '네트워크가 복구되면 보내 드릴게요' }).waitFor();
   await shot('07-대기');
   await page.locator('#doneHomeBtn').click();
   await page.locator('#home.active').waitFor();
@@ -112,7 +112,7 @@ async function shoot({ w, h, scale }) {
   await page.locator('#mailAddress').fill('teacher@example.com');
   await page.locator('#mailNextBtn').click();
   await page.locator('#mailSendBtn').click();
-  await page.getByRole('heading', { name: '인터넷이 돌아오면 보내 드릴게요' }).waitFor();
+  await page.getByRole('heading', { name: '네트워크가 복구되면 보내 드릴게요' }).waitFor();
   // «보내지 못함» 목록은 여덟 번 실패해야 생긴다 — 그 상태를 직접 만들어 보이는 모양만 찍는다
   await page.evaluate(async () => { const [item] = await window.vcDesktop.mail.list(); await window.vcDesktop.mail.update(item.id, { attempts: 8, failed: true }); });
   await page.reload();

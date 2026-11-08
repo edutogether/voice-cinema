@@ -95,7 +95,7 @@ async function queue(page, name, email) {
   await page.locator('#mailAddress').fill(email);
   await page.locator('#mailNextBtn').click();
   await page.locator('#mailSendBtn').click();
-  await expect(page.getByRole('heading', { name: '인터넷이 돌아오면 보내 드릴게요' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '네트워크가 복구되면 보내 드릴게요' })).toBeVisible();
 }
 /** 대기 화면에서 «다른 더빙 하기»로 첫 화면에 — 메일 대기 단추는 첫 화면에만 있다 */
 async function home(page) {
@@ -316,7 +316,7 @@ test('끊김 → 입력 → 확인 → 대기 → 복구 → 올리기 → 메�
   await page.locator('#mailSendBtn').click();
 
   // 대기: 기기에 암호화해 두고, 끊겨 있으면 올리지 않는다. 목록에는 주소를 가려서 보이고 이름은 보이지 않는다
-  await expect(page.getByRole('heading', { name: '인터넷이 돌아오면 보내 드릴게요' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '네트워크가 복구되면 보내 드릴게요' })).toBeVisible();
   await expectNoBadge(page);
   await home(page);
   await expect(page.locator('#mailQueueChip')).toHaveText('메일 대기 1건');
