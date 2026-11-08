@@ -211,33 +211,39 @@ async function expectNoBadge(page) {
   await expect(page.locator('#mailQueueChip:visible')).toHaveCount(0);
 }
 
-/** 입력 화면이 그 창에 들어가는가: 가로 넘침 없음 · 칸과 단추가 화면 안 · 두 칸과 «다음»은 같은 폭 · 같은 높이의 한 열이고 판 안쪽을 넘지 않는다
- *  (11/8 Bumm님 «디자인 왜 이렇게 개촌스러워졌어» — 그 전에는 이름 칸만 짧고 «다음»이 따로 놀았다) */
+/** 입력 화면이 그 창에 들어가는가: 가로 넘침 없음 · 칸과 단추가 화면 안 · 두 칸은 같은 폭 · 같은 높이의 한 열이고 판 안쪽을 넘지 않는다
+ *  (11/8 Bumm님 «디자인 왜 이렇게 개촌스러워졌어» — 그 전에는 이름 칸만 짧고 «다음»이 따로 놀았다).
+ *  단추 줄은 «다음»과 «다시 제작하기»(11/9 Bumm님 «다음» 옆)가 한 줄로 칸과 같은 폭을 채운다 — «다음»이 칸의 왼쪽에서, «다시 제작하기»가 칸의 오른쪽에서 끝난다 */
 async function expectFormFits(page) {
   // 창 크기가 바뀐 뒤 스크롤 막대 · 화면 맞춤이 자리 잡을 때까지 기다린다(그 뒤에도 넘치면 실패)
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), '가로 넘침').toBe(0);
   const m = await page.evaluate(() => {
     const rect = (el) => el.getBoundingClientRect();
+    const ids = ['#mailName', '#mailAddress', '#mailNextBtn', '#retryBtn'];
     return {
       hscroll: document.documentElement.scrollWidth - document.documentElement.clientWidth,
       inner: [window.innerWidth, window.innerHeight],
-      controls: ['#mailName', '#mailAddress', '#mailNextBtn'].map((s) => {
+      controls: ids.map((s) => {
         const r = rect(document.querySelector(s));
         return { s, inside: r.left >= 0 && r.right <= window.innerWidth && r.bottom <= window.innerHeight };
       }),
-      boxes: ['#mailName', '#mailAddress', '#mailNextBtn'].map((s) => { const r = rect(document.querySelector(s)); return [r.left, r.width, r.height]; }),
+      boxes: ids.map((s) => { const r = rect(document.querySelector(s)); return { left: r.left, right: r.right, width: r.width, height: r.height, middle: (r.top + r.bottom) / 2 }; }),
       panel: (() => { const form = document.querySelector('.mail-form'); const style = window.getComputedStyle(form); return rect(form).width * (1 - (parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)) / form.offsetWidth); })(),
     };
   });
   expect(m.hscroll, `가로 넘침 ${m.inner}`).toBe(0);
   for (const c of m.controls) expect(c, `${m.inner}`).toMatchObject({ inside: true });
-  const [name, address, next] = m.boxes;
-  for (const [label, box] of [['주소 칸', address], ['«다음»', next]]) {
-    expect(Math.abs(box[0] - name[0]), `${label}의 왼쪽이 이름 칸과 어긋난다 ${m.inner}`).toBeLessThanOrEqual(1);
-    expect(Math.abs(box[1] - name[1]), `${label}의 폭이 이름 칸과 다르다 ${m.inner}`).toBeLessThanOrEqual(1);
-    expect(Math.abs(box[2] - name[2]), `${label}의 높이가 이름 칸과 다르다 ${m.inner}`).toBeLessThanOrEqual(1);
+  const [name, address, next, retry] = m.boxes;
+  expect(Math.abs(address.left - name.left), `주소 칸의 왼쪽이 이름 칸과 어긋난다 ${m.inner}`).toBeLessThanOrEqual(1);
+  expect(Math.abs(address.width - name.width), `주소 칸의 폭이 이름 칸과 다르다 ${m.inner}`).toBeLessThanOrEqual(1);
+  expect(Math.abs(next.left - name.left), `«다음»의 왼쪽이 이름 칸과 어긋난다 ${m.inner}`).toBeLessThanOrEqual(1);
+  expect(Math.abs(retry.right - name.right), `«다시 제작하기»의 오른쪽이 이름 칸과 어긋난다 ${m.inner}`).toBeLessThanOrEqual(1);
+  expect(retry.left, `«다음»과 «다시 제작하기»가 겹친다 ${m.inner}`).toBeGreaterThanOrEqual(next.right + 4);
+  expect(Math.abs(retry.middle - next.middle), `«다시 제작하기»가 «다음»과 한 줄이 아니다 ${m.inner}`).toBeLessThanOrEqual(1);
+  for (const [label, box] of [['주소 칸', address], ['«다음»', next], ['«다시 제작하기»', retry]]) {
+    expect(Math.abs(box.height - name.height), `${label}의 높이가 이름 칸과 다르다 ${m.inner}`).toBeLessThanOrEqual(1);
   }
-  expect(address[1], `칸이 판 안쪽 폭을 넘는다 ${m.inner}`).toBeLessThanOrEqual(m.panel + 1);
+  expect(address.width, `칸이 판 안쪽 폭을 넘는다 ${m.inner}`).toBeLessThanOrEqual(m.panel + 1);
 }
 
 test('끊김 → 입력 → 확인 → 대기 → 복구 → 올리기 → 메일 보내기 → 기기에서 삭제', async () => {
@@ -259,10 +265,14 @@ test('끊김 → 입력 → 확인 → 대기 → 복구 → 올리기 → 메�
   // 입력: 칸은 비어 있고, 왜 받는지 한 줄이 있다. 메일 없이 저장하는 단추는 없다(설치판은 메일로 전한다, 11/8 Bumm님)
   await expect(page.locator('#mailName')).toHaveValue('');
   await expect(page.locator('#mailAddress')).toHaveValue('');
-  await expect(page.locator('#doneMsg')).toHaveText('인터넷이 돌아오면 인솔 선생님 메일로 영화 링크를 보내요.');
+  await expect(page.locator('#mailHandoff h2')).toHaveText('네트워크 장애로 QR코드를 만들지 못했어요');
+  await expect(page.locator('#doneMsg')).toHaveText('네트워크가 복구되면 담임 선생님 메일 주소로 영화 링크를 보내드려요.');
+  await expect(page.locator('label[for="mailAddress"]')).toHaveText('담임교사 메일주소');
   await expect(page.locator('#mailSaveHereBtn')).toHaveCount(0);
   // 결과 카드 안만 센다 — 머리글 로고 두 개도 «처음부터 시작» 단추다(11/8 화면 수정)
-  await expect(page.locator('#result.active .result-details button')).toHaveCount(1);
+  // 단추는 «다음»과 «다시 제작하기» 둘(11/9 Bumm님)
+  await expect(page.locator('#result.active .result-details button')).toHaveCount(2);
+  await expect(page.locator('#retryBtn')).toHaveText('다시 제작하기');
   await expect(page.locator('#mailAddress')).toHaveAttribute('type', 'email');
   await expect(page.locator('#mailAddress')).toHaveAttribute('autocomplete', 'off');
 
@@ -539,7 +549,8 @@ test('인터넷이 있어도 올리지 못하면 메일 화면으로 가고, 대
   await app.close();
 });
 
-test('대기열을 열 수 없으면(키 손상) 메일 화면 없이 지금까지처럼 이 기기에 저장으로 간다', async () => {
+// «이 기기에 저장»은 휴대폰에서만(11/9 Bumm님) — 대기열을 열 수 없어도 메일 칸이고, 맡기지 못하면 알리고 «다시 제작하기»를 기다린다.
+test('대기열을 열 수 없으면(키 손상) 메일 칸에서 맡기지 못했다고 알리고, «이 기기에 저장»으로 가지 않는다', async () => {
   const profile = test.info().outputPath('profile');
   mkdirSync(path.join(profile, 'mail-queue'), { recursive: true });
   writeFileSync(path.join(profile, 'mail-queue', 'queue.key'), 'not-a-sealed-key');
@@ -553,7 +564,14 @@ test('대기열을 열 수 없으면(키 손상) 메일 화면 없이 지금까�
   await expect(page.locator('#mailStartup')).toHaveCount(0);
   expect(await recordOnce(page)).toMatchObject({ phase: 'recorded' });
   await page.locator('#saveBtn').click();
-  await expect(page.locator('#downloadRow')).toBeVisible({ timeout: 200000 });
-  await expect(page.locator('#mailName')).toHaveCount(0);
+  await expect(page.locator('#mailHandoff')).toBeVisible({ timeout: 200000 });
+  await page.locator('#mailName').fill(NAME_A);
+  await page.locator('#mailAddress').fill(MAIL);
+  await page.locator('#mailNextBtn').click();
+  await page.locator('#mailSendBtn').click();
+  await expect(page.locator('#mailStoreError')).toBeVisible();
+  await expect(page.locator('#mailName')).toHaveValue(NAME_A);
+  await expect(page.locator('#retryBtn')).toBeVisible();
+  await expect(page.locator('#downloadRow')).toHaveCount(0);
   await app.close();
 });

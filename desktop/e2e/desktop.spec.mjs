@@ -2,7 +2,7 @@
 // 바깥 주소 · 인터넷 없음)를 본다. 업로드는 routeUpload로 가로챈다(운영 저장소에 시험 파일을 쌓지 않는다). 자동화로 띄운 창은
 // App Check가 거절하므로(웹의 헤드리스와 같다) 실제 업로드는 여기서 보지 않는다 — 사람이 연 설치판은 App Check를 통과한다(10/27 확인).
 import { test, expect, _electron } from '@playwright/test';
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installSyntheticMic, recordOnce } from '../../e2e/synthetic-mic.js';
@@ -10,7 +10,6 @@ import { installSyntheticMic, recordOnce } from '../../e2e/synthetic-mic.js';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const EXE = process.env.VC_DESKTOP_EXE ?? path.join(HERE, '..', 'release', 'win-unpacked', 'Voice Cinema.exe');
 const ORIGIN = 'https://voice.edutogether.kr';
-const OFFLINE_MSG = '인터넷 연결이 끊겨 QR을 만들지 못했어요. 아래 단추를 눌러 이 기기에 저장한 뒤 선생님께 알려 주세요.';
 
 /** mp4의 mvhd 상자에서 길이(초)를 읽는다. */
 function mp4Duration(buffer) {
@@ -68,16 +67,6 @@ async function openStudio(page, name) {
   await page.getByRole('button', { name: `${name} 미리보기 선택`, exact: true }).click();
   await expect(page.locator('#chipName')).toHaveText(name);
   await expect(page.locator('#clip')).toHaveJSProperty('readyState', 4, { timeout: 20000 });
-}
-
-/**
- * 메일 대기열을 열 수 없게 해 두고 띄운다 — 메일 화면 없이 «이 기기에 저장»으로 가는 길(대기열을 못 열 때의 설치판)을 본다.
- * 메일 설치판은 그 밖에는 이 길로 가지 않는다(«메일 없이 이 기기에 저장» 단추는 11/8 Bumm님 지시로 없앴다). 메일 화면은 mail.spec.mjs가 본다.
- */
-function withoutMail() {
-  const dir = path.join(test.info().outputPath('profile'), 'mail-queue');
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(path.join(dir, 'queue.key'), 'not-a-sealed-key');
 }
 
 /** 저장 알림 창은 사람이 닫아야 하는 창이라 검사에서는 내용만 받아 둔다(main.js가 부르는 dialog를 바꿔 끼운다). */
@@ -139,35 +128,34 @@ test('녹음 → 합성 → 업로드가 되면 QR이 뜨고, 올린 것은 10�
   await app.close();
 });
 
-test('업로드가 안 되면 «이 기기에 저장»이 다운로드 폴더에 10초 영화를 두고, 저장했다고 알린다(같은 이름은 덮어쓰지 않는다)', async () => {
-  withoutMail();
+// «이 기기에 저장»은 휴대폰에서만이라(11/9 Bumm님) 설치판 화면에는 그 단추가 없다. 화면이 무엇을 내려받으면 묻지 않고 다운로드 폴더에 두고
+// 알리는 처리(main.js · save-path.js)는 그대로 있다 — 페이지에서 내려받기를 직접 일으켜 본다.
+test('내려받기는 묻지 않고 다운로드 폴더에 두고 저장했다고 알린다(같은 이름은 덮어쓰지 않는다)', async () => {
   const { app, page } = await launch();
   const downloads = test.info().outputPath('downloads');
   await captureDialogs(app, downloads);
-  await routeUpload(app, { status: 500, body: { ok: false } });
-  await openStudio(page, '히어로');
-  expect(await recordOnce(page)).toMatchObject({ phase: 'recorded' });
-  await page.locator('button', { hasText: '저장하기' }).click();
-  await expect(page.locator('#downloadRow')).toBeVisible({ timeout: 200000 });
-  expect(await uploads(app)).toHaveLength(3); // 처음 + 다시 2번(MAX_UPLOAD_ATTEMPTS)
-  await page.locator('#downloadBtn').click();
+  const download = () => page.evaluate(() => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([new Uint8Array([1, 2, 3, 4])], { type: 'video/mp4' }));
+    a.download = 'Voice Cinema_히어로.mp4';
+    document.body.append(a);
+    a.click();
+    a.remove();
+  });
+  await download();
   await expect.poll(() => app.evaluate(() => globalThis.__dialogs.length), { timeout: 30000 }).toBe(1);
-  await page.locator('#downloadBtn').click();
+  await download();
   await expect.poll(() => app.evaluate(() => globalThis.__dialogs.length), { timeout: 30000 }).toBe(2);
   expect(readdirSync(downloads).sort()).toEqual(['Voice Cinema_히어로 (1).mp4', 'Voice Cinema_히어로.mp4']);
-  const movie = readFileSync(path.join(downloads, 'Voice Cinema_히어로.mp4'));
-  expect(Math.abs(mp4Duration(movie) - 10)).toBeLessThanOrEqual(0.05);
+  expect([...readFileSync(path.join(downloads, 'Voice Cinema_히어로.mp4'))]).toEqual([1, 2, 3, 4]);
   const [first] = await app.evaluate(() => globalThis.__dialogs);
   expect(first).toMatchObject({ message: '이 기기의 다운로드 폴더에 저장했어요.', detail: path.join(downloads, 'Voice Cinema_히어로.mp4') });
   await app.close();
 });
 
-test('인터넷이 없어도 첫 화면 · 녹음 · 합성이 되고, 올리지 않고 곧바로 이 기기에 저장으로 간다', async () => {
+test('인터넷이 없어도 첫 화면 · 녹음 · 합성이 되고, 올리지 않고 곧바로 장애 화면(담임교사 메일 칸)으로 간다', async () => {
   // 닿지 않는 프록시로 바깥 요청을 모두 막는다(reCAPTCHA · 업로드 서버 · 옛 주소). 설치판 안의 파일은 영향을 받지 않는다.
-  withoutMail();
   const { app, page } = await launch(['--proxy-server=http://127.0.0.1:9']);
-  const downloads = test.info().outputPath('downloads');
-  await captureDialogs(app, downloads);
   await routeUpload(app, 'fail');
   await openStudio(page, '스포츠');
   expect(await page.evaluate(() => fetch('https://voice-cinema.web.app/').then(() => 'online', (e) => e.name))).toBe('TypeError');
@@ -179,10 +167,10 @@ test('인터넷이 없어도 첫 화면 · 녹음 · 합성이 되고, 올리지
     window.dispatchEvent(new Event('offline'));
   });
   await page.locator('button', { hasText: '저장하기' }).click();
-  await expect(page.locator('#doneMsg')).toHaveText(OFFLINE_MSG, { timeout: 90000 });
-  await page.locator('#downloadBtn').click();
-  await expect.poll(() => app.evaluate(() => globalThis.__dialogs.length), { timeout: 30000 }).toBe(1);
-  expect(Math.abs(mp4Duration(readFileSync(path.join(downloads, 'Voice Cinema_스포츠.mp4'))) - 10)).toBeLessThanOrEqual(0.05);
+  await expect(page.locator('#mailHandoff h2')).toHaveText('네트워크 장애로 QR코드를 만들지 못했어요', { timeout: 90000 });
+  await expect(page.locator('#retryBtn')).toHaveText('다시 제작하기');
+  // «이 기기에 저장»은 휴대폰에서만(11/9 Bumm님)
+  await expect(page.locator('#downloadRow')).toHaveCount(0);
   expect(await uploads(app)).toHaveLength(0);
   await app.close();
 });
