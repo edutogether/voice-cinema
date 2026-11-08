@@ -3,7 +3,7 @@
      사본의 "원본 버전"이 위와 다르면 원본이 갱신된 것이니 재복사한다. 사본에서 직접 고치지 않는다.
      이 스탬프 블록은 사본에도 그대로 남긴다 — 지우면 그 저장소만 갱신을 감지할 수 없게 된다. -->
 ---
-status: in-progress
+status: done
 등급: 1
 작성자: Voice Cinema 세션
 작성 시각: 2026-11-09 01:40 (KST)
@@ -38,3 +38,8 @@ Poster Studio의 keepWarm과 같은 방식으로 한다(그쪽은 읽기만 했�
 - 예약 작업이 하나 늘어 셋이 된다(자동 삭제 · 의견 정리 · 예열). Cloud Scheduler 무료 몫은 결제 계정당 작업 3개이고,
   이 프로젝트의 결제 계정에는 이 프로젝트 하나뿐이며 예약 작업은 지금 둘이다(11/9 `gcloud billing projects list` · `scheduler jobs list`로 확인) — 셋째도 무료 몫 안이다.
   다른 프로젝트를 같은 결제 계정에 붙여 작업이 넷이 되면 한 달 약 0.10달러가 붙는다. 호출 수(6일 × 12시간 × 12번 = 864번)는 Cloud Run 무료 몫 안이다.
+
+## 라이브 (11/9)
+
+- `512004b` 배포(05:10 KST, 배포 42518596980)와 함께 나갔다. 예약 작업 `firebase-schedule-keepWarm-asia-northeast3` — ENABLED · `*/5 9-18 9-14 11 *` · Asia/Seoul.
+- 손으로 한 번 돌림(05:11:58 KST) → 함수 기록 «[keepWarm] ping 200».
