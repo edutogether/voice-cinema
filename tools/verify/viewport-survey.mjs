@@ -595,9 +595,10 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
     await delay(150);
     await page.evaluate(() => { scrollTo(0, 0); });
     await shot('15-저장중');
-    await page.locator('#savemode').waitFor({ timeout: 90000 });
+    // 설치판은 올리지 못하면 메일 전달 화면으로 간다(11/8) — 웹은 그대로 이 기기에 저장
+    await page.locator('#savemode, #mailHandoff').first().waitFor({ timeout: 90000 });
     await page.evaluate(() => { scrollTo(0, 0); });
-    await shot('16-오류-기기저장');
+    await shot((await page.locator('#mailHandoff').count()) ? '16-메일저장' : '16-오류-기기저장');
     await page.goBack();
     await page.locator('#afterRow').waitFor({ timeout: 10000 });
     step = '완성';
