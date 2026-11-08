@@ -174,9 +174,9 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     expect(Math.abs(mp4Duration(mp4) - 10)).toBeLessThanOrEqual(.05);
   });
 
-  // 11/8 Bumm님 «웹도 끊기면 메일 칸을 띄움» — 연결은 됐다고 나오는데 올리기만 실패해도(부스 KT EGG의 LTE만 끊긴 때) 같은 끊김으로 보고
-  // 인솔 선생님 메일 칸으로 간다. 보내고 지우는 흐름은 e2e/web-mail.spec.js가 본다.
-  test('실패 경로: 클라우드 업로드가 실패하면 다시 시도한 뒤 인솔 선생님 메일 칸을 띄운다', async ({ page }) => {
+  // 11/8 Bumm님 «웹도 끊기면 메일 칸을 띄움» — 연결은 됐다고 나오는데 올리기만 실패해도(부스 KT EGG의 LTE만 끊긴 때) 같은 장애로 보고
+  // 담임교사 메일 칸으로 간다(PC · 패드). 보내고 지우는 흐름과 «다시 제작하기»는 e2e/web-mail.spec.js가 본다.
+  test('실패 경로: 클라우드 업로드가 실패하면 다시 시도한 뒤 담임교사 메일 칸을 띄운다', async ({ page }) => {
     let callCount = 0;
     await page.route(UPLOAD_PATTERN, (route) => {
       callCount++;
@@ -189,19 +189,20 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     await page.locator('button', { hasText: '저장하기' }).click();
 
     await expect(page.locator('#mailHandoff')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('#mailHandoff h2')).toHaveText('인터넷이 끊겨 QR을 만들지 못했어요');
+    await expect(page.locator('#mailHandoff h2')).toHaveText('네트워크 장애로 QR코드를 만들지 못했어요');
+    await expect(page.locator('#mailHandoff #doneMsg')).toHaveText('네트워크가 복구되면 담임 선생님 메일 주소로 영화 링크를 보내드려요.');
+    await expect(page.locator('label[for="mailAddress"]')).toHaveText('담임교사 메일주소');
     await expect(page.locator('#mailName')).toBeVisible();
+    await expect(page.locator('#retryBtn')).toHaveText('다시 제작하기');
     await expect(page.locator('#qrbox')).toHaveCount(0);
+    // «이 기기에 저장»은 휴대폰에서만(11/8 Bumm님)
     await expect(page.locator('#downloadRow')).toHaveCount(0);
     expect(callCount).toBeGreaterThanOrEqual(2); // 1차 실패 + 재시도
   });
 
-  // 와이파이 없이 쓰는 설치판(10/27) — 인터넷이 아예 없으면 App Check를 20초씩 세 번 기다리지 않고 바로 저장 안내로 가며,
-  // «잠깐 불안해서»가 아니라 인터넷이 없어 QR을 못 만든다고 알린다. 원판은 이미 받아 두었으므로 navigator.onLine만 끈다.
-  // 메일 대기열을 쓸 수 없는 브라우저(IndexedDB 없음)는 메일 칸 없이 이 기기에 저장으로 간다(11/8) — 메일 칸으로 가는 것은 e2e/web-mail.spec.js.
-  // 장면은 처음 가운데에 있는 SF로 고른다 — openStudio는 그 카드가 자동 넘김(6초)으로 가운데에 올 때까지 기다리므로, 일곱째인 스포츠는
-  // 누르기에만 41초가 걸려 녹음 · 합성까지 60초를 넘겼다(11/8 추적 기록).
-  test('인터넷이 없고 메일 대기열을 쓸 수 없는 브라우저면 올리지 않고 곧바로 기기 저장으로 가며 그 까닭을 알린다', async ({ page }) => {
+  // 메일 대기열을 쓸 수 없는 브라우저(IndexedDB 없음)도 PC · 패드에서는 «이 기기에 저장»을 띄우지 않는다(11/9 — 휴대폰에서만).
+  // 장애 화면에 남아 «다시 제작하기»를 기다린다(맡기지 못하는 경우는 e2e/web-mail.spec.js «저장소를 막아…»).
+  test('메일 대기열을 쓸 수 없는 PC 브라우저도 «이 기기에 저장» 없이 장애 화면을 띄운다', async ({ page }) => {
     await page.addInitScript(() => Object.defineProperty(window, 'indexedDB', { configurable: true, value: undefined }));
     let callCount = 0;
     await page.route(UPLOAD_PATTERN, (route) => {
@@ -218,12 +219,10 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     });
     await page.locator('button', { hasText: '저장하기' }).click();
 
-    await expect(page.locator('#downloadRow')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('#doneMsg')).toHaveText('인터넷 연결이 끊겨 QR을 만들지 못했어요. 아래 단추를 눌러 이 기기에 저장한 뒤 선생님께 알려 주세요.');
-    await expect(page.locator('#savemode')).toContainText('자동으로 지워지지 않아요');
+    await expect(page.locator('#mailHandoff')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('#retryBtn')).toBeVisible();
+    await expect(page.locator('#downloadRow')).toHaveCount(0);
     expect(callCount).toBe(0);
-    const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#downloadBtn').click()]);
-    expect(download.suggestedFilename()).toBe('Voice Cinema_SF.mp4');
   });
 
   // mergeClip()은 원판을 불러오지 못하면 예외를 던지고 Result.tsx가 에러 화면(errbox)을 보여준다.
@@ -321,5 +320,58 @@ test.describe('휴대폰에서 직접 체험', () => {
     await expect(open).toHaveAttribute('href', url);
     await expect(open).toHaveAttribute('target', '_blank');
     await expect(open).toBeInViewport();
+  });
+
+  // 와이파이 없이 쓰는 설치판(10/27)과 같은 길 — 인터넷이 아예 없으면 App Check를 20초씩 세 번 기다리지 않고 바로 장애 화면으로 간다.
+  // 휴대폰은 메일 칸 대신 이 기기에 저장이다(11/8 Bumm님 «이 기기에 저장은 휴대폰에서만»). 원판은 이미 받아 두었으므로 navigator.onLine만 끈다.
+  // 장면은 처음 가운데에 있는 SF로 고른다 — openStudio는 그 카드가 자동 넘김(6초)으로 가운데에 올 때까지 기다리므로, 일곱째인 스포츠는
+  // 누르기에만 41초가 걸려 녹음 · 합성까지 60초를 넘겼다(11/8 추적 기록).
+  test('인터넷이 없으면 올리지 않고 곧바로 이 기기에 저장으로 가며, «다시 제작하기»는 연결이 돌아오면 QR을 만든다', async ({ page }) => {
+    const url = 'https://storage.googleapis.com/fake/dub_retry.mp4';
+    let callCount = 0;
+    let serverUp = false;
+    await page.route(UPLOAD_PATTERN, (route) => {
+      callCount++;
+      return serverUp
+        ? route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, url }) })
+        : route.fulfill({ status: 500, contentType: 'application/json', body: '{"ok":false}' });
+    });
+    const setOnline = (on) => page.evaluate((value) => {
+      Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => value });
+      window.dispatchEvent(new window.Event(value ? 'online' : 'offline'));
+    }, on);
+
+    await openStudio(page, 'SF');
+    await page.locator('#recBtn').click();
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
+    await setOnline(false);
+    await page.locator('button', { hasText: '저장하기' }).click();
+
+    await expect(page.locator('#downloadRow')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('#done h2')).toHaveText('네트워크 장애로 QR코드를 만들지 못했어요');
+    await expect(page.locator('#doneMsg')).toHaveText('아래 단추를 눌러 이 기기에 저장해 주세요.');
+    await expect(page.locator('#savemode')).toContainText('자동으로 지워지지 않아요');
+    await expect(page.locator('#mailHandoff')).toHaveCount(0);
+    expect(callCount).toBe(0);
+    const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#downloadBtn').click()]);
+    expect(download.suggestedFilename()).toBe('Voice Cinema_SF.mp4');
+
+    // 끊긴 채 누르면 올리지 않고 «다시 만드는 중…»을 잠깐 보인 뒤 같은 화면에 남는다
+    const retry = page.locator('#retryBtn');
+    await retry.click();
+    await expect(retry).toHaveText('다시 만드는 중…');
+    await expect(retry).toBeDisabled();
+    await expect(retry).toHaveText('다시 제작하기');
+    await expect(page.locator('#downloadRow')).toBeVisible();
+    expect(callCount).toBe(0);
+
+    // 연결이 돌아오면 같은 단추로 QR을 만든다
+    serverUp = true;
+    await setOnline(true);
+    await retry.click();
+    await expect(page.locator('#qrbox')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('#openMovieBtn')).toHaveAttribute('href', url);
+    await expect(page.locator('#downloadRow')).toHaveCount(0);
+    expect(callCount).toBe(1);
   });
 });

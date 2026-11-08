@@ -1,4 +1,4 @@
-// 메일 전달: 인터넷이 돌아오면 영상을 올리고 → 인솔 교사에게 메일을 보내고 → 기기에서 지운다.
+// 메일 전달: 인터넷이 돌아오면 영상을 올리고 → 담임교사에게 메일을 보내고 → 기기에서 지운다.
 // 업로드 · 메일 모두 App Check 토큰이 필요해 화면 쪽에서 돈다. 보관은 설치판이면 메인 프로세스(desktop/mail-store.js)가 암호화해서 하고,
 // 웹(크롬)이면 이 사이트의 IndexedDB(src/lib/mailStoreWeb.ts)에 한다(2026-11-08 Bumm님 «웹도 끊기면 메일 칸을 띄움»).
 // 메일은 서버(functions/index.js의 /mail)가 정한 틀로 Resend를 거쳐 보낸다 — 여기서는 받는 주소 · 이름 · 영화 링크만 넘긴다(2026-11-08 실제 발송).
@@ -17,8 +17,8 @@ declare global {
   }
 }
 
-// 설치판은 암호화 보관(다리)만 쓴다 — 다리를 열지 못하면(키 손상 등) 웹 보관으로 넘어가지 않고 지금까지처럼 이 기기에 저장으로 간다.
-// 웹은 IndexedDB가 있을 때만 — 없으면 메일 화면을 그리지 않고 이 기기에 저장으로 간다.
+// 설치판은 암호화 보관(다리)만 쓴다 — 다리를 열지 못하면(키 손상 등) 웹 보관으로 넘어가지 않는다.
+// 웹은 IndexedDB가 있을 때만. 보관이 없으면 메일 칸에서 «맞아요, 보내 주세요»가 맡기지 못하고 «다시 제작하기»를 안내한다(11/9 — «이 기기에 저장»은 휴대폰만, Result.tsx).
 const bridge: MailStore | null = IN_INSTALLER
   ? window.vcDesktop?.mail ?? null
   : typeof indexedDB === 'undefined' ? null : webMailStore;
@@ -28,7 +28,7 @@ const MAIL_TIMEOUT_MS = 30_000;
 // 창(탭)이 여러 개여도 한 창만 보낸다 — 같은 영화를 두 번 올리거나 메일이 두 통 가지 않게
 const DELIVERY_LOCK = 'voice-cinema-mail';
 
-/** 이 값이 거짓이면 메일 화면을 하나도 그리지 않는다. */
+/** 메일 보관이 있으면 참이다 — 거짓이면 첫 화면의 «메일 대기» 단추를 그리지 않는다. */
 export const mailEnabled = bridge !== null;
 /** 웹 보관이면 참이다 — 대기 화면이 «이 창이 열려 있어야» · «크롬 기록을 지우면»을 알린다. */
 export const mailInBrowser = bridge === webMailStore;
@@ -149,7 +149,8 @@ export function startMailDelivery(): void {
 }
 
 export async function queueMail(info: MailInfo, blob: Blob): Promise<void> {
-  await bridge!.add(info, await blob.arrayBuffer());
+  if (!bridge) throw new Error('메일 보관 없음');
+  await bridge.add(info, await blob.arrayBuffer());
   await refresh();
   void run();
 }

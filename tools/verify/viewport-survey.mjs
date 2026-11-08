@@ -608,7 +608,7 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
     await delay(150);
     await page.evaluate(() => { scrollTo(0, 0); });
     await shot('15-저장중');
-    // 올리지 못하면 메일 전달 화면으로 간다(11/8 — 설치판 · 웹). 메일 보관을 쓸 수 없는 브라우저는 그대로 이 기기에 저장
+    // 올리지 못하면 PC · 패드 · 설치판은 메일 전달 화면, 휴대폰은 이 기기에 저장으로 간다(11/9 Bumm님)
     await page.locator('#savemode, #mailHandoff').first().waitFor({ timeout: 90000 });
     await page.evaluate(() => { scrollTo(0, 0); });
     const mailing = (await page.locator('#mailHandoff').count()) > 0;
