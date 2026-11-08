@@ -24,7 +24,7 @@ const MAX_GAIN_DB = 12;
 const NOISE_CEILING = 0.00316; // −50dBFS — 보정하더라도 주변 소음이 이보다 커지지 않게
 
 export type LiveStep = 'continue' | 'stop' | 'stop-cut';
-/** ok 그대로 · quiet·cut·early 들어 보고 판단(저장 가능) · silent·short 다시 녹음(저장 못 함) */
+/** ok 그대로 · silent·quiet·cut·early 들어 보고 판단(저장 가능 — silent는 11/9 Bumm님) · short 다시 녹음(저장 못 함) */
 export type Verdict = 'ok' | 'quiet' | 'cut' | 'early' | 'silent' | 'short';
 
 export interface TakeCheck {

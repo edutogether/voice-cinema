@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 // 완성 화면(10/20 대표님 PC 시사): 왼쪽 그림은 QR이 생기기 전·후 같은 크기이고 오른쪽 높이에 맞춘다. 그림 위에는
 // 왼쪽 InKY Film Festival·오른쪽 인천광역시교육청 로고, 큰 글자는 영화 제목·그 아래는 장르. QR 위 두 줄과 «내 영화 받기»는
-// 없고, «다른 더빙 하기»는 Lucide 아이콘을 앞에 단 좁은 단추다.
+// 없고, «다른 더빙하기»는 Lucide 아이콘을 앞에 단 빨간 주 단추다 — 메일 칸 «다음»과 같은 크기 · 높이 · 모서리 · 글자(11/9 Bumm님).
 const UPLOAD_PATTERN = '**/voiceCinema/upload';
 
 for (const [width, height] of [[1440, 900], [768, 1024], [390, 664]]) {
@@ -69,14 +69,20 @@ for (const [width, height] of [[1440, 900], [768, 1024], [390, 664]]) {
     await expect(page.locator('#result')).not.toContainText('11월 30일');
     await expect(page.locator('#qrbox')).not.toContainText('내 영화 받기');
     const home = page.locator('#doneHomeBtn');
-    await expect(home).toHaveText('다른 더빙 하기');
+    await expect(home).toHaveText('다른 더빙하기');
     await expect(home.locator('svg.action-icon')).toHaveCount(1);
-    // «다른 더빙 하기»는 모든 폭에서 좁은 보조 단추(흰 바탕·테두리) — 빨간 주 단추는 «내 영화 열기» 하나(10/21 팀장 검수)
-    const look = await home.evaluate((el) => { const s = getComputedStyle(el); return { bg: s.backgroundColor, border: s.borderTopWidth }; });
-    expect(look.bg).toBe('rgb(255, 255, 255)');
-    expect(parseFloat(look.border)).toBeGreaterThan(0);
+    // «다른 더빙하기»는 모든 끝 화면에서 빨간 주 단추 — 메일 칸 «다음»과 같은 높이 48 · 모서리 10 · 16px 굵기 600(11/9 Bumm님 «빨간걸로»).
+    // 넓은 화면은 «다음»과 같은 폭 248, 휴대폰은 다른 단추처럼 가로를 채운다. 마우스가 올라가 있지 않은 색으로 잰다
+    await page.mouse.move(1, 1);
+    await expect.poll(() => home.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(229, 35, 32)');
+    const look = await home.evaluate((el) => { const s = getComputedStyle(el); return { radius: s.borderTopLeftRadius, size: s.fontSize, weight: s.fontWeight, color: s.color }; });
+    expect(look).toEqual({ radius: '10px', size: '16px', weight: '600', color: 'rgb(255, 255, 255)' });
+    const homeBox = await home.boundingBox();
+    // 휴대폰은 다른 단추처럼 높이 52 — 48이면 폭 320 휴대폰(비율 0.82)에서 손가락 칸이 39px다
+    expect(Math.round(homeBox.height)).toBe(width > 600 ? 48 : 52);
     const detailsWidth = await page.locator('.result-details').evaluate((el) => el.clientWidth);
-    expect((await home.boundingBox()).width).toBeLessThan(detailsWidth * .75);
+    if (width > 600) expect(Math.round(homeBox.width)).toBe(248);
+    else expect(homeBox.width).toBeGreaterThan(detailsWidth * .9);
     // QR 안내 문장은 한 줄(«있어요»만 아랫줄로 떨어지지 않게)
     const msgLines = await page.locator('#doneMsg').evaluate((el) => Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)));
     expect(msgLines).toBe(1);

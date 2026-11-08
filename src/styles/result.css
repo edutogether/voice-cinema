@@ -30,7 +30,7 @@ body:has(#result.active) { background:#fff; }
 .result-details h2 { font-size:clamp(26px,calc(2.15 * var(--vw)),34px); font-weight:750; line-height:1.35; letter-spacing:-.04em; margin:0 0 14px; word-break:keep-all; }
 .result-details h2:focus { outline:none; }
 .result-details p { font-size:1rem; line-height:1.7; word-break:keep-all; }
-#doneMsg,#loadingSub { margin:0 0 24px; color:#626262; }
+#doneMsg { margin:0 0 24px; color:#626262; }
 .result-symbol { display:grid; place-items:center; width:44px; height:44px; margin:0 0 20px; border-radius:50%; background:#fff1f0; color:#e52320; }
 .result-symbol .action-icon { width:24px; height:24px; }
 .qrbox { display:flex; flex-direction:column; align-items:center; width:fit-content; padding:16px 20px; margin:0 0 22px; background:#fff; border:1px solid #e5e5e5; border-radius:12px; }
@@ -40,9 +40,12 @@ body:has(#result.active) { background:#fff; }
 .result-details p.savemode { font-size:.875rem; }
 .result-details p.retention-note { margin:8px 0 0; font-size:.8125rem; color:#626262; }
 .result-actions { margin-top:28px; }
-/* «다른 더빙 하기»는 글자 폭만큼, 왼쪽에 붙인다(10/20 대표님 «좌우 폭을 줄인다»). 휴대폰은 아래에서 다시 가로를 채운다 */
+/* «다른 더빙하기»는 모든 끝 화면(QR · 메일 맡긴 뒤 · 이 기기에 저장 · 샘플)에서 빨간 주 단추다 — 메일 칸 «다음»과 같은 크기 · 높이 · 모서리 · 글자
+   (11/9 Bumm님 «다른 더빙하기 버튼 제대로 다시만들고 빨간걸로»): 폭 248 · 높이 48(낮은 창 44) · 모서리 10 · 16px 굵기 600, 왼쪽에 붙인다.
+   «다음»은 26rem 열에서 «다시 제작하기»와 간격 8px을 뺀 249px이다. 휴대폰은 아래에서 다른 단추(«내 영화 열기» · «이 기기에 저장»)처럼 가로를 채우고
+   높이 52다 — 48이면 폭 320 휴대폰(비율 0.82)에서 손가락 칸이 39px로 모자랐다(11/9 해상도 조사) */
 .result-cloud .result-actions,.result-fallback .result-actions { justify-content:flex-start; }
-#result #doneHomeBtn { flex:0 0 auto; padding-inline:28px; }
+#result #doneHomeBtn { flex:0 0 auto; width:15.5rem; max-width:100%; min-height:48px; padding:0 22px; }
 #result .btn { border-radius:10px; text-decoration:none; }
 #result .btn-primary,#result .btn-save { background:#e52320; color:white; border:1px solid #e52320; }
 #result .btn-ghost { background:#fff; color:#262626; border:1px solid #d8d8d8; }
@@ -53,14 +56,6 @@ body:has(#result.active) { background:#fff; }
 .result-fallback .savemode { padding:18px 20px; border:1px solid #e5e5e5; border-radius:10px; background:#f7f7f7; }
 .errbox { margin:24px 0; padding:18px 20px; color:#642a26; background:#fff3f2; border:1px solid #f3d2cf; border-radius:10px; font-size:.9375rem; line-height:1.7; word-break:keep-all; }
 .errbox b { font-weight:700; }
-.spinner { width:44px; height:44px; margin:0 0 26px; border:3px solid #eee; border-top-color:#e52320; border-radius:50%; animation:spin 1s linear infinite; }
-@keyframes spin { to { transform:rotate(360deg); } }
-.save-steps { display:flex; flex-direction:column; list-style:none; padding:24px 0; margin:28px 0; gap:20px; border-block:1px solid #eee; font-size:.9375rem; color:#737373; }
-.save-steps li { display:flex; align-items:center; gap:12px; }
-.save-steps li > span { display:grid; place-items:center; width:28px; height:28px; border:1px solid #ddd; border-radius:50%; flex-shrink:0; }
-.save-steps [aria-current] { color:#171717; font-weight:650; }
-.save-steps [aria-current] > span { border-color:#e52320; background:#e52320; color:white; }
-.result-details .result-wait-note { font-size:.875rem; color:#737373; }
 #result .workflow-footer { color:#737373; padding:20px 24px; font-size:.8125rem; }
 @container app (max-height:800px) and (min-width:601px) {
  .result-card { margin-top:40px; }
@@ -76,11 +71,15 @@ body:has(#result.active) { background:#fff; }
  .result-details { padding:0; }
  .result-details .result-eyebrow { margin-bottom:10px; }
  .result-symbol { display:none; }
- #doneMsg,#loadingSub { margin-bottom:16px; }
+ #doneMsg { margin-bottom:16px; }
  .qrbox { margin-bottom:0; }
  .qrbox img { width:152px; height:152px; }
  .result-actions { margin-top:16px; }
  #result .workflow-footer { padding-block:8px; }
+}
+/* 낮은 창의 «다른 더빙하기»는 메일 칸 «다음»과 같은 44px(mail.css와 같은 조건) */
+@container app (max-height:700px) and (min-width:601px) {
+ #result #doneHomeBtn { min-height:44px; }
 }
 /* 가로로 눕힌 휴대폰: 그림과 글을 위에서 함께 시작한다 — 가운데로 맞추면 그림이 긴 글의 가운데로 내려가 첫 화면 왼쪽이 빈다(11/8 해상도 전수). 표시 그림을 접어 QR을 앞으로 당긴다. */
 @container app (max-height:599px) and (min-width:601px) {
@@ -128,8 +127,7 @@ body:has(#result.active) { background:#fff; }
  .result-details h2 { font-size:1.625rem; }
  .result-symbol { display:none; }
  #result .btn { width:100%; white-space:normal; }
- /* «다른 더빙 하기»는 휴대폰에서도 좁은 보조 단추로 가운데에(10/21 팀장 검수 — 빨간 큰 단추 둘이면 주 단추를 모른다) */
- #result #doneHomeBtn { width:auto; margin-inline:auto; }
+ #result #doneHomeBtn { width:100%; min-height:52px; }
  .qrbox { margin-inline:auto; max-width:100%; }
  .result-actions { gap:10px; }
  .result-fallback .savemode { padding:16px; }
@@ -140,7 +138,6 @@ body:has(#result.active) { background:#fff; }
  .result-card { gap:12px; }
  .errbox { margin-block:10px; padding-block:12px; }
 }
-@media (prefers-reduced-motion:reduce) { .spinner { animation:none; } }
 /* 휴대폰에서 직접 체험하면 자기 화면의 QR을 찍을 수 없으므로 같은 공개 주소를 여는 단추를 QR 아래에 둔다(10/17).
    부스의 노트북·태블릿(넓은 화면)에서는 QR만 보인다 — 학생이 자기 휴대폰으로 받아 가는 것이 기본이다. */
 #result .open-movie { display:none; }

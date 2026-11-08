@@ -1,0 +1,68 @@
+/* 저장 대기 화면 — Poster Studio의 로딩 화면(src/studio/generation-wait.css · waiting-art.css, 2806349) 그대로(11/9 Bumm님, 팀장 전달).
+   값은 바꾸지 않았고 Voice Cinema의 화면 맞춤 규칙에 맞춰 단위만 옮겼다: 화면 단위(vw · dvh) → var(--vw) · 화면 전체(inset:0),
+   @media 폭 · 높이 조건 → @container app(.claude/rules/app.md «해상도별 화면 맞춤» — 크롬은 zoom 안에서 화면 단위까지 키운다). */
+.generation-wait {
+  position: fixed; inset: 0; width: auto; max-width: none; height: auto; max-height: none;
+  margin: 0; padding: 28px 24px; border: 0; border-radius: 0; box-shadow: none; background: #fff; color: #222; overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.generation-wait::backdrop { background: #fff; }
+.generation-content { position: relative; width: min(760px, 100%); min-height: 100%; margin: auto; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.generation-film { position: relative; width: min(350px, calc(65 * var(--vw))); aspect-ratio: 1; flex-shrink: 0; margin-bottom: 12px; }
+.generation-robot-film { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: contain; opacity: 0; }
+.generation-robot-film[data-active="true"] { opacity: 1; }
+.generation-robot-video { pointer-events: none; transition: opacity .18s ease; }
+/* 영상이 나타나면 아래 정지 그림(영상 첫 프레임과 같은 그림)을 숨긴다 — 영상이 다 나타난 뒤(.18s)에 숨기고, 다시 보일 때(영상 실패)는 바로 보인다 */
+.generation-robot-still[data-active="false"] { transition: opacity 0s linear .18s; }
+/* 모든 문구가 같은 칸의 높이를 계산하므로 긴 문구로 바뀌어도 그림이 움직이지 않는다 */
+.generation-copy-stack { display: grid; width: 100%; min-width: 0; }
+.generation-copy-stack > * { grid-area: 1 / 1; align-self: center; min-width: 0; opacity: 0; visibility: hidden; transition: opacity .45s ease; white-space: normal; word-break: keep-all; overflow-wrap: anywhere; }
+.generation-copy-stack > [data-active="true"] { opacity: 1; visibility: visible; }
+.generation-wait h1 { margin: 0; font-size: clamp(23px, calc(2.4 * var(--vw)), 32px); letter-spacing: -1px; font-weight: 750; line-height: 1.45; outline: none; }
+.movie-fact { position: relative; width: min(620px, 100%); margin-top: 0; }
+.movie-fact h2 { margin: 0; padding: 0; color: #ed3124; font-size: clamp(20px, calc(1.8 * var(--vw)), 23px); font-weight: 750; letter-spacing: -.5px; line-height: 1.5; }
+.movie-fact-bodies { margin-top: 14px; }
+.movie-fact p { margin: 0; color: #666; font-size: 16px; font-weight: 400; line-height: 1.75; }
+.generation-dots { display: flex; justify-content: center; align-items: center; gap: 9px; height: 8px; margin: 24px 0; flex-shrink: 0; }
+.generation-dots i { display: block; width: 7px; height: 7px; border-radius: 50%; background: #ed3124; opacity: .3; animation: generation-dot-wave 2.4s ease-in-out infinite; animation-delay: -2.4s; }
+.generation-dots i:nth-child(2) { animation-delay: -2.1s; }
+.generation-dots i:nth-child(3) { animation-delay: -1.8s; }
+@keyframes generation-dot-wave { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+.generation-wait[data-paused="true"] .generation-dots i { animation-play-state: paused; }
+@container app (min-width: 761px) and (max-height: 850px) {
+  .generation-film { width: 270px; margin-bottom: 8px; }
+  .movie-fact { margin-top: 0; }
+}
+@container app (max-width: 760px) {
+  .generation-wait { padding: 24px 20px; }
+  .generation-film { width: min(280px, calc(72 * var(--vw))); margin-bottom: 4px; }
+  .generation-wait h1 { font-size: 24px; letter-spacing: -.8px; line-height: 1.35; }
+  .movie-fact { margin-top: 0; }
+  .movie-fact h2 { font-size: 20px; line-height: 1.4; }
+  .movie-fact p { font-size: 15px; line-height: 1.55; }
+  /* 그림 · 제목 · 점 · 빨간 문구 · 회색 설명을 한 덩어리로 — 설명 칸은 가장 긴 글의 높이라 짧은 글을 위에 붙인다(칸 높이는 그대로라 그림은 움직이지 않는다) */
+  .generation-dots { margin: 12px 0; }
+  .movie-fact-bodies { margin-top: 6px; }
+  .movie-fact-titles > *, .movie-fact-bodies > * { align-self: start; }
+  /* 설명 글의 \n(waitingSets.ts)에서만 줄을 바꾼다. PC는 그대로 한 덩어리 */
+  .movie-fact-bodies > p { white-space: pre-line; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .generation-copy-stack > *, .generation-robot-film, .generation-dots i { transition: none; }
+  .generation-dots i { animation: none; opacity: .65; }
+}
+/* 원화는 보존한다. 피사체 하단을 상자 높이 94%에 맞추고 장면별 체감 크기만 소폭 보정한다(Poster Studio waiting-art.css) */
+.waiting-art-frame { overflow: hidden; }
+.waiting-art-frame > img, .waiting-art-frame > video { transform-origin: 50% 100%; transform: translate(var(--art-x, 0%), var(--art-y, 0%)) scale(var(--art-scale, 1)); }
+.waiting-art-frame[data-art="1"] { --art-scale: 1; --art-y: 2.523%; }
+.waiting-art-frame[data-art="2"] { --art-scale: 1; --art-y: 1.528%; }
+.waiting-art-frame[data-art="3"] { --art-scale: 0.95; --art-y: 6.280%; }
+.waiting-art-frame[data-art="4"] { --art-scale: 1.02; --art-y: 10.372%; }
+.waiting-art-frame[data-art="5"] { --art-scale: 0.95; --art-y: 5.200%; }
+.waiting-art-frame[data-art="6"] { --art-scale: 1; --art-y: 2.949%; }
+.waiting-art-frame[data-art="7"] { --art-scale: 1.1; --art-y: 15.562%; }
+.waiting-art-frame[data-art="8"] { --art-scale: 0.98; --art-y: 6.668%; }
+.waiting-art-frame[data-art="9"] { --art-scale: 0.88; --art-y: 1.000%; }
+.waiting-art-frame[data-art="10"] { --art-scale: 0.94; --art-y: -1.060%; }
+.waiting-art-frame[data-art="11"] { --art-scale: 1; --art-y: 4.511%; }
+.waiting-art-frame[data-art="12"] { --art-scale: 1.04; --art-y: 5.966%; --art-x: -1.3%; }

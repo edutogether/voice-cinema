@@ -61,12 +61,12 @@ const LAUNCH = { ignoreDefaultArgs: ['--hide-scrollbars'], args: ['--use-fake-de
 // 역할별 글자 — Poster Studio와 대조할 표의 줄이다. 앞의 선택자가 화면에 있으면 그 값을 쓴다.
 const ROLES = {
   '앱 이름': ['#splash .name', '.chart-app strong', '.studio-brand > span'],
-  '화면 제목': ['.chart-heading h1', '.result-details h2', '.controls h2', 'main h1'],
-  '보조 제목': ['.chart-invitation h2', '.studio-heading h1', 'main h2'],
+  '화면 제목': ['.generation-wait h1', '.chart-heading h1', '.result-details h2', '.controls h2', 'main h1'],
+  '보조 제목': ['.movie-fact h2[data-active="true"]', '.chart-invitation h2', '.studio-heading h1', 'main h2'],
   '장면 이름': ['.scene-shell.is-current .gname', '.poster-credit strong'],
-  '안내 문장': ['.hint', '#doneMsg', '#loadingSub', '.chart-invitation > p:last-of-type', 'main p'],
-  '주 단추': ['#recBtn', '#saveBtn', '.scene-shell.is-current .tile-enter', '#openMovieBtn', '#downloadBtn'],
-  '보조 단추': ['#previewBtn', '#resetBtn', '.back', '#doneHomeBtn', '#errBackBtn'],
+  '안내 문장': ['.movie-fact p[data-active="true"]', '.hint', '#doneMsg', '.chart-invitation > p:last-of-type', 'main p'],
+  '주 단추': ['#recBtn', '#saveBtn', '.scene-shell.is-current .tile-enter', '#openMovieBtn', '#downloadBtn', '#doneHomeBtn'],
+  '보조 단추': ['#previewBtn', '#resetBtn', '.back', '#errBackBtn'],
   '작은 글': ['.privacylink', '.festival-steps', '.cinema-footer', '.chart-guide p', '.clip-time', '.scene-choice-card > span', '.workflow-footer'],
 };
 
@@ -80,9 +80,10 @@ function measurePage(roles) {
   const name = (el) => { const t = (el.getAttribute('aria-label') || el.textContent || el.getAttribute('alt') || '').trim().replace(/\s+/g, ' ').slice(0, 22); return (el.id ? '#' + el.id : el.tagName.toLowerCase() + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/)[0] : '')) + (t ? ' «' + t + '»' : ''); };
   // body의 overflow는 화면으로 옮겨 가서 잘라 주는 부모가 아니다 — 이 앱은 body에 overflow-x:hidden이 있어 부모로 세면 삐져나간 것을 전부 놓친다
   const clipsX = (el) => { for (let a = el.parentElement; a && a !== document.documentElement && a !== document.body; a = a.parentElement) { const s = getComputedStyle(a); if (/(hidden|clip|auto|scroll)/.test(s.overflowX)) { const r = a.getBoundingClientRect(); if (r.left >= -1 && r.right <= W + 1) return true; } } return false; };
-  // 스플래시가 떠 있으면 그 화면만 잰다 — 그 뒤에 깔린 메인은 가려져 있다
+  // 스플래시나 모달 대화상자(저장 대기 화면)가 떠 있으면 그 화면만 잰다 — 그 뒤에 깔린 화면은 가려져 있다
   const splash = document.getElementById('splash');
-  const scope = splash && vis(splash) ? splash : document.body;
+  const modal = document.querySelector('dialog:modal');
+  const scope = modal || (splash && vis(splash) ? splash : document.body);
   const hiddenOrSide = (el) => !!el.closest('[hidden], [aria-hidden="true"], .scene-shell:not(.is-current), .scene-choices');
   const floating = (el) => { for (let x = el; x && x !== scope; x = x.parentElement) { const p = getComputedStyle(x).position; if (p === 'absolute' || p === 'fixed' || p === 'sticky') return true; } return false; };
   const pinned = (el) => { for (let x = el; x && x !== scope; x = x.parentElement) { const p = getComputedStyle(x).position; if (p === 'fixed' || p === 'sticky') return true; } return false; };
@@ -268,13 +269,15 @@ if (SELFTEST) {
     <div style="zoom:.5"><p id=small style="margin:0;font-size:20px">줄인 글자</p></div>
     <div style="position:relative;width:300px;height:240px"><button class=tile id=card style="display:block;width:300px;height:240px;padding:0;border:0;position:relative"><span style="display:block;width:300px;height:170px"><img style="display:block;width:300px;height:170px" src="${svg}"></span><span class=gname id=cardname style="display:block;width:120px">장면 이름</span><span class=tile-enter id=cardbtn style="position:absolute;left:60px;top:198px">더빙하기 단추</span></button><button class=scene-arrow id=cardarrow style="position:absolute;left:0;top:60px">이전</button></div></body>`;
   const I = `<!doctype html><meta charset=utf-8><body style="margin:0;font:20px/30px sans-serif"><button id=behind style="width:300px;height:200px">메인</button><p id=behind2 style="position:absolute;left:0;top:0;margin:0">겹친 글</p><div id=splash style="position:fixed;inset:0;background:#fff"><p id=splashname style="margin:0">앱 이름</p></div></body>`;
+  // 모달 대화상자(저장 대기 화면): 그 뒤에 깔린 화면은 가려져 있어 재지 않고, 대화상자 안의 겹침은 잡는다
+  const L = `<!doctype html><meta charset=utf-8><body style="margin:0;font:20px/30px sans-serif"><button id=behindmodal style="width:300px;height:200px">뒤 화면</button><p id=behindmodal2 style="position:absolute;left:0;top:0;margin:0">겹친 글</p><dialog id=modalbox style="position:fixed;inset:0;width:auto;height:auto;max-width:none;max-height:none;margin:0;border:0;background:#fff"><p id=modaltext style="margin:0;width:200px">대화상자 글</p><button id=modalbtn style="display:block;margin-top:-20px;width:200px;height:40px">대화상자 단추</button></dialog><script>document.getElementById('modalbox').showModal()</script></body>`;
   const H2 = `<!doctype html><meta charset=utf-8><body style="margin:0"><div class="scene-shell is-current"><div class=tile-media style="width:320px;height:180px"></div></div></body>`;
   const J = `<!doctype html><meta charset=utf-8><body style="margin:0;font:12px/14px sans-serif"><a class=privacylink id=touching style="position:absolute;left:0;top:0">개인정보처리방침</a><img id=underlink style="position:absolute;left:0;top:14px;width:200px;height:60px" src="${svg}"><a class=privacylink id=clear style="position:absolute;left:300px;top:0">개인정보처리방침</a><img id=farlink style="position:absolute;left:300px;top:30px;width:200px;height:60px" src="${svg}"><div class="scene-shell is-current" style="position:absolute;top:120px"><span class=tile-enter style="display:none">더빙하기</span></div></body>`;
   const K = `<!doctype html><meta charset=utf-8><body style="margin:0;font:14px/20px sans-serif"><div id=tinyposter style="position:relative;overflow:hidden;width:240px;height:100px"><img style="position:absolute;inset:0;width:100%;height:100%" src="${svg}"><span id=logotext style="position:absolute;left:10px;top:10px;width:130px">InKY Film Festival</span><span style="position:absolute;left:100px;top:10px;width:120px;height:21px;display:block"><img id=logoimg style="display:block;width:120px;height:21px" src="${svg}"></span><span id=badge2 style="position:absolute;right:4px;bottom:4px">완성</span><p id=uptext style="position:absolute;left:10px;bottom:0;margin:0;height:130px">위로 밀려 잘린 글</p></div></body>`;
   const browser = await chromium.launch(LAUNCH);
   const page = await browser.newPage({ viewport: { width: 1000, height: 700 } });
   const run = async (html) => { await page.setContent(html); await delay(150); return page.evaluate(measurePage, { 작은: ['#small'] }); };
-  const [a, b, d, e, f, g, h, i, j, k] = [await run(A), await run(B), await run(D), await run(E), await run(F), await run(G), await run(H2), await run(I), await run(J), await run(K)];
+  const [a, b, d, e, f, g, h, i, j, k, l] = [await run(A), await run(B), await run(D), await run(E), await run(F), await run(G), await run(H2), await run(I), await run(J), await run(K), await run(L)];
   // 터치 기기에서만 세는 손가락 단추
   const touch = await browser.newContext({ viewport: { width: 400, height: 700 }, hasTouch: true, isMobile: true });
   const tp = await touch.newPage();
@@ -303,6 +306,8 @@ if (SELFTEST) {
     ['장면 카드 그림 위 화살표는 안 잡는다', !g.overlaps.some((s) => s.includes('#cardarrow'))],
     ['장면 카드 안의 글끼리 겹치면 잡는다', g.overlaps.some((s) => s.includes('#cardname') && s.includes('#cardbtn'))],
     ['스플래시 뒤의 메인은 안 잰다', i.overlaps.length === 0],
+    ['모달 대화상자 뒤의 화면은 안 잰다', !l.overlaps.some((x) => x.includes('#behindmodal'))],
+    ['모달 대화상자 안의 겹침은 잡는다', l.overlaps.some((x) => x.includes('#modaltext') && x.includes('#modalbtn'))],
     ['방침 링크 글자가 그림에 닿으면 잡는다', j.overlaps.some((s) => s.includes('#touching') && s.includes('#underlink'))],
     ['방침 링크에서 떨어진 그림은 안 잡는다', !j.overlaps.some((s) => s.includes('#clear'))],
     ['메인에 «더빙하기»가 안 보이면 잡는다', j.off.some((s) => s.includes('더빙하기'))],

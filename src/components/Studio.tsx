@@ -59,6 +59,16 @@ const HEADLINE: Record<Phase, string> = {
 export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, autoPreview }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [buffering, setBuffering] = useState(false);
+  // 받는 중 표시는 카드에서 녹음실로 커지는 동안(메인 화면처럼 보이는 때)에는 띄우지 않고, 다 열린 뒤 받은 만큼을 퍼센트로 붙인다
+  // (11/9 Bumm님 «메인화면에선 띄우지말고 영상 골라서 누른 화면에서는 필요하면 지금거에서 퍼센트까지 띄워도 될듯»)
+  const [settled, setSettled] = useState(!entrance);
+  const [loaded, setLoaded] = useState(0);
+  const measureLoaded = (v: HTMLVideoElement) => {
+    if (!Number.isFinite(v.duration) || v.duration <= 0) { setLoaded(0); return; }
+    let end = 0;
+    for (let i = 0; i < v.buffered.length; i += 1) if (v.buffered.start(i) <= v.currentTime + 0.1) end = Math.max(end, v.buffered.end(i));
+    setLoaded(Math.min(100, Math.floor((end / v.duration) * 100)));
+  };
   const titleRef = useRef<HTMLHeadingElement>(null);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
   const startButtonRef = useRef<HTMLButtonElement>(null);
@@ -147,14 +157,15 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
             </div>
             <div className={`studio-video-frame${phase === 'idle' ? ' is-paused' : ''}`}>
               <video id="clip" ref={videoRef} poster={stillUrl(genre.id)} playsInline muted preload="auto"
-                onWaiting={() => setBuffering(true)} onPlaying={() => setBuffering(false)} onError={() => setBuffering(false)} />
+                onWaiting={(e) => { measureLoaded(e.currentTarget); setBuffering(true); }} onPlaying={() => setBuffering(false)} onError={() => setBuffering(false)}
+                onProgress={(e) => measureLoaded(e.currentTarget)} onLoadedMetadata={(e) => measureLoaded(e.currentTarget)} />
               <div className="studio-pause-shade" aria-hidden="true" />
               <div className="studio-pause-title" aria-hidden="true">
                 <small>장면 더빙</small>
                 <strong>{genre.summary}</strong>
                 <p>{genre.name}<span>10초</span></p>
               </div>
-              {playing && buffering && <div className="studio-buffering" role="status">영상을 불러오고 있어요</div>}
+              {settled && playing && buffering && <div className="studio-buffering" role="status">영상을 불러오고 있어요 {loaded}%</div>}
               <SceneCaption genre={genre} videoRef={videoRef} enabled={phase === 'watching' || previewing} />
               <SceneTurnCue genre={genre} videoRef={videoRef} enabled={previewing} />
               {previewing && dub.soundBlocked && <button type="button" className="studio-sound-on" id="soundOnBtn" onClick={dub.soundOn}><ActionIcon name="soundOff" /> 소리 켜기</button>}
@@ -199,7 +210,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
           </div>
         </div>
       </div>
-      {active && entrance && <StudioEntrance entry={entrance} />}
+      {active && entrance && <StudioEntrance entry={entrance} onDone={() => setSettled(true)} />}
     </section>
   );
 }

@@ -3,6 +3,7 @@ import { finalClipUrl, stillUrl, stillAvifUrl, type Genre } from '../genres';
 import { FestivalHeader } from './FestivalHeader';
 import { ActionIcon } from './ActionIcon';
 import { MailHandoff } from './MailHandoff';
+import { GenerationWait, type SceneEnd } from './GenerationWait';
 import { mergeClip, processVoice } from '../lib/ffmpeg';
 import { downloadBlob, uploadToCloud } from '../lib/upload';
 import { buildUploadFilename, isPreviewChannel } from '../logic';
@@ -72,6 +73,8 @@ export function Result({ active, job, onHome, onBack }: Props) {
   // 지금 이 화면이 맡은 작업 — 다시 제작하기가 끝났을 때 그사이 다른 작업으로 바뀌었으면 화면을 건드리지 않는다
   const jobRef = useRef(job);
   jobRef.current = job;
+  // 대기 화면이 걸어 두는 «지금 재생 중인 대기 영상이 끝날 때까지 기다리기» — 결과(QR · 메일 칸 · 이 기기에 저장 · 오류)는 그 뒤에 보인다(GenerationWait.tsx)
+  const sceneEndRef = useRef<SceneEnd | null>(null);
 
   useEffect(() => {
     if (active) cardRef.current?.querySelector('h2')?.focus({ preventScroll: true });
@@ -84,6 +87,11 @@ export function Result({ active, job, onHome, onBack }: Props) {
       return;
     }
     let cancelled = false;
+    // 대기 화면에서 결과로 넘어갈 때는 재생 중인 대기 영상을 끝까지 보인다(11/9 Bumm님 «이왕 틀던건 다 고대로 보여주고 결과 보여줘라», 팀장 전달)
+    const finish = async (next: Stage) => {
+      await sceneEndRef.current?.();
+      if (!cancelled) setStage(next);
+    };
     void (async () => {
       let merged: Blob;
       try {
@@ -91,24 +99,24 @@ export function Result({ active, job, onHome, onBack }: Props) {
       } catch (e) {
         // 오류 원문(FFmpeg 기록)은 아이 화면에 보이지 않고 개발자 콘솔에만 남긴다
         console.error('[영상 합성 실패]', e instanceof Error ? e.message : e);
-        if (!cancelled) setStage({ kind: 'error' });
+        if (!cancelled) await finish({ kind: 'error' });
         return;
       }
       if (cancelled) return;
       // 올리지 못했을 때(네트워크 장애): PC · 패드 · 설치판은 담임교사 메일 칸, 휴대폰은 이 기기에 저장(11/8 Bumm님, 팀장 전달).
       // 미리보기 주소는 서버가 받지 않아(허용 출처 밖) 맡겨 두어도 영영 보내지지 않는다 — 이 기기에 저장으로 간다.
-      const cannotUpload = () => setStage(PREVIEW || onPhone() ? { kind: 'fallback', blob: merged } : { kind: 'mail', blob: merged });
-      // 인터넷이 아예 없으면 올리지 않는다 — App Check 대기(20초)를 세 번 «저장하고 있어요»로 보내지 않고
+      const cannotUpload = () => finish(PREVIEW || onPhone() ? { kind: 'fallback', blob: merged } : { kind: 'mail', blob: merged });
+      // 인터넷이 아예 없으면 올리지 않는다 — App Check 대기(20초)를 세 번 대기 화면으로 보내지 않고
       // 바로 장애 화면으로 간다(10/27 설치판, 오프라인일 때는 정직하게 안내).
       if (!isOnline()) {
-        cannotUpload();
+        await cannotUpload();
         return;
       }
       setStage({ kind: 'uploading' });
       const url = await uploadMovie(merged, job.genre.id);
       if (cancelled) return;
-      if (url) setStage({ kind: 'cloud', qr: makeQR(url), url });
-      else cannotUpload();
+      if (url) await finish({ kind: 'cloud', qr: makeQR(url), url });
+      else await cannotUpload();
     })();
     return () => {
       cancelled = true;
@@ -158,22 +166,12 @@ export function Result({ active, job, onHome, onBack }: Props) {
             <p className="savemode">목소리 합성·클라우드 저장은 실행하지 않습니다.</p>
             <div className="row result-actions">
               <button className="btn btn-lg btn-ghost" id="sampleBackBtn" onClick={onBack}><ActionIcon name="back" /> 녹음 화면으로</button>
-              <button className="btn btn-lg btn-ghost" id="doneHomeBtn" onClick={onHome}>다른 더빙 하기 <ActionIcon name="arrow" /></button>
+              <button className="btn btn-lg btn-save" id="doneHomeBtn" onClick={onHome}><ActionIcon name="clapperboard" /> 다른 더빙하기</button>
             </div>
           </div>
         )}
-        {loading && (
-          <div id="loading" role="status" aria-busy="true">
-            <div className="spinner" aria-hidden="true" />
-            <h2 id="loadingTitle" tabIndex={-1}>{stage.kind === 'merging' ? '영화를 만들고 있어요' : '내 영화를 저장하고 있어요'}</h2>
-            <p id="loadingSub">{stage.kind === 'merging' ? '목소리를 영상에 입히는 중입니다' : '완성된 영화를 저장하고 있어요'}</p>
-            <ol className="save-steps" aria-label="저장 진행">
-              <li aria-current={stage.kind === 'merging' ? 'step' : undefined}><span>{stage.kind === 'uploading' ? <ActionIcon name="check" /> : '1'}</span> 영상과 목소리 합치기</li>
-              <li aria-current={stage.kind === 'uploading' ? 'step' : undefined}><span>2</span> 저장하고 QR 만들기</li>
-            </ol>
-            <p className="result-wait-note">완료될 때까지 이 화면을 열어두세요.</p>
-          </div>
-        )}
+        {/* 합치고 올리는 동안은 Poster Studio와 같은 대기 화면(흰 전체 화면 · 대기 영상 · 장면 제목 · 영화 상식, 11/9 Bumm님). 이 화면을 떠나 있으면(뒤로 가기) 띄우지 않는다 */}
+        {active && loading && <GenerationWait sceneEndRef={sceneEndRef} />}
 
         {(stage.kind === 'cloud' || stage.kind === 'fallback') && (
           <div id="done">
@@ -225,8 +223,8 @@ export function Result({ active, job, onHome, onBack }: Props) {
             )}
 
             <div className="row result-actions">
-              {/* «다른 더빙 하기»는 보조 단추(흰 바탕·테두리, 좁게) — 주 단추는 «내 영화 열기»·«이 기기에 저장»이다(10/21 팀장 검수) */}
-              <button className="btn btn-lg btn-ghost" id="doneHomeBtn" onClick={onHome}><ActionIcon name="clapperboard" /> 다른 더빙 하기</button>
+              {/* «다른 더빙하기»는 모든 끝 화면에서 빨간 주 단추 — 메일 칸 «다음»과 같은 크기(11/9 Bumm님 «다른 더빙하기 버튼 제대로 다시만들고 빨간걸로», result.css) */}
+              <button className="btn btn-lg btn-save" id="doneHomeBtn" onClick={onHome}><ActionIcon name="clapperboard" /> 다른 더빙하기</button>
             </div>
           </div>
         )}

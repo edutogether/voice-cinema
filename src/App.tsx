@@ -7,6 +7,8 @@ import { Studio } from './components/Studio';
 import { GENRES, type Genre } from './genres';
 import { afterFirstMediaReady } from './lib/backgroundLoad';
 import { loadEngine } from './lib/ffmpeg';
+import { warmWaitingStills } from './lib/waitingVideo';
+import { WAIT_STILLS } from './components/GenerationWait';
 import { installServiceWorker } from './lib/sw';
 import { initAppCheck } from './lib/upload';
 import { captureSceneEntrance, type SceneEntrance } from './lib/sceneEntrance';
@@ -113,13 +115,16 @@ export function App() {
   // 첫 더빙 전에 엔진(31MB)과 App Check를 미리 준비해 저장 시 대기시간을 줄인다. 다만 화면의 첫 영상이 재생할 만큼 받힌 뒤에
   // 시작한다 — 느린 와이파이에서 처음부터 같이 받으면 장면 영상이 한참 늦게 뜬다(10/24, src/lib/backgroundLoad.ts).
   // 받는 동안 화면에는 아무것도 띄우지 않는다(11/8 Bumm님 — 첫 화면의 «영상 저장 준비 중… N%»를 뺐다). 실패해도 그대로 두고,
-  // 저장할 때 다시 받는다(그동안 저장 화면은 «영화를 만들고 있어요»로 기다린다 — src/components/Result.tsx).
+  // 저장할 때 다시 받는다(그동안 저장 화면은 대기 화면으로 기다린다 — src/components/GenerationWait.tsx).
   useEffect(() => {
     if (sampleMode) return;
     let cancelled = false;
     afterFirstMediaReady(BACKGROUND_START_FALLBACK_MS).then(() => {
       if (cancelled) return;
-      loadEngine().catch((e) => console.error('[엔진 준비 실패]', e));
+      // 엔진 다음에 대기 화면 정지 그림 열한 장(2.5MB)을 받아 둔다 — 인터넷이 끊긴 뒤 저장해도 대기 화면에 그림이 보이게(2026-11-09)
+      loadEngine()
+        .catch((e) => console.error('[엔진 준비 실패]', e))
+        .then(() => { if (!cancelled) void warmWaitingStills(WAIT_STILLS); });
       initAppCheck().catch((e) => console.error('[App Check 사전초기화 실패]', e));
     });
     return () => { cancelled = true; };
