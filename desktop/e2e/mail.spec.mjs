@@ -478,7 +478,8 @@ test('인터넷이 있어도 올리지 못하면 메일 화면으로 가고, 대
   await expect(startup).not.toBeVisible();
   await expect(page.locator('#mailQueueChip')).toHaveCount(0);
 
-  // 켜 둔 채 여러 번(8번) 실패하면 «보내지 못함»으로 빠져 자동으로는 보내지 않고, 첫 화면 단추의 목록에서 운영자가 다시 보낸다
+  // 켜 둔 채 서버가 여러 번(8번) 거절(4xx)하면 «보내지 못함»으로 빠져 자동으로는 보내지 않고, 첫 화면 단추의 목록에서 운영자가 다시 보낸다.
+  // 5xx · 연결 실패는 몇 번이든 «보내지 못함»이 되지 않고 계속 다시 보낸다(11/8 팀장 결정)
   await offline(app, true);
   await pickScene(page, 'SF');
   await recordToEntry(page);
@@ -493,8 +494,13 @@ test('인터넷이 있어도 올리지 못하면 메일 화면으로 가고, 대
   await expect(startup).not.toBeVisible();
   await expect(page.locator('#mailQueueChip')).toHaveText('메일 대기 1건');
   const uploadedTwice = (await uploads(app)).length;
-  // 여덟 번째 실패를 기다리는 대신 일곱 번 실패한 상태로 두고 다음 차례(15초마다)가 여덟 번째로 실패하게 한다
-  await page.evaluate(async () => { const [waiting] = await window.vcDesktop.mail.list(); await window.vcDesktop.mail.update(waiting.id, { attempts: 7, nextAt: 0 }); });
+  // 503을 서른 번 넘게 받아도 «보내지 못함»이 아니다 — 서른 번 실패한 상태로 두고 다음 차례(15초마다)도 503이면 그대로 기다린다
+  await page.evaluate(async () => { const [waiting] = await window.vcDesktop.mail.list(); await window.vcDesktop.mail.update(waiting.id, { attempts: 30, rejections: 0, nextAt: 0 }); });
+  await expect.poll(() => page.evaluate(async () => (await window.vcDesktop.mail.list())[0]), { timeout: 60000 }).toMatchObject({ attempts: 31, rejections: 0, failed: false });
+  await expect(page.locator('#mailQueueChip')).toHaveText('메일 대기 1건');
+  // 여덟 번째 거절을 기다리는 대신 일곱 번 거절된 상태로 두고 다음 차례가 400으로 여덟 번째 거절이 되게 한다
+  await setMailReply(app, { status: 400, body: { ok: false } });
+  await page.evaluate(async () => { const [waiting] = await window.vcDesktop.mail.list(); await window.vcDesktop.mail.update(waiting.id, { attempts: 7, rejections: 7, nextAt: 0 }); });
   await expect(page.locator('#mailQueueChip')).toHaveText('보내지 못함 1건', { timeout: 60000 });
   await expect(startup).not.toBeVisible();
   await page.locator('.scene-carousel').dispatchEvent('pointerdown', { pointerType: 'touch', isPrimary: true });
