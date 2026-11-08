@@ -10,11 +10,16 @@
  * 비율은 창 크기만으로 정하고 세로 스크롤 막대 자리를 미리 뺀다 — 막대가 생기고 사라져도 비율은 그대로이고 --app-w만 따라간다. 화면 폭으로 정하면 막대가 비율을 바꿔
  * 작은 비율 · 오른쪽 빈 띠로 남거나(10/28 설치판 기준 16에서 발견 — 웹에도 있다), 막대가 앱 폭을 760 아래로 끌어내려 휴대폰 배치가 되고 그 배치에서 막대가 사라져
  * 창을 건드리지 않아도 끝없이 오갔다(11/8 설치판 640×640 입력 오류 화면). 막대가 없는 기기(휴대폰 · 헤드리스)에서는 막대 자리가 0이다.
+ * 스플래시 배율(--splash-scale, PC · 태블릿 · 설치판): 웹 PC 2560×1305 창의 스플래시를 기준으로, 창 넓이(가로 × 세로)의 비율에 맞춰 줄이고 키운다
+ * (11/8 Bumm님 «PC 2560 정도의 비율로, PC · 패드 다른 비율도, 설치판 앱도 맞춰야지»). 넓이로 재는 까닭: 패드를 세로로 돌려도 같은 크기로 보이고,
+ * 가로가 긴 PC 창에서는 높이 비율과 거의 같다(1280×585 0.474 · 1920×945 0.737). 화면 전체 비율(zoom)과 따로다 — CSS가 그것을 되돌린 뒤 이것만 건다.
  * 인라인 스크립트를 두지 않는 규칙(CSP) 때문에 별도 파일로 두고, body 첫머리에서 읽어 첫 그림부터 맞춘다. */
 (function () {
   var PHONE_W = 390;
   var MIN_W = 768;
   var MIN_H = 640;
+  var SPLASH_W = 2560;
+  var SPLASH_H = 1305;
   var root = document.documentElement;
   var body = document.body;
   var probe = document.createElement('div');
@@ -43,6 +48,7 @@
     root.style.setProperty('--fit-undo', String(1 / z));
     root.style.setProperty('--app-w', root.clientWidth / z + 'px');
     root.style.setProperty('--app-h', h / z + 'px');
+    root.style.setProperty('--splash-scale', String(Math.sqrt((w * h) / (SPLASH_W * SPLASH_H))));
     root.dataset.fit = kind;
   };
   fit();

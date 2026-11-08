@@ -1,6 +1,6 @@
 // 메일 전달 서버 규칙(functions/mail.js) — 검사 · 내용 · Resend 요청 모양 · 오류 처리(2026-11-08).
 import { test, expect } from 'vitest';
-import { validateMailRequest, buildMailMessage, mailIdempotencyKey, sendViaResend, MAIL_FROM, MAIL_SUBJECT, RESEND_URL, MAX_ITEMS, NAME_MAX, GENRE_NAMES } from '../mail.js';
+import { validateMailRequest, buildMailMessage, mailIdempotencyKey, sendViaResend, MAIL_FROM, MAIL_REPLY_TO, MAIL_SUBJECT, RESEND_URL, MAX_ITEMS, NAME_MAX, GENRE_NAMES } from '../mail.js';
 import { GENRE_IDS } from '../validate.js';
 
 const BUCKET = 'inky-voice-cinema.firebasestorage.app';
@@ -66,7 +66,12 @@ test('메일 내용: 정한 틀 · 받는 사람 하나 · 제목에 아동 이�
   expect(m.text).toContain(`· 민준 — 스포츠\n  ${link('sports')}`);
   expect(m.text).toContain(`· 별\n  ${link('dub', '0123456789abcdef01')}`);
   expect(m.text).toContain('2026년 11월 30일까지');
-  expect(Object.keys(m).sort()).toEqual(['from', 'subject', 'text', 'to']);
+  // 답장은 행사 공용 메일로 간다(11/8 Bumm님) — 본문도 «보내기 전용»이 아니라 답장을 받는다고 적는다
+  expect(m.reply_to).toBe(MAIL_REPLY_TO);
+  expect(MAIL_REPLY_TO).toBe('edutogether2015@gmail.com');
+  expect(m.text).toContain('이 메일에 답장해 주세요');
+  expect(m.text).not.toContain('보내기 전용');
+  expect(Object.keys(m).sort()).toEqual(['from', 'reply_to', 'subject', 'text', 'to']);
 });
 
 test('같은 내용이면 같은 열쇠, 영화가 하나 달라지면 다른 열쇠(256자 안)', () => {

@@ -38,8 +38,20 @@ for (const [width, height] of [[1440, 900], [768, 1024], [390, 664]]) {
 
     await expect(poster.locator('.poster-logo-inky')).toContainText('InKY Film Festival');
     await expect(poster.locator('.poster-logo-inky img')).toHaveAttribute('src', '/brands/inky.png');
-    await expect(poster.locator('.poster-logo-education img')).toHaveAttribute('src', '/brands/education-white.svg');
-    // 두 로고는 흰 둥근 바탕 없이 흰 로고만 얹는다(11/8 Bumm님 «방송국 로고처럼») — 교육청은 공식 CI를 모양 그대로 흰색으로 반전한 벡터
+    await expect(poster.locator('.poster-logo-education img')).toHaveAttribute('src', '/brands/education-on-dark.svg');
+    // 교육청 엠블럼은 공식 색, 글자만 흰색(11/8 Bumm님) — 누리집 «도안 색상»의 HEX 여섯 개가 그대로 들어 있다
+    const educationSvg = await page.evaluate(() => fetch('/brands/education-on-dark.svg').then((r) => r.text()));
+    for (const hex of ['#005ead', '#00b3e3', '#0a9b5d', '#9eca4f', '#ffd14f', '#f68428']) expect(educationSvg, hex).toContain(hex);
+    expect(educationSvg).toContain('<g fill="#fff">');
+    // InKY 카메라를 잘라 보이는 칸은 원본 inky.png의 86~91줄(노란 마크 끝 85줄과 흰 한글 제목 시작 92줄 사이)에서 끝난다 —
+    // 칸이 원본 100줄까지 내려가 제목 윗부분이 마크 밑에 흰 조각(«…IOIE»처럼)으로 보였다(11/8 Bumm님)
+    const cropEnd = await poster.locator('.poster-logo-inky .festival-symbol').evaluate((box) => {
+      const img = box.querySelector('img');
+      return box.getBoundingClientRect().height / img.getBoundingClientRect().height * img.naturalHeight;
+    });
+    expect(cropEnd, '잘라 보이는 칸의 끝 줄').toBeGreaterThan(86);
+    expect(cropEnd, '잘라 보이는 칸의 끝 줄').toBeLessThan(91);
+    // 두 로고는 흰 둥근 바탕 없이 로고만 얹는다(11/8 Bumm님 «방송국 로고처럼»)
     for (const logo of ['.poster-logo-inky', '.poster-logo-education']) {
       expect(await poster.locator(logo).evaluate((el) => getComputedStyle(el).backgroundColor), logo).toBe('rgba(0, 0, 0, 0)');
     }
