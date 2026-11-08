@@ -120,8 +120,32 @@ test('녹음 → 합성 → 업로드가 되면 QR이 뜨고, 올린 것은 10�
   await routeUpload(app, { status: 200, body: { ok: true, url: 'https://storage.googleapis.com/test/dub.mp4' } });
   await openStudio(page, '판타지');
   expect(await recordOnce(page)).toMatchObject({ phase: 'recorded' });
+  // 저장 대기 화면의 영상마다 «보이기 시작 · 끝남»과 QR이 뜬 때를 페이지 안에서 적는다 — 웹과 같은 두 편 하한(11/9 Bumm님 «2개는 로딩영상이 재생되게 해 그게 최소»)
+  await page.evaluate(() => {
+    const log = { videos: [], qrAt: null };
+    window.__wait = log;
+    const seen = new WeakSet();
+    const now = () => window.performance.now();
+    new window.MutationObserver(() => {
+      document.querySelectorAll('#loading video.generation-robot-video').forEach((v) => {
+        if (seen.has(v)) return;
+        seen.add(v);
+        const entry = { shownAt: null, endedAt: null };
+        log.videos.push(entry);
+        new window.MutationObserver(() => { if (v.dataset.active === 'true' && entry.shownAt === null) entry.shownAt = now(); })
+          .observe(v, { attributes: true, attributeFilter: ['data-active'] });
+        v.addEventListener('ended', () => { entry.endedAt = now(); });
+      });
+      if (document.querySelector('#qrImg') && log.qrAt === null) log.qrAt = now();
+    }).observe(document.body, { childList: true, subtree: true });
+  });
   await page.locator('button', { hasText: '저장하기' }).click();
   await expect(page.locator('#qrImg')).toBeVisible({ timeout: 90000 });
+  const wait = await page.evaluate(() => window.__wait);
+  const shown = wait.videos.filter((entry) => entry.shownAt !== null);
+  expect(shown.length, '대기 영상 두 편이 보였다').toBe(2);
+  for (const [index, entry] of shown.entries()) expect(entry.endedAt, `${index + 1}번째 대기 영상을 끝까지 틀었다`).not.toBeNull();
+  expect(wait.qrAt, 'QR은 둘째 대기 영상이 끝난 뒤에').toBeGreaterThanOrEqual(shown[1].endedAt);
   const [uploaded] = await uploads(app);
   expect(uploaded.filename).toMatch(/^dub_fantasy_\d+_[0-9a-f]+\.mp4$/);
   expect(Math.abs(mp4Duration(Buffer.from(uploaded.dataBase64, 'base64')) - 10)).toBeLessThanOrEqual(0.05);
@@ -153,7 +177,7 @@ test('내려받기는 묻지 않고 다운로드 폴더에 두고 저장했다�
   await captureDialogs(app, downloads);
   const download = () => page.evaluate(() => {
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([new Uint8Array([1, 2, 3, 4])], { type: 'video/mp4' }));
+    a.href = window.URL.createObjectURL(new window.Blob([new Uint8Array([1, 2, 3, 4])], { type: 'video/mp4' }));
     a.download = 'Voice Cinema_히어로.mp4';
     document.body.append(a);
     a.click();
