@@ -33,11 +33,6 @@ export function shouldRetryUpload(error: unknown): boolean {
   return !(error instanceof Error && error.name === 'AbortError');
 }
 
-// 받은 바이트를 실제 파일 크기(total)로 나눈 진행률. 100%에서 멈춘다.
-export function progressPercent(received: number, total: number): number {
-  return Math.min(100, Math.round((received / total) * 100));
-}
-
 // 카카오톡 안 브라우저인가 — 카카오톡은 UA 끝에 «KAKAOTALK 버전»을 붙인다(안드로이드·아이폰 공통).
 // 카카오스토리 등 다른 인앱은 이번 대상이 아니다(10/20 대표님).
 /**

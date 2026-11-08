@@ -56,12 +56,6 @@ export function App() {
   const [autoPreviewKey, setAutoPreviewKey] = useState<number | null>(null);
   const [entrance, setEntrance] = useState<SceneEntrance | null>(null);
   const [job, setJob] = useState<SaveJob | null>(null);
-  const [enginePercent, setEnginePercent] = useState(0);
-  const [engineLoading, setEngineLoading] = useState(false);
-  const [engineFailed, setEngineFailed] = useState(false);
-  // 새 버전이 준비됐는지. 저절로 새로고침하지 않고 사람이 누를 때만 한다 —
-  // 부스에서 아이가 녹음·합성 중에 화면이 다시 시작되면 작업이 통째로 날아간다.
-  const [updateReady, setUpdateReady] = useState(false);
 
   useEffect(() => {
     // 새로고침 뒤에는 이전 참가자의 녹음·결과를 복구하지 않는다.
@@ -110,24 +104,19 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    return installServiceWorker(() => setUpdateReady(true));
+    installServiceWorker();
   }, []);
 
   // 첫 더빙 전에 엔진(31MB)과 App Check를 미리 준비해 저장 시 대기시간을 줄인다. 다만 화면의 첫 영상이 재생할 만큼 받힌 뒤에
   // 시작한다 — 느린 와이파이에서 처음부터 같이 받으면 장면 영상이 한참 늦게 뜬다(10/24, src/lib/backgroundLoad.ts).
+  // 받는 동안 화면에는 아무것도 띄우지 않는다(11/8 Bumm님 — 첫 화면의 «영상 저장 준비 중… N%»를 뺐다). 실패해도 그대로 두고,
+  // 저장할 때 다시 받는다(그동안 저장 화면은 «영화를 만들고 있어요»로 기다린다 — src/components/Result.tsx).
   useEffect(() => {
     if (sampleMode) return;
     let cancelled = false;
     afterFirstMediaReady(BACKGROUND_START_FALLBACK_MS).then(() => {
       if (cancelled) return;
-      setEngineLoading(true);
-      loadEngine((percent) => setEnginePercent(percent))
-        .then(() => setEngineLoading(false))
-        .catch((e) => {
-          console.error('[엔진 준비 실패]', e);
-          setEngineLoading(false);
-          setEngineFailed(true);
-        });
+      loadEngine().catch((e) => console.error('[엔진 준비 실패]', e));
       initAppCheck().catch((e) => console.error('[App Check 사전초기화 실패]', e));
     });
     return () => { cancelled = true; };
@@ -169,13 +158,7 @@ export function App() {
 
   return (
     <div className="wrap" ref={wrapRef}>
-      <Home
-        active={view === 'home'}
-        enginePercent={enginePercent}
-        engineLoading={engineLoading}
-        engineFailed={engineFailed}
-        onSelect={openStudio}
-      />
+      <Home active={view === 'home'} onSelect={openStudio} />
       {genre && (
         <Studio
           key={studioKey}
@@ -192,13 +175,6 @@ export function App() {
             setView('result');
           }}
         />
-      )}
-      {/* 홈에 있을 때만 알린다 — 녹음·합성·저장 중에는 화면에 끼어들지 않는다.
-          누르는 순간에만 새로고침하므로 하던 작업이 날아갈 일이 없다. */}
-      {updateReady && view === 'home' && (
-        <button className="update-nudge" type="button" onClick={() => window.location.reload()}>
-          새 버전이 있어요 <b>새로고침</b>
-        </button>
       )}
       {job && (
         <Result

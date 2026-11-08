@@ -7,7 +7,7 @@
 // firebase-admin 등 functions/node_modules 안에만 있는 의존성을 로드하려 해서
 // 이 위치에서 import가 실패한다.
 import { test, expect } from 'vitest';
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -129,14 +129,6 @@ test('배포 도구: firebase-tools는 잠금 파일 밖에서 정확한 같은 
     expect(c).toMatch(/ deploy --only /);
     expect(배포.indexOf(c), '배포는 auth 뒤').toBeGreaterThan(배포.indexOf('google-github-actions/auth'));
   }
-});
-
-// 2026-10-20: 엔진 받기 진행률의 분모는 실제 wasm 크기다. Hosting이 brotli로 압축해 보내 Content-Length(약 7.3MB)가
-// 받는 바이트(32.2MB)보다 작아서, 그것을 분모로 쓰면 «영상 저장 준비 중… 177%»처럼 100%를 넘었다.
-// 벤더 파일을 올리면 이 값도 같이 바꿔야 한다 — 어긋나면 여기서 떨어진다.
-test('엔진 크기: src/config.ts의 ENGINE_WASM_BYTES가 실제 ffmpeg-core.wasm 크기와 같다', () => {
-  const 상수 = Number(extract(read('src/config.ts'), /export const ENGINE_WASM_BYTES = ([\d_]+);/, 'ENGINE_WASM_BYTES').replace(/_/g, ''));
-  expect(상수).toBe(statSync(path.join(root, 'public/vendor/ffmpeg-core/ffmpeg-core.wasm')).size);
 });
 
 // 2026-10-24: 녹음은 원판이 −8dB 낮춰 둔 목소리 칸(5.0~8.5초)에 들어간다. 원판을 만든 도구의 칸과 앱의 칸이 어긋나면

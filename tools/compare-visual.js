@@ -96,25 +96,20 @@ async function captureWithSelectors(browser, baseURL) {
     });
     await page.addInitScript((sels) => {
       window.__SELECTORS__ = sels;
-      // 엔진 배너가 한 번이라도 켜졌는지 처음부터 지켜본다 — 나중에 확인하면
-      // 이미 켜졌다 꺼진 뒤라 "아직 안 켜진 상태"와 구분할 수 없다.
-      window.__barShown = false;
-      setInterval(() => {
-        if (document.querySelector('.enginebar')?.classList.contains('show')) window.__barShown = true;
-      }, 16);
+      // 엔진 파일을 다 받았는지 처음부터 지켜본다(자원 기록). 첫 화면의 엔진 배너는 2026-11-08에 뺐다 —
+      // 그전에는 배너가 켜졌다 꺼지는 것으로 정착 상태를 판정했다.
+      window.__engineDone = false;
+      new window.PerformanceObserver((list) => {
+        if (list.getEntries().some((e) => e.name.includes('/vendor/ffmpeg-core/ffmpeg-core.wasm'))) window.__engineDone = true;
+      }).observe({ type: 'resource', buffered: true });
     }, screen.selectors);
     await page.goto(baseURL, { waitUntil: 'load' });
     // 고정 시간으로 기다리면 두 쪽의 로딩 속도 차이가 그대로 차이로 잡힌다.
     // 스플래시가 사라지고 엔진 준비가 끝난 "정착 상태"에서 비교한다.
     // (스플래시가 사라지는 시점 자체는 tools/compare-visual.js가 아니라 별도 실측으로 확인한다.)
     await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 30000 });
-    // 배너가 "켜졌다가 꺼질 때"까지 기다린다 — 꺼진 것만 보면 아직 켜지기 전
-    // 순간을 정착 상태로 오해해 초기값(0%)을 잡는다.
-    await page.waitForFunction(
-      () => window.__barShown && !document.querySelector('.enginebar')?.classList.contains('show'),
-      null,
-      { timeout: 180000 }
-    );
+    // 엔진을 다 받을 때까지 기다린다 — 받기 전 순간을 정착 상태로 오해하지 않게.
+    await page.waitForFunction(() => window.__engineDone, null, { timeout: 180000 });
     await screen.prepare(page);
     out[screen.name] = await page.evaluate((props) => {
       const data = {};

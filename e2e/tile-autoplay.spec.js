@@ -82,30 +82,30 @@ test.describe('마우스가 없는 기기', () => {
   // 효과가 그 콜백에 걸려 있었다. 그래서 엔진 내려받기 진행률(0~100%)이 바뀔 때마다
   // 카드가 전부 멈췄다(src까지 비우고) 다시 틀었다.
   //
-  // 그래서 진행률이 **실제로 여러 번 바뀌는 동안**을 지켜보며, 그 사이 **가운데에 있는** 장면 영상이
+  // 그래서 엔진을 **실제로 다 받는 동안**을 지켜보며, 그 사이 **가운데에 있는** 장면 영상이
   // 한 번도 다시 불러와지지 않는지 본다(장면이 넘어가며 떠난 카드를 놓아주는 것은 정상이다 — 그때는
-  // 이미 가운데가 아니다). 진행률 변화를 못 봤으면 이 검사는 아무것도 안 본 것이므로 통과가 아니라 실패다(§21-1).
+  // 이미 가운데가 아니다). 첫 화면의 진행률 표시는 11/8에 뺐다(Bumm님) — 그래서 엔진 파일을 다 받은 것을
+  // 자원 기록(PerformanceObserver)으로 본다. 다 받는 것을 못 봤으면 이 검사는 아무것도 안 본 것이므로 통과가 아니라 실패다(§21-1).
   test('엔진을 내려받는 동안에도 가운데 장면이 멈췄다 다시 틀지 않는다', async ({ page, context }) => {
     await context.addInitScript(() => {
-      window.__관찰 = { 진행: new Set(), 다시불러옴: 0 };
+      window.__관찰 = { 엔진받음: false, 다시불러옴: 0 };
       const load = window.HTMLMediaElement.prototype.load;
       window.HTMLMediaElement.prototype.load = function () {
         if (this.closest('.scene-shell.is-current')) window.__관찰.다시불러옴++;
         return load.call(this);
       };
-      new MutationObserver(() => {
-        const b = document.getElementById('engineProg');
-        if (b) window.__관찰.진행.add(b.textContent);
-      }).observe(document, { subtree: true, childList: true, characterData: true });
+      new window.PerformanceObserver((list) => {
+        if (list.getEntries().some((e) => e.name.includes('/vendor/ffmpeg-core/ffmpeg-core.wasm'))) window.__관찰.엔진받음 = true;
+      }).observe({ type: 'resource', buffered: true });
     });
 
     await 첫화면(page);
-    // 엔진을 다 받을 때까지(배너가 닫힐 때까지) 본다.
-    await page.waitForFunction(() => !document.querySelector('#enginebar.show'), null, { timeout: 60000 });
+    // 엔진 파일을 다 받을 때까지 본다.
+    await page.waitForFunction(() => window.__관찰.엔진받음, null, { timeout: 60000 }).catch(() => {});
     await page.waitForTimeout(1000);
 
-    const 관찰 = await page.evaluate(() => ({ 진행: window.__관찰.진행.size, 다시불러옴: window.__관찰.다시불러옴 }));
-    expect(관찰.진행, '엔진 진행률이 바뀌는 것을 못 봤다 — 이 검사가 빈 검사가 됐다').toBeGreaterThanOrEqual(5);
+    const 관찰 = await page.evaluate(() => ({ 엔진받음: window.__관찰.엔진받음, 다시불러옴: window.__관찰.다시불러옴 }));
+    expect(관찰.엔진받음, '엔진을 다 받는 것을 못 봤다 — 이 검사가 빈 검사가 됐다').toBe(true);
     expect(관찰.다시불러옴, '홈이 다시 그려질 때 가운데 장면 영상이 멈췄다 다시 불러와졌다').toBe(0);
   });
 

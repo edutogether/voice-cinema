@@ -526,12 +526,7 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
     await delay(700);
     await page.evaluate(() => { scrollTo(0, 0); });
     await shot('02-메인');
-    // 엔진을 받는 동안의 «영상 저장 준비 중» 표시 — 보일 때와 같은 자리를 잰다
-    if (want('03-메인-저장준비')) {
-      await page.evaluate(() => { const bar = document.getElementById('enginebar'); bar.classList.add('show'); });
-      await shot('03-메인-저장준비');
-      await page.evaluate(() => { const bar = document.getElementById('enginebar'); bar.classList.remove('show'); });
-    }
+    // (03-메인-저장준비는 11/8 첫 화면의 «영상 저장 준비 중… N%»를 빼며 없앴다 — 번호는 앞 조사와 맞대 보려고 그대로 둔다)
     // 제목이 가장 긴 애니메이션 장면으로 간다. 앞의 장면들은 메인에서 함께 잰다.
     step = '장면 고르기';
     // 숨긴 창은 느려 재는 동안 자동 넘김이 장면을 바꾼다 — 손가락 한 번 누르기로 멈춘다(desktop/tools/resize-check.mjs와 같다)
