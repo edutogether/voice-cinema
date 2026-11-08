@@ -9,14 +9,16 @@ body:has(#result.active) { background:#fff; }
 .result-poster > .pic > img { position:absolute; width:100%; height:100%; inset:0; object-fit:cover; }
 .result-poster::after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(0,0,0,.25),transparent 28%,rgba(0,0,0,.06) 48%,rgba(0,0,0,.82)); }
 /* 왼쪽 위 InKY Film Festival, 오른쪽 위 인천광역시교육청 — 방송국 로고처럼 바탕 없이 흰 로고만 그림 위에 얹는다(11/8 Bumm님 «흰 둥근 바탕을 없앱니다»).
-   InKY는 공식 로고(`/brands/inky.png`, 흰 글씨판)의 카메라 + 머리글과 같은 «InKY Film Festival», 교육청은 공식 CI 벡터의 반전(흰색) 표기
-   (`/brands/education-white.svg`). 색 · 모양을 새로 만들지 않는다. 위쪽 그림자 띠가 밝은 장면에서도 흰 로고를 받친다. */
+   InKY는 공식 로고(`/brands/inky.png`, 흰 글씨판)의 카메라 + 머리글과 같은 «InKY Film Festival», 교육청은 공식 CI 벡터에서 엠블럼은 공식 색,
+   글자만 흰색(`/brands/education-on-dark.svg`, 11/8 Bumm님). 색 · 모양을 새로 만들지 않는다. 위쪽 그림자 띠가 밝은 장면에서도 흰 로고를 받친다.
+   카메라를 잘라 보이는 칸은 원본 88.5줄에서 끝낸다 — 노란 마크는 85줄에서 끝나고 92줄부터 흰 한글 제목이라, 칸이 더 길면 그 윗부분이
+   마크 밑에 흰 조각(«…IOIE»처럼)으로 보인다(11/8 Bumm님). 머리글 · 영상 로고 띠는 흰 바탕이라 같은 조각이 보이지 않는다. */
 .result-poster::before { content:''; position:absolute; z-index:1; inset:0 0 auto; height:96px; background:linear-gradient(180deg,rgba(0,0,0,.42),rgba(0,0,0,.18) 55%,transparent); pointer-events:none; }
 .poster-logo { position:absolute; z-index:2; top:22px; display:flex; align-items:center; gap:8px; height:28px; color:#fff; font-size:1rem; line-height:1; letter-spacing:-.4px; white-space:nowrap; text-shadow:0 1px 3px #00000059; }
 .poster-logo-inky { left:24px; }
 .poster-logo-education { right:24px; }
 .poster-logo strong { font-weight:800; }
-.poster-logo .festival-symbol { width:36px; height:26px; }
+.poster-logo .festival-symbol { width:36px; height:23px; }
 .poster-logo .festival-symbol img { left:-31.1px; width:207.8px; }
 .poster-logo-education img { display:block; width:auto; height:27px; }
 .poster-credit { position:absolute; z-index:1; bottom:36px; left:32px; right:32px; }
@@ -105,7 +107,7 @@ body:has(#result.active) { background:#fff; }
  .poster-logo { top:14px; height:22px; font-size:.8125rem; gap:6px; }
  .poster-logo-inky { left:16px; }
  .poster-logo-education { right:16px; }
- .poster-logo .festival-symbol { width:28px; height:20px; }
+ .poster-logo .festival-symbol { width:28px; height:17.5px; }
  .poster-logo .festival-symbol img { left:-23.75px; width:158.75px; }
  .poster-logo-education img { height:21px; }
  .poster-credit { left:24px; right:24px; }
