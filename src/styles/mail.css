@@ -1,7 +1,7 @@
 /* 메일 전달 화면(설치판 · 웹, 11/8) — 완성 화면(result.css)의 흰색/빨간색을 그대로 쓴다. 메일 대기열이 없는 브라우저에서는 이 요소들이 그려지지 않는다. */
 /* 적는 칸과 단추를 한 열(폭 26rem, 좁은 창에서는 카드 폭)에 세운다(11/8 Bumm님 «디자인 왜 이렇게 개촌스러워졌어» — 이름 칸만 짧고 메일 칸만 길어 들쭉날쭉,
    회색 판 안의 두꺼운 빨간 초점 테두리, 따로 노는 «다음» 단추였다). 두 칸은 같은 폭 · 같은 높이(48px), 라벨과 칸 사이 6px · 칸과 칸 사이 16px,
-   단추는 칸과 같은 폭 · 같은 높이다. 판 없이 흰 카드 위에 두는 것은 의견 창 · 완성 화면과 같은 결이다. */
+   단추 줄은 칸과 같은 폭 · 같은 높이다(«다음»과 «다시 제작하기»가 한 줄, 11/9). 판 없이 흰 카드 위에 두는 것은 의견 창 · 완성 화면과 같은 결이다. */
 .mail-form { width:100%; max-width:26rem; margin-top:24px; }
 .mail-field + .mail-field { margin-top:16px; }
 .mail-field label { display:block; margin-bottom:6px; font-size:.875rem; font-weight:700; color:#262626; }
@@ -14,7 +14,7 @@
 .mail-actions { justify-content:flex-start; margin-top:20px; }
 .mail-form .mail-actions { margin-top:24px; flex-wrap:nowrap; gap:8px; }
 #result .mail-actions .btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; flex:0 1 auto; max-width:100%; padding-inline:22px; }
-/* 열 안의 단추는 칸과 같은 높이로, 주 단추가 남는 폭을 다 채운다(«다음»은 칸 폭 그대로, 확인 화면은 «맞아요, 보내 주세요»가 넓고 «고치기»는 글자만큼) */
+/* 열 안의 단추는 칸과 같은 높이로, 주 단추가 남는 폭을 다 채운다(«다음»이 넓고 «다시 제작하기»는 글자만큼, 확인 화면은 «맞아요, 보내 주세요»가 넓고 «고치기»는 글자만큼) */
 #result .mail-form .mail-actions .btn { min-width:0; min-height:48px; padding-block:0; }
 #result .mail-form .mail-actions .btn-save { flex:1 1 auto; max-width:none; }
 #result .btn:disabled { opacity:.6; cursor:default; }
