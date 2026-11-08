@@ -992,6 +992,8 @@ Claude in Chrome은 여분의 브라우저가 아니라 **대표 본인의 크�
 근거는 그 가지의 `_docs/intents/2026-11-08-mail-delivery/intent.md`. 웹 화면은 이 경로를 부르지 않는다.
 - 경로: `POST /mail` `{ to, items: [{ name, url }] }` → 서버가 메일 틀(`functions/mail.js`의 `buildMailMessage`)을 정해 Resend로 보낸다.
   보내는 사람 `Voice Cinema <voice-cinema@edutogether.kr>`(도메인 `edutogether.kr` 인증, 11/8 팀장). 받는 사람은 한 통에 한 명, 영화는 한 통에 30편까지
+- 🟠 **답장 주소(`reply_to`)는 행사 공용 메일 `edutogether2015@gmail.com`이다**(11/8 Bumm님) — edutogether.kr에는 받는 메일함(MX)이 없어 답장이 되돌아온다.
+  본문 끝줄도 «궁금한 점은 이 메일에 답장해 주세요»다. 둘을 함께 바꾼다(`mail.test.js`가 본다)
 - 🔴 **`/upload`와 같은 문 검사(`boothGuard`)를 거친다** — 인증 전 상한(분당 600) → `BOOTH_TOKEN` → App Check → 경로별 한도(업로드 분당 60, 메일 분당 20).
   메일 한도를 업로드 한도와 나누어 쓰지 말 것 — `functions/test/mail-rate-limit.test.js`가 따로 센다
 - 🔴 **영화 주소는 이 버킷의 `dubs/` 공개 주소만 받고, 그 파일이 실제로 있어야 한다**(`validateMailRequest` · `exists()`) — 아니면 아무 링크나 우리 도메인 이름으로 보내는 통로가 된다

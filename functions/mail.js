@@ -6,6 +6,8 @@ import { GENRE_IDS } from './validate.js';
 
 export const MAIL_FROM = 'Voice Cinema <voice-cinema@edutogether.kr>';
 export const MAIL_SUBJECT = '[제4회 인천어린이청소년영화제] Voice Cinema 완성 영화 안내';
+// 선생님이 답장을 누르면 행사 공용 메일로 간다(2026-11-08 Bumm님) — 보내는 주소에는 받는 함이 없다
+export const MAIL_REPLY_TO = 'edutogether2015@gmail.com';
 // 화면 입력 칸과 같은 값이다(src/lib/mailAddress.ts — 계약 시험이 대조한다)
 export const MAIL_MAX = 254;
 export const NAME_MAX = 40;
@@ -59,6 +61,7 @@ export function buildMailMessage(to, items) {
   return {
     from: MAIL_FROM,
     to: [to],
+    reply_to: MAIL_REPLY_TO,
     subject: MAIL_SUBJECT,
     text: [
       '선생님, 안녕하세요.',
@@ -69,7 +72,7 @@ export function buildMailMessage(to, items) {
       '아래 내용을 확인해 주세요.',
       '· 링크는 2026년 11월 30일까지 열리고, 그 뒤에는 자동으로 지워집니다.',
       '· 링크를 아는 사람은 누구나 볼 수 있으니 해당 학생에게만 전해 주세요.',
-      '· 이 메일은 보내기 전용입니다.',
+      '· 궁금한 점은 이 메일에 답장해 주세요.',
     ].join('\n'),
   };
 }
