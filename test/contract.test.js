@@ -71,6 +71,15 @@ test('자동삭제: 예약 시각과 개인정보처리방침에 적힌 시각�
   expect(read('privacy.html')).toContain(`2026년 12월 1일 ${시각}`);
 });
 
+// 2026-11-08: 웹에서 보내지 못한 메일 대기분은 서버가 영상을 지우는 때와 같은 때 지운다 — 그 뒤에는 링크도 없다.
+// 늦게 지우면 방침(«12월 1일 00:00 이후 … 지웁니다»)보다 아이 목소리가 오래 남고, 일찍 지우면 아직 보낼 수 있는 메일을 버린다.
+test('메일 대기분 삭제: src/config.ts의 MAIL_PURGE_AT과 functions/index.js의 CUTOFF_DATE가 같은 때다', () => {
+  const 서버 = extract(read('functions/index.js'), /const CUTOFF_DATE = new Date\('([^']+)'\)/, '서버 CUTOFF_DATE');
+  const 화면 = extract(read('src/config.ts'), /export const MAIL_PURGE_AT = Date\.parse\('([^']+)'\)/, '화면 MAIL_PURGE_AT');
+  expect(Date.parse(화면)).toBe(Date.parse(서버));
+  expect(Number.isNaN(Date.parse(서버))).toBe(false);
+});
+
 // 2026-10-05: 서버가 저장 이름을 정할 때 쓰는 장르 목록이 앱의 장르와 같아야 한다.
 // 어긋나도 업로드는 실패하지 않지만(이름이 dub으로 바뀔 뿐) 파일 이름에서 장르를 잃는다.
 test('장르 목록: functions/validate.js와 src/genres.ts가 같은 장르를 쓴다', () => {
@@ -81,6 +90,16 @@ test('장르 목록: functions/validate.js와 src/genres.ts가 같은 장르를 
 });
 
 // 2026-11-08: 설치판 메일에 적는 장르 이름은 서버가 정한다(functions/mail.js) — 화면의 장르 이름과 같아야 선생님이 본 것과 맞는다.
+// 설치판 메일: 화면이 받아 준 주소 · 이름을 서버가 거절하면 메일이 «보내지 못함»에 묶인다 — 규칙과 길이가 같아야 한다(2026-11-08).
+test('메일 주소 규칙 · 길이: functions/mail.js와 src/lib/mailAddress.ts가 같다', () => {
+  const 화면 = read('src/lib/mailAddress.ts');
+  const 서버 = read('functions/mail.js');
+  for (const 이름 of ['MAIL_PATTERN', 'MAIL_MAX', 'NAME_MAX']) {
+    const 찾기 = new RegExp(`export const ${이름} = (.+);`);
+    expect(extract(서버, 찾기, `서버 ${이름}`), 이름).toBe(extract(화면, 찾기, `화면 ${이름}`));
+  }
+});
+
 test('장르 이름: functions/mail.js의 메일용 이름표와 src/genres.ts의 name이 같다', () => {
   const 앱 = Object.fromEntries([...read('src/genres.ts').matchAll(/\{ id: '([a-z]+)', name: '([^']+)'/g)].map((m) => [m[1], m[2]]));
   const 표 = read('functions/mail.js').match(/GENRE_NAMES = \{([^}]+)\}/)[1];

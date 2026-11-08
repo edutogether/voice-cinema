@@ -379,6 +379,8 @@ async function openBrowser(browser, { kind, w, h, touch }) {
     await delay(1500);
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, url: FAKE_URL }) });
   });
+  // 메일 전달(/mail)도 나가지 않는다 — 대기 화면을 찍은 뒤 전달이 돌아도 실제 서버에 닿지 않게 늘 «지금은 못 보냄»으로 답한다
+  await context.route('**/voiceCinema/mail', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ ok: false, error: '시험' }) }));
   // App Check · reCAPTCHA는 잴 것이 아니다 — 토큰을 기다리지 않게 막는다
   await context.route(/recaptcha|firebaseappcheck/, (route) => route.abort());
   if (assetsRoot) await context.route(/\/(vendor\/ffmpeg-core|clips)\//, async (route) => {
@@ -407,8 +409,11 @@ async function openDesktop({ w, h, tag, scale }) {
     globalThis.__survey = { failing: 0, posts: 0, answered: 0 };
     ses.fetch = async (request, options) => {
       if (/recaptcha|firebaseappcheck/.test(request.url)) throw new Error('시험이라 막음');
-      if (!request.url.endsWith('/voiceCinema/upload')) return original(request, options);
+      const mail = request.url.endsWith('/voiceCinema/mail');
+      if (!mail && !request.url.endsWith('/voiceCinema/upload')) return original(request, options);
       if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: { ...cors, 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': request.headers.get('access-control-request-headers') ?? '*' } });
+      // 메일 전달도 실제 서버에 닿지 않는다 — 늘 «지금은 못 보냄»
+      if (mail) return new Response(JSON.stringify({ ok: false, error: '시험' }), { status: 503, headers: { ...cors, 'Content-Type': 'application/json' } });
       globalThis.__survey.posts++;
       await request.text();
       globalThis.__survey.answered++;
@@ -595,9 +600,29 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
     await delay(150);
     await page.evaluate(() => { scrollTo(0, 0); });
     await shot('15-저장중');
-    await page.locator('#savemode').waitFor({ timeout: 90000 });
+    // 올리지 못하면 메일 전달 화면으로 간다(11/8 — 설치판 · 웹). 메일 보관을 쓸 수 없는 브라우저는 그대로 이 기기에 저장
+    await page.locator('#savemode, #mailHandoff').first().waitFor({ timeout: 90000 });
     await page.evaluate(() => { scrollTo(0, 0); });
-    await shot('16-오류-기기저장');
+    const mailing = (await page.locator('#mailHandoff').count()) > 0;
+    await shot(mailing ? '16-메일저장' : '16-오류-기기저장');
+    if (mailing) {
+      step = '메일 확인';
+      await page.locator('#mailName').fill('민수');
+      await page.locator('#mailAddress').fill('teacher@school.kr');
+      await page.locator('#mailNextBtn').click();
+      await page.locator('#mailAddressShown').waitFor({ timeout: 10000 });
+      await page.evaluate(() => { scrollTo(0, 0); });
+      await shot('16b-메일확인');
+      step = '메일 대기';
+      // 맡기면 전달이 곧바로 돈다 — 올리기를 실패시켜 대기 화면 그대로 둔다(웹은 조건 두 줄이 보인다)
+      await opened.failNext(100);
+      await page.locator('#mailSendBtn').click();
+      await page.locator('#doneHomeBtn').waitFor({ timeout: 10000 });
+      await delay(300);
+      await page.evaluate(() => { scrollTo(0, 0); });
+      await shot('16c-메일대기');
+      step = '기기 저장';
+    }
     await page.goBack();
     await page.locator('#afterRow').waitFor({ timeout: 10000 });
     step = '완성';

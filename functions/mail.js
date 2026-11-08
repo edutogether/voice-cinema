@@ -24,6 +24,8 @@ export const GENRE_NAMES = {
 
 // 업로드가 정한 저장 이름만 받는다(buildServerFilename: dub_<장르>_<시각>_<난수 18자>.mp4)
 const OBJECT_NAME = /^dub_([a-z]+)_\d{13}_[0-9a-f]{18}\.mp4$/;
+// 업로드가 저장하는 폴더(index.js의 UPLOAD_PREFIX와 같다)
+const UPLOAD_DIR = 'dubs/';
 // 화면 입력 칸과 같은 모양 검사 + 영문만(한/영 오타는 화면이 먼저 막는다). 주소 하나만 받는다 — 쉼표 · 꺾쇠 · 공백이 들어갈 수 없다
 export const MAIL_PATTERN = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
 // 줄바꿈 · 제어 문자는 이름에 넣지 않는다(메일 본문의 줄을 지어낼 수 없게)
@@ -33,19 +35,35 @@ const CONTROL = /[\p{Cc}\u2028\u2029]/u;
  * 요청 본문 { to, items: [{ name, url }] }을 검사한다. 링크는 이 버킷의 dubs/ 아래 업로드 이름이어야 한다.
  * 성공 { ok: true, to, items: [{ name, url, object, genre }] }, 실패 { ok: false, error } — 오류 문구에 받은 값을 넣지 않는다.
  */
+/**
+ * 링크에서 dubs/ 아래 저장 이름을 꺼낸다. 업로드는 file.publicUrl()을 돌려주는데, 그것은 저장 이름을 encodeURIComponent로 감싸
+ * «dubs/»의 «/»가 «%2F»가 된다 — QR과 화면이 맡겨 둔 링크가 이 모양이다(11/8 실제 발송에서 이 모양을 거절해 메일이 400이었다).
+ * 그래서 풀어서 본다. 풀 수 없거나, 푼 이름이 dubs/ 바로 아래가 아니면 빈 문자열이다(경로 넘기 · 다른 폴더는 OBJECT_NAME이 막는다).
+ */
+function dubObject(url, prefix) {
+  if (!url.startsWith(prefix)) return '';
+  let path;
+  try {
+    path = decodeURIComponent(url.slice(prefix.length));
+  } catch {
+    return '';
+  }
+  return path.startsWith(UPLOAD_DIR) ? path.slice(UPLOAD_DIR.length) : '';
+}
+
 export function validateMailRequest(body, bucketName) {
   const { to, items } = body || {};
   const mail = typeof to === 'string' ? to.trim() : '';
   if (!mail || mail.length > MAIL_MAX || !MAIL_PATTERN.test(mail)) return { ok: false, error: '메일 주소가 올바르지 않습니다.' };
   if (!Array.isArray(items) || items.length === 0 || items.length > MAX_ITEMS) return { ok: false, error: '영화 목록이 올바르지 않습니다.' };
-  const prefix = `https://storage.googleapis.com/${bucketName}/dubs/`;
+  const prefix = `https://storage.googleapis.com/${bucketName}/`;
   const seen = new Set();
   const checked = [];
   for (const item of items) {
     const name = typeof item?.name === 'string' ? item.name.trim() : '';
     if (!name || name.length > NAME_MAX || CONTROL.test(name)) return { ok: false, error: '이름이 올바르지 않습니다.' };
     const url = typeof item?.url === 'string' ? item.url : '';
-    const object = url.startsWith(prefix) ? url.slice(prefix.length) : '';
+    const object = dubObject(url, prefix);
     const m = OBJECT_NAME.exec(object);
     if (!m) return { ok: false, error: '영화 링크가 올바르지 않습니다.' };
     if (seen.has(object)) return { ok: false, error: '같은 영화가 두 번 들어 있습니다.' };

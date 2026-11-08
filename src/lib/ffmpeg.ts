@@ -2,6 +2,7 @@ import { ENGINE_WASM_BYTES, PAUSE_SECONDS, VOICE_WINDOW_SECONDS } from '../confi
 import { finalClipUrl } from '../genres';
 import { pickAudioExtension, progressPercent } from '../logic';
 import { readInBackground } from './backgroundLoad';
+import { serviceWorkerRegistering } from './sw';
 import { loadFFmpegModule, loadFFmpegUtil, type FFmpegInstance } from './vendor';
 
 const SW_CONTROL_WAIT_MS = 20000;
@@ -29,12 +30,14 @@ async function toBlobURLWithProgress(
 }
 
 // 첫 방문에서는 서비스워커가 이 탭을 맡기 전에 엔진을 받기 시작하면 서비스워커가 그 받기를 못 봐 캐시에 넣지 못한다 —
-// 그러면 다음에 열 때 31MB를 또 받는다. 서비스워커가 맡을 때까지 잠깐(최대 waitMs) 기다린다. 서비스워커가 없으면 바로 받는다.
+// 그러면 다음에 열 때 31MB를 또 받는다. 서비스워커가 맡을 때까지 잠깐(최대 waitMs) 기다린다. 서비스워커가 없거나 등록이 실패하면
+// 바로 받는다 — Windows 설치판은 서비스워커를 등록하지 않아, 기다리면 매번 20초 동안 «영상 저장 준비 중… 0%»였다(10/27).
 async function whenServiceWorkerControls(waitMs: number): Promise<void> {
   if (!import.meta.env.PROD || !('serviceWorker' in navigator) || navigator.serviceWorker.controller) return;
   await new Promise<void>((resolve) => {
     const timer = window.setTimeout(done, waitMs);
     navigator.serviceWorker.addEventListener('controllerchange', done);
+    void serviceWorkerRegistering()?.then((ok) => { if (!ok) done(); });
     function done() {
       window.clearTimeout(timer);
       navigator.serviceWorker.removeEventListener('controllerchange', done);

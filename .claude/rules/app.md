@@ -974,6 +974,12 @@ Claude in Chrome은 여분의 브라우저가 아니라 **대표 본인의 크�
   크롬이 `net::ERR_UNSAFE_PORT`로 막았다(같은 파일 ④, 서버와 무관). Node의 fetch도 같은 목록(WHATWG Fetch «bad port»)을 막는다. 이 파일 · 조사 도구
   (`tools/verify/viewport-survey.mjs`) · `test/live-commit.test.js` 세 곳이 쓰고, `test/safe-port.test.js`가 고정한다(다시 띄우기를 빼면 빨간불 확인)
 
+## 🟡 흔들린 검사 기록 — `e2e/recording-voice.spec.js` «발화 1·1.5·2·2.7초, 3초 앞뒤…» (2026-11-08, 웹 메일 전달 작업본)
+- 전체 E2E(병렬) 한 번에서 2.87초에 끝난 발화의 녹음이 **3.06초**로 «끝난 뒤 0.2초 넘게 더 담는다»(3.07초 초과)에 10ms 모자라 떨어졌다
+- 단독 3번 모두 통과, 바로 뒤 전체 실행(266 통과 · 6 건너뜀)에서도 다시 나지 않았다. 이 작업은 녹음 쪽(`Studio.tsx` · `voiceCheck.ts` · 시험용 마이크)을 master와 같게 두었다
+- 원인 후보(확인 안 됨): 말이 끝났는지 보는 판정이 20ms마다 소리를 재므로, 병렬 부하로 한 번이 늦으면 «0.25초 조용함»을 한 칸 일찍 잡을 수 있다 — 끝소리 0.2초의 여유가 그만큼 준다
+- **다시 보이면**: 단독에서도 나는지부터 본다(`npx playwright test e2e/recording-voice.spec.js --repeat-each 6 --workers 1`). 단독에서 나면 끝을 잡는 판정의 결함으로 다룬다
+
 ## 🟢 모바일 글자 200%에서 상단 단계 표시가 넘치던 것 — 고침 (2026-10-05 발견 · 10-17 고침, 결정 10)
 휴대폰 폭 375px에서 글자를 200%로 키우면 헤더의 단계 표시 «3 영화 저장»이 화면 오른쪽 밖으로 **35px** 넘쳤다(페이지 폭 410px).
 760px 이하에서 단계 항목의 `white-space:nowrap`을 풀고 `word-break:keep-all`을 걸어, **칸이 모자랄 때만** 단계 이름이
@@ -993,9 +999,9 @@ Claude in Chrome은 여분의 브라우저가 아니라 **대표 본인의 크�
 - **비용**: 한 번 받을 때 약 0.24GB(인터넷 송신 GB당 약 $0.12 → 한 번에 약 $0.03). 저장은 월 1센트 미만
 - 🟢 **2026-11-08 공개**(팀장 확인): 버킷 `inky-voice-cinema-download`(inky-voice-cinema · asia-northeast3 · 객체별 권한, Poster Studio `inky-poster-studio-download`와 같은 모양)에 `feat/vc-desktop` `fabfecd` 빌드(239,560,087바이트, SHA-256 `f2064049…54a9337`)를 올렸다. 라이브 링크 302 → 200(attachment) · 받은 파일 해시 같음 · 버킷 목록 익명 403을 확인했다. 아이콘은 그 뒤 `fece3fe` 배포로 나갔다
 
-## 설치판 메일 전달 서버 `/mail` (2026-11-08, 지시 팀장 — Bumm님 답 전달)
-설치판에서 인터넷이 끊겨 QR을 못 만든 영화를, 인터넷이 돌아오면 인솔 선생님께 메일로 보낸다. 화면 · 대기열은 설치판 가지(`feat/vc-desktop`)에 있고 여기에는 서버만 있다.
-근거는 그 가지의 `_docs/intents/2026-11-08-mail-delivery/intent.md`. 웹 화면은 이 경로를 부르지 않는다.
+## 메일 전달 서버 `/mail` (2026-11-08, 지시 팀장 — Bumm님 답 전달)
+인터넷이 끊겨 QR을 못 만든 영화를, 인터넷이 돌아오면 인솔 선생님께 메일로 보낸다. 처음에는 설치판만 불렀고(근거는 설치판 가지의 `_docs/intents/2026-11-08-mail-delivery/intent.md`),
+같은 날 웹(크롬)도 부르게 됐다 — 웹 화면 · 대기열은 아래 «웹 메일 전달» 절.
 - 경로: `POST /mail` `{ to, items: [{ name, url }] }` → 서버가 메일 틀(`functions/mail.js`의 `buildMailMessage`)을 정해 Resend로 보낸다.
   보내는 사람 `Voice Cinema <voice-cinema@edutogether.kr>`(도메인 `edutogether.kr` 인증, 11/8 팀장). 받는 사람은 한 통에 한 명, 영화는 한 통에 30편까지
 - 🟠 **답장 주소(`reply_to`)는 행사 공용 메일 `edutogether2015@gmail.com`이다**(11/8 Bumm님) — edutogether.kr에는 받는 메일함(MX)이 없어 답장이 되돌아온다.
@@ -1003,6 +1009,9 @@ Claude in Chrome은 여분의 브라우저가 아니라 **대표 본인의 크�
 - 🔴 **`/upload`와 같은 문 검사(`boothGuard`)를 거친다** — 인증 전 상한(분당 600) → `BOOTH_TOKEN` → App Check → 경로별 한도(업로드 분당 60, 메일 분당 20).
   메일 한도를 업로드 한도와 나누어 쓰지 말 것 — `functions/test/mail-rate-limit.test.js`가 따로 센다
 - 🔴 **영화 주소는 이 버킷의 `dubs/` 공개 주소만 받고, 그 파일이 실제로 있어야 한다**(`validateMailRequest` · `exists()`) — 아니면 아무 링크나 우리 도메인 이름으로 보내는 통로가 된다
+- 🔴 **업로드가 돌려주는 주소는 `…/dubs%2Fdub_….mp4`다**(`file.publicUrl()`이 저장 이름을 `encodeURIComponent`로 감싼다) — 검사는 풀어서 `dubs/` 바로 아래인지 본다(`dubObject`).
+  11/8 실제 발송에서 «/» 그대로인 주소만 받던 검사가 진짜 주소를 400으로 거절했다. 가짜 링크로만 시험해 몰랐다 — 🔴 **시험의 가짜 주소는 진짜 모양(`%2F`)으로 쓴다**.
+  `mail.test.js`가 진짜 `publicUrl()`로 만든 주소를 받고, `%2F`로 경로 넘기 · 두 번 감싼 주소 · 풀 수 없는 주소 · 같은 영화 두 모양을 거절하는지 본다(옛 검사로 빨간불 확인)
 - 🔴 **메일 주소 · 이름 · 키를 로그에 남기지 말 것** — 로그는 «보냄: 영화 N편 (Resend 번호)»와 «발송 실패: 상태 오류 이름»뿐이다. Resend가 돌려준 오류 글도 읽지 않는다(받는 주소가 들어 있을 수 있다).
   검사 실패 글에도 입력값을 넣지 않는다. `mail-handler.test.js`가 로그 전체에서 주소 · 이름 · 키를 찾는다
 - 🔴 **키는 `secrets: ['RESEND_API_KEY']`로만 읽는다** — Secret Manager(`RESEND_API_KEY` 버전 1, 11/8 팀장)에 있다. `functions/.env`에 넣지 않고, 출력 · 커밋 어디에도 남기지 않는다.
@@ -1016,8 +1025,32 @@ Claude in Chrome은 여분의 브라우저가 아니라 **대표 본인의 크�
 - 12/1 00:00 뒤에는 410 — 링크가 그때 사라진다(자동 삭제와 같은 기준 `isAfterCutoff`)
 - 시험: `functions/test/mail.test.js`(검사 · 메일 틀 · 응답 해석) · `mail-handler.test.js`(진짜 핸들러, Storage · App Check · Resend를 가짜로) · `mail-rate-limit.test.js`.
   실제 Resend로 보내는 시험은 자동 시험에 넣지 않는다 — 키를 시험 환경에 두지 않는다
-- 개인정보처리방침에 «설치판에서 QR을 못 만들 때만 이름 또는 별명 · 인솔 선생님 메일 주소를 받는다» · Resend(미국 처리 · 보관, 발송 기록 30일)가 있다(11/8).
+- 개인정보처리방침에 «QR을 못 만들 때만 이름 또는 별명 · 인솔 선생님 메일 주소를 받는다» · 보관 자리(설치판은 암호화, 브라우저는 사이트 저장소) · Resend(미국 처리 · 보관, 발송 기록 30일)가 있다(11/8).
   Resend의 30일은 무료 요금제 기준이다 — 요금제를 바꾸면 방침도 고친다
+
+## 웹 메일 전달 — 크롬에서도 끊기면 메일 칸을 띄운다 (2026-11-08 Bumm님 ⭐ «웹도 끊기면 메일 칸을 띄움», 팀장 전달)
+웹에서 QR을 만들지 못하면(끊김 · 업로드 실패) 설치판과 같은 메일 칸(`MailHandoff`)을 띄운다. 영상 · 이름 · 주소는 그 사이트의 IndexedDB에 맡기고, 인터넷이 돌아오면
+올리기 → `/mail` → 지우기. 서버 · 화면은 설치판의 것을 그대로 쓴다(새 서버 · 새 비용 없음). 근거는 `_docs/intents/2026-11-08-web-offline-mail/intent.md`.
+- 갈림: `src/lib/installer.ts`의 `IN_INSTALLER`(설치판 다리 `window.vcDesktop.mail`이 있는가). 설치판은 다리의 암호화 대기열, 웹은 `mailStoreWeb.ts`(DB `voice-cinema-mail` 1판, 저장소 `items` · `videos`)
+- 🟠 **웹 보관은 암호화하지 않는다** — 열쇠를 둘 곳이 같은 브라우저뿐이라 암호화해도 지키는 것이 없다. 다른 사이트는 읽지 못하고, 부스 노트북의 크롬 프로필 안에 남는다(방침에 적었다)
+- 🔴 **화면 문구의 조건 두 줄을 지우지 말 것**(팀장 지시) — «인터넷이 돌아올 때 이 창이 열려 있어야 보내져요.» · «크롬 기록(사이트 데이터)을 지우면 보내기 전 영화도 지워져요.»(`#mailConditions`, 웹에만).
+  웹에는 창을 닫은 뒤 보내 줄 것이 없다(서비스워커 백그라운드 동기화는 크롬 전용이고 App Check · reCAPTCHA가 페이지에 묶여 있다)
+- 🟠 **창이 여럿 열려도 한 번만 보낸다** — 전달은 Web Locks `voice-cinema-mail`(`ifAvailable`)을 잡은 창만 돈다. 잠금을 빼면 두 창이 같은 영화를 두 번 올리고 메일을 두 통 보낸다(`web-mail.spec.js` «창이 둘…», 빨간불 확인)
+- 🔴 **보내지 못한 것은 2026-12-01 00:00(한국 시간) 뒤 처음 열 때 지운다**(`MAIL_PURGE_AT`) — 자동 삭제 · 서버 410과 같은 경계다. `test/contract.test.js`가 `isAfterCutoff`와 대조하고, `web-mail.spec.js`가 1초 전 · 그 시각을 본다
+- 저장소가 막힌 브라우저는 메일 칸에서 «보내기»를 눌러도 맡기지 못하므로 이 기기에 저장으로 간다(`web-mail.spec.js`). IndexedDB가 아예 없는 브라우저는 메일 칸을 띄우지 않고,
+  끊겨 있으면 올리기를 건너뛰고 곧바로 기기 저장이다(`dubbing-flow.spec.js`)
+- 웹에는 «메일 없이 이 기기에 저장» 단추가 없다(설치판과 같다 — Bumm님 11/8 설치판 결정을 그대로 따랐다, 결정 항목으로 팀장에게 올림)
+- 🟠 **자동 다시 보내기는 8번 실패하면 멈춘다**(30초부터 두 배씩 5분까지, 약 22분) — `online` 이벤트가 오면 횟수를 지우고 다시 돈다. KT EGG처럼 와이파이는 살아 있고 LTE만 끊기면
+  `navigator.onLine`이 참이라 online 이벤트가 오지 않는다 — 그때는 22분 뒤 «보내지 못함»에 남아 운영자가 대기 단추에서 다시 보낸다(결정 항목으로 팀장에게 올림)
+- 🔴 **`upload.ts`의 `loadRecaptcha`와 실패 정리(스크립트 · `grecaptcha` · `___grecaptcha_cfg` 지우기)를 빼지 말 것**(11/8 실제 발송에서 찾음) — 끊긴 채 연 창은 App Check SDK가
+  넣은 reCAPTCHA 스크립트가 실패해도 그대로 남아, 인터넷이 돌아온 뒤에도 토큰 교환을 한 번도 하지 않고 업로드가 401(«App Check 토큰 없음»)로 네 번 떨어졌다(설치판도 같다).
+  지금은 App Check를 켜기 전에 스크립트를 직접 받고, 실패하면 흔적을 지워 다음 요청 때 처음부터 다시 받는다. 로더가 넣는 gstatic 스크립트의 실패도 document의 잡기 단계에서 본다.
+  `upload-appcheck-wait.spec.js`의 «reCAPTCHA를 처음에 받지 못해도…»가 고정한다(로더 없음 · 정리 없음 · gstatic 실패 무시, 셋 다 빨간불 확인)
+- 시험: `e2e/web-mail.spec.js`(끊김 → 메일 칸 → 맡김 → 돌아오면 올리고 보내고 지움 · 새로고침 뒤 이어서 · 두 창 · 12/1 지우기 · 저장소 막힘). 끊김은 `navigator.onLine`을 시험이 쥐어 흉내 낸다.
+  `/upload` · `/mail`은 가로챈다(주소는 가짜). 조사 도구(`tools/verify/viewport-survey.mjs`)도 `/mail`을 가로채 늘 503으로 답한다 — 메일 확인 · 대기 화면(`16b` · `16c`)을 찍은 뒤 전달이 돌아도 밖으로 나가지 않는다
+- 🟠 **실제 발송 확인은 세 걸음이다**(Playwright로 띄운 창은 App Check가 403이고 그 프로필은 24시간 묶인다) — ① Playwright로 늘 끊긴 창을 띄워 더빙 · 메일 칸 · 맡김까지(캡처)
+  ② 같은 프로필을 자동화 없이 띄워 바깥 연결을 열면 저절로 올리고 보낸다(Chromium 넷로그로 요청 · 상태만 본다) ③ 다시 Playwright로 열어 IndexedDB가 비었는지 본다.
+  창은 정본 주소를 설치판과 같은 가로채기(`desktop/bundle.js`)로 띄운다(정본 주소여야 reCAPTCHA 허용 도메인 · 업로드 허용 출처를 지난다). 받는 주소는 기록 · 캡처에 남기지 않는다
 
 ## 부스 장비 — 교육청 제출 운영계획(9/7 판)이 기준이다 (2026-11-07 팀장 전달)
 스테이션 2개 · 삼성 갤럭시북2 Pro SE 3대(운영 2 · 예비 1) · 마이크 내장 블루투스 헤드셋 3개(운영 2 · 예비 1, 별도 마이크 · 녹음 부스 없음) · 통신 KT EGG 2대(계획서의 «포켓 Wi-Fi»와 같은 장비, 스테이션당 1대 — 11/7 Bumm님) · 보조배터리 1개 · 파티션과 가림막 2개 · 인원 3명. 장애 시 핫스팟 → 로컬 실행 순서이고, 결과물은 11월 30일까지 보관한다(자동 삭제 2026-12-01 00:00과 같은 말이다).
@@ -1119,10 +1152,10 @@ Bumm님이 정할 것·직접 하실 것·세션이 할 것을 11/14 기준 순�
 ## 명령
 - 개발 서버: `npm run dev` (http://localhost:4321)
 - 빌드: `npm run build` (`tsc --noEmit` + `vite build` → `dist/`)
-- 테스트: `npm test` (vitest, 루트 96 + functions 105 = 201개, 2026-11-08 기준). 개별 실행은 `cd functions && npm test`
+- 테스트: `npm test` (vitest, 루트 126 + functions 110 = 236개, 2026-11-08 웹 메일 전달 기준). 개별 실행은 `cd functions && npm test`
 - 린트: `npm run lint` (eslint). `src/`는 `tsc`가 담당하므로 eslint 대상에서 뺐다. 빈 `catch{}`는 이 코드베이스가
   의도적으로 쓰는 패턴이라 허용해뒀다 — 버그가 아니다
-- E2E: `npm run test:e2e` (155개 — 그중 6개는 조건부 건너뜀, 2026-10-21 기준) — 빌드 후 `dist/`를 서빙해 실제 산출물로 검증한다. 최초 1회
+- E2E: `npm run test:e2e` (272개 — 그중 6개는 조건부 건너뜀, 2026-11-08 기준) — 빌드 후 `dist/`를 서빙해 실제 산출물로 검증한다. 최초 1회
   `npx playwright install chromium` 필요하고, Playwright 버전을 올리면 이 설치를 다시 해야 한다
 - 에뮬레이터: 쓰지 않음 — 서버 쪽은 순수 함수만 유닛테스트하고, 실제 동작은 배포 후 라이브로 확인한다
 

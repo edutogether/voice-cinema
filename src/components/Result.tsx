@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { finalClipUrl, stillUrl, stillAvifUrl, type Genre } from '../genres';
 import { FestivalHeader } from './FestivalHeader';
 import { ActionIcon } from './ActionIcon';
+import { MailHandoff } from './MailHandoff';
 import { mergeClip, processVoice } from '../lib/ffmpeg';
 import { downloadBlob, uploadToCloud } from '../lib/upload';
 import { buildUploadFilename, isPreviewChannel } from '../logic';
 import { makeQR } from '../lib/vendor';
+import { isOnline, mailEnabled } from '../lib/mailDelivery';
 import type { Recording } from '../hooks/useDubbing';
 
 export type RecordingSource = { kind: 'sample' } | ({ kind: 'recording' } & Recording);
@@ -17,6 +19,7 @@ type Stage =
   | { kind: 'uploading' }
   | { kind: 'cloud'; qr: string; url: string }
   | { kind: 'fallback'; blob: Blob }
+  | { kind: 'mail'; blob: Blob }
   | { kind: 'error' };
 
 interface Props {
@@ -64,6 +67,16 @@ export function Result({ active, job, onHome, onBack }: Props) {
         return;
       }
       if (cancelled) return;
+      // 올리지 못했을 때: 메일 대기열이 있으면(설치판 · 웹 모두, 11/8 Bumm님 «웹도 끊기면 메일 칸을 띄움») 인솔 교사 메일을 받고, 그 밖에는 이 기기에 저장으로 간다.
+      // 미리보기 주소는 서버가 받지 않아(허용 출처 밖) 맡겨 두어도 영영 보내지지 않는다 — 이 기기에 저장으로 간다.
+      const useMail = mailEnabled && !isPreviewChannel(window.location.hostname);
+      const cannotUpload = () => setStage(useMail ? { kind: 'mail', blob: merged } : { kind: 'fallback', blob: merged });
+      // 인터넷이 아예 없으면 올리지 않는다 — App Check 대기(20초)를 세 번 «저장하고 있어요»로 보내지 않고
+      // 바로 메일 칸(없으면 이 기기에 저장)으로 간다(10/27 설치판, 오프라인일 때는 정직하게 안내).
+      if (!isOnline()) {
+        cannotUpload();
+        return;
+      }
       setStage({ kind: 'uploading' });
 
       try {
@@ -76,7 +89,7 @@ export function Result({ active, job, onHome, onBack }: Props) {
         if (!cancelled) setStage({ kind: 'cloud', qr: makeQR(url), url });
       } catch (e) {
         console.error('[클라우드 저장 실패]', e instanceof Error ? e.message : e);
-        if (!cancelled) setStage({ kind: 'fallback', blob: merged });
+        if (!cancelled) cannotUpload();
       }
     })();
     return () => {
@@ -178,6 +191,10 @@ export function Result({ active, job, onHome, onBack }: Props) {
               <button className="btn btn-lg btn-ghost" id="doneHomeBtn" onClick={onHome}><ActionIcon name="clapperboard" /> 다른 더빙 하기</button>
             </div>
           </div>
+        )}
+
+        {stage.kind === 'mail' && (
+          <MailHandoff genre={job.genre} blob={stage.blob} onSaveHere={() => setStage({ kind: 'fallback', blob: stage.blob })} onHome={onHome} />
         )}
 
         {stage.kind === 'error' && (

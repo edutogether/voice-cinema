@@ -22,6 +22,20 @@ test('첫 방문에 엔진은 회선으로 한 번만 받고, 서비스워커가
   expect(fromNetwork, '엔진을 회선으로 받은 횟수').toHaveLength(1);
 });
 
+// Windows 설치판(10/27)은 서비스워커를 등록하지 않는다(desktop/bundle.js가 /sw.js에 404). 엔진 받기가 서비스워커를 기다리면 매번 20초 동안
+// «영상 저장 준비 중… 0%»였다 — 등록이 실패하면 기다리지 않는다.
+test('서비스워커 등록이 실패하면 엔진을 기다리지 않고 받는다', async ({ page }) => {
+  await page.addInitScript(() => {
+    navigator.serviceWorker.register = () => Promise.reject(new Error('등록 실패 흉내'));
+  });
+  const started = Date.now();
+  const engineRequested = page.waitForRequest((r) => r.url().includes('/vendor/ffmpeg-core/ffmpeg-core.wasm'), { timeout: 60000 }).then(() => Date.now() - started);
+  await page.goto('/');
+  const ms = await engineRequested;
+  expect(ms, '첫 화면을 연 뒤 엔진을 받기 시작한 시각(ms)').toBeLessThan(15000);
+  expect(await page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length)).toBe(0);
+});
+
 test('첫 화면에 안 보이는 장면 카드(가운데에서 셋째 이상)는 그림을 아직 받지 않고, 가까이 오면 받는다', async ({ page }) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
