@@ -56,7 +56,7 @@ async function routeUpload(app, reply) {
 const uploads = (app) => app.evaluate(() => globalThis.__uploads.map((text) => JSON.parse(text)));
 
 /** 이 화면이 엔진(ffmpeg-core.wasm)을 끝까지 받았는가 — 첫 화면의 «N%» 표시는 11/8 Bumm님 지시로 없앴다. 화면이 직접 받으므로(src/lib/ffmpeg.ts) 그 자원 기록을 본다 */
-const engineLoaded = (page) => page.evaluate(() => performance.getEntriesByType('resource').some((e) => e.name.endsWith('/vendor/ffmpeg-core/ffmpeg-core.wasm') && e.responseEnd > 0));
+const engineLoaded = (page) => page.evaluate(() => window.performance.getEntriesByType('resource').some((e) => e.name.endsWith('/vendor/ffmpeg-core/ffmpeg-core.wasm') && e.responseEnd > 0));
 
 /** 시험용 마이크(제품 코드에는 아무것도 넣지 않는다)를 깔고 다시 연 뒤 장면 녹음실로 */
 async function openStudio(page, name) {

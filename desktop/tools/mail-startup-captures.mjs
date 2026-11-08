@@ -31,9 +31,12 @@ async function launch(profile) {
     globalThis.__holdTo = null;
     globalThis.__failTo = null;
     globalThis.__release = null;
+    globalThis.__offline = false;
     ses.fetch = async (request, options) => {
       const kind = ['upload', 'mail'].find((k) => request.url.endsWith(`/voiceCinema/${k}`));
       if (!kind) return original(request, options);
+      // 끊긴 동안(새로 고친 직후 다시 끊기 전의 틈 포함) 업로드 · 메일은 연결 실패다
+      if (globalThis.__offline) throw new Error('끊김 흉내');
       if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: { ...cors, 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': request.headers.get('access-control-request-headers') ?? '*' } });
       const text = await request.text();
       const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
@@ -50,18 +53,29 @@ async function launch(profile) {
   return { app, page };
 }
 
+/** 끊김 흉내를 켜고 끈다. 🟠 Playwright의 setOffline은 이 앱 창을 새로 고치면 풀린다(navigator.onLine이 다시 참, 11/8 확인) — 그래서 CDP로 직접 건다 */
+const network = async (app, cdp, on) => {
+  await app.evaluate((_e, off) => { globalThis.__offline = off; }, !on);
+  await cdp.send('Network.emulateNetworkConditions', { offline: !on, latency: 0, downloadThroughput: -1, uploadThroughput: -1 });
+};
+
 /** 끊긴 채 선생님 두 분 몫을 하나씩 대기열에 넣고 다시 연다(켤 때와 같은 시작 창) */
 async function queueTwoAndRestart(app, page) {
-  await app.context().setOffline(true);
-  await page.reload();
+  const cdp = await page.context().newCDPSession(page);
   await page.locator('#splash').waitFor({ state: 'detached', timeout: 90000 });
+  await network(app, cdp, false);
   await page.evaluate(async ([a, b]) => {
     const bytes = new Uint8Array(64).buffer;
     await window.vcDesktop.mail.add({ name: '별님', email: a, genreId: 'fantasy', genreName: '판타지' }, bytes);
     await window.vcDesktop.mail.add({ name: '달님', email: b, genreId: 'sf', genreName: 'SF' }, bytes);
   }, [TEACHER_A, TEACHER_B]);
+  // 새로 고치면 끊김 흉내가 풀린다 — 켜지자마자 도는 보내기는 업로드가 연결 실패로 끝나고(__offline), 곧바로 다시 끊는다
   await page.reload();
+  await network(app, cdp, false);
   await page.locator('#splash').waitFor({ state: 'detached', timeout: 90000 });
+  if (await page.evaluate(() => window.navigator.onLine)) throw new Error('다시 끊지 못했다');
+  if ((await page.evaluate(() => window.vcDesktop.mail.list())).length !== 2) throw new Error('대기열이 2건이 아니다');
+  return cdp;
 }
 
 const shooter = (app, page) => async (name) => {
@@ -83,11 +97,14 @@ await fs.mkdir(out, { recursive: true });
   const { app, page } = await launch(path.join(out, 'profile-1'));
   const shot = shooter(app, page);
   const startup = page.locator('#mailStartup');
-  await queueTwoAndRestart(app, page);
+  const cdp = await queueTwoAndRestart(app, page);
   await page.locator('#mailStartup[data-phase="offline"]').waitFor({ timeout: 30000 });
+  // 저절로 뜬 창은 마우스로 쓰는 사람에게 단추 초점 테두리를 보이지 않는다 — 초점은 창 자체에 있어야 한다
+  const focused = await page.evaluate(() => document.activeElement?.id ?? '');
+  if (focused !== 'mailStartup') throw new Error(`시작 창이 뜰 때 초점이 창이 아니라 «${focused}»에 있다`);
   await shot('1-끊김-보낼-메일-2건');
   await app.evaluate((_e, to) => { globalThis.__holdTo = to; }, TEACHER_B);
-  await app.context().setOffline(false);
+  await network(app, cdp, true);
   await page.locator('#mailStartup[data-phase="sending"] [role="status"]', { hasText: '1 / 2건' }).waitFor({ timeout: 90000 });
   for (let i = 0; i < 60 && !(await app.evaluate(() => !!globalThis.__release)); i++) await delay(500);
   await shot('2-보내는-중-1-of-2');
@@ -96,7 +113,6 @@ await fs.mkdir(out, { recursive: true });
   await shot('3-다-보냄-이제-꺼도-돼요');
   await startup.getByRole('button', { name: '완료' }).click();
   await startup.waitFor({ state: 'hidden' });
-  await shot('4-완료-누른-뒤-첫-화면');
   await app.close();
 }
 
@@ -104,11 +120,11 @@ await fs.mkdir(out, { recursive: true });
 {
   const { app, page } = await launch(path.join(out, 'profile-2'));
   const shot = shooter(app, page);
-  const startup = page.locator('#mailStartup');
-  await queueTwoAndRestart(app, page);
+  const cdp = await queueTwoAndRestart(app, page);
+  await page.locator('#mailStartup[data-phase="offline"]').waitFor({ timeout: 30000 });
   await app.evaluate((_e, to) => { globalThis.__failTo = to; }, TEACHER_B);
-  await app.context().setOffline(false);
+  await network(app, cdp, true);
   await page.locator('#mailStartup[data-phase="partial"]').waitFor({ timeout: 90000 });
-  await shot('5-일부-못-보냄');
+  await shot('4-일부-못-보냄');
   await app.close();
 }

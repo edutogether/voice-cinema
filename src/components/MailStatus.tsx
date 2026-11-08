@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { lastInputWasKeyboard } from '../lib/inputModality';
 import { maskMail } from '../lib/mailAddress';
 import { getMailState, removeMail, retryAll, retryMail, subscribeMail } from '../lib/mailDelivery';
 import { batchStatus } from '../lib/mailQueue';
@@ -58,7 +59,12 @@ export function MailStartup({ atHome }: { atHome: boolean }) {
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
-    if (show && !dialog.open) dialog.showModal();
+    if (show && !dialog.open) {
+      dialog.showModal();
+      // 이 창은 사람이 누르지 않아도 저절로 뜬다 — 브라우저가 첫 단추에 초점을 주면 마우스로 쓰는 사람에게도 빨간 초점 테두리가 보인다.
+      // 키보드로 다니는 사람에게만 단추에 초점을 두고, 그 밖에는 창 자체에 둔다(src/lib/inputModality.ts, 11/8 캡처에서 찾음)
+      if (!lastInputWasKeyboard()) dialog.focus();
+    }
     if (!show && dialog.open) dialog.close();
   }, [show]);
 
@@ -71,7 +77,7 @@ export function MailStartup({ atHome }: { atHome: boolean }) {
 
   return (
     <dialog
-      className="mail-queue mail-startup" id="mailStartup" ref={dialogRef} aria-labelledby="mailStartupTitle" data-phase={phase ?? undefined}
+      className="mail-queue mail-startup" id="mailStartup" ref={dialogRef} tabIndex={-1} aria-labelledby="mailStartupTitle" data-phase={phase ?? undefined}
       // 보내는 동안에는 Esc로 닫지 않는다 — 끝날 때까지 이 창으로 진행을 본다(닫아도 보내기는 뒤에서 돈다)
       onCancel={(e) => { if (phase === 'sending') e.preventDefault(); }}
       onClose={() => setBatch(null)}

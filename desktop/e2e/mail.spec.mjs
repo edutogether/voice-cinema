@@ -85,7 +85,7 @@ async function pickScene(page, name) {
 /** 녹음 · 저장해 입력 화면까지(끊겨 있으면 곧바로, 올리지 못하면 세 번 시도한 뒤) */
 async function recordToEntry(page, timeout = 90000) {
   // 엔진을 다 받은 뒤 녹음한다(첫 화면의 «N%» 표시는 11/8에 없앴다 — 화면이 직접 받는 자원 기록을 본다)
-  await expect.poll(() => page.evaluate(() => performance.getEntriesByType('resource').some((e) => e.name.endsWith('/vendor/ffmpeg-core/ffmpeg-core.wasm') && e.responseEnd > 0)), { timeout: 30000 }).toBe(true);
+  await expect.poll(() => page.evaluate(() => window.performance.getEntriesByType('resource').some((e) => e.name.endsWith('/vendor/ffmpeg-core/ffmpeg-core.wasm') && e.responseEnd > 0)), { timeout: 30000 }).toBe(true);
   expect(await recordOnce(page)).toMatchObject({ phase: 'recorded' });
   await page.locator('#saveBtn').click();
   await expect(page.locator('#mailName')).toBeVisible({ timeout });

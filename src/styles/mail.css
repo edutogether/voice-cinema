@@ -58,6 +58,7 @@
 
 /* 설치판 시작 창 «보낼 메일 N건이 있어요»(11/8 Bumm님) — 대기 목록 창과 같은 판, 단추만 크게 */
 .mail-startup { width:min(520px,calc(100% - 48px)); padding:28px; }
+.mail-startup:focus { outline:none; }
 .mail-startup h2 { margin-bottom:10px; font-size:1.375rem; line-height:1.4; word-break:keep-all; }
 .mail-startup p { margin:0; color:#262626; font-size:1rem; line-height:1.6; word-break:keep-all; }
 .mail-startup-bar { height:8px; margin-top:18px; overflow:hidden; border-radius:999px; background:#ececec; }
