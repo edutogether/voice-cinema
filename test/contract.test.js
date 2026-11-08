@@ -80,6 +80,15 @@ test('장르 목록: functions/validate.js와 src/genres.ts가 같은 장르를 
   expect(서버).toEqual(앱);
 });
 
+// 2026-11-08: 설치판 메일에 적는 장르 이름은 서버가 정한다(functions/mail.js) — 화면의 장르 이름과 같아야 선생님이 본 것과 맞는다.
+test('장르 이름: functions/mail.js의 메일용 이름표와 src/genres.ts의 name이 같다', () => {
+  const 앱 = Object.fromEntries([...read('src/genres.ts').matchAll(/\{ id: '([a-z]+)', name: '([^']+)'/g)].map((m) => [m[1], m[2]]));
+  const 표 = read('functions/mail.js').match(/GENRE_NAMES = \{([^}]+)\}/)[1];
+  const 서버 = Object.fromEntries([...표.matchAll(/([a-z]+): '([^']+)'/g)].map((m) => [m[1], m[2]]));
+  expect(Object.keys(앱).length).toBeGreaterThan(0);
+  expect(서버).toEqual(앱);
+});
+
 // 2026-11-01(Bumm님 결정, _shared/CONVENTIONS.md §3.7): 배포 도구는 잠금 파일에 두지 않고 정확한 판을 박아 npx로 부른다 —
 // 고친 판이 없는 옛 minimatch를 끌고 와 Dependabot 경고가 닫히지 않아서다. 판은 자격증명을 깔기(auth) 전에 받아 두고,
 // 배포 두 줄이 그 같은 판을 다시 부른다. 판 범위·@latest를 쓰거나 한 줄만 올리면 여기서 떨어진다.
