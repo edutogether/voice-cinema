@@ -38,6 +38,7 @@ export default [
       globals: {
         process: 'readonly', console: 'readonly', Buffer: 'readonly',
         setTimeout: 'readonly', clearTimeout: 'readonly', fetch: 'readonly', AbortController: 'readonly', AbortSignal: 'readonly',
+        URLSearchParams: 'readonly', // kakao.js가 카카오 인증 주소와 폼 본문을 만든다
       },
     },
   },
@@ -48,7 +49,8 @@ export default [
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
-      globals: { console: 'readonly', Buffer: 'readonly', process: 'readonly', fetch: 'readonly', Response: 'readonly', AbortSignal: 'readonly' },
+      // feedback-handler.test.js는 카카오 요청의 폼 본문 · 넘겨주는 주소를 읽고, 가짜 Firestore가 문서를 복사해 돌려준다
+      globals: { console: 'readonly', Buffer: 'readonly', process: 'readonly', fetch: 'readonly', Response: 'readonly', AbortSignal: 'readonly', URL: 'readonly', URLSearchParams: 'readonly', structuredClone: 'readonly' },
     },
   },
   {

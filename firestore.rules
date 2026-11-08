@@ -1,0 +1,12 @@
+rules_version = '2';
+
+// Firestore는 의견(feedback)과 카카오 알림 토큰(kakaoAuth)에만 쓴다(2026-11-08 Bumm님 승인).
+// 모든 읽기 · 쓰기는 functions/index.js가 Admin SDK로만 하므로(이 규칙이 적용되지 않음), 브라우저에서 오는
+// 직접 접근은 전부 막는다 — storage.rules와 같은 방어적 기본값. 이름 · 의견 글 · 토큰이 화면에서 읽히면 안 된다.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

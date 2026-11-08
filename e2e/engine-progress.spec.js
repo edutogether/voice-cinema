@@ -2,13 +2,14 @@ import { test, expect } from '@playwright/test';
 
 // 첫 화면에는 엔진 받기 표시와 새 버전 알림이 없다(2026-11-08 Bumm님 — 오른쪽 위 «영상 저장 준비 중… N%»와 오른쪽 아래 «새 버전이 있어요 · 새로고침»을 뺐다).
 // 엔진(31MB)은 뒤에서 조용히 미리 받고(App.tsx), 받지 못하면 저장할 때 다시 받는다. 새 판은 다음에 열 때 적용된다(src/lib/sw.ts).
-// 머리글 오른쪽 위 줄에는 정한 것만 있다 — 웹 PC는 설치 파일 아이콘 · 개인정보처리방침, 휴대폰은 설치 아이콘이 숨는다.
+// 머리글 오른쪽 위 줄에는 정한 것만 있다 — 웹 PC는 «의견 보내기» · 설치 파일 아이콘 · 개인정보처리방침, 휴대폰은 설치 아이콘이 숨는다.
 
 const ENGINE_WASM = '**/vendor/ffmpeg-core/ffmpeg-core.wasm';
+const BEFORE_CLOSE = Date.parse('2026-11-10T14:00:00+09:00'); // «의견 보내기»가 있는 때(11/14 00:00에 사라진다)
 
 for (const [name, options, row] of [
-  ['PC 1440×900', { viewport: { width: 1440, height: 900 } }, ['download-link', 'privacylink']],
-  ['세로 휴대폰 390×844', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }, ['privacylink']],
+  ['PC 1440×900', { viewport: { width: 1440, height: 900 } }, ['feedback-link', 'download-link', 'privacylink']],
+  ['세로 휴대폰 390×844', { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true }, ['feedback-link', 'privacylink']],
 ]) {
   test(`${name}: 엔진을 받는 동안에도, 받지 못해도 첫 화면에 받기 표시가 없고 머리글 줄에는 정한 것만 있다`, async ({ browser }) => {
     for (const failed of [false, true]) {
@@ -19,6 +20,7 @@ for (const [name, options, row] of [
       await context.route(ENGINE_WASM, (route) => { asked = true; return failed ? route.abort() : undefined; });
       const page = await context.newPage();
       const engineFailed = failed ? page.waitForEvent('console', { predicate: (m) => m.text().includes('[엔진 준비 실패]'), timeout: 60000 }) : null;
+      await page.clock.install({ time: BEFORE_CLOSE });
       await page.goto('/');
       await page.locator('#splash').waitFor({ state: 'detached' });
       await expect.poll(() => asked, { message: '엔진 받기가 시작되지 않았다 — 이 검사가 빈 검사가 됐다', timeout: 30000 }).toBe(true);

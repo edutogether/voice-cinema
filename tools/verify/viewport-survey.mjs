@@ -182,11 +182,22 @@ function measurePage(roles) {
     const off169 = Math.abs(r.width / r.height / (16 / 9) - 1);
     if (off169 > 0.015) crops.push((el.className && typeof el.className === 'string' ? el.className.split(/\s+/)[0] : el.tagName.toLowerCase()) + ' ' + (r.width / r.height).toFixed(2) + ':1 (' + Math.round(off169 * 100) + '%)');
   }
-  // 손가락 단추(터치 기기만 본다 — 판정은 도구 쪽)
+  // 손가락 단추(터치 기기만 본다 — 판정은 도구 쪽). 높이는 실제로 눌리는 높이다: 가운데 세로줄에서 위아래로 1px씩 짚어 그 단추(또는 그 안의 것)가
+  // 잡히는 데까지 잰다 — 투명한 덧칸(::after)으로 넓힌 칸은 들어가고, 다른 것이 위에서 덮은 자리는 빠진다(11/8 — 상자 높이만 보던 때는 덧칸으로 넓힌
+  // «메일 대기» 단추를 작다고 하고, 상자를 키워 넓히면 그 상자가 옆 글을 덮는 것으로 잡혔다). 가운데가 화면 밖이거나 덮였으면 상자 높이로 본다.
+  const hitHeight = (el, r) => {
+    const x = r.left + r.width / 2, cy = Math.floor(r.top + r.height / 2);
+    const on = (y) => { if (y < 0 || y >= H) return false; const t = document.elementFromPoint(x, y); return !!t && (t === el || el.contains(t)); };
+    if (x < 0 || x >= W || !on(cy)) return r.height;
+    let up = 0; while (up < 80 && on(cy - up - 1)) up++;
+    let down = 0; while (down < 80 && on(cy + down + 1)) down++;
+    return up + down + 1;
+  };
   const small = [];
   if (matchMedia('(pointer: coarse)').matches) for (const el of scope.querySelectorAll('button, input, select, textarea, a.btn')) {
     if (!vis(el) || hiddenOrSide(el)) continue; const r = el.getBoundingClientRect();
-    if (r.width > 4 && r.height > 4 && r.height < 40) small.push(name(el) + ' ' + Math.round(r.height) + 'px');
+    if (r.width <= 4 || r.height <= 4) continue;
+    const h = hitHeight(el, r); if (h < 40) small.push(name(el) + ' ' + Math.round(h) + 'px');
   }
   // 메인의 주 단추가 아예 없는 크기(11/8 — 761~900 폭에 «더빙하기»가 없었는데 «깨끗»으로 나왔다). 찾을 단추가 없으면 아래 스크롤 판정도 0으로 지나간다
   const enter = scope === document.body ? document.querySelector('.scene-shell.is-current .tile-enter') : null;
@@ -267,7 +278,7 @@ if (SELFTEST) {
   // 터치 기기에서만 세는 손가락 단추
   const touch = await browser.newContext({ viewport: { width: 400, height: 700 }, hasTouch: true, isMobile: true });
   const tp = await touch.newPage();
-  await tp.setContent('<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width"><body><button id=tiny style="height:24px">작은 단추</button><button id=fine style="height:44px">좋은 단추</button></body>');
+  await tp.setContent('<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width"><style>#slop,#covered{position:absolute;left:0;top:28px;height:24px}#slop::after,#covered::after{content:"";position:absolute;left:0;right:0;top:-10px;height:44px}</style><body><button id=tiny style="height:24px">작은 단추</button><button id=fine style="height:44px">좋은 단추</button><div style="position:relative;height:80px"><button id=slop>덧칸으로 넓힌 단추</button></div><div style="position:relative;height:80px"><button id=covered>덧칸이 덮인 단추</button><div style="position:absolute;left:0;right:0;top:44px;height:30px;background:#eee"></div></div></body>');
   const t = await tp.evaluate(measurePage, {});
   await browser.close();
   const has = (list, id) => list.some((s) => s.includes('#' + id));
@@ -303,6 +314,8 @@ if (SELFTEST) {
     ['zoom 안의 글자는 곱한 크기로 읽는다', g.type['작은'] === 10],
     ['터치 기기의 40px 미만 단추를 잡는다', has(t.small, 'tiny') || t.small.some((s) => s.includes('작은 단추'))],
     ['터치 기기의 44px 단추는 안 잡는다', !t.small.some((s) => s.includes('좋은 단추'))],
+    ['투명한 덧칸으로 44px까지 넓힌 단추는 안 잡는다', !t.small.some((s) => s.includes('#slop'))],
+    ['덧칸을 다른 것이 덮어 실제로 눌리는 칸이 작으면 잡는다', t.small.some((s) => s.includes('#covered'))],
     ['마우스 기기는 단추 높이를 세지 않는다', a.small.length === 0],
   ];
   let fails = 0;

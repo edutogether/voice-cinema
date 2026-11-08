@@ -1,0 +1,55 @@
+/* 첫 화면 «의견 보내기»(2026-11-08 Bumm님, FeedbackLink.tsx) — Poster Studio(11/5 · 11/7 고친 값)와 같은 모양이다. 2026-11-14 00:00에 링크와 창이 함께 사라진다.
+   링크: 개인정보처리방침과 같은 줄 · 같은 글자 · 같은 색, 그 줄 맨 왼쪽. 다음 항목과 16px(휴대폰 14px) — 줄 간격 8px에 이 여백을 더한다. */
+.feedback-link { display:inline-flex; min-height:24px; align-items:center; margin-right:8px; padding:0; border:0; background:none; color:#666; font:inherit; font-size:.75rem; white-space:nowrap; cursor:pointer; }
+@media (hover:hover) { .feedback-link:hover { color:#171717; text-decoration:underline; } }
+.feedback-link:focus-visible { outline:2px solid #ed3124; outline-offset:2px; }
+@container app (max-width:760px) { .feedback-link { margin-right:6px; font-size:.6875rem; } }
+/* 손가락으로 누르는 기기는 누르는 칸만 화면에서 44px로 넓힌다 — 링크 상자는 방침 링크와 같은 24px 그대로 두고 투명한 덧칸(::after)으로
+   («메일 대기» 단추와 같은 방식, mail.css). 상자를 키우면(11/8 첫 판: 높이 44 · 음수 여백) 그 상자가 아래 설명 글을 덮는 것으로 잡히고,
+   화면 맞춤으로 줄어든 휴대폰(폭 320, 비율 0.82)에서는 화면 36px밖에 안 됐다.
+   위로는 7px만 — 태블릿 머리글의 InKY 단추 누르는 칸이 링크 줄 7px 위에서 끝난다(home.css .festival-restart). 나머지는 아래로 넓힌다.
+   옆으로 4px — 오른쪽 이웃(설치 파일 아이콘은 왼쪽으로 12px 넓혔다)과 맞닿고 겹치지 않는다.
+   쌓임 1 — 낮은 휴대폰(375×553)은 바로 아래 제목 칸(휴대폰에서 position:relative)이 덧칸 아래쪽을 덮어 화면 31px만 눌렸다. 덧칸이 덮는 것은 글(제목)뿐이다. */
+@media (pointer:coarse) {
+  .feedback-link { position:relative; z-index:1; }
+  .feedback-link::after { content:""; position:absolute; left:-4px; right:-4px; top:-7px; height:max(44px, calc(44px * var(--fit-undo, 1))); }
+}
+
+/* 의견 창 — 둥근 20px · 폭 560 · 제목 22/800 · 칸 16px 글자 · 의견 칸 높이 96 · 단추 120×44(Poster Studio 값). 크기는 화면 맞춤(public/fit.js)의 기준 화면 단위로 잰다 */
+.feedback-dialog { box-sizing:border-box; width:min(560px, calc(var(--app-w, 100%) - 32px)); max-width:none; max-height:calc(var(--app-h, 100%) - 32px); overflow-y:auto; overscroll-behavior:contain; margin:auto; padding:22px 26px 18px; border:0; border-radius:20px; background:#fff; color:#1d1d1f; box-shadow:0 24px 64px rgba(0,0,0,.28); }
+.feedback-dialog::backdrop { background:rgba(15,15,20,.55); }
+.feedback-dialog h2 { margin:0 0 2px; font-size:22px; font-weight:800; }
+.feedback-sub { margin:0 0 14px; font-size:15px; line-height:1.5; color:#555; }
+.feedback-dialog label { display:block; margin:0 0 5px; font-size:14px; font-weight:700; }
+.feedback-hint { font-weight:400; color:#767676; }
+.feedback-dialog :is(input,textarea) { box-sizing:border-box; display:block; width:100%; margin:0 0 12px; border:1.5px solid #8c8c8c; border-radius:12px; padding:9px 13px; background:#fff; color:inherit; font:inherit; font-size:16px; }
+.feedback-dialog textarea { height:96px; margin-bottom:4px; resize:none; }
+/* 이름 칸 · 의견 칸이 같은 초점 테두리 */
+.feedback-dialog :is(input,textarea):focus-visible { outline:3px solid #e52320; outline-offset:1px; }
+/* 의견 줄: 왼쪽 «의견 — 안내» · 오른쪽 끝 글자 수 */
+.feedback-text-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+.feedback-count { margin:0; flex:none; font-size:13px; color:#767676; white-space:nowrap; }
+/* 두 문장을 나란히 — 칸이 좁으면 저절로 두 줄이 된다. 입력 칸 바로 아래에 붙는다 */
+.feedback-auto { display:flex; flex-wrap:wrap; justify-content:space-between; gap:0 16px; margin:0 0 14px; padding:6px 12px; border-radius:10px; background:#f4f4f5; font-size:13px; line-height:1.5; color:#666; }
+.feedback-problem { margin:-6px 0 10px; font-size:14px; line-height:1.4; color:#c91b19; }
+.feedback-problem:empty { margin:0; }
+.feedback-actions { display:flex; justify-content:flex-end; gap:10px; }
+.feedback-actions button { width:120px; height:44px; border:0; padding:0; border-radius:12px; font:inherit; font-size:15px; font-weight:800; cursor:pointer; }
+.feedback-actions button:disabled { cursor:default; opacity:.7; }
+.feedback-actions button:focus-visible { outline:3px solid #e52320; outline-offset:2px; }
+.feedback-cancel { background:#e4e4e7; color:#27272a; }
+.feedback-send { background:#e52320; color:#fff; }
+@media (hover:hover) {
+  .feedback-cancel:not(:disabled):hover { background:#d4d4d8; }
+  .feedback-send:not(:disabled):hover { background:#c91b19; }
+}
+/* 휴대폰(세로 · 가로 — public/fit.js의 data-fit): 설명글을 전부 빼고 칸과 여백을 줄인다(Poster Studio 11/7과 같다). 화면에서만 숨기고 보내는 값은 그대로다.
+   보낸 뒤의 «의견을 잘 받았어요»는 결과 안내라 남긴다(feedback-lead가 아니다) */
+html:is([data-fit="phone"],[data-fit="none"]) :is(.feedback-lead,.feedback-hint,.feedback-auto) { display:none; }
+html:is([data-fit="phone"],[data-fit="none"]) .feedback-dialog { padding:18px 18px 14px; }
+html:is([data-fit="phone"],[data-fit="none"]) .feedback-dialog h2 { margin-bottom:10px; font-size:20px; }
+html:is([data-fit="phone"],[data-fit="none"]) .feedback-dialog label { margin-bottom:4px; }
+html:is([data-fit="phone"],[data-fit="none"]) .feedback-dialog :is(input,textarea) { margin-bottom:10px; padding:7px 12px; }
+html:is([data-fit="phone"],[data-fit="none"]) .feedback-dialog textarea { height:76px; margin-bottom:12px; }
+html:is([data-fit="phone"],[data-fit="none"]) .feedback-problem { margin:-4px 0 8px; }
+html:is([data-fit="phone"],[data-fit="none"]) .feedback-problem:empty { margin:0; }

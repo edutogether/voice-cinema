@@ -4,9 +4,20 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { initializeApp } from 'firebase-admin/app';
 import { getStorage } from 'firebase-admin/storage';
 import { getAppCheck } from 'firebase-admin/app-check';
+import { getFirestore } from 'firebase-admin/firestore';
 import express from 'express';
 import { validateUploadRequest, createRateLimiter, deleteInBatches, buildServerFilename, isAfterCutoff } from './validate.js';
 import { validateMailRequest, buildMailMessage, sendViaResend } from './mail.js';
+import {
+  isFeedbackClosed,
+  validateFeedback,
+  feedbackMemo,
+  cleanupOldFeedback,
+  dailyMaintenance,
+  FEEDBACK_COLLECTION,
+  FEEDBACK_REPLY_BUDGET_MS,
+} from './feedback.js';
+import { createKakao } from './kakao.js';
 
 initializeApp();
 
@@ -51,6 +62,13 @@ const isRateLimited = createRateLimiter({ max: 60 });
 // 메일은 선생님마다 한 통이고 설치판은 15초마다 한 번 대기열을 본다 — 부스 두 곳이 한 IP를 같이 써도 분당 20이면 넉넉하다(2026-11-08).
 // 이 한도는 메일 주소를 아무 데나 넣어 보내는 남용을 묶는 용도다. 하루 상한은 Resend 무료 요금제(하루 100통)가 따로 건다.
 const isMailRateLimited = createRateLimiter({ max: 20 });
+// 의견은 시험하는 선생님이 손으로 적어 보낸다 — 한 IP에서 분당 10이면 부스 두 곳이 같이 써도 넉넉하다(2026-11-08).
+// 공개 토큰으로 마구 보내도 저장 · 카카오 알림이 이 안에서 멈춘다(앞의 App Check가 먼저 막는다).
+const isFeedbackRateLimited = createRateLimiter({ max: 10 });
+
+// Firestore는 의견과 카카오 토큰에만 쓴다(2026-11-08 Bumm님 승인, 무료 등급). 함수가 처음 쓸 때 연결한다
+const db = () => getFirestore();
+const kakao = createKakao(db);
 
 const app = express();
 // Cloud Run(Functions v2)은 X-Forwarded-For로 실제 클라이언트 IP를 넘겨주는데,
@@ -69,7 +87,7 @@ app.set('trust proxy', 1);
 // 배포(로컬 배포 등)에서는 null이고, 대조는 그것을 "확인 안 됨 → 다시 배포"로 센다.
 app.get('/', (req, res) => res.json({ ok: true, service: 'inky-voice-cinema', commit: process.env.DEPLOY_COMMIT || null }));
 
-// 헤더만 보는 검사 — 인증 전 상한 → BOOTH_TOKEN → App Check → 경로별 한도 순서다. /upload와 /mail이 같이 쓴다(2026-11-08, 순서는 그대로).
+// 헤더만 보는 검사 — 인증 전 상한 → BOOTH_TOKEN → App Check → 경로별 한도 순서다. /upload · /mail · /feedback이 같이 쓴다(2026-11-08, 순서는 그대로).
 // 로그에는 요청 번호만 남긴다 — IP · 메일 주소 · 이름을 넣지 않는다.
 function boothGuard(tag, limiter, limitLog) {
   return async (req, res, next) => {
@@ -183,6 +201,47 @@ app.post('/mail', boothGuard('mail', isMailRateLimited, '분당 메일 한도 �
   }
 });
 
+// 현장 의견(2026-11-08 Bumm님 «Poster Studio와 똑같이», 팀장 전달) — 웹 첫 화면 «의견 보내기» → Firestore feedback에 저장 + Bumm님 카카오톡 «나에게 보내기» 알림.
+// 받는 칸은 이름 · 의견 · 판 번호 · 화면 크기 · 기기 · 단계 여섯뿐이다(functions/feedback.js). 2026-11-14 00:00(KST)부터는 문 검사 전에 410으로 받지 않는다(배포 없이 닫힌다).
+// 받기를 마치면 내보내 넘긴 뒤 지우고(tools/feedback-export.mjs), 잊어도 매일 04시 정리가 받은 지 90일 지난 것을 지운다.
+// 카카오가 실패해도 저장은 남고 화면은 «보냈어요»다(알림은 덤). 🔴 로그에 이름 · 의견 글 · 토큰을 넣지 않는다 — 문서 번호와 알림 결과만 남긴다.
+app.post('/feedback', (req, res, next) => {
+  if (!isFeedbackClosed(Date.now())) return next();
+  console.warn('[feedback] 받는 기간이 끝남');
+  res.status(410).json({ ok: false, error: '의견은 이제 받지 않아요.', code: 'feedback_closed' });
+}, boothGuard('feedback', isFeedbackRateLimited, '분당 의견 한도 초과'), (req, res, next) => {
+  if (req.is('application/json')) return next();
+  res.status(415).json({ ok: false, error: '의견 형식이 올바르지 않습니다.', code: 'feedback_invalid' });
+}, express.json({ limit: '8kb' }), async (req, res) => {
+  const requestId = req.requestId;
+  const now = Date.now();
+  const value = validateFeedback(req.body);
+  if (!value) {
+    console.warn(`[feedback:${requestId}] 검증 실패`);
+    return res.status(400).json({ ok: false, error: '의견 형식이 올바르지 않습니다.', code: 'feedback_invalid' });
+  }
+  const deadline = now + FEEDBACK_REPLY_BUDGET_MS;
+  let id;
+  try {
+    id = (await db().collection(FEEDBACK_COLLECTION).add({ ...value, createdAt: new Date(now) })).id;
+  } catch (err) {
+    console.error(`[feedback:${requestId}] 저장 실패:`, err?.message || err);
+    return res.status(503).json({ ok: false, error: '지금은 보낼 수 없어요. 잠시 뒤에 다시 해 주세요.', code: 'feedback_store' });
+  }
+  let notified = false;
+  try {
+    notified = await kakao.sendMemo(feedbackMemo(value), now, deadline);
+  } catch (err) {
+    console.error(`[feedback:${requestId}] 카카오 알림 실패(저장은 됨):`, err?.message || err);
+  }
+  console.log(`[feedback:${requestId}] 저장 ${id} · 알림 ${notified ? '보냄' : '못 보냄'}`);
+  res.json({ ok: true });
+});
+
+// 카카오 알림 연결(처음 한 번) — Bumm님이 브라우저로 /kakao/start를 열어 로그인 · 동의한다(functions/kakao.js).
+app.get('/kakao/start', (req, res) => kakao.start(req, res));
+app.get('/kakao/callback', (req, res) => kakao.callback(req, res));
+
 // 2026-09-01 Firebase Hosting(voice-cinema.web.app)로 이전. GitHub Pages는
 // 한동안 병행 운영했으나 2026-09-08 대표 지시로 폐지했다(포털 카드가 이미 Firebase
 // 주소를 가리키는 것을 확인한 뒤) — 그래서 edutogether.github.io는 허용 목록에서 뺐다.
@@ -238,8 +297,8 @@ export const voiceCinema = onRequest(
     maxInstances: 10,
     concurrency: 1,
     cors: ALLOWED_ORIGINS,
-    // 메일 발송 키(2026-11-08) — Secret Manager에만 있고 이 함수가 돌 때 환경 변수로 들어온다. 코드 · 문서 · 로그에 값을 두지 않는다
-    secrets: ['RESEND_API_KEY'],
+    // 메일 발송 키 · 카카오 앱 키 둘(2026-11-08) — Secret Manager에만 있고 이 함수가 돌 때 환경 변수로 들어온다. 코드 · 문서 · 로그에 값을 두지 않는다
+    secrets: ['RESEND_API_KEY', 'KAKAO_REST_API_KEY', 'KAKAO_CLIENT_SECRET'],
   },
   app
 );
@@ -272,4 +331,11 @@ export const cleanupAfterCutoff = onSchedule(
       throw err;
     }
   }
+);
+
+// 매일 04시(KST) 의견 정리 · 카카오 토큰 갱신(2026-11-08, Poster Studio와 같은 시각 · 같은 일).
+// 매일 갱신하면 리프레시 토큰이 만료 1개월 안에 들어서는 날 카카오가 새것을 주고 덮어쓴다 — 의견이 뜸해도 다시 동의할 일이 없다.
+export const feedbackMaintenance = onSchedule(
+  { schedule: '0 4 * * *', timeZone: 'Asia/Seoul', region: 'asia-northeast3', timeoutSeconds: 120, secrets: ['KAKAO_REST_API_KEY', 'KAKAO_CLIENT_SECRET'] },
+  () => dailyMaintenance({ feedback: () => cleanupOldFeedback(db()), kakao: () => kakao.refreshToken() })
 );

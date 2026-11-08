@@ -10,6 +10,7 @@ import './styles/home.css';
 import './styles/studio.css';
 import './styles/result.css';
 import './styles/mail.css';
+import './styles/feedback.css';
 import './styles/kakao.css';
 
 function startApp() {
