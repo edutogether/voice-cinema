@@ -171,7 +171,7 @@ export function MailHandoff({ genre, blob, retrying, onRetry, onHome }: Props) {
             <p id="doneMsg">이 기기에 잠시 보관했다가 인터넷이 돌아오면 보내고 바로 지워요. 프로그램을 껐다면 다시 켜야 이어서 보내요.</p>
           )}
           <div className="row result-actions mail-actions">
-            <button type="button" className="btn btn-lg btn-ghost" id="doneHomeBtn" onClick={onHome}><ActionIcon name="clapperboard" /> 다른 더빙 하기</button>
+            <button type="button" className="btn btn-lg btn-save" id="doneHomeBtn" onClick={onHome}><ActionIcon name="clapperboard" /> 다른 더빙 하기</button>
           </div>
         </>
       )}
