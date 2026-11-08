@@ -185,12 +185,12 @@ async function sizeWindow(app, page, w, h) {
 }
 
 /**
- * 첫 화면 오른쪽 위 한 줄: 노란 «인터넷 없이 쓰는 설치판» · (기다리는 메일이 있으면) «메일 대기» 단추 · 방침 링크가 차례로 겹치지 않고 같은 높이에 있다.
+ * 첫 화면 오른쪽 위 한 줄: 노란 «설치판 · 녹음하고 로컬에 저장» · (기다리는 메일이 있으면) «메일 대기» 단추 · 방침 링크가 차례로 겹치지 않고 같은 높이에 있다.
  * 이 줄 말고는 설치판 표시가 화면 어디에도 없다(11/8 Bumm님 «노란 표시 하나만»).
  */
 async function expectHeaderRow(page, chip) {
   await expect(page.locator('#mailBar')).toHaveCount(0);
-  await expect(page.locator('.installer-badge')).toHaveText('인터넷 없이 쓰는 설치판');
+  await expect(page.locator('.installer-badge')).toHaveText('설치판 · 녹음하고 로컬에 저장');
   await expect(page.locator('#mailQueueChip')).toHaveCount(chip ? 1 : 0);
   // 창 크기를 바꾼 직후에는 화면 맞춤이 한두 프레임 뒤에 자리 잡는다 — 자리 잡은 뒤에도 어긋나면 실패한다
   await expect.poll(() => page.evaluate(() => {
@@ -539,7 +539,7 @@ test('대기열을 열 수 없으면(키 손상) 메일 화면 없이 지금까�
   writeFileSync(path.join(profile, 'mail-queue', 'queue.key'), 'not-a-sealed-key');
   const { app, page } = await launch(profile);
   expect(await page.evaluate(() => typeof window.vcDesktop)).toBe('undefined');
-  await expect(page.locator('.installer-badge')).toHaveText('인터넷 없이 쓰는 설치판');
+  await expect(page.locator('.installer-badge')).toHaveText('설치판 · 녹음하고 로컬에 저장');
   await expect(page.locator('#mailQueueChip')).toHaveCount(0);
   await setReply(app, { status: 500, body: { ok: false } });
   await openStudio(page, '판타지');
