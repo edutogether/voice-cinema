@@ -95,9 +95,9 @@ export function Result({ active, job, onHome, onBack }: Props) {
       <div className={`result-card result-${stage.kind}`} ref={cardRef}>
         <div className="result-poster">
           <picture className="pic"><source type="image/avif" srcSet={stillAvifUrl(job.genre.id)} /><img src={stillUrl(job.genre.id)} alt="" /></picture>
-          {/* 왼쪽 위 InKY Film Festival, 오른쪽 위 인천광역시교육청 — 내려받는 영상에도 같은 자리에 같은 모양으로 구워져 있다(10/20 대표님, tools/build-video-logos.mjs) */}
+          {/* 왼쪽 위 InKY Film Festival, 오른쪽 위 인천광역시교육청 — 바탕 없는 흰 로고(11/8 Bumm님). 내려받는 영상에도 같은 자리에 구워져 있다(흰 띠 위 공식 색, 10/20 대표님, tools/build-video-logos.mjs) */}
           <span className="poster-logo poster-logo-inky" aria-hidden="true"><span className="festival-symbol"><img src="/brands/inky.png" alt="" /></span><span><strong>InKY</strong> Film Festival</span></span>
-          <span className="poster-logo poster-logo-education" aria-hidden="true"><img src="/brands/education.png" alt="" width="199" height="52" /></span>
+          <span className="poster-logo poster-logo-education" aria-hidden="true"><img src="/brands/education-white.svg" alt="" width="102" height="27" /></span>
           <div className="poster-credit"><p>{job.kind === 'sample' ? '녹음 화면 샘플 체험' : '내 목소리로 완성하는 영화'}</p><strong>{job.genre.summary}</strong><span>{job.kind === 'sample' ? '다운로드 · 원본 영상' : job.genre.name}</span></div>
         </div>
         <div className="result-details">

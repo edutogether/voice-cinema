@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { stopAutoPreview } from './stop-auto-preview.js';
 
-test('대기는 전체 길이, 장면·이어 재생·미리보기는 영상 시계를 표시하고 5.0초 멈춤에서는 05:00에 선다', async ({ page }) => {
+test('대기는 전체 길이, 장면·이어 재생·미리보기·다시 녹음은 영상 시계를 표시하고 5.0초 멈춤에서는 05:00에 선다', async ({ page }) => {
+  test.setTimeout(120000); // 두 번 녹음한다(한 번에 약 18초)
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
@@ -13,11 +14,11 @@ test('대기는 전체 길이, 장면·이어 재생·미리보기는 영상 시
   await page.locator('#recBtn').click();
   await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(0);
   await expect(clock).toHaveText(/^\d{2}:\d{2} \/ 10:00$/);
-  // 문구는 0.6초뿐이라(10/24) 멈춤 단계(문구·카운트다운·녹음)에 들어선 것을 기다린다
+  // 멈춤 단계(문구·카운트다운·녹음)에 들어선 것을 기다린다
   await expect(page.locator('#studio')).toHaveAttribute('data-phase', /^(cue|countdown|recording)$/, { timeout: 10000 });
   await expect(clock).toHaveText('05:00 / 10:00');
   await expect.poll(() => page.locator('#bar').evaluate(bar => new window.DOMMatrixReadOnly(getComputedStyle(bar).transform).a)).toBeCloseTo(.5, 2);
-  await expect(page.locator('#recpill')).toBeVisible({ timeout: 6000 });
+  await expect(page.locator('#recpill')).toBeVisible({ timeout: 9000 });
   await expect(clock).toHaveText('05:00 / 10:00');
   await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'continuing', { timeout: 6000 });
   await expect.poll(async () => (await clock.textContent()) !== '05:00 / 10:00').toBe(true);
@@ -25,12 +26,11 @@ test('대기는 전체 길이, 장면·이어 재생·미리보기는 영상 시
   await expect(clock).toHaveText('10:00 / 10:00');
   await expect(page.locator('#progress')).toHaveAttribute('aria-valuenow', '100');
   await expect(page.locator('#bar')).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+  // «다시 녹음»은 «장면 시작»처럼 곧바로 처음(00:00)부터 장면을 다시 틀고 영상 시계를 보여 준다(11/8 Bumm님)
   await page.locator('#resetBtn').click();
-  await expect(clock).toHaveText('10:00');
-  // 미리보기는 처음(00:00)부터 영상 시계를 보여 준다(10/20 «다시 듣기» 대신)
-  await page.locator('#previewBtn').click();
   await expect.poll(async () => (await clock.textContent()).startsWith('00:')).toBe(true);
   await expect.poll(() => page.locator('#clip').evaluate(v => v.currentTime)).toBeGreaterThan(.3);
+  await expect(clock).toHaveText(/^\d{2}:\d{2} \/ 10:00$/);
 });
 
 for (const [width, height] of [[1440, 900], [390, 844]]) {

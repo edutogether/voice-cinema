@@ -3,12 +3,13 @@ import { countdownLog, watchCountdown } from './countdown-watch.js';
 
 // 5.0초 멈춤 뒤 «이제 당신의 차례입니다 !» → 3·2·1 «지금 바로 당신의 목소리를 들려주세요 !»가 화면 가운데 보이고
 // 다른 요소에 가려지지 않는다. 그동안 영상은 5.0초 정지 화면 그대로다. 녹음기가 실제로 켜진 뒤에 «녹음 중»이 보인다.
-// 절정(멈춤)에서 «녹음 중»까지는 1.5초 안팎이다(10/24 대표님 — 전에는 3.9초). 숫자 하나가 0.3초라 화면에서 기록해 두고 본다.
+// 문구와 숫자는 정확히 1초에 하나씩 넘어가고, 절정(멈춤)에서 «녹음 중»까지 4초다(11/8 Bumm님 «너무 빠르다» — 10/24에는 1.5초, 그 전에는 3.9초).
+// 나타나는 순간은 화면에서 기록해 두고 본다(e2e/countdown-watch.js).
 for (const [label, viewport] of [
   ['PC', { width: 1440, height: 900 }],
   ['휴대폰', { width: 390, height: 844 }],
 ]) {
-  test(`${label}: 멈춤 문구와 3·2·1이 화면 가운데 보이고, 1.5초 안팎 뒤 녹음기가 켜지면 «녹음 중»`, async ({ page }) => {
+  test(`${label}: 멈춤 문구와 3·2·1이 화면 가운데 1초씩 보이고, 4초 뒤 녹음기가 켜지면 «녹음 중»`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await watchCountdown(page);
     await page.goto('/');
@@ -16,7 +17,7 @@ for (const [label, viewport] of [
     await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
     await page.locator('#recBtn').click();
 
-    await expect(page.locator('#recpill')).toBeVisible({ timeout: 12000 });
+    await expect(page.locator('#recpill')).toBeVisible({ timeout: 20000 });
     const log = await countdownLog(page);
     expect(log.map((e) => e.key)).toEqual(['cue', '3초 뒤 녹음 시작', '2초 뒤 녹음 시작', '1초 뒤 녹음 시작', 'recording']);
     expect(log[0].text).toBe('이제 당신의 차례입니다 !');
@@ -29,11 +30,19 @@ for (const [label, viewport] of [
       expect(entry.text).toContain('지금 바로 당신의 목소리를 들려주세요 !');
       expect(entry.uncovered, entry.key).toBe(true);
     }
-    // 멈춤 문구 0.6초 + 숫자 0.3초 × 3 = 1.5초, 그 뒤 녹음기가 켜지기까지(첫 소리 조각, 수십 ms).
-    // 위 끝은 예전 3.9초가 아님을 보는 자리다 — 병렬 검사 부하에서는 타이머가 밀려 1.97초까지 나왔다(단독 1.5초 안팎)
+    // 문구 → 3 → 2 → 1은 1초씩이다. 한 기준 시각에서 재므로 한 칸이 늦게 그려져도 다음 칸이 밀리지 않는다 —
+    // 칸마다는 그리기 지연만큼 흔들려도(병렬 부하) 문구에서 «1»까지는 3초 그대로다.
+    const steps = log.slice(1, 4).map((entry, i) => entry.at - log[i].at);
+    for (const ms of steps) {
+      expect(ms, JSON.stringify(steps)).toBeGreaterThan(850);
+      expect(ms, JSON.stringify(steps)).toBeLessThan(1250);
+    }
+    expect(log[3].at - log[0].at).toBeGreaterThan(2950);
+    expect(log[3].at - log[0].at).toBeLessThan(3250);
+    // «1» 1초 뒤 녹음기가 켜지면(첫 소리 조각, 수십 ms) «녹음 중» — 절정에서 4초 남짓
     const wait = (log[4].at - log[0].at) / 1000;
-    expect(wait).toBeGreaterThan(1.45);
-    expect(wait).toBeLessThan(2.5);
+    expect(wait).toBeGreaterThan(3.95);
+    expect(wait).toBeLessThan(4.8);
     await expect(page.locator('#count')).toHaveCount(0);
     await expect(page.locator('.record-left')).toBeVisible();
   });

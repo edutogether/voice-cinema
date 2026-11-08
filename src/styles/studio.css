@@ -39,30 +39,33 @@ body:has(#studio.active) { background:#fff; }
 @media (orientation:portrait) {
  .scene-caption { bottom:calc((100cqh - 56.25cqw) / 2 + 4.5cqw); font-size:max(14px,2.8cqw); }
 }
-/* 미리보기의 대사 구간 문구 — 막을 깔지 않고 영상 위에 글자만 얹는다(11/7 Bumm님). 자막과 같은 자리이고 시간이 겹치지 않는다. */
-.scene-turn-cue { position:absolute; z-index:2; left:50%; bottom:8cqh; transform:translateX(-50%); display:flex; align-items:center; gap:.45em; width:max-content; max-width:90cqw; padding:.45em .95em; border-radius:999px; background:#df291f; color:#fff; font-size:max(15px,3.2cqh); font-weight:700; line-height:1.3; word-break:keep-all; pointer-events:none; }
-.scene-turn-cue .action-icon { width:1.15em; height:1.15em; }
-@media (orientation:portrait) {
- .scene-turn-cue { bottom:calc((100cqh - 56.25cqw) / 2 + 4.5cqw); font-size:max(15px,2.6cqw); }
-}
+/* 미리보기의 대사 구간 문구 — 영상은 흐르는 채로 화면을 살짝 어둡게 하고 큰 흰 글씨를 가운데 띄운다.
+   녹음 때의 «이제 당신의 차례입니다 !» · 3·2·1 화면과 같은 글씨 · 같은 나타남이다(11/8 Bumm님 — 빨간 둥근 막대를 없앰). 자막과 시간이 겹치지 않는다. */
+.scene-turn-cue { position:absolute; inset:0; z-index:2; display:grid; place-items:center; padding:24px; background:#0006; pointer-events:none; animation:cueShade .25s ease-out; }
 /* 브라우저가 소리 재생을 막았을 때만 나온다 — 누르면 소리가 난다 */
 .studio-sound-on { position:absolute; z-index:4; top:16px; right:16px; display:inline-flex; align-items:center; gap:8px; min-height:var(--touch-min); padding:8px 16px; border:1px solid #ffffff80; border-radius:999px; background:#171717cc; color:#fff; font:inherit; font-size:.9375rem; font-weight:600; cursor:pointer; }
 .studio-sound-on:focus-visible { outline:3px solid #df291f; outline-offset:2px; }
 /* 5.0초에서 멈춘 직후 «이제 당신의 차례입니다 !» — 앱 글씨라 영상·완성본에 굽지 않는다. */
-.studio-cue { position:absolute; inset:0; z-index:3; display:grid; place-items:center; padding:24px; background:#0007; pointer-events:none; animation:countIn .25s ease-out; }
-.studio-cue strong { color:#fff; font-size:clamp(1.75rem,calc(4.2 * var(--vw)),3.5rem); font-weight:700; letter-spacing:-.02em; line-height:1.3; text-align:center; word-break:keep-all; text-shadow:0 4px 24px #0009; }
+.studio-cue { position:absolute; inset:0; z-index:3; display:grid; place-items:center; padding:24px; background:#0007; pointer-events:none; animation:cueShade .25s ease-out; }
+/* 어두운 막은 흐려졌다 나타나기만 하고(처음부터 영상 전체를 덮는다) 글자만 살짝 커지며 나타난다 — 막까지 0.9배에서 키우면 어두운 네모가 화면 안에서 자라 보였다(11/8) */
+:is(.studio-cue,.scene-turn-cue) strong { animation:countIn .25s ease-out; color:#fff; font-size:clamp(1.75rem,calc(4.2 * var(--vw)),3.5rem); font-weight:700; letter-spacing:-.02em; line-height:1.3; text-align:center; word-break:keep-all; text-shadow:0 4px 24px #0009; }
 /* 녹음 3.5초 중 남은 시간 */
 .record-left { position:absolute; z-index:2; left:0; right:0; bottom:0; height:8px; background:#ffffff40; }
 .record-left > i { display:block; height:100%; background:#df291f; transform-origin:left center; }
 .overlay { position:absolute; inset:0; z-index:3; display:grid; place-items:center; background:#0008; }
 .count { color:#fff; font-size:clamp(6rem,calc(14 * var(--vw)),12rem); font-weight:600; line-height:1; text-align:center; font-variant-numeric:tabular-nums; text-shadow:0 4px 32px #0008; animation:countIn .25s ease-out; }
 .count span { display:block; margin-top:24px; padding-inline:24px; font-size:clamp(1.125rem,calc(2.4 * var(--vw)),2rem); font-weight:700; line-height:1.4; letter-spacing:-.02em; word-break:keep-all; }
+@keyframes cueShade { from { opacity:0; } }
 @keyframes countIn { from { opacity:.3; transform:scale(.9); } to { opacity:1; transform:none; } }
 .recpill { display:flex; align-items:center; gap:8px; position:absolute; z-index:2; top:20px; left:28px; color:#fff; background:#d52620; border:1px solid #ee655e; border-radius:999px; padding:8px 14px; font-size:.875rem; font-weight:600; }
 .recpill .d { width:8px; height:8px; border-radius:50%; background:white; }
 .studio-player-dock { padding:18px 28px max(24px,env(safe-area-inset-bottom)); background:#fff; border-top:1px solid #e8e8e8; }
 .studio-timeline { display:flex; align-items:center; gap:16px; margin-bottom:20px; }
 .timeline-state,.clip-time { flex-shrink:0; color:#626262; font-size:.8125rem; line-height:1.5; font-variant-numeric:tabular-nums; }
+/* 단계 이름은 한 칸에 겹쳐 두고 지금 것만 보인다 — 칸 폭이 가장 긴 이름으로 고정돼 진행 막대가 단계마다 좌우로 튀지 않는다 */
+.timeline-state { display:grid; white-space:nowrap; }
+.timeline-state > span { grid-area:1 / 1; visibility:hidden; }
+.timeline-state > .on { visibility:visible; }
 /* 시간 글자 폭을 미리 잡아 두지 않는다 — 대기 중 «10:00»만 있을 때도 막대가 시간 글자 바로 앞까지 온다(10/20 대표님) */
 .clip-time { text-align:right; }
 .progress { flex:1; position:relative; height:24px; margin-block:-10.5px; }
@@ -78,9 +81,9 @@ body:has(#studio.active) { background:#fff; }
 #studio .btn-ghost { color:#272727; background:#fff; border:1px solid #d7d7d7; }
 #studio .btn-rec,#studio .btn-save { background:#df291f; color:#fff; border:1px solid #df291f; }
 #studio .btn-rec { min-width:160px; }
-/* «미리보기»는 다시 보고 싶을 때 쓰는 작은 보조 단추다 — 주 단추는 «장면 시작» 하나(11/7 Bumm님) */
-#studio #previewBtn { flex:none; min-width:9.3em; min-height:var(--touch-min); padding:8px 12px; font-size:.875rem; font-weight:500; white-space:nowrap; }
-#previewBtn .action-icon { width:16px; height:16px; }
+/* «미리보기»는 흰 보조 단추이고 크기는 «장면 시작»과 같다(11/8 Bumm님). 두 단추 다 «미리보기 멈춤»이 드는 폭을 잡아 두어
+   글자가 바뀌어도 옆 단추가 움직이지 않는다. */
+#studio .record-actions .btn { min-width:11.5em; }
 .record-dot { width:12px; height:12px; border-radius:50%; background:currentColor; }
 #studio .btn-rec:disabled { cursor:default; background:#fff1f0; border-color:#f2c9c5; color:#b72119; }
 .workflow-footer { margin:auto 0 0; padding:16px 0; color:#bfc2b9; text-align:center; font-size:.875rem; line-height:1.6; }
@@ -111,8 +114,8 @@ body:has(#studio.active) { background:#fff; }
  /* 버튼은 가로를 꽉 채운다 — «미리보기 | 장면 시작», 녹음 뒤에는 «다시 녹음 | 저장하기»(10/20 «다시 듣기» 없앰). 혼자 남으면 한 줄을 다 쓴다. */
  .record-actions,#afterRow { display:flex; flex-wrap:nowrap; gap:10px; width:100%; }
  .record-actions .btn,#afterRow .btn { flex:1 1 0; }
- #studio .btn { padding:12px 10px; min-width:0; font-size:.9375rem; }
- #studio .btn-rec,#saveBtn { flex-grow:1.6; }
+ #studio .btn,#studio .record-actions .btn { padding:12px 10px; min-width:0; font-size:.9375rem; }
+ #saveBtn { flex-grow:1.6; }
  .recpill { top:16px; left:16px; }
  .workflow-footer { padding:24px 4px; font-size:.8125rem; }
 }
@@ -156,7 +159,7 @@ body:has(#studio.active) { background:#fff; }
  .controls-copy { flex-basis:220px; }
  .controls h2 { font-size:1.125rem; }
 }
-@media (prefers-reduced-motion:reduce) { .count,.studio-cue { animation:none; } :is(.btn,.back) { transition:none; } }
+@media (prefers-reduced-motion:reduce) { .count,:is(.studio-cue,.scene-turn-cue) strong { animation:none; } :is(.btn,.back) { transition:none; } }
 
 /* 짧은 로딩에는 번쩍이지 않고, 실제 대기만 알린다. */
 .studio-buffering { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); padding:12px 18px; border-radius:999px; background:#171717cc; color:#fff; font-size:.875rem; pointer-events:none; animation:bufferNotice .2s .3s both; }
