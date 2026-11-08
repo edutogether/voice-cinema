@@ -97,7 +97,7 @@ async function queue(page, name, email) {
   await page.locator('#mailSendBtn').click();
   await expect(page.getByRole('heading', { name: '네트워크가 복구되면 보내 드릴게요' })).toBeVisible();
 }
-/** 대기 화면에서 «다른 더빙 하기»로 첫 화면에 — 메일 대기 단추는 첫 화면에만 있다 */
+/** 대기 화면에서 «다른 더빙하기»로 첫 화면에 — 메일 대기 단추는 첫 화면에만 있다 */
 async function home(page) {
   await page.locator('#doneHomeBtn').click();
   await expect(page.locator('#home')).toHaveClass(/active/);
@@ -317,7 +317,7 @@ test('끊김 → 입력 → 확인 → 대기 → 복구 → 올리기 → 메�
 
   // 대기: 기기에 암호화해 두고, 끊겨 있으면 올리지 않는다. 목록에는 주소를 가려서 보이고 이름은 보이지 않는다
   await expect(page.getByRole('heading', { name: '네트워크가 복구되면 보내 드릴게요' })).toBeVisible();
-  // 맡긴 뒤 화면의 단추는 «다른 더빙 하기» 하나이고 빨간 주 단추다(11/9 Bumm님) — 마우스가 방금 누른 자리에 있으면 올라간 색이 되므로 비켜 두고 잰다
+  // 맡긴 뒤 화면의 단추는 «다른 더빙하기» 하나이고 빨간 주 단추다(11/9 Bumm님) — 마우스가 방금 누른 자리에 있으면 올라간 색이 되므로 비켜 두고 잰다
   await expect(page.locator('#mailHandoff button')).toHaveCount(1);
   await page.mouse.move(1, 1);
   await expect.poll(() => page.locator('#doneHomeBtn').evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(229, 35, 32)');

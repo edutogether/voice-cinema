@@ -58,8 +58,8 @@ const uploads = (app) => app.evaluate(() => globalThis.__uploads.map((text) => J
 const engineLoaded = (page) => page.evaluate(() => window.performance.getEntriesByType('resource').some((e) => e.name.endsWith('/vendor/ffmpeg-core/ffmpeg-core.wasm') && e.responseEnd > 0));
 
 /** 시험용 마이크(제품 코드에는 아무것도 넣지 않는다)를 깔고 다시 연 뒤 장면 녹음실로 */
-async function openStudio(page, name) {
-  await installSyntheticMic(page, [{ delay: 0.3, dur: 1.5 }]);
+async function openStudio(page, name, takes = [{ delay: 0.3, dur: 1.5 }]) {
+  await installSyntheticMic(page, takes);
   await page.reload();
   await page.locator('#splash').waitFor({ state: 'detached', timeout: 60000 });
   // 자동 넘김을 멈추고(손가락 한 번 누르기 — e2e/pause-scenes.js) 아래 그림 띠에서 그 장면을 누르면 녹음실로 들어간다
@@ -124,6 +124,23 @@ test('녹음 → 합성 → 업로드가 되면 QR이 뜨고, 올린 것은 10�
   await expect(page.locator('#qrImg')).toBeVisible({ timeout: 90000 });
   const [uploaded] = await uploads(app);
   expect(uploaded.filename).toMatch(/^dub_fantasy_\d+_[0-9a-f]+\.mp4$/);
+  expect(Math.abs(mp4Duration(Buffer.from(uploaded.dataBase64, 'base64')) - 10)).toBeLessThanOrEqual(0.05);
+  await app.close();
+});
+
+// 3·2·1 뒤에 아이가 아무 말도 안 해도 장면은 끝까지 흐르고 영화가 만들어진다(11/9 Bumm님 «321 한담에 말 안하니 … 중간에 끊어져버림 이럼 안돼» —
+// 웹 e2e/recording-voice.spec.js와 같은 화면 · 같은 판정)
+test('3·2·1 뒤에 아무 말도 안 해도(무음) 장면이 끝까지 이어지고, 저장하면 10초 영화가 올라간다', async () => {
+  const { app, page } = await launch();
+  await routeUpload(app, { status: 200, body: { ok: true, url: 'https://storage.googleapis.com/test/dub.mp4' } });
+  await openStudio(page, '판타지', [{ silent: true }]);
+  const r = await recordOnce(page);
+  expect(r).toMatchObject({ phase: 'recorded', check: 'silent' });
+  expect(r.hint).toContain('목소리가 들리지 않았어요');
+  expect(await page.locator('#clip').evaluate((v) => v.ended || v.currentTime > 9.5)).toBe(true);
+  await page.locator('button', { hasText: '저장하기' }).click();
+  await expect(page.locator('#qrImg')).toBeVisible({ timeout: 90000 });
+  const [uploaded] = await uploads(app);
   expect(Math.abs(mp4Duration(Buffer.from(uploaded.dataBase64, 'base64')) - 10)).toBeLessThanOrEqual(0.05);
   await app.close();
 });
