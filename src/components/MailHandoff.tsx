@@ -157,7 +157,7 @@ export function MailHandoff({ genre, blob, retrying, onRetry, onHome }: Props) {
       {step === 'queued' && (
         <>
           <span className="result-symbol"><ActionIcon name="check" /></span>
-          <h2 tabIndex={-1}>인터넷이 돌아오면 보내 드릴게요</h2>
+          <h2 tabIndex={-1}>네트워크가 복구되면 보내 드릴게요</h2>
           {mailInBrowser ? (
             <>
               <p id="doneMsg">이 브라우저에 잠시 보관했다가 인터넷이 돌아오면 보내고 바로 지워요.</p>

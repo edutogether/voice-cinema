@@ -122,7 +122,7 @@ test('끊긴 채 더빙을 마치면 메일 칸이 뜨고, 인터넷이 돌아�
   expect(seen.uploads).toHaveLength(0); // 끊겨 있으면 올리지 않는다
 
   await enterMail(page);
-  await expect(page.locator('#mailHandoff h2')).toHaveText('인터넷이 돌아오면 보내 드릴게요');
+  await expect(page.locator('#mailHandoff h2')).toHaveText('네트워크가 복구되면 보내 드릴게요');
   await expect(page.locator('#doneMsg')).toHaveText('이 브라우저에 잠시 보관했다가 인터넷이 돌아오면 보내고 바로 지워요.');
   await expect(page.locator('#mailConditions li')).toHaveText(CONDITIONS);
   expect(await stored(page)).toEqual({ items: 1, videos: 1 });

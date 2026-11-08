@@ -18,6 +18,7 @@ import {
   FEEDBACK_REPLY_BUDGET_MS,
 } from './feedback.js';
 import { createKakao } from './kakao.js';
+import { keepWarmPing, KEEP_WARM_SCHEDULE } from './keepWarm.js';
 
 initializeApp();
 
@@ -338,4 +339,10 @@ export const cleanupAfterCutoff = onSchedule(
 export const feedbackMaintenance = onSchedule(
   { schedule: '0 4 * * *', timeZone: 'Asia/Seoul', region: 'asia-northeast3', timeoutSeconds: 120, secrets: ['KAKAO_REST_API_KEY', 'KAKAO_CLIENT_SECRET'] },
   () => dailyMaintenance({ feedback: () => cleanupOldFeedback(db()), kakao: () => kakao.refreshToken() })
+);
+
+// 행사 주간 서버 예열 — 11/9~11/14 9~18시(KST) 5분마다 GET /, 11/15 00:00부터는 깨어나도 부르지 않는다(keepWarm.js, 2026-11-09)
+export const keepWarm = onSchedule(
+  { schedule: KEEP_WARM_SCHEDULE, timeZone: 'Asia/Seoul', region: 'asia-northeast3', timeoutSeconds: 30 },
+  () => keepWarmPing()
 );
