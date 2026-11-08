@@ -32,6 +32,8 @@ async function shoot({ w, h, scale }) {
       if (!kind) return original(request, options);
       if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: { ...cors, 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': request.headers.get('access-control-request-headers') ?? '*' } });
       await request.text();
+      // 12번 단계는 서버가 메일을 거절한 모양(400)을 만든다 — 4xx 거절만 여덟 번에서 멈추고 «보내지 못함»에 남는다(src/lib/mailQueue.ts)
+      if (kind === 'mail' && globalThis.__mailReject) return new Response(JSON.stringify({ ok: false }), { status: 400, headers: { ...cors, 'Content-Type': 'application/json' } });
       return new Response(JSON.stringify(kind === 'upload' ? { ok: true, url } : { ok: true }), { status: 200, headers: { ...cors, 'Content-Type': 'application/json' } });
     };
   }, MOVIE_URL);
@@ -104,7 +106,13 @@ async function shoot({ w, h, scale }) {
   await page.locator('#mailQueue').getByRole('button', { name: '닫기' }).click();
   await offline(false);
   await page.locator('#mailQueueChip').waitFor({ state: 'detached', timeout: 90000 });
-  await shot('10-보낸-뒤-메인-대기-없음');
+  // 인터넷이 돌아오면 남은 메일을 보내는 창이 첫 화면 위에 뜨고, 다 보내면 «N건 모두 보냈어요»로 바뀐다(src/components/MailStatus.tsx)
+  const sentDialog = page.locator('#mailStartup[open][data-phase="done"]');
+  await sentDialog.waitFor({ timeout: 90000 });
+  await shot('10-보낸-뒤-모두-보냄-창');
+  await sentDialog.locator('#mailStartupDone').click();
+  await sentDialog.waitFor({ state: 'detached' });
+  await shot('10b-보낸-뒤-메인-대기-없음');
   await offline(true);
   await recordToEntry();
   await shot('11-다음-사람-빈칸');
@@ -113,10 +121,19 @@ async function shoot({ w, h, scale }) {
   await page.locator('#mailNextBtn').click();
   await page.locator('#mailSendBtn').click();
   await page.getByRole('heading', { name: '네트워크가 복구되면 보내 드릴게요' }).waitFor();
-  // «보내지 못함» 목록은 여덟 번 실패해야 생긴다 — 그 상태를 직접 만들어 보이는 모양만 찍는다
-  await page.evaluate(async () => { const [item] = await window.vcDesktop.mail.list(); await window.vcDesktop.mail.update(item.id, { attempts: 8, failed: true }); });
+  // 서버가 메일을 거절하는 모양(400)을 만들고 다시 연다. 다시 열면 끊김 흉내(setOffline)가 풀리고, 설치판은 켤 때 남은 건을 처음부터 보낸다
+  // (src/lib/mailDelivery.ts의 retryAll) — 시작 창이 «1건을 못 보냈어요»로 끝난다
+  await app.evaluate(() => { globalThis.__mailReject = true; });
   await page.reload();
   await page.locator('#splash').waitFor({ state: 'detached', timeout: 90000 });
+  const startup = page.locator('#mailStartup[open][data-phase="partial"]');
+  await startup.waitFor({ timeout: 90000 });
+  await shot('12a-켤-때-못-보냄-창');
+  await startup.locator('#mailStartupLater').click();
+  await startup.waitFor({ state: 'detached' });
+  // «보내지 못함»은 서버가 여덟 번 거절해야 된다(30초 · 1분 … 간격) — 일곱 번 거절한 상태로 두고 다음 차례(15초 안)의 여덟 번째 거절을 기다린다
+  await page.evaluate(async () => { const [item] = await window.vcDesktop.mail.list(); await window.vcDesktop.mail.update(item.id, { attempts: 7, rejections: 7, nextAt: 0 }); });
+  await page.locator('#mailQueueChip', { hasText: '보내지 못함' }).waitFor({ timeout: 60000 });
   await page.locator('#mailQueueChip').click();
   await shot('12-보내지-못함-목록');
   await page.locator('#mailQueue').getByRole('button', { name: '지우기' }).click();
