@@ -40,7 +40,7 @@ export default [
       sourceType: 'module',
       globals: {
         process: 'readonly', console: 'readonly', Buffer: 'readonly',
-        setTimeout: 'readonly', clearTimeout: 'readonly', fetch: 'readonly', AbortController: 'readonly',
+        setTimeout: 'readonly', clearTimeout: 'readonly', fetch: 'readonly', AbortController: 'readonly', AbortSignal: 'readonly',
       },
     },
   },
@@ -51,7 +51,7 @@ export default [
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',
-      globals: { console: 'readonly', Buffer: 'readonly', process: 'readonly', fetch: 'readonly' },
+      globals: { console: 'readonly', Buffer: 'readonly', process: 'readonly', fetch: 'readonly', Response: 'readonly', AbortSignal: 'readonly' },
     },
   },
   {

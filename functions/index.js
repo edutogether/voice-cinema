@@ -6,6 +6,7 @@ import { getStorage } from 'firebase-admin/storage';
 import { getAppCheck } from 'firebase-admin/app-check';
 import express from 'express';
 import { validateUploadRequest, createRateLimiter, deleteInBatches, buildServerFilename, isAfterCutoff } from './validate.js';
+import { validateMailRequest, buildMailMessage, sendViaResend } from './mail.js';
 
 initializeApp();
 
@@ -47,6 +48,9 @@ const BOOTH_TOKEN = 'ac3231330f737aaf7f90c825f7ddacc9e287b3ac87caf99d';
 // 쓰므로, 인증 전 요청이 학생 업로드 몫을 쓰지 않게 하는 것이 목적이다.
 const isOverRequestCap = createRateLimiter({ max: 600 });
 const isRateLimited = createRateLimiter({ max: 60 });
+// 메일은 선생님마다 한 통이고 설치판은 15초마다 한 번 대기열을 본다 — 부스 두 곳이 한 IP를 같이 써도 분당 20이면 넉넉하다(2026-11-08).
+// 이 한도는 메일 주소를 아무 데나 넣어 보내는 남용을 묶는 용도다. 하루 상한은 Resend 무료 요금제(하루 100통)가 따로 건다.
+const isMailRateLimited = createRateLimiter({ max: 20 });
 
 const app = express();
 // Cloud Run(Functions v2)은 X-Forwarded-For로 실제 클라이언트 IP를 넘겨주는데,
@@ -65,47 +69,53 @@ app.set('trust proxy', 1);
 // 배포(로컬 배포 등)에서는 null이고, 대조는 그것을 "확인 안 됨 → 다시 배포"로 센다.
 app.get('/', (req, res) => res.json({ ok: true, service: 'inky-voice-cinema', commit: process.env.DEPLOY_COMMIT || null }));
 
+// 헤더만 보는 검사 — 인증 전 상한 → BOOTH_TOKEN → App Check → 경로별 한도 순서다. /upload와 /mail이 같이 쓴다(2026-11-08, 순서는 그대로).
+// 로그에는 요청 번호만 남긴다 — IP · 메일 주소 · 이름을 넣지 않는다.
+function boothGuard(tag, limiter, limitLog) {
+  return async (req, res, next) => {
+    const requestId = crypto.randomBytes(4).toString('hex');
+    req.requestId = requestId;
+    if (isOverRequestCap(req.ip)) {
+      console.warn(`[${tag}:${requestId}] 요청 제한 초과`);
+      return res.status(429).json({ ok: false, error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' });
+    }
+    if (req.get('x-booth-token') !== BOOTH_TOKEN) {
+      console.warn(`[${tag}:${requestId}] 토큰 불일치`);
+      return res.status(403).json({ ok: false, error: '접근 권한이 없습니다.' });
+    }
+    // 2026-09-02, 대표 승인(D2) — Firebase App Check(reCAPTCHA Enterprise)로 BOOTH_TOKEN에
+    // 이중 방어를 더한다. BOOTH_TOKEN은 공개값이라 아는 사람은 누구나 쓸 수 있었지만,
+    // App Check 토큰은 진짜 브라우저에서 reCAPTCHA를 통과해야만 발급된다.
+    const appCheckToken = req.get('x-firebase-appcheck');
+    if (!appCheckToken) {
+      console.warn(`[${tag}:${requestId}] App Check 토큰 없음`);
+      return res.status(401).json({ ok: false, error: '보안 검증에 실패했습니다.' });
+    }
+    try {
+      await getAppCheck().verifyToken(appCheckToken);
+    } catch (e) {
+      console.warn(`[${tag}:${requestId}] App Check 토큰 검증 실패: ${e?.message}`);
+      return res.status(401).json({ ok: false, error: '보안 검증에 실패했습니다.' });
+    }
+    if (limiter(req.ip)) {
+      // IP는 로그에 남기지 않는다 — 개인정보처리방침이 «서비스에서 별도로 저장하지 않습니다»라고 약속한다(11/2 종합감사). 요청 번호로 충분하다
+      console.warn(`[${tag}:${requestId}] ${limitLog}`);
+      return res.status(429).json({ ok: false, error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' });
+    }
+    next();
+  };
+}
+
 // 종합감사(2026-09-02) 발견 반영: 예전엔 express.json()이 라우트보다 먼저
 // 전역 등록돼 있어, 토큰/App Check/레이트리밋 검사보다 28MB 본문 파싱이
 // 먼저 실행됐다 — 인증 안 된 요청도 매번 파싱+base64 디코딩 비용(256MiB
 // 인스턴스)을 강제로 치르게 할 수 있었다(보안·비용 이중 문제). 헤더만
 // 보는 검사(레이트리밋/BOOTH_TOKEN/App Check)를 먼저 통과한 요청에만
 // body를 파싱하도록 순서를 바꿨다.
-app.post('/upload', async (req, res, next) => {
-  const requestId = crypto.randomBytes(4).toString('hex');
-  req.requestId = requestId;
-  if (isOverRequestCap(req.ip)) {
-    console.warn(`[upload:${requestId}] 요청 제한 초과`);
-    return res.status(429).json({ ok: false, error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' });
-  }
-  if (req.get('x-booth-token') !== BOOTH_TOKEN) {
-    console.warn(`[upload:${requestId}] 토큰 불일치`);
-    return res.status(403).json({ ok: false, error: '접근 권한이 없습니다.' });
-  }
-  // 2026-09-02, 대표 승인(D2) — Firebase App Check(reCAPTCHA Enterprise)로 BOOTH_TOKEN에
-  // 이중 방어를 더한다. BOOTH_TOKEN은 공개값이라 아는 사람은 누구나 쓸 수 있었지만,
-  // App Check 토큰은 진짜 브라우저에서 reCAPTCHA를 통과해야만 발급된다.
-  const appCheckToken = req.get('x-firebase-appcheck');
-  if (!appCheckToken) {
-    console.warn(`[upload:${requestId}] App Check 토큰 없음`);
-    return res.status(401).json({ ok: false, error: '보안 검증에 실패했습니다.' });
-  }
-  try {
-    await getAppCheck().verifyToken(appCheckToken);
-  } catch (e) {
-    console.warn(`[upload:${requestId}] App Check 토큰 검증 실패: ${e?.message}`);
-    return res.status(401).json({ ok: false, error: '보안 검증에 실패했습니다.' });
-  }
-  if (isRateLimited(req.ip)) {
-    // IP는 로그에 남기지 않는다 — 개인정보처리방침이 «서비스에서 별도로 저장하지 않습니다»라고 약속한다(11/2 종합감사). 요청 번호로 충분하다
-    console.warn(`[upload:${requestId}] 분당 업로드 한도 초과`);
-    return res.status(429).json({ ok: false, error: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.' });
-  }
-  next();
 // MAX_DECODED_BYTES(20MB)를 base64로 인코딩하면 약 4/3배(~27MB)가 되므로,
 // body 파서 한도는 그보다 넉넉히 잡아야 한다(2026-09-01, 12MB/15mb였을 때
 // 실제 클립 교체 후 전 장르 업로드가 이 한도에서 막히는 것을 실측으로 발견).
-}, express.json({ limit: '28mb' }), async (req, res) => {
+app.post('/upload', boothGuard('upload', isRateLimited, '분당 업로드 한도 초과'), express.json({ limit: '28mb' }), async (req, res) => {
   const requestId = req.requestId;
   try {
     const check = validateUploadRequest(req.body);
@@ -128,6 +138,48 @@ app.post('/upload', async (req, res, next) => {
   } catch (err) {
     console.error(`[upload:${requestId}] 오류`, err?.message || err);
     res.status(500).json({ ok: false, error: '저장 중 오류가 발생했습니다.', requestId });
+  }
+});
+
+// 설치판 메일 전달(2026-11-08 Bumm님) — 인터넷이 끊겨 QR을 만들지 못한 영화를, 인터넷이 돌아온 뒤 설치판이 올리고 여기로 보낸다.
+// 메일 내용은 서버가 정한 틀로만 만들고, 링크는 이 버킷 dubs/에 실제로 있는 업로드만 받는다(functions/mail.js).
+// 키는 Secret Manager의 RESEND_API_KEY로만 읽는다(onRequest의 secrets). 🔴 로그에 메일 주소 · 이름 · 키를 넣지 않는다.
+// 실패하면 설치판이 대기열에 두고 30초부터 두 배씩 5분까지 다시 보낸다 — 응답 상태로 다시 보낼지 가르지 않는다.
+app.post('/mail', boothGuard('mail', isMailRateLimited, '분당 메일 한도 초과'), express.json({ limit: '16kb' }), async (req, res) => {
+  const requestId = req.requestId;
+  try {
+    if (isAfterCutoff(new Date(), CUTOFF_DATE)) {
+      console.warn(`[mail:${requestId}] 보관 기한이 지남`);
+      return res.status(410).json({ ok: false, error: '보관 기한이 지났습니다.' });
+    }
+    const bucket = getStorage().bucket();
+    const check = validateMailRequest(req.body, bucket.name);
+    if (!check.ok) {
+      console.warn(`[mail:${requestId}] 검증 실패: ${check.error}`);
+      return res.status(400).json({ ok: false, error: check.error });
+    }
+    for (const item of check.items) {
+      const [exists] = await bucket.file(UPLOAD_PREFIX + item.object).exists();
+      if (!exists) {
+        console.warn(`[mail:${requestId}] 없는 영화 링크`);
+        return res.status(400).json({ ok: false, error: '영화 링크가 올바르지 않습니다.' });
+      }
+    }
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.error(`[mail:${requestId}] 발송 키 없음`);
+      return res.status(503).json({ ok: false, error: '지금은 메일을 보낼 수 없습니다.' });
+    }
+    const sent = await sendViaResend({ apiKey, message: buildMailMessage(check.to, check.items) });
+    if (!sent.ok) {
+      console.error(`[mail:${requestId}] 발송 실패: ${sent.status} ${sent.name}`);
+      return res.status(sent.retry ? 503 : 502).json({ ok: false, error: '메일을 보내지 못했습니다.', requestId });
+    }
+    console.log(`[mail:${requestId}] 보냄: 영화 ${check.items.length}편 (${sent.id})`);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(`[mail:${requestId}] 오류`, err?.message || err);
+    res.status(500).json({ ok: false, error: '메일을 보내지 못했습니다.', requestId });
   }
 });
 
@@ -186,6 +238,8 @@ export const voiceCinema = onRequest(
     maxInstances: 10,
     concurrency: 1,
     cors: ALLOWED_ORIGINS,
+    // 메일 발송 키(2026-11-08) — Secret Manager에만 있고 이 함수가 돌 때 환경 변수로 들어온다. 코드 · 문서 · 로그에 값을 두지 않는다
+    secrets: ['RESEND_API_KEY'],
   },
   app
 );
