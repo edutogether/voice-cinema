@@ -162,9 +162,15 @@ test('맡긴 뒤 창을 새로고침해도 남아 있고, 다시 연 창이 인�
   expect(seen.mails).toEqual([{ to: TEACHER, items: [{ name: '지우', url: MOVIE_URL }] }]);
 });
 
-test('창이 둘 열려 있어도 영화는 한 번만 올리고 메일은 한 통만 보낸다', async ({ context }) => {
+test('창이 둘 열려 있어도 영화는 한 번만 올리고 메일은 한 통만 보내며, 보내지 않은 창의 «메일 대기»도 사라진다', async ({ context }) => {
   await startOffline(context);
   const seen = await catchServer(context);
+  // 올리기를 붙잡아 한 창이 보내는 동안 다른 창에도 인터넷이 돌아오게 한다(어느 창이 먼저 잠금을 잡는지를 시험이 정한다).
+  // 11/9 CI에서 «같은 때 돌아옴»으로 두면 둘째 창이 보낼 때만 첫째 창의 «메일 대기 1건»이 끝까지 남는 것이 드러났다 — 잠금을 늦게 잡은 창이 빈 목록을 화면에 알리지 않았다
+  const held = [];
+  let release;
+  const gate = new Promise((resolve) => { release = resolve; });
+  await context.route(UPLOAD_PATTERN, async (route) => { held.push(route); await gate; await route.fallback(); });
   const first = await context.newPage();
   await dubAndSave(first, '히어로');
   await enterMail(first);
@@ -173,12 +179,17 @@ test('창이 둘 열려 있어도 영화는 한 번만 올리고 메일은 한 �
   await second.goto('/');
   await expect(second.locator('#mailQueueChip')).toHaveText('메일 대기 1건');
 
-  // 두 창에 같은 때 인터넷이 돌아온다
-  await Promise.all([first, second].map((page) => page.evaluate(() => window.__setOnline(true))));
-  await expect(first.locator('#mailQueueChip')).toBeHidden({ timeout: 90000 });
+  // 둘째 창이 먼저 잠금을 잡고 올리는 중일 때 첫째 창에도 인터넷이 돌아온다 — 잠금이 없으면 첫째 창도 같은 영화를 올린다
+  await second.evaluate(() => window.__setOnline(true));
+  await expect.poll(() => held.length, { timeout: 60000 }).toBe(1);
+  await first.evaluate(() => window.__setOnline(true));
+  await first.waitForTimeout(1500);
+  release();
+  await expect(second.locator('#mailQueueChip')).toBeHidden({ timeout: 60000 });
   expect(await stored(first)).toEqual({ items: 0, videos: 0 });
-  // 다른 창이 같은 때 시작했다면 그 요청도 이미 나갔을 시간 — 잠금이 없으면 여기서 두 번이 된다
-  await first.waitForTimeout(3000);
+  // 첫째 창은 다음 차례(15초마다)에 잠금을 잡고 빈 목록을 읽는다 — 그때 «메일 대기»가 사라져야 한다
+  await expect(first.locator('#mailQueueChip')).toBeHidden({ timeout: 40000 });
+  expect(held).toHaveLength(1);
   expect(seen.uploads).toHaveLength(1);
   expect(seen.mails).toHaveLength(1);
 });

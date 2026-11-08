@@ -111,7 +111,11 @@ async function run(): Promise<void> {
 
 async function deliver(store: MailStore): Promise<void> {
   try {
-    for (const group of dueGroups(await store.list(), Date.now())) {
+    // 읽은 목록을 화면에도 알린다 — 다른 창이 이미 보내고 지웠으면 여기서 빈 목록을 읽고, 이 창의 «메일 대기»도 그때 사라진다
+    // (11/9 CI: 늦게 잠금을 잡은 창이 빈 목록을 알리지 않아 «메일 대기 1건»이 끝까지 남았다)
+    const items = await store.list();
+    setState({ items });
+    for (const group of dueGroups(items, Date.now())) {
       if (!isOnline()) break;
       try {
         setState({ activity: 'upload' });
