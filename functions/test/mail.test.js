@@ -66,6 +66,10 @@ test.each([
   ['dubs 밖', { items: [{ name: '민준', url: `https://storage.googleapis.com/${BUCKET}/other/dub_fantasy_1762560000000_abcdefabcdefabcdef.mp4` }] }, '영화 링크가 올바르지 않습니다.'],
   ['경로 넘기', { items: [{ name: '민준', url: `https://storage.googleapis.com/${BUCKET}/dubs/../x/dub_fantasy_1762560000000_abcdefabcdefabcdef.mp4` }] }, '영화 링크가 올바르지 않습니다.'],
   ['%2F로 경로 넘기', { items: [{ name: '민준', url: `https://storage.googleapis.com/${BUCKET}/dubs%2F..%2Fx%2F${OBJECT}` }] }, '영화 링크가 올바르지 않습니다.'],
+  // 풀고 나면 dubs/ 로 시작하므로 앞 검사는 지나간다 — 남은 이름의 «..» · «/»는 저장 이름 모양(OBJECT_NAME)만이 막는다
+  ['%2E%2E로 감싼 경로 넘기(..만)', { items: [{ name: '민준', url: `https://storage.googleapis.com/${BUCKET}/dubs%2F%2E%2E%2F${OBJECT}` }] }, '영화 링크가 올바르지 않습니다.'],
+  ['dubs 안 하위 폴더(/만)', { items: [{ name: '민준', url: `https://storage.googleapis.com/${BUCKET}/dubs%2Fx%2F${OBJECT}` }] }, '영화 링크가 올바르지 않습니다.'],
+  ['이름 뒤 경로 넘기', { items: [{ name: '민준', url: `https://storage.googleapis.com/${BUCKET}/dubs%2F${OBJECT}%2F..%2F${OBJECT}` }] }, '영화 링크가 올바르지 않습니다.'],
   ['두 번 감싼 링크', { items: [{ name: '민준', url: `https://storage.googleapis.com/${BUCKET}/dubs%252F${OBJECT}` }] }, '영화 링크가 올바르지 않습니다.'],
   ['풀 수 없는 링크', { items: [{ name: '민준', url: `https://storage.googleapis.com/${BUCKET}/dubs%2F${OBJECT}%E0%A4%A` }] }, '영화 링크가 올바르지 않습니다.'],
   ['같은 영화를 두 모양으로', { items: [{ name: '민준', url: link() }, { name: '서연', url: `https://storage.googleapis.com/${BUCKET}/dubs%2F${OBJECT}` }] }, '같은 영화가 두 번 들어 있습니다.'],

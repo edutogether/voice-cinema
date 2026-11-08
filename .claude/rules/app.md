@@ -1012,6 +1012,8 @@ Claude in Chrome은 여분의 브라우저가 아니라 **대표 본인의 크�
 - 🔴 **업로드가 돌려주는 주소는 `…/dubs%2Fdub_….mp4`다**(`file.publicUrl()`이 저장 이름을 `encodeURIComponent`로 감싼다) — 검사는 풀어서 `dubs/` 바로 아래인지 본다(`dubObject`).
   11/8 실제 발송에서 «/» 그대로인 주소만 받던 검사가 진짜 주소를 400으로 거절했다. 가짜 링크로만 시험해 몰랐다 — 🔴 **시험의 가짜 주소는 진짜 모양(`%2F`)으로 쓴다**.
   `mail.test.js`가 진짜 `publicUrl()`로 만든 주소를 받고, `%2F`로 경로 넘기 · 두 번 감싼 주소 · 풀 수 없는 주소 · 같은 영화 두 모양을 거절하는지 본다(옛 검사로 빨간불 확인)
+  - 🔴 **풀고 나면 `dubs/`로 시작하는 경로 넘기(`dubs%2F%2E%2E%2F…` · `dubs%2Fx%2F…` · 이름 뒤 `%2F..%2F…`)는 저장 이름 모양(`OBJECT_NAME`)의 `^` · `$`만이 막는다** — 둘 중 하나를 풀면
+    `mail.test.js`가 빨간불이다(11/8 팀장 확인 요청으로 `^`를 빼 5개 · `$`를 빼 2개 실패 확인). 이름 모양을 느슨하게 하지 말 것
 - 🔴 **메일 주소 · 이름 · 키를 로그에 남기지 말 것** — 로그는 «보냄: 영화 N편 (Resend 번호)»와 «발송 실패: 상태 오류 이름»뿐이다. Resend가 돌려준 오류 글도 읽지 않는다(받는 주소가 들어 있을 수 있다).
   검사 실패 글에도 입력값을 넣지 않는다. `mail-handler.test.js`가 로그 전체에서 주소 · 이름 · 키를 찾는다
 - 🔴 **키는 `secrets: ['RESEND_API_KEY']`로만 읽는다** — Secret Manager(`RESEND_API_KEY` 버전 1, 11/8 팀장)에 있다. `functions/.env`에 넣지 않고, 출력 · 커밋 어디에도 남기지 않는다.
@@ -1152,7 +1154,7 @@ Bumm님이 정할 것·직접 하실 것·세션이 할 것을 11/14 기준 순�
 ## 명령
 - 개발 서버: `npm run dev` (http://localhost:4321)
 - 빌드: `npm run build` (`tsc --noEmit` + `vite build` → `dist/`)
-- 테스트: `npm test` (vitest, 루트 126 + functions 110 = 236개, 2026-11-08 웹 메일 전달 기준). 개별 실행은 `cd functions && npm test`
+- 테스트: `npm test` (vitest, 루트 126 + functions 113 = 239개, 2026-11-08 웹 메일 전달 기준). 개별 실행은 `cd functions && npm test`
 - 린트: `npm run lint` (eslint). `src/`는 `tsc`가 담당하므로 eslint 대상에서 뺐다. 빈 `catch{}`는 이 코드베이스가
   의도적으로 쓰는 패턴이라 허용해뒀다 — 버그가 아니다
 - E2E: `npm run test:e2e` (272개 — 그중 6개는 조건부 건너뜀, 2026-11-08 기준) — 빌드 후 `dist/`를 서빙해 실제 산출물로 검증한다. 최초 1회

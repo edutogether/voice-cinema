@@ -103,7 +103,7 @@ git rev-list --count voice-cinema-freeze-20260910-audited-100..master
   재시도 판단)은 `src/logic.ts`. 이쪽 로직을 고칠 땐 여기부터 본다.
 - **계약 테스트** `test/contract.test.js` — 두 소스 파일을 직접 읽어 `BOOTH_TOKEN`, 업로드 타임아웃,
   자동삭제 시각과 고지문이 서로 맞는지 대조한다. **어긋나면 테스트를 고치지 말고 값을 맞춘다.**
-- 🟢 **유닛 236개**(루트 126 + `functions/` 110, vitest, 2026-11-08 웹 메일 전달 기준). `functions/`는 자체 `node_modules`를 가진
+- 🟢 **유닛 239개**(루트 126 + `functions/` 113, vitest, 2026-11-08 웹 메일 전달 기준). `functions/`는 자체 `node_modules`를 가진
   **독립 패키지**라 루트와 따로 설치·실행한다. 루트 `vitest.config.js`의 `include`가 `functions/`를
   아예 안 건드리게 좁혀둔 것은 그 안 서드파티 테스트가 딸려 들어오는 걸 막기 위한 것이니 넓히지 말 것.
 - 🟢 **E2E 272개**(`e2e/` 45개 파일, 6개는 조건부 건너뜀, Playwright, 2026-11-08 기준) — 진짜 Chromium을 가짜 마이크로 띄워 **녹음→ffmpeg.wasm 실제
