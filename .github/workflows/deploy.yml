@@ -176,11 +176,12 @@ jobs:
       - uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2
         with:
           credentials_json: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
-      # storage rules와 functions를 먼저 배포하고, hosting은 그 다음 단계로
+      # 규칙(Firestore · Storage)과 functions를 먼저 배포하고, hosting은 그 다음 단계로
       # 순서를 명시한다 — 코디세이 기준(규칙/functions 먼저, hosting 나중)과 동일.
+      # Firestore 규칙은 2026-11-08 의견 보내기와 함께 들어왔다(브라우저 접근 전부 막음 — firestore.rules).
       # 배포 도구는 auth 전에 받아 둔 같은 판을 npx로 다시 부른다(위 --version 단계). 하위 의존성은 잠금 파일로
       # 고정되지 않는다 — §3.7이 알고 고른 대가다.
-      - run: npx --yes firebase-tools@15.32.1 deploy --only storage,functions --project inky-voice-cinema --non-interactive
+      - run: npx --yes firebase-tools@15.32.1 deploy --only firestore:rules,storage,functions --project inky-voice-cinema --non-interactive
       - run: npx --yes firebase-tools@15.32.1 deploy --only hosting:voice-cinema --project inky-voice-cinema --non-interactive
       # 종합감사(2026-09-02) 발견 반영: 로컬 E2E는 통과했는데 배포된 사이트에서만
       # CSP가 인라인 onclick 핸들러를 막아 버튼 8개가 죽었던 회귀(CLAUDE.md 기록)를

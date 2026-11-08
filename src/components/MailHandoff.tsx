@@ -18,12 +18,13 @@ interface Props {
 }
 
 /**
- * 영상을 올리지 못했을 때(설치판 · 웹 모두, 11/8) 교사 · 운영자가 이름(또는 별명)과 인솔 교사 메일을 적는다.
+ * 영상을 올리지 못했을 때(설치판 · 웹 모두, 11/8) 교사 · 운영자가 학생 이름과 인솔 교사 메일을 적는다 — 둘 다 적어야 다음으로 간다
+ * (11/8 Bumm님 «이름 또는 별명이라고 하지 말고 이름이라고만 해, 이름 안 적으면 어찌 알아보냐»).
  * 🔴 적는 동안 값은 이 화면의 상태에만 있다 — 제출 양식(form) · 자동 완성을 쓰지 않아 다음 사람에게 이전 주소가 뜨지 않는다.
  * «맞아요, 보내 주세요»를 누른 뒤에만 보내기 대기열(설치판은 암호화 파일, 웹은 이 사이트의 IndexedDB)에 맡긴다.
  * 주소를 두 번 적게 하지 않고 다음 화면에서 다시 보여 고치게 한다(GOV.UK 메일 주소 패턴).
  * «메일 없이 이 기기에 저장»은 두지 않는다(11/8 Bumm님, 설치판과 같은 화면) — 대기열에 맡기지 못했을 때만 이 기기에 저장으로 간다.
- * 적는 칸과 확인은 옅은 판 하나에 모은다(11/8 Bumm님 «아래쪽이 너무 비어 보입니다 … 허술해 보이지 않게», src/styles/mail.css).
+ * 적는 칸 · 확인 · 단추는 같은 폭의 한 열에 세운다(11/8 Bumm님, src/styles/mail.css).
  */
 export function MailHandoff({ genre, blob, onSaveHere, onHome }: Props) {
   const [step, setStep] = useState<'entry' | 'confirm' | 'queued'>('entry');
@@ -87,19 +88,19 @@ export function MailHandoff({ genre, blob, onSaveHere, onHome }: Props) {
           <p id="doneMsg">인터넷이 돌아오면 인솔 선생님 메일로 영화 링크를 보내요.</p>
           <div className="mail-form">
             <div className="mail-field mail-field-name">
-              <label htmlFor="mailName">이름 또는 별명</label>
+              <label htmlFor="mailName">이름</label>
               <input
                 id="mailName" ref={nameRef} type="text" value={name} maxLength={NAME_MAX} autoComplete="off" spellCheck={false}
-                aria-invalid={nameError} aria-describedby={nameError ? 'mailNameError' : undefined}
+                aria-required="true" aria-invalid={nameError} aria-describedby={nameError ? 'mailNameError' : undefined}
                 onChange={(e) => { setName(e.target.value); setNameError(false); }} onKeyDown={onEnter}
               />
-              {nameError && <p className="mail-error" id="mailNameError">이름 또는 별명을 적어 주세요.</p>}
+              {nameError && <p className="mail-error" id="mailNameError">이름을 적어 주세요.</p>}
             </div>
             <div className="mail-field mail-field-address">
               <label htmlFor="mailAddress">인솔 선생님 메일 주소</label>
               <input
                 id="mailAddress" ref={emailRef} type="email" inputMode="email" value={email} maxLength={MAIL_MAX} autoComplete="off" autoCapitalize="off" spellCheck={false}
-                aria-invalid={mailProblem !== null} aria-describedby={mailProblem ? 'mailAddressError' : undefined}
+                aria-required="true" aria-invalid={mailProblem !== null} aria-describedby={mailProblem ? 'mailAddressError' : undefined}
                 onChange={(e) => { setEmail(e.target.value); setMailProblem(null); }} onKeyDown={onEnter}
               />
               {mailProblem && <p className="mail-error" id="mailAddressError">{MAIL_ERROR[mailProblem]}</p>}
@@ -117,7 +118,7 @@ export function MailHandoff({ genre, blob, onSaveHere, onHome }: Props) {
           <p id="doneMsg">이 주소로 영화 링크를 보내요. 주소가 틀리면 다른 사람에게 갈 수 있어요.</p>
           <div className="mail-form">
             <p className="mail-address" id="mailAddressShown">{email}</p>
-            <p className="mail-name-shown">이름 또는 별명: <b id="mailNameShown">{name}</b></p>
+            <p className="mail-name-shown">이름: <b id="mailNameShown">{name}</b></p>
             {betterDomain && (
               <p className="mail-typo" id="mailTypo">
                 혹시 {betterDomain} 주소인가요 ?

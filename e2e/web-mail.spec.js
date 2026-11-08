@@ -215,3 +215,36 @@ test('브라우저가 저장소를 막아 맡기지 못하면 이 기기에 저�
   const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#downloadBtn').click()]);
   expect(download.suggestedFilename()).toBe('Voice Cinema_스포츠.mp4');
 });
+
+// 미리보기 채널 주소(voice-cinema--<채널>.web.app)는 서버 허용 출처 밖이라 업로드도 메일도 받지 않는다 — 메일 칸에 맡겨 두면 영영 보내지지 않는다.
+// 그래서 그 주소에서는 메일 칸 대신 이 기기에 저장으로 간다(Result.tsx). 그 주소를 로컬 서버로 이어 흉내 내고(진짜 미리보기 채널에는 가지 않는다),
+// 업로드는 서버가 출처를 거절할 때처럼 끊는다. 서비스워커는 막는다 — 이어 준 주소의 요청을 페이지가 직접 받아야 한다.
+test.describe('미리보기 채널 주소', () => {
+  test.use({ serviceWorkers: 'block' });
+
+  test('QR을 만들지 못해도 메일 칸을 띄우지 않고 이 기기에 저장으로 간다', async ({ page, context }) => {
+    const preview = 'https://voice-cinema--e2e-preview.web.app';
+    await context.route((url) => url.origin === preview, async (route) => {
+      const { pathname, search } = new URL(route.request().url());
+      await route.fulfill({ response: await route.fetch({ url: `http://localhost:4321${pathname}${search}` }) });
+    });
+    const tried = { uploads: 0, mails: 0 };
+    await context.route(UPLOAD_PATTERN, (route) => { tried.uploads++; return route.abort(); });
+    await context.route(MAIL_PATTERN, (route) => { tried.mails++; return route.abort(); });
+    await context.route(/recaptcha|gstatic|firebaseappcheck/, (route) => route.abort());
+
+    await page.goto(`${preview}/`);
+    await page.locator('.tile', { hasText: 'SF' }).first().click();
+    await expect(page.locator('#chipName')).toHaveText('SF');
+    await page.locator('#recBtn').click();
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
+    await page.locator('button', { hasText: '저장하기' }).click();
+
+    await expect(page.locator('#downloadRow')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('#mailHandoff')).toHaveCount(0);
+    await expect(page.locator('#doneMsg')).toContainText('미리보기 주소에서는 QR을 만들 수 없어요');
+    expect(tried.uploads, '올리기는 해 본다').toBeGreaterThan(0);
+    expect(tried.mails).toBe(0);
+    expect(await stored(page)).toEqual({ items: 0, videos: 0 });
+  });
+});

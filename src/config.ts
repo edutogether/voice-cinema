@@ -57,3 +57,7 @@ export const MAX_UPLOAD_ATTEMPTS = 3;
 // 웹에서 보내지 못한 메일 대기분(src/lib/mailStoreWeb.ts)을 지우는 때 — 서버가 영상을 지우는 때(functions/index.js의 CUTOFF_DATE)와 같다.
 // 링크도 그때 사라져 보낼 까닭이 없고, 개인정보처리방침의 보관 기한과 같다(test/contract.test.js가 대조한다). 설치판은 desktop/main.js가 같은 값을 쓴다.
 export const MAIL_PURGE_AT = Date.parse('2026-12-01T00:00:00+09:00');
+
+// 첫 화면 «의견 보내기»가 사라지는 때(2026-11-08 Bumm님 «11/14 00:00에 저절로 빠지게») — 배포 없이 이 시각에 단추와 창이 내려간다.
+// 서버(functions/feedback.js의 같은 이름)도 이 시각부터 받지 않는다 — 기기 시계가 틀려도 받지 않게. test/contract.test.js가 두 값을 대조한다.
+export const FEEDBACK_CLOSE_AT = Date.parse('2026-11-14T00:00:00+09:00');

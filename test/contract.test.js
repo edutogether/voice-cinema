@@ -80,6 +80,54 @@ test('메일 대기분 삭제: src/config.ts의 MAIL_PURGE_AT과 functions/index
   expect(Number.isNaN(Date.parse(서버))).toBe(false);
 });
 
+test('의견 받기 닫힘: src/config.ts와 functions/feedback.js의 FEEDBACK_CLOSE_AT이 같고, 한국 시간 2026-11-14 00:00이다', () => {
+  const 서버 = extract(read('functions/feedback.js'), /export const FEEDBACK_CLOSE_AT = new Date\('([^']+)'\)/, '서버 FEEDBACK_CLOSE_AT');
+  const 화면 = extract(read('src/config.ts'), /export const FEEDBACK_CLOSE_AT = Date\.parse\('([^']+)'\)/, '화면 FEEDBACK_CLOSE_AT');
+  expect(Date.parse(화면)).toBe(Date.parse(서버));
+  expect(Date.parse(서버)).toBe(Date.UTC(2026, 10, 13, 15, 0, 0));
+});
+
+// 방침이 약속한 닫힘 시각 · 보관 기간이 서버 값과 같아야 한다 — 한쪽만 바꾸면 방침이 틀린 말이 된다
+test('의견 방침: 개인정보처리방침의 닫힘 시각과 보관 일수가 functions/feedback.js와 같다', () => {
+  const 서버 = read('functions/feedback.js');
+  const 닫힘 = new Date(Date.parse(extract(서버, /export const FEEDBACK_CLOSE_AT = new Date\('([^']+)'\)/, '서버 FEEDBACK_CLOSE_AT')) + 9 * 3600_000);
+  const 시각 = `${닫힘.getUTCFullYear()}년 ${닫힘.getUTCMonth() + 1}월 ${닫힘.getUTCDate()}일 ${String(닫힘.getUTCHours()).padStart(2, '0')}:${String(닫힘.getUTCMinutes()).padStart(2, '0')}`;
+  const [일, 시, 분, 초, 밀리] = extract(서버, /export const FEEDBACK_TTL_MS = ([\d\s*]+);/, '서버 FEEDBACK_TTL_MS').split('*').map(Number);
+  expect([시, 분, 초, 밀리]).toEqual([24, 60, 60, 1000]);
+  const 방침 = read('privacy.html');
+  expect(방침).toContain(`의견 보내기는 <strong>${시각}</strong>(한국 시간)에 닫힙니다`);
+  expect(방침).toContain(`받은 지 ${일}일이 지나면`);
+});
+
+test('의견 이름 · 글자 수 상한: 화면과 서버가 같다', () => {
+  const 서버 = read('functions/feedback.js');
+  const 화면 = read('src/lib/feedback.ts');
+  for (const 이름 of ['NAME_MAX', 'TEXT_MAX']) {
+    expect(extract(화면, new RegExp(`export const FEEDBACK_${이름} = (\\d+);`), `화면 FEEDBACK_${이름}`), 이름)
+      .toBe(extract(서버, new RegExp(`export const ${이름} = (\\d+);`), `서버 ${이름}`));
+  }
+});
+
+// 서버가 답하는 시간(저장 + 카카오)이 화면의 기다림보다 길면, 서버는 저장했는데 화면은 «보낼 수 없어요»가 되고
+// 다시 누르면 같은 의견이 두 번 저장 · 알림된다(Poster Studio 11/8 종합감사). 여유 5초는 App Check 확인 · 연결 시간 몫이다.
+test('의견 응답 시간: 서버의 답하는 시간 + 5초 ≤ 화면의 기다림', () => {
+  const 서버 = Number(extract(read('functions/feedback.js'), /export const FEEDBACK_REPLY_BUDGET_MS = (\d+);/, '서버 FEEDBACK_REPLY_BUDGET_MS'));
+  const 화면 = Number(extract(read('src/lib/feedback.ts'), /const TIMEOUT_MS = (\d+);/, '화면 TIMEOUT_MS'));
+  expect(서버).toBeGreaterThan(0);
+  expect(서버 + 5000).toBeLessThanOrEqual(화면);
+});
+
+// 2026-11-08: Firestore에는 이름 · 의견 글 · 카카오 토큰이 있다 — 브라우저에서는 아무것도 읽고 쓰지 못해야 하고, 그 규칙이 실제로 배포돼야 한다.
+// 규칙을 배포하지 않으면 콘솔의 기본 규칙(만들 때 고른 값)이 그대로 남는다.
+test('Firestore 규칙: 브라우저 접근을 전부 막고, 배포 잡이 규칙을 함께 올린다', () => {
+  expect(JSON.parse(read('firebase.json')).firestore).toEqual({ rules: 'firestore.rules' });
+  const 규칙 = read('firestore.rules').replace(/\/\/.*$/gm, '');
+  const 허용 = [...규칙.matchAll(/allow\s+([^;]+);/g)].map((m) => m[1].replace(/\s+/g, ' ').trim());
+  expect(허용).toEqual(['read, write: if false']);
+  expect(규칙).toMatch(/match \/\{document=\*\*\}/);
+  expect(read('.github/workflows/deploy.yml')).toMatch(/deploy --only firestore:rules,storage,functions /);
+});
+
 // 2026-10-05: 서버가 저장 이름을 정할 때 쓰는 장르 목록이 앱의 장르와 같아야 한다.
 // 어긋나도 업로드는 실패하지 않지만(이름이 dub으로 바뀔 뿐) 파일 이름에서 장르를 잃는다.
 test('장르 목록: functions/validate.js와 src/genres.ts가 같은 장르를 쓴다', () => {
@@ -118,7 +166,7 @@ test('배포 도구: firebase-tools는 잠금 파일 밖에서 정확한 같은 
   const 배포 = read('.github/workflows/deploy.yml');
   expect(배포).not.toMatch(/node_modules\/\.bin\/firebase/);
   const 부름 = [...배포.matchAll(/^\s+- run: (.*firebase-tools.*)$/gm)].map((m) => m[1]);
-  expect(부름.length, 'firebase-tools를 부르는 줄을 못 찾음').toBe(3); // auth 전 --version, storage,functions, hosting
+  expect(부름.length, 'firebase-tools를 부르는 줄을 못 찾음').toBe(3); // auth 전 --version, firestore:rules,storage,functions, hosting
   const 판 = new Set(부름.map((c) => c.match(/^npx --yes firebase-tools@(\S+) /)?.[1]));
   expect([...판], '세 줄 모두 `npx --yes firebase-tools@<판>`이고 판이 하나').toHaveLength(1);
   expect([...판][0], '범위·태그가 아닌 정확한 판').toMatch(/^\d+\.\d+\.\d+$/);

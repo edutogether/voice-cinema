@@ -39,6 +39,7 @@
 | 2026-11-07 | [pc-fit](2026-11-07-pc-fit/intent.md) | 2 | done | PC 웹 — 큰 창에서 통째로 커지는 것(키우지 않기) · 메인 영상 위아래 잘림(16:9 그대로) · 스플래시를 Poster Studio와 같게. responsive-fit의 PC 부분을 대신한다 |
 | 2026-11-07 | [res-all](2026-11-07-res-all/intent.md) | 2 | done | 모든 해상도 · 설치판 2차 — 2560 화면을 기준으로 휴대폰 · 패드 · PC · 설치판을 맞추고 전체 크기를 자동으로 잰다. 화면 문구 표, 합성 오류 원문 빼기, 엔진 캐시 분리를 함께 낸다 |
 | 2026-11-08 | [web-offline-mail](2026-11-08-web-offline-mail/intent.md) | 2 | done | 웹(크롬)에서도 끊기면 인솔 선생님 메일 칸 — 영상은 그 크롬의 IndexedDB에 맡기고 인터넷이 돌아오면 올리고 메일을 보낸 뒤 지운다(Bumm님 11/8 ⭐). 실제 발송에서 App Check 다시 받기 · `/mail` 주소 검사 결함을 찾아 고쳤다 |
+| 2026-11-08 | [field-feedback](2026-11-08-field-feedback/intent.md) | 2 | in-progress | 웹 첫 화면 «의견 보내기»를 Poster Studio와 똑같이 — 이름 · 의견 · 판 번호 · 화면 크기 · 기기 · 단계를 Firestore에 저장하고 Bumm님 카카오톡으로 알린다, 90일 자동 삭제 · 내보내기 도구, 2026-11-14 00:00(KST)에 배포 없이 빠진다 |
 
 ## 폴더 규칙
 

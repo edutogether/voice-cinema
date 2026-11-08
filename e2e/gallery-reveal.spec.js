@@ -74,6 +74,11 @@ test('PC: 화살표 키로 마지막 장면을 고른 뒤 녹음실에서 돌아
   await expect(page.getByRole('button', { name: 'CGV와 인천광역시교육청 — 처음부터 시작' })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: 'InKY Film Festival — 처음부터 시작' })).toBeFocused();
+  // «의견 보내기»는 2026-11-14 00:00(한국 시간)에 사라진다(e2e/feedback.spec.js) — 그 전에만 그 칸을 지난다
+  if (Date.now() < Date.parse('2026-11-14T00:00:00+09:00')) {
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: '의견 보내기' })).toBeFocused();
+  }
   await page.keyboard.press('Tab');
   await expect(page.getByRole('link', { name: 'Voice Cinema 설치 파일 다운로드' })).toBeFocused();
   await page.keyboard.press('Tab');

@@ -63,7 +63,9 @@ body:has(#home.active) { background:#fff; }
 .chart-title em { color:#df291f; font-style:normal; }
 .chart-title-phone { display:none; }
 .chart-heading h1 span { display:grid; place-items:center; width:26px; height:26px; background:#f3f3f3; border-radius:50%; font-size:.875rem; letter-spacing:0; font-weight:600; }
-.chart-heading > p { margin:0; max-width:290px; color:#626262; font-size:.875rem; line-height:1.6; word-break:keep-all; }
+/* 설명 글(마우스가 없는 기기에만 있다)은 오른쪽 위 «개인정보처리방침» 줄 바로 아래에 온다 — 위 여백 10px로 링크 칸(머리글 아래 3 + 24px)을 비켜 내린다
+   (11/8 해상도 전수에서 1250 이하만 고쳤고, 같은 날 1280×800 태블릿에서 글자 사이가 4px로 붙은 것을 찾아 모든 폭으로 넓혔다). */
+.chart-heading > p { margin:10px 0 0; max-width:290px; color:#626262; font-size:.875rem; line-height:1.6; word-break:keep-all; }
 .tile { position:relative; display:flex; flex-direction:column; width:100%; min-width:0; min-height:0; appearance:none; border:0; padding:0; text-align:left; background:white; color:#171717; font:inherit; cursor:pointer; border-radius:12px; }
 .tile-media { display:block; position:relative; flex:1; min-height:0; width:100%; overflow:hidden; background:#181818; }
 /* 카드를 채우는 자식도 자신의 모서리를 갖는다 — iOS는 transform이 걸린 카드(캐러셀의 크기 변화)에서
@@ -110,8 +112,6 @@ html[data-fit="none"] .download-link { display:none; }
 @container app (max-width:1250px) {
   .chart-aside { display:none; }
   .chart-layout { gap:0; }
-  /* 왼쪽 안내가 접히면 설명 글이 오른쪽 위로 올라와 «개인정보처리방침» 줄 바로 아래에 온다 — 링크 칸(머리글 아래 3 + 24px)을 비켜 내린다(11/8 해상도 전수, 글자끼리 닿을 듯 붙었다). */
-  .chart-heading > p { margin-top:10px; }
 }
 @container app (max-width:1150px) {
   .cinema-festival { display:none; }

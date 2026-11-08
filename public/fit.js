@@ -12,7 +12,9 @@
  * 창을 건드리지 않아도 끝없이 오갔다(11/8 설치판 640×640 입력 오류 화면). 막대가 없는 기기(휴대폰 · 헤드리스)에서는 막대 자리가 0이다.
  * 스플래시 배율(--splash-scale, PC · 태블릿 · 설치판): 웹 PC 2560×1305 창의 스플래시를 기준으로, 창 넓이(가로 × 세로)의 비율에 맞춰 줄이고 키운다
  * (11/8 Bumm님 «PC 2560 정도의 비율로, PC · 패드 다른 비율도, 설치판 앱도 맞춰야지»). 넓이로 재는 까닭: 패드를 세로로 돌려도 같은 크기로 보이고,
- * 가로가 긴 PC 창에서는 높이 비율과 거의 같다(1280×585 0.474 · 1920×945 0.737). 화면 전체 비율(zoom)과 따로다 — CSS가 그것을 되돌린 뒤 이것만 건다.
+ * 가로가 긴 PC 창에서는 높이 비율과 거의 같다. 화면 전체 비율(zoom)과 따로다 — CSS가 그것을 되돌린 뒤 이것만 건다.
+ * 배율은 넓이 비율의 제곱근(√)과 1(그 전의 고정 크기)의 한가운데다(11/8 Bumm님 «작은 모니터에서 스플래시가 되게 작아졌다. 이전 거랑 지금의 중간 정도로») —
+ * 제곱근만 쓰면 작은 창에서 너무 작았다(시험 모니터 1408×713 0.548 → 0.774, 1280×585 0.474 → 0.737, 1920×945 0.737 → 0.868). 2560×1305는 그대로 1이다.
  * 인라인 스크립트를 두지 않는 규칙(CSP) 때문에 별도 파일로 두고, body 첫머리에서 읽어 첫 그림부터 맞춘다. */
 (function () {
   var PHONE_W = 390;
@@ -48,7 +50,7 @@
     root.style.setProperty('--fit-undo', String(1 / z));
     root.style.setProperty('--app-w', root.clientWidth / z + 'px');
     root.style.setProperty('--app-h', h / z + 'px');
-    root.style.setProperty('--splash-scale', String(Math.sqrt((w * h) / (SPLASH_W * SPLASH_H))));
+    root.style.setProperty('--splash-scale', String((1 + Math.sqrt((w * h) / (SPLASH_W * SPLASH_H))) / 2));
     root.dataset.fit = kind;
   };
   fit();

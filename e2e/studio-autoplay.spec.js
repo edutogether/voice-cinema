@@ -198,7 +198,8 @@ test('재생 중에 «장면 시작»을 누르면 재생을 끊고 처음부터
   const keys = (await countdownLog(page)).map((entry) => entry.key);
   expect(keys[0]).toBe('cue');
   expect(keys.filter((key) => /초 뒤 녹음 시작/.test(key)).length).toBe(3);
-  expect(keys.at(-1)).toBe('recording');
+  // «녹음 중»과 «이제 당신의 목소리를 들려주세요 !»가 함께 뜬다(11/8 Bumm님)
+  expect(keys.slice(-2)).toEqual(['recording', 'speak']);
   await expect(page.locator('#clip')).toHaveJSProperty('paused', true);
   // 녹음 흐름에는 대사 구간 문구가 나오지 않는다
   await expect(page.locator('.scene-turn-cue')).toHaveCount(0);

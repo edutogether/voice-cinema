@@ -1,11 +1,16 @@
 import { test, expect } from '@playwright/test';
 import { pauseScenes } from './pause-scenes.js';
 
-// 스플래시의 보이는 크기(등장 애니메이션이 끝난 뒤)와 스플래시 배율
+// 스플래시 배율 — 고정 크기(1)와 넓이 비율의 제곱근의 한가운데(11/8 Bumm님 «이전 거랑 지금의 중간 정도로», public/fit.js)
+const splashScale = (width, height) => (1 + Math.sqrt((width * height) / (2560 * 1305))) / 2;
+// 스플래시의 보이는 크기(등장 애니메이션이 끝난 뒤)와 스플래시 배율.
+// 이름은 줄 높이가 아니라 화면에 그려지는 글자 크기(글꼴 크기 × 실제 배율)로 잰다 — 줄 높이(line-height normal)는 글꼴 크기마다
+// 글꼴의 위 · 아래 높이를 따로 반올림해 배율과 1~2px 어긋난다(3840×2025에서 58px, 비례값 56.8px)
 const splashSize = (page) => page.evaluate(async () => {
   await Promise.all(document.querySelector('#splash .logo').getAnimations().map(animation => animation.finished));
   const size = (selector) => { const r = document.querySelector(selector).getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height)]; };
-  return { scale: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--splash-scale')), logo: size('#splash .logo img'), nameHeight: size('#splash .name')[1], bar: size('#splash .sbar')[0], education: size('#splash .splash-education')[0] };
+  const name = document.querySelector('#splash .name');
+  return { scale: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--splash-scale')), logo: size('#splash .logo img'), nameFont: parseFloat(getComputedStyle(name).fontSize) * name.currentCSSZoom, bar: size('#splash .sbar')[0], education: size('#splash .splash-education')[0] };
 });
 
 // 해상도별 화면 맞춤(public/fit.js, 11/7 Bumm님 «2560 화면을 기준으로 모든 해상도를 그것처럼», Poster Studio 방식): 세로 휴대폰은 폭 390에 맞춰 줄이고 키운다.
@@ -71,12 +76,12 @@ for (const [width, height] of [[1280, 585], [1366, 633], [1536, 729], [1707, 825
     const page = await browser.newPage({ viewport: { width, height } });
     await page.goto('/');
     await page.locator('#splash .logo img').waitFor();
-    // 스플래시는 웹 PC 2560×1305 창의 크기(Poster Studio PC와 같은 아이콘 72 · 이름 높이 45 · 로딩바 190 · 교육청 로고 190)를 창 넓이 비율로 줄이고 키운다
+    // 스플래시는 웹 PC 2560×1305 창의 크기(Poster Studio PC와 같은 아이콘 72 · 이름 글자 38 · 로딩바 190 · 교육청 로고 190)를 창 넓이 비율로 줄이고 키운다
     // (11/8 Bumm님 «PC 2560 정도의 비율로») — 고정 크기였을 때는 작은 창(설치판 1280×587)에서 화면의 두 배 남짓을 차지했다
     const splash = await splashSize(page);
-    const k = Math.sqrt((width * height) / (2560 * 1305));
+    const k = splashScale(width, height);
     expect(splash.scale).toBeCloseTo(k, 3);
-    for (const [label, got, base] of [['아이콘 폭', splash.logo[0], 72], ['아이콘 높이', splash.logo[1], 72], ['이름 높이', splash.nameHeight, 45], ['로딩바', splash.bar, 190], ['교육청 로고', splash.education, 190]]) {
+    for (const [label, got, base] of [['아이콘 폭', splash.logo[0], 72], ['아이콘 높이', splash.logo[1], 72], ['이름 글자', splash.nameFont, 38], ['로딩바', splash.bar, 190], ['교육청 로고', splash.education, 190]]) {
       expect(Math.abs(got - base * k), `${label}: ${got}, 기대 ${(base * k).toFixed(1)}`).toBeLessThanOrEqual(1);
     }
 
@@ -123,8 +128,8 @@ for (const [width, height] of [[1280, 800], [800, 1280], [1024, 768], [768, 1024
     await page.locator('#splash .logo img').waitFor();
     expect(await page.evaluate(() => document.documentElement.dataset.fit)).toBe('tablet');
     const splash = await splashSize(page);
-    const k = Math.sqrt((width * height) / (2560 * 1305));
-    for (const [label, got, base] of [['아이콘', splash.logo[0], 72], ['이름 높이', splash.nameHeight, 45], ['로딩바', splash.bar, 190], ['교육청 로고', splash.education, 190]]) {
+    const k = splashScale(width, height);
+    for (const [label, got, base] of [['아이콘', splash.logo[0], 72], ['이름 글자', splash.nameFont, 38], ['로딩바', splash.bar, 190], ['교육청 로고', splash.education, 190]]) {
       expect(Math.abs(got - base * k), `${label}: ${got}, 기대 ${(base * k).toFixed(1)}`).toBeLessThanOrEqual(1);
     }
     await page.close();
@@ -137,7 +142,7 @@ test('스플래시가 떠 있는 동안 창 크기가 바뀌면 스플래시도 
   await page.goto('/');
   await page.locator('#splash .logo img').waitFor();
   await page.setViewportSize({ width: 1280, height: 587 });
-  const k = Math.sqrt((1280 * 587) / (2560 * 1305));
+  const k = splashScale(1280, 587);
   await expect.poll(async () => (await splashSize(page)).bar).toBe(Math.round(190 * k));
   await page.close();
 });
