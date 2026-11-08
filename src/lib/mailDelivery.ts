@@ -9,7 +9,7 @@ import { buildUploadFilename } from '../logic';
 import { IN_INSTALLER } from './installer';
 import { afterFailure, dueGroups, type MailItem } from './mailQueue';
 import { webMailStore, type MailInfo, type MailStore } from './mailStoreWeb';
-import { boothHeaders, uploadToCloud } from './upload';
+import { boothHeaders, HttpError, uploadToCloud } from './upload';
 
 declare global {
   interface Window {
@@ -84,8 +84,11 @@ async function send(group: MailItem[]): Promise<void> {
   });
   let json: { ok?: boolean } = {};
   try { json = await resp.json(); } catch { /* 응답이 JSON이 아니면 실패로 센다 */ }
-  if (!resp.ok || json.ok !== true) throw new Error(`메일 서버 응답 ${resp.status}`);
+  if (!resp.ok || json.ok !== true) throw new HttpError(`메일 서버 응답 ${resp.status}`, resp.status);
 }
+
+/** 서버가 요청을 거절했다(4xx) — 연결 실패 · 시간 초과 · 5xx는 아니다(mailQueue.ts의 afterFailure). */
+const rejected = (e: unknown) => e instanceof HttpError && e.status >= 400 && e.status < 500;
 
 let running = false;
 async function run(): Promise<void> {
@@ -114,7 +117,7 @@ async function deliver(store: MailStore): Promise<void> {
         await refresh();
       } catch (e) {
         console.error('[메일 대기열] 이번에는 보내지 못함', e instanceof Error ? e.message : '');
-        for (const item of group) await store.update(item.id, afterFailure(item, Date.now()));
+        for (const item of group) await store.update(item.id, afterFailure(item, Date.now(), rejected(e)));
         await refresh();
       }
     }
@@ -129,7 +132,7 @@ async function deliver(store: MailStore): Promise<void> {
 async function retryAll(): Promise<void> {
   if (!bridge) return;
   try {
-    for (const item of await bridge.list()) await bridge.update(item.id, { attempts: 0, nextAt: 0, failed: false });
+    for (const item of await bridge.list()) await bridge.update(item.id, { attempts: 0, rejections: 0, nextAt: 0, failed: false });
   } catch (e) {
     console.error('[메일 대기열] 다시 시도를 준비하지 못함', e instanceof Error ? e.message : '');
   }
@@ -152,7 +155,7 @@ export async function queueMail(info: MailInfo, blob: Blob): Promise<void> {
 }
 
 export async function retryMail(id: string): Promise<void> {
-  await bridge!.update(id, { attempts: 0, nextAt: 0, failed: false });
+  await bridge!.update(id, { attempts: 0, rejections: 0, nextAt: 0, failed: false });
   await refresh();
   void run();
 }

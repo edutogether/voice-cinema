@@ -7,7 +7,10 @@ export interface MailItem {
   genreName: string;
   createdAt: number;
   url?: string;
+  /** 실패한 횟수(다시 보내는 간격을 정한다) */
   attempts: number;
+  /** 그중 서버가 4xx로 거절한 횟수 — 이것만 MAX_ATTEMPTS에서 «보내지 못함»이 된다(없으면 0) */
+  rejections?: number;
   nextAt: number;
   failed: boolean;
 }
@@ -21,9 +24,15 @@ export function retryDelay(attempts: number): number {
   return Math.min(FIRST_RETRY_MS * 2 ** (attempts - 1), LONGEST_RETRY_MS);
 }
 
-export function afterFailure(item: Pick<MailItem, 'attempts'>, now: number): Pick<MailItem, 'attempts' | 'nextAt' | 'failed'> {
+/**
+ * 실패 하나를 센다. 서버가 4xx로 거절한 것(rejected)만 MAX_ATTEMPTS번째에 «보내지 못함»으로 빼고,
+ * 연결 실패 · 시간 초과 · 5xx는 창이 열려 있는 동안 5분마다 계속 다시 보낸다(11/8 팀장 결정 —
+ * 와이파이는 살아 있고 바깥 회선만 끊기면 «인터넷이 돌아옴» 알림이 오지 않아, 횟수로 멈추면 회선이 돌아와도 보내지 않았다).
+ */
+export function afterFailure(item: Pick<MailItem, 'attempts' | 'rejections'>, now: number, rejected: boolean): Pick<MailItem, 'attempts' | 'rejections' | 'nextAt' | 'failed'> {
   const attempts = item.attempts + 1;
-  return { attempts, nextAt: now + retryDelay(attempts), failed: attempts >= MAX_ATTEMPTS };
+  const rejections = (item.rejections ?? 0) + (rejected ? 1 : 0);
+  return { attempts, rejections, nextAt: now + retryDelay(attempts), failed: rejections >= MAX_ATTEMPTS };
 }
 
 /** 지금 보낼 차례인 건을 교사별로 묶는다 — 한 교사에게는 한 통만 간다. */
