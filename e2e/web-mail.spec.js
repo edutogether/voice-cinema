@@ -1,4 +1,4 @@
-// 웹(크롬)에서도 QR을 만들지 못하면 인솔 선생님 메일 칸을 띄운다(2026-11-08 Bumm님 «웹도 끊기면 메일 칸을 띄움»).
+// 웹(크롬, PC · 패드)에서도 QR을 만들지 못하면 담임교사 메일 칸을 띄운다(2026-11-08 Bumm님 «웹도 끊기면 메일 칸을 띄움», 11/9 «담임교사 메일주소»).
 // 영상 · 이름 · 주소는 이 사이트의 IndexedDB에 맡기고, 인터넷이 돌아오면 올리고 → 메일을 보내고 → 지운다.
 // 업로드(/upload)와 메일(/mail)은 가로채 프로덕션에 아무것도 쌓이지 않고 메일도 나가지 않는다 — 주소는 가짜다.
 // 끊김은 navigator.onLine을 시험이 쥐어 흉내 낸다(새로고침해도 끊긴 채로 시작한다). 원판 · 엔진은 로컬 서버에서 그대로 받는다.
@@ -117,7 +117,7 @@ test('끊긴 채 더빙을 마치면 메일 칸이 뜨고, 인터넷이 돌아�
   const seen = await catchServer(context);
 
   await dubAndSave(page, 'SF');
-  await expect(page.locator('#mailHandoff h2')).toHaveText('인터넷이 끊겨 QR을 만들지 못했어요');
+  await expect(page.locator('#mailHandoff h2')).toHaveText('네트워크 장애로 QR코드를 만들지 못했어요');
   await expect(page.locator('#downloadRow')).toHaveCount(0);
   expect(seen.uploads).toHaveLength(0); // 끊겨 있으면 올리지 않는다
 
@@ -193,7 +193,34 @@ test('2026-12-01 00:00(한국 시간) 이후 처음 열면 보내지 못한 것�
   await expect(page.locator('#mailQueueChip')).toHaveCount(0);
 });
 
-test('브라우저가 저장소를 막아 맡기지 못하면 이 기기에 저장으로 간다', async ({ page, context }) => {
+// «다시 제작하기»(11/8 Bumm님) — 끊긴 채 누르면 올리지 않고 적던 칸에 남고, 연결이 돌아온 뒤 누르면 QR을 만든다. 적던 값은 맡기지 않는다.
+test('«다시 제작하기»는 끊긴 동안 적던 칸을 그대로 두고, 연결이 돌아오면 QR을 만들며 아무것도 맡기지 않는다', async ({ page, context }) => {
+  await startOffline(context);
+  const seen = await catchServer(context);
+
+  await dubAndSave(page, 'SF');
+  await page.locator('#mailName').fill('민수');
+  await page.locator('#mailAddress').fill(TEACHER);
+  const retry = page.locator('#retryBtn');
+  await retry.click();
+  await expect(retry).toHaveText('다시 만드는 중…');
+  await expect(page.locator('#mailNextBtn')).toBeDisabled();
+  await expect(retry).toHaveText('다시 제작하기');
+  await expect(page.locator('#mailName')).toHaveValue('민수');
+  await expect(page.locator('#mailAddress')).toHaveValue(TEACHER);
+  expect(seen.uploads).toHaveLength(0);
+
+  await page.evaluate(() => window.__setOnline(true));
+  await retry.click();
+  await expect(page.locator('#qrbox')).toBeVisible({ timeout: 90000 });
+  await expect(page.locator('#mailHandoff')).toHaveCount(0);
+  expect(seen.uploads).toHaveLength(1);
+  expect(seen.mails).toHaveLength(0);
+  expect(await stored(page)).toEqual({ items: 0, videos: 0 });
+});
+
+// PC · 패드에는 «이 기기에 저장»이 없다(11/9 — 휴대폰에서만). 맡기지 못하면 적던 칸으로 돌아와 알리고 «다시 제작하기»를 기다린다.
+test('브라우저가 저장소를 막아 맡기지 못하면 적던 칸으로 돌아와 알리고 «다시 제작하기»를 기다린다', async ({ page, context }) => {
   await startOffline(context);
   await context.addInitScript(() => {
     const open = window.IDBFactory.prototype.open;
@@ -209,11 +236,11 @@ test('브라우저가 저장소를 막아 맡기지 못하면 이 기기에 저�
   await page.locator('#mailNextBtn').click();
   await page.locator('#mailSendBtn').click();
 
-  await expect(page.locator('#downloadRow')).toBeVisible();
-  await expect(page.locator('#mailHandoff')).toHaveCount(0);
-  await expect(page.locator('#savemode')).toContainText('자동으로 지워지지 않아요');
-  const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#downloadBtn').click()]);
-  expect(download.suggestedFilename()).toBe('Voice Cinema_스포츠.mp4');
+  await expect(page.locator('#mailStoreError')).toHaveText("이 기기에 맡기지 못했어요. 네트워크가 복구되면 '다시 제작하기'를 눌러 주세요.");
+  await expect(page.locator('#mailName')).toHaveValue('민수');
+  await expect(page.locator('#mailAddress')).toHaveValue(TEACHER);
+  await expect(page.locator('#retryBtn')).toBeVisible();
+  await expect(page.locator('#downloadRow')).toHaveCount(0);
 });
 
 // 미리보기 채널 주소(voice-cinema--<채널>.web.app)는 서버 허용 출처 밖이라 업로드도 메일도 받지 않는다 — 메일 칸에 맡겨 두면 영영 보내지지 않는다.
