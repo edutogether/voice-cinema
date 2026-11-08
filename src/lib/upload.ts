@@ -99,6 +99,15 @@ export async function boothHeaders(): Promise<Record<string, string>> {
   return { 'Content-Type': 'application/json', 'x-booth-token': BOOTH_TOKEN, 'X-Firebase-AppCheck': token };
 }
 
+/** 서버가 답한 HTTP 상태를 함께 넘긴다 — 메일 대기열은 4xx(서버가 요청을 거절함)만 «보내지 못함»으로 센다(src/lib/mailQueue.ts). */
+export class HttpError extends Error {
+  readonly status: number;
+  constructor(message: string, status: number, options?: ErrorOptions) {
+    super(message, options);
+    this.status = status;
+  }
+}
+
 async function uploadOnce(dataBase64: string, filename: string): Promise<string> {
   const headers = await boothHeaders();
   const ctrl = new AbortController();
@@ -115,9 +124,9 @@ async function uploadOnce(dataBase64: string, filename: string): Promise<string>
     try {
       json = JSON.parse(text);
     } catch (e) {
-      throw new Error('저장 응답 파싱 실패: ' + text.slice(0, 200), { cause: e });
+      throw new HttpError('저장 응답 파싱 실패: ' + text.slice(0, 200), resp.status, { cause: e });
     }
-    if (!json.ok || !json.url) throw new Error('영상 저장 실패: ' + (json.error || 'unknown'));
+    if (!json.ok || !json.url) throw new HttpError('영상 저장 실패: ' + (json.error || 'unknown'), resp.status);
     return json.url;
   } finally {
     clearTimeout(timer);

@@ -9,9 +9,16 @@ describe('다시 보내는 간격', () => {
   it('30초에서 두 배씩 늘어 5분에서 멈춘다', () => {
     expect([1, 2, 3, 4, 5, 6, 7].map(retryDelay)).toEqual([30_000, 60_000, 120_000, 240_000, 300_000, 300_000, 300_000]);
   });
-  it(`${MAX_ATTEMPTS}번 실패하면 «보내지 못함»으로 뺀다`, () => {
-    expect(afterFailure({ attempts: MAX_ATTEMPTS - 2 }, 1000)).toEqual({ attempts: MAX_ATTEMPTS - 1, nextAt: 1000 + 300_000, failed: false });
-    expect(afterFailure({ attempts: MAX_ATTEMPTS - 1 }, 1000).failed).toBe(true);
+  it(`서버가 ${MAX_ATTEMPTS}번 거절(4xx)하면 «보내지 못함»으로 뺀다`, () => {
+    expect(afterFailure({ attempts: MAX_ATTEMPTS - 2, rejections: MAX_ATTEMPTS - 2 }, 1000, true)).toEqual({ attempts: MAX_ATTEMPTS - 1, rejections: MAX_ATTEMPTS - 1, nextAt: 1000 + 300_000, failed: false });
+    expect(afterFailure({ attempts: MAX_ATTEMPTS - 1, rejections: MAX_ATTEMPTS - 1 }, 1000, true).failed).toBe(true);
+  });
+  it('연결 실패 · 시간 초과 · 5xx는 몇 번이든 «보내지 못함»이 되지 않고 5분마다 다시 보낸다', () => {
+    expect(afterFailure({ attempts: 100 }, 1000, false)).toEqual({ attempts: 101, rejections: 0, nextAt: 1000 + 300_000, failed: false });
+  });
+  it('거절 횟수만 센다 — 연결 실패가 앞에 몇 번 있었어도 첫 거절에서 빼지 않는다', () => {
+    expect(afterFailure({ attempts: 20, rejections: 0 }, 1000, true)).toMatchObject({ rejections: 1, failed: false });
+    expect(afterFailure({ attempts: 20, rejections: MAX_ATTEMPTS - 1 }, 1000, true).failed).toBe(true);
   });
 });
 
