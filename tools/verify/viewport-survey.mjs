@@ -65,7 +65,7 @@ const ROLES = {
   '보조 제목': ['.movie-fact h2[data-active="true"]', '.chart-invitation h2', '.studio-heading h1', 'main h2'],
   '장면 이름': ['.scene-shell.is-current .gname', '.poster-credit strong'],
   '안내 문장': ['.movie-fact p[data-active="true"]', '.hint', '#doneMsg', '.chart-invitation > p:last-of-type', 'main p'],
-  '주 단추': ['#recBtn', '#saveBtn', '.scene-shell.is-current .tile-enter', '#openMovieBtn', '#downloadBtn', '#doneHomeBtn'],
+  '주 단추': ['#recBtn', '#saveBtn', '.scene-shell.is-current .tile-enter', '#phoneSaveBtn', '#downloadBtn', '#doneHomeBtn'],
   '보조 단추': ['#previewBtn', '#resetBtn', '.back', '#errBackBtn'],
   '작은 글': ['.privacylink', '.festival-steps', '.cinema-footer', '.chart-guide p', '.clip-time', '.scene-choice-card > span', '.workflow-footer'],
 };
@@ -84,7 +84,10 @@ function measurePage(roles) {
   const splash = document.getElementById('splash');
   const modal = document.querySelector('dialog:modal');
   const scope = modal || (splash && vis(splash) ? splash : document.body);
-  const hiddenOrSide = (el) => !!el.closest('[hidden], [aria-hidden="true"], .scene-shell:not(.is-current), .scene-choices');
+  // 화면 읽기 프로그램에만 남기고 1px로 잘라 숨긴 것(clip-path:inset(50%))은 화면에 없다 — 그 안의 글이 1px 칸 밖으로 늘어져도 세지 않는다
+  // (화면 px라 비율이 1보다 크면 1px 칸이 1.06px처럼 잡힌다 — 2px 미만으로 본다)
+  const srOnly = (el) => { for (let a = el; a && a !== document.body; a = a.parentElement) { const r = a.getBoundingClientRect(); if (r.width < 2 && r.height < 2 && /inset\(50%\)/.test(getComputedStyle(a).clipPath)) return true; } return false; };
+  const hiddenOrSide = (el) => !!el.closest('[hidden], [aria-hidden="true"], .scene-shell:not(.is-current), .scene-choices') || srOnly(el);
   const floating = (el) => { for (let x = el; x && x !== scope; x = x.parentElement) { const p = getComputedStyle(x).position; if (p === 'absolute' || p === 'fixed' || p === 'sticky') return true; } return false; };
   const pinned = (el) => { for (let x = el; x && x !== scope; x = x.parentElement) { const p = getComputedStyle(x).position; if (p === 'fixed' || p === 'sticky') return true; } return false; };
   const hscroll = Math.max(0, document.documentElement.scrollWidth - W);
@@ -205,9 +208,9 @@ function measurePage(roles) {
   const enterHome = enter?.closest('section');
   if (enter && (!enterHome || vis(enterHome)) && !vis(enter)) off.push('«더빙하기» 단추가 안 보임');
   // 주 단추: 그 화면에서 할 일이 스크롤 없이 보이는가(판정은 도구 쪽 — 가로로 눕힌 휴대폰은 세지 않는다)
-  const primary = ['#recBtn', '#saveBtn', '.scene-shell.is-current .tile-enter', '#openMovieBtn', '#qrbox', '#downloadBtn', '#errBackBtn'].map((q) => document.querySelector(q)).find((el) => el && vis(el));
+  const primary = ['#recBtn', '#saveBtn', '.scene-shell.is-current .tile-enter', '#phoneSaveBtn', '#qrbox', '#downloadBtn', '#errBackBtn'].map((q) => document.querySelector(q)).find((el) => el && vis(el));
   const cta = primary ? Math.max(0, Math.round(primary.getBoundingClientRect().bottom + scrollY - H)) : 0;
-  const below = ['#recBtn', '#saveBtn', '.scene-shell.is-current .tile-enter', '#qrbox', '#openMovieBtn', '#downloadBtn', '#doneHomeBtn', '#errBackBtn'].map((q) => document.querySelector(q)).filter((el) => el && vis(el)).map((el) => Math.round(el.getBoundingClientRect().bottom + scrollY - H)).filter((px) => px > 0);
+  const below = ['#recBtn', '#saveBtn', '.scene-shell.is-current .tile-enter', '#qrbox', '#phoneSaveBtn', '#downloadBtn', '#doneHomeBtn', '#errBackBtn'].map((q) => document.querySelector(q)).filter((el) => el && vis(el)).map((el) => Math.round(el.getBoundingClientRect().bottom + scrollY - H)).filter((px) => px > 0);
   // 글자: 역할별 크기와 가장 작은 글자(비율까지 곱한 실제 크기). 원문이 작게 적힌 것을 찾으려고 글이 직접 든 요소를 전부 본다.
   const px = (el) => Math.round(parseFloat(getComputedStyle(el).fontSize) * (el.currentCSSZoom || 1) * 10) / 10;
   const type = {};
@@ -242,7 +245,7 @@ if (SELFTEST) {
   const A = `<!doctype html><meta charset=utf-8><body style="margin:0;font:20px/30px sans-serif">
     <div id=textcut style="height:60px;overflow:hidden;width:200px">첫 줄<br>둘째 줄<br>셋째 줄 감춰짐</div>
     <span id=logo style="display:block;position:relative;width:88px;height:44px;overflow:hidden"><img style="position:absolute;width:108px;height:108px;top:-32px" src="${svg}"></span>
-    <h2 id=sr style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap">숨김 제목 길게 길게</h2>
+    <div id=sr style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap"><span id=srlabel>숨김 이름 길게 길게</span><h2>숨김 제목 길게 길게</h2></div>
     <div style="position:relative;width:300px"><p id=para style="margin:0">흐름 안의 문단입니다</p><button id=floatbtn style="position:absolute;left:20px;top:4px">떠 있는 단추</button></div>
     <div style="position:relative;width:200px;height:120px"><img id=poster style="width:200px;height:120px" src="${svg}"><span id=badge style="position:absolute;right:4px;top:4px">완성</span></div>
     <div style="position:relative;width:600px"><h1 id=wideh1 style="margin:0;font-size:24px">짧은 제목</h1><a id=corner href="#" style="position:absolute;right:0;top:0">구석 링크</a></div>
@@ -287,6 +290,7 @@ if (SELFTEST) {
   const has = (list, id) => list.some((s) => s.includes('#' + id));
   const expect = [
     ['글자 잘림을 잡는다', has(a.cutY, 'textcut')], ['일부러 자른 로고는 안 잡는다', !has(a.cutY, 'logo')], ['1px 숨김 제목은 안 잡는다', !has(a.cutY, 'sr')],
+    ['1px 숨김 칸 밖으로 늘어진 글은 안 잡는다', !has(a.off, 'srlabel') && !a.overlaps.some((s) => s.includes('#srlabel'))],
     ['떠 있는 단추가 문단을 덮으면 잡는다', a.overlaps.some((s) => s.includes('#floatbtn') && s.includes('#para'))],
     ['그림 위 배지는 안 잡는다', !a.overlaps.some((s) => s.includes('#badge'))],
     ['고정 줄에 늘 가려지는 글을 잡는다', has(a.overlaps, 'under')],
@@ -641,7 +645,8 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
     step = '완성';
     await opened.failNext(0);
     await page.locator('#saveBtn').click();
-    await page.locator('#qrbox').waitFor({ timeout: 90000 });
+    // 휴대폰은 QR 대신 «내 폰에 저장하기»다(11/9 시안)
+    await page.locator('#qrbox:visible, #phoneSaveBtn:visible').first().waitFor({ timeout: 90000 });
     await delay(200);
     await page.evaluate(() => { scrollTo(0, 0); });
     await shot('17-완성');

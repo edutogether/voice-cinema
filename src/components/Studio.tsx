@@ -9,6 +9,7 @@ import { prefetchFinalClip } from '../lib/ffmpeg';
 
 import { ActionIcon } from './ActionIcon';
 import { ClipTimeline } from './ClipTimeline';
+import { FestivalHeader } from './FestivalHeader';
 import { SceneCaption, SceneTurnCue } from './SceneCaption';
 import { StudioEntrance } from './StudioEntrance';
 import type { SceneEntrance } from '../lib/sceneEntrance';
@@ -147,6 +148,8 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
       <div className="studio-workspace">
         <div className="studio-screen">
           <div className="stage">
+            {/* 메인과 같은 로고 줄 · 단계 표시(«2 목소리 녹음») — 키 큰 세로 휴대폰에서만 보인다(11/9 시안, studio.css) */}
+            <FestivalHeader step={2} />
             <div className="studio-heading">
               <button className="back" id="studioBackBtn" onClick={onHome}><ActionIcon name="back" /> 다른 영화 고르기</button>
               <div className="studio-scene-title">
@@ -165,6 +168,8 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
                 <strong>{genre.summary}</strong>
                 <p>{genre.name}<span>10초</span></p>
               </div>
+              {/* 메인 카드처럼 장르 배지 + 장면 이름을 영상 왼쪽 아래에 — 키 큰 세로 휴대폰에서만(11/9 시안). 그때 위 머리줄의 제목은 화면 읽기용으로만 남긴다 */}
+              <div className="studio-scene-tag" aria-hidden="true"><b>{genre.name}</b>{genre.summary}</div>
               {settled && playing && buffering && <div className="studio-buffering" role="status">영상을 불러오고 있어요 {loaded}%</div>}
               <SceneCaption genre={genre} videoRef={videoRef} enabled={phase === 'watching' || previewing} />
               <SceneTurnCue genre={genre} videoRef={videoRef} enabled={previewing} />
@@ -186,7 +191,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
                 <span className="timeline-state">{(Object.keys(TIMELINE_STATE) as Phase[]).map((p) => (
                   <span key={p} className={p === phase ? 'on' : undefined}>{TIMELINE_STATE[p]}</span>
                 ))}</span>
-                <ClipTimeline phase={phase} videoRef={videoRef} />
+                <ClipTimeline phase={phase} videoRef={videoRef} turn={genre.turn} />
               </div>
               <div className={`controls${inTake ? ' is-recording' : ''}${done ? ' is-recorded' : ''}`}>
                 <div className="controls-copy">

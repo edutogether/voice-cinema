@@ -52,10 +52,12 @@ for (const [width, height, touch, kind, layoutW, layoutH] of cases) {
     await expect(page.locator('.studio-video-frame')).not.toHaveClass(/is-entering/);
     expect(await overflow()).toEqual({ x: 0, y: 0 });
     // 세로 화면 녹음실은 영상이 폭에 맞춘 16:9 그대로다 — 세로 태블릿도 회색 띠가 없다(10/23, 전에는 영상 틀이 남는 높이를 다 차지했다)
+    // 키 큰 세로 휴대폰(기준 화면 높이 720 이상)은 메인 장면 카드와 같은 폭 94%의 둥근 카드다(11/9 시안) — 그래도 16:9 그대로
     if (height > width) {
       const frame = await page.locator('.studio-video-frame').boundingBox();
-      expect(Math.abs(frame.width - width)).toBeLessThanOrEqual(1);
-      expect(Math.abs(frame.height - width * 9 / 16)).toBeLessThanOrEqual(1);
+      const frameWidth = kind === 'phone' && layoutH >= 720 ? width * .94 : width;
+      expect(Math.abs(frame.width - frameWidth)).toBeLessThanOrEqual(1);
+      expect(Math.abs(frame.height - frameWidth * 9 / 16)).toBeLessThanOrEqual(1);
     }
     await page.close();
   });

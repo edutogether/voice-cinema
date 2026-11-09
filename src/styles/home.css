@@ -325,17 +325,33 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
  #home .cinema-footer p { flex:1; display:flex; flex-direction:row-reverse; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:2px 8px; }
  #home .cinema-footer br { display:none; }
 }
-/* 키 큰 휴대폰(10/21 팀장 «여전히 빈다 — 눈으로 봐서 비어 보이지 않게»): 장면 카드는 94%·16:9 그대로(10/19 대표님) 두고,
-   제목을 두 줄(«10초의 영화.»를 아랫줄)로 키우고 맨 위 줄·«더빙하기»·아래 그림 띠를 화면 높이(svh)에 맞춰 키워 빈 곳을 채운다 */
+/* 키 큰 휴대폰(앱 높이 720 이상 — 360×800 · 375×812 · 390×844 · 412×915 · 430×932). 11/9 시안(Bumm님 360×800 캡처 말씀, 팀장 전달):
+   ① 로고 묶음(마이크 · «나만의 더빙 극장» · «Voice Cinema»)을 줄이고, «나만의 더빙 극장» 줄을 오른쪽 위 «의견 보내기 · 개인정보처리방침» 줄과
+      같은 높이(머리글 아래 3px · 24px 줄) · 같은 글자 크기로 둔다 ② 제목을 줄여 로고 묶음 바로 아래로 올린다
+   ③ 남는 높이는 네 몫으로 고르게 — 제목↔장면, 장면↔«더빙하기», «더빙하기»↔그림 띠, 그림 띠↔바닥글. 그래서 장면이 제목과 «더빙하기» 사이 세로 가운데에 온다.
+      두 몫은 장면 칸 안(카드 위 ::before 한 몫, «더빙하기» 칸 위아래 한 몫씩), 마지막 한 몫은 그림 띠 뒤(.scene-carousel::after)가 받는다.
+   장면 카드는 94%·16:9 그대로(10/19 대표님), «더빙하기» · 그림 띠 크기도 그대로다. */
 @container app (max-width:600px) and (min-height:720px) {
- .chart-aside { grid-template-columns:clamp(40px,calc(7 * var(--vh)),64px) minmax(0,1fr); column-gap:12px; }
- .chart-invitation img { width:clamp(40px,calc(7 * var(--vh)),64px); height:clamp(40px,calc(7 * var(--vh)),64px); }
- .chart-label { font-size:clamp(.6875rem,calc(1.6 * var(--vh)),.875rem); }
- .chart-app { font-size:clamp(1.0625rem,calc(2.9 * var(--vh)),1.625rem); }
- .chart-heading h1 { font-size:clamp(1.5rem,calc(4.3 * var(--vh)),2.375rem); line-height:1.25; }
+ .chart-layout { padding-top:3px; }
+ .chart-aside { grid-template-columns:36px minmax(0,1fr); column-gap:10px; padding-bottom:10px; margin-bottom:18px; }
+ .chart-invitation img { width:36px; height:36px; }
+ .chart-label { font-size:.6875rem; line-height:24px; }
+ .chart-app { font-size:1.125rem; line-height:1.25; }
+ .chart-main::before { display:none; }
+ .chart-heading { padding-bottom:0; }
+ .chart-heading h1 { font-size:1.75rem; line-height:1.25; }
  .chart-title-phone em { display:block; }
- .scene-stage { --scene-caption-height:calc(clamp(44px,calc(7 * var(--vh)),64px) + 18px); }
- .scene-shell .tile-enter { min-height:clamp(44px,calc(7 * var(--vh)),64px); font-size:clamp(1rem,calc(2.3 * var(--vh)),1.25rem); }
+ .scene-carousel { flex:1 0 auto; }
+ .scene-carousel::after { content:""; flex:1 0 0; }
+ .scene-choice-row { margin-block:0; }
+ .scene-stage { --scene-enter-height:clamp(44px,calc(7 * var(--vh)),64px); --scene-caption-height:var(--scene-enter-height); --scene-media-height:calc(var(--scene-width) * 9 / 16); flex:3 0 auto; }
+ .scene-shell { top:0; }
+ .scene-shell .tile::before { content:""; flex:1 0 0; }
+ .scene-shell .tile-media { flex:none; aspect-ratio:16 / 9; }
+ .scene-shell .tile-body { flex:2 0 auto; padding:0; }
+ /* 꺾쇠는 카드 그림의 세로 가운데 — 카드 위 한 몫((칸 높이 − 아래 4px − 그림 − 단추) ÷ 3) + 그림 높이의 반 */
+ .scene-arrow { top:calc((100% - 4px - var(--scene-media-height) - var(--scene-enter-height)) / 3 + var(--scene-media-height) / 2); }
+ .scene-shell .tile-enter { min-height:var(--scene-enter-height); font-size:clamp(1rem,calc(2.3 * var(--vh)),1.25rem); }
  .scene-choice-set { grid-template-columns:repeat(8,clamp(96px,calc(19 * var(--vh)),180px)); }
  .scene-choice-card > span { font-size:clamp(.75rem,calc(1.8 * var(--vh)),1rem); }
 }

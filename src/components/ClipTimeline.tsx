@@ -13,7 +13,7 @@ const total = formatTime(CLIP_SECONDS);
 // 그래서 진행바는 탐색 막대가 아니라 영상 시계를 보여 주기만 한다.
 const SHOWN: readonly Phase[] = ['previewing', 'watching', 'cue', 'countdown', 'recording', 'checking', 'continuing', 'recorded'];
 
-export function ClipTimeline({ phase, videoRef }: { phase: Phase; videoRef: React.RefObject<HTMLVideoElement | null> }) {
+export function ClipTimeline({ phase, videoRef, turn }: { phase: Phase; videoRef: React.RefObject<HTMLVideoElement | null>; turn?: { start: number; end: number } }) {
   const textRef = useRef<HTMLSpanElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLElement>(null);
@@ -54,7 +54,11 @@ export function ClipTimeline({ phase, videoRef }: { phase: Phase; videoRef: Reac
   return <>
     <div className={`progress${shown ? ' show' : ''}`} id="progress" ref={trackRef}
       role="progressbar" aria-label="영상 진행"
-      aria-valuemin={0} aria-valuemax={100} aria-valuenow={phase === 'recorded' ? 100 : 0}><i id="bar" ref={barRef} /></div>
+      aria-valuemin={0} aria-valuemax={100} aria-valuenow={phase === 'recorded' ? 100 : 0}>
+      {/* 내 차례 칸(장면 자료의 turn) — 키 큰 세로 휴대폰에서만 보인다(11/9 시안, studio.css). 진행 막대(i)가 그 위로 지나간다 */}
+      {turn && <span className="progress-turn" aria-hidden="true"
+        style={{ left: `${(turn.start / CLIP_SECONDS) * 100}%`, width: `${((turn.end - turn.start) / CLIP_SECONDS) * 100}%` }} />}
+      <i id="bar" ref={barRef} /></div>
     <span className="clip-time" aria-hidden="true" ref={textRef}>{initialText}</span>
   </>;
 }

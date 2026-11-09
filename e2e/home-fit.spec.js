@@ -40,9 +40,27 @@ for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [
         const app = await page.locator('.chart-app').boundingBox();
         expect(label.bg, '«나만의 더빙 극장»에 띠가 남아 있다').toBe('rgba(0, 0, 0, 0)');
         expect(label.bottom, '«나만의 더빙 극장»이 Voice Cinema 위에 있지 않다').toBeLessThanOrEqual(app.y + 1);
-        // 맨 위 줄은 오른쪽 위 «개인정보처리방침» 줄 아래에서 시작한다(10/19 대표님 «더 아래로»)
-        const top = await page.locator('.chart-aside').boundingBox();
-        expect(top.y, '맨 위 줄이 개인정보처리방침 줄과 겹친다').toBeGreaterThanOrEqual(privacy.y + privacy.height);
+        if (height / (width / 390) >= 720) {
+          // 키 큰 휴대폰(기준 화면 높이 720 이상, 11/9 시안 ①): «나만의 더빙 극장» 줄을 오른쪽 위 링크 줄과 같은 높이에 두되, 로고 묶음은 링크 줄과 겹치지 않는다
+          const links = await page.locator('#home .header-links').boundingBox();
+          const labelBox = await page.locator('.chart-label').boundingBox();
+          expect(Math.abs((labelBox.y + labelBox.height / 2) - (privacy.y + privacy.height / 2)), '«나만의 더빙 극장» 줄이 링크 줄과 같은 높이가 아니다').toBeLessThanOrEqual(2);
+          for (const selector of ['.chart-invitation img', '.chart-label', '.chart-app']) {
+            // 글은 글자가 그려진 자리로 잰다 — 칸 상자는 오른쪽 끝까지 뻗는다
+            const b = await page.locator(selector).evaluate((el) => {
+              if (el.tagName === 'IMG') return el.getBoundingClientRect().toJSON();
+              const range = document.createRange();
+              range.selectNodeContents(el);
+              return range.getBoundingClientRect().toJSON();
+            });
+            const overlap = b.x < links.x + links.width && b.x + b.width > links.x && b.y < links.y + links.height && b.y + b.height > links.y;
+            expect(overlap, `${selector}가 링크 줄과 겹친다`).toBe(false);
+          }
+        } else {
+          // 맨 위 줄은 오른쪽 위 «개인정보처리방침» 줄 아래에서 시작한다(10/19 대표님 «더 아래로»)
+          const top = await page.locator('.chart-aside').boundingBox();
+          expect(top.y, '맨 위 줄이 개인정보처리방침 줄과 겹친다').toBeGreaterThanOrEqual(privacy.y + privacy.height);
+        }
       }
       // «01 / 08» 줄은 휴대폰에서 없앤다(10/19 대표님). 멈춤 단추는 10/20부터 어느 폭에도 없다
       await expect(page.locator('.scene-navigation'), '.scene-navigation는 휴대폰에서 없앤다').toBeHidden();

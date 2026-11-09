@@ -174,3 +174,34 @@ body:has(#studio.active) { background:#fff; }
  .studio-pause-title p { margin-top:8px; font-size:.8125rem; }
 }
 @container app (max-height:500px) and (orientation:landscape) { .studio-pause-title { bottom:14px; } .studio-pause-title strong { font-size:1.125rem; } .studio-pause-title p { display:none; } }
+/* 키 큰 세로 휴대폰 녹음실(11/9 시안 — Bumm님 «텅텅 빈 것 같은데 큰 글씨 욱여넣기 말고», 팀장 제안 A~D 전부, 팀장 전달):
+   A 메인과 같은 로고 줄 · 단계 표시(«2 목소리 녹음»)를 맨 위에 두고, 머리줄에는 «← 다른 영화 고르기»만 남긴다
+   B 장르 · 장면 이름은 메인 카드처럼 영상 왼쪽 아래에 얹는다. 영상은 메인 장면 카드와 같은 크기(폭 94% · 16:9)의 둥근 카드다 —
+     화면 폭보다 크게 하려면 위아래를 잘라야(cover) 해 10/21 규칙(말하는 상대가 잘림)에 걸린다. 자막은 배지 위로 올린다
+   C 진행 막대에 내 차례 칸(장면 자료의 turn, 5.0~8.5초)을 연한 빨강으로. 아래 «내 대사» 목록은 넣지 않는다 — 아이가 말할 대사 글이
+     장면 자료에 없다(자유롭게 외친다). 지시대로 자료가 없으면 빼고 이유를 보고한다
+   D 단추는 화면 맨 아래에 붙이고, 그 위의 영상 · 안내를 고르게 펼친다 — 남는 높이를 세 몫(머리줄↔영상, 막대↔안내, 안내↔단추)으로
+     나눈다. 진행 막대는 영상에 붙인다.
+   글자 크기는 그대로다. 그 밖의 크기(낮은 휴대폰 · 가로 · 태블릿 · PC)에서는 이 요소들이 보이지 않고 배치도 바뀌지 않는다. */
+#studio .festival-header,.studio-scene-tag,.progress-turn { display:none; }
+#studio .festival-header { margin-inline:0; }
+@container app (max-width:600px) and (orientation:portrait) and (min-height:720px) {
+ .stage { height:auto; min-height:var(--app-h); padding-bottom:max(20px,env(safe-area-inset-bottom)); }
+ .stage::before,.stage::after { display:none; }
+ #studio .festival-header { display:grid; flex:none; }
+ /* 로고 줄이 맨 위, «다른 영화 고르기»는 그 아래 — 머리글 밖에 떠 있는 «개인정보처리방침»과 한 줄에서 가운데를 맞춘다 */
+ .studio-heading { display:flex; flex:none; order:0; padding:10px 16px 0; border-bottom:0; }
+ #studio .header-links { top:calc(100% + 10px + (var(--touch-min) - 24px) / 2); }
+ /* 제목은 영상 위 배지로 옮기고, 머리줄의 제목은 화면 읽기 · 초점 이동용으로만 남긴다 */
+ .studio-scene-title { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+ .studio-video-frame { width:94%; margin:auto auto 0; border-radius:16px; overflow:hidden; box-shadow:0 8px 24px #17202c12; }
+ .stage video { border-radius:inherit; }
+ .studio-scene-tag { display:flex; position:absolute; z-index:1; left:14px; bottom:12px; max-width:calc(100% - 28px); flex-wrap:wrap; align-items:center; gap:4px 6px; color:#fff; font-size:1rem; font-weight:700; line-height:1.3; letter-spacing:-.03em; text-shadow:0 1px 6px #000c; word-break:keep-all; pointer-events:none; }
+ .studio-scene-tag b { padding:1px 6px; border-radius:4px; background:#fff; color:#171717; font-size:.6875rem; line-height:1.5; letter-spacing:0; text-shadow:none; }
+ .scene-caption { bottom:40px; }
+ .studio-player-dock,.controls { display:contents; }
+ .studio-timeline { flex:none; margin:14px 16px 0; }
+ .progress-turn { display:block; position:absolute; top:7.5px; height:9px; border-radius:3px; background:#df291f4d; }
+ .controls-copy { flex:none; margin:auto 16px 0; }
+ .record-actions,#afterRow { width:94%; margin:auto auto 0; }
+}

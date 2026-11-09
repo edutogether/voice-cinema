@@ -138,7 +138,39 @@ body:has(#result.active) { background:#fff; }
  .result-card { gap:12px; }
  .errbox { margin-block:10px; padding-block:12px; }
 }
-/* 휴대폰에서 직접 체험하면 자기 화면의 QR을 찍을 수 없으므로 같은 공개 주소를 여는 단추를 QR 아래에 둔다(10/17).
-   부스의 노트북·태블릿(넓은 화면)에서는 QR만 보인다 — 학생이 자기 휴대폰으로 받아 가는 것이 기본이다. */
-#result .open-movie { display:none; }
-@media (hover:none) { @container app (max-width:760px) { #result .open-movie { display:flex; width:100%; margin:0 0 18px; } } }
+/* 휴대폰 완성 화면(11/9 시안 — Bumm님 «모바일은 QR 말고 저장하기, 텅텅 빈 거 걱정», 팀장 제안 A~D 전부, 팀장 전달). 휴대폰은 public/fit.js의
+   data-fit phone · none(Result.tsx의 onPhone과 같은 기준)이고, PC · 패드 · 설치판은 QR 그대로다. 설치판에는 휴대폰 요소를 그리지 않는다.
+   A 포스터를 누르면 그 자리에서 완성 영화가 흐른다(이 기기에서 만든 파일 — 다시 받지 않는다). 포스터는 메인 장면 카드와 같은 폭(94%)으로 조금 키운다.
+     10/17의 «내 영화 열기»는 이것으로 바꿔 뺐다
+   B «내 폰에 저장하기»는 큰 빨간 단추 — 아이폰은 공유 창(«비디오 저장»), 안드로이드는 내려받기(Result.tsx)
+   C 보관 기한 한 줄 — 날짜는 자동 삭제 일정(MAIL_PURGE_AT)에서 가져온다  D «다른 더빙하기»는 흰 바탕 · 빨간 테두리로 한 단계 약하게
+   키 큰 휴대폰은 남는 높이를 카드 위아래로 나눠 머리글과 바닥글 사이 세로 가운데에 둔다(PC의 11/8 «아래쪽이 너무 비어 보입니다»와 같은 방식).
+   키운 포스터 · 가운데 두기는 저장 중(merging · uploading)부터 건다 — 완성되는 순간 그림 크기가 바뀌지 않게(10/20 «QR 전 · 후 같은 크기») */
+.poster-play,.poster-movie,.phone-save,#doneMsg .for-phone { display:none; }
+.poster-play { position:absolute; z-index:3; right:14px; bottom:14px; place-items:center; width:56px; height:56px; padding:0; border:0; border-radius:50%; background:#000000a6; box-shadow:0 0 0 2px #ffffffd9; color:#fff; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.poster-play .action-icon { width:26px; height:26px; margin-left:3px; }
+.poster-play .action-icon path { fill:currentColor; }
+.poster-play:focus-visible { outline:3px solid #e52320; outline-offset:3px; }
+.poster-movie { position:absolute; inset:0; z-index:4; width:100%; height:100%; object-fit:contain; background:#000; border-radius:inherit; }
+.phone-save { margin:0 0 4px; }
+#result .phone-save .btn { width:100%; min-height:clamp(52px,calc(7 * var(--vh)),64px); font-size:1.125rem; }
+.result-details .phone-save p.retention-note { margin:10px 0 0; text-align:center; font-size:.875rem; }
+html:is([data-fit="phone"],[data-fit="none"]) .result-cloud .qrbox,
+html:is([data-fit="phone"],[data-fit="none"]) #doneMsg .for-qr { display:none; }
+html:is([data-fit="phone"],[data-fit="none"]) #doneMsg .for-phone,
+html:is([data-fit="phone"],[data-fit="none"]) .phone-save,
+html:is([data-fit="phone"],[data-fit="none"]) .poster-movie { display:block; }
+html:is([data-fit="phone"],[data-fit="none"]) .poster-play { display:grid; }
+html:is([data-fit="phone"],[data-fit="none"]) .result-cloud #doneHomeBtn { background:#fff; color:#e52320; border-color:#e52320; }
+@container app (max-width:600px) {
+ html:is([data-fit="phone"],[data-fit="none"]) :is(.result-merging,.result-uploading,.result-cloud) .result-poster { margin-inline:calc(50% - var(--app-w) * .47); }
+}
+@container app (max-width:600px) and (min-height:720px) {
+ /* 아래 안쪽 여백 10px + 바닥글 위 여백 20px = 위 30px — 머리글과 바닥글 글자 사이 가운데 */
+ html:is([data-fit="phone"],[data-fit="none"]) :is(.result-merging,.result-uploading,.result-cloud) { margin-block:auto; padding-block:30px 10px; }
+ html:is([data-fit="phone"],[data-fit="none"]) #result:has(.result-merging,.result-uploading,.result-cloud) .workflow-footer { margin-top:0; }
+}
+/* 가로로 눕힌 휴대폰: QR이 빠져 글이 그림보다 짧아져도 그림과 글을 위에서 함께 시작한다(11/8 «가로로 눕힌 휴대폰» 규칙과 같은 뜻) */
+@container app (max-height:599px) and (min-width:601px) {
+ html:is([data-fit="phone"],[data-fit="none"]) .result-cloud .result-details { align-self:start; }
+}

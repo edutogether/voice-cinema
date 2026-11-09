@@ -165,8 +165,9 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     await expect(page.locator('#qrbox')).not.toContainText('내 영화 받기');
     // 합성은 로고를 구운 합성용 원판(final/)으로 한다(10/20 대표님 «내려받는 영상에도 로고»)
     expect(merged.some((u) => /\/clips\/final\/sf\.mp4\?v=[0-9a-f]{8}$/.test(u))).toBe(true);
-    // «내 영화 열기»는 휴대폰에서만 보인다 — 부스의 노트북에서는 학생이 자기 휴대폰으로 QR을 찍는다.
-    await expect(page.locator('#openMovieBtn')).toBeHidden();
+    // 영화 재생 · «내 폰에 저장하기»는 휴대폰에서만 보인다 — 부스의 노트북에서는 학생이 자기 휴대폰으로 QR을 찍는다(11/9 시안).
+    await expect(page.locator('#phoneSaveBtn')).toBeHidden();
+    await expect(page.locator('#posterPlayBtn')).toBeHidden();
 
     expect(uploaded.filename).toMatch(/^dub_sf_\d+_[0-9a-f]+\.mp4$/);
     const mp4 = Buffer.from(uploaded.dataBase64, 'base64');
@@ -303,23 +304,65 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
   });
 });
 
-// 10/17: 휴대폰에서 직접 체험하면 자기 화면의 QR을 찍을 수 없다 — QR 아래 «내 영화 열기»가 같은 공개 주소를 연다.
+// 휴대폰에서 직접 체험하면 자기 화면의 QR을 찍을 수 없다 — 11/9 시안(Bumm님 «모바일은 QR 말고 저장하기»): QR 대신 그 자리에서 영화를 틀고
+// «내 폰에 저장하기»로 이 기기에 둔다. 안드로이드는 내려받기, 아이폰은 공유 창(«비디오 저장»)이다.
+const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1';
+
+async function finishOnPhone(page) {
+  const url = 'https://storage.googleapis.com/fake/dub_phone.mp4';
+  await page.route(UPLOAD_PATTERN, (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, url }) }));
+  await openStudio(page, 'SF');
+  await page.locator('#recBtn').click();
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
+  await page.locator('button', { hasText: '저장하기' }).click();
+  await expect(page.locator('#phoneSaveBtn')).toBeVisible({ timeout: 60000 });
+}
+
 test.describe('휴대폰에서 직접 체험', () => {
   test.use({ viewport: { width: 390, height: 664 }, hasTouch: true, isMobile: true });
 
-  test('저장되면 QR 아래 «내 영화 열기» 단추가 보이고 같은 공개 주소를 가리킨다', async ({ page }) => {
-    const url = 'https://storage.googleapis.com/fake/dub_phone.mp4';
-    await page.route(UPLOAD_PATTERN, (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, url }) }));
-    await openStudio(page, 'SF');
-    await page.locator('#recBtn').click();
-    await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
-    await page.locator('button', { hasText: '저장하기' }).click();
-    await expect(page.locator('#qrbox')).toBeVisible({ timeout: 60000 });
-    const open = page.locator('#openMovieBtn');
-    await expect(open).toBeVisible();
-    await expect(open).toHaveAttribute('href', url);
-    await expect(open).toHaveAttribute('target', '_blank');
-    await expect(open).toBeInViewport();
+  test('저장되면 QR 대신 영화를 그 자리에서 틀고, «내 폰에 저장하기»는 이 기기에 내려받는다(안드로이드)', async ({ page }) => {
+    await finishOnPhone(page);
+    await expect(page.locator('#qrbox')).toBeHidden();
+    await expect(page.locator('#openMovieBtn')).toHaveCount(0);
+    await expect(page.locator('#retentionNote')).toHaveText('이 영화는 11월 30일까지 보관돼요');
+    await expect(page.locator('#phoneSaveBtn')).toBeInViewport();
+    // «다른 더빙하기»는 한 단계 약하게 — 흰 바탕 · 빨간 테두리
+    const home = await page.locator('#doneHomeBtn').evaluate((el) => { const s = getComputedStyle(el); return [s.backgroundColor, s.borderTopColor]; });
+    expect(home).toEqual(['rgb(255, 255, 255)', 'rgb(229, 35, 32)']);
+
+    await page.locator('#posterPlayBtn').click();
+    const movie = page.locator('video.poster-movie');
+    await expect(movie).toBeVisible();
+    await expect(movie).toHaveAttribute('src', /^blob:/);
+    await expect.poll(() => movie.evaluate((v) => v.currentTime)).toBeGreaterThan(0);
+
+    const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#phoneSaveBtn').click()]);
+    expect(download.suggestedFilename()).toBe('Voice Cinema_SF.mp4');
+  });
+
+  test.describe('아이폰', () => {
+    test.use({ userAgent: IPHONE_UA });
+
+    test('«내 폰에 저장하기»는 누른 그 자리에서 공유 창에 mp4 파일을 넘긴다(«비디오 저장»)', async ({ page }) => {
+      // 공유 창은 자동화로 띄울 수 없어 넘기는 값만 본다 — 누른 손길이 살아 있을 때 불러야 아이폰이 창을 연다
+      await page.addInitScript(() => {
+        navigator.canShare = (data) => !!data?.files?.length;
+        navigator.share = async (data) => {
+          const file = data.files[0];
+          window.__shared = { name: file.name, type: file.type, size: file.size, active: navigator.userActivation.isActive };
+        };
+      });
+      await finishOnPhone(page);
+      let downloaded = false;
+      page.on('download', () => { downloaded = true; });
+      await page.locator('#phoneSaveBtn').click();
+      await expect.poll(() => page.evaluate(() => window.__shared)).toBeTruthy();
+      const shared = await page.evaluate(() => window.__shared);
+      expect(shared).toMatchObject({ name: 'Voice Cinema_SF.mp4', type: 'video/mp4', active: true });
+      expect(shared.size).toBeGreaterThan(100000);
+      expect(downloaded).toBe(false);
+    });
   });
 
   // 와이파이 없이 쓰는 설치판(10/27)과 같은 길 — 인터넷이 아예 없으면 App Check를 20초씩 세 번 기다리지 않고 바로 장애 화면으로 간다.
@@ -369,8 +412,7 @@ test.describe('휴대폰에서 직접 체험', () => {
     serverUp = true;
     await setOnline(true);
     await retry.click();
-    await expect(page.locator('#qrbox')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('#openMovieBtn')).toHaveAttribute('href', url);
+    await expect(page.locator('#phoneSaveBtn')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('#downloadRow')).toHaveCount(0);
     expect(callCount).toBe(1);
   });

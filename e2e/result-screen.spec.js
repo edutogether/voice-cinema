@@ -5,8 +5,11 @@ import { test, expect } from '@playwright/test';
 // 없고, «다른 더빙하기»는 Lucide 아이콘을 앞에 단 빨간 주 단추다 — 메일 칸 «다음»과 같은 크기 · 높이 · 모서리 · 글자(11/9 Bumm님).
 const UPLOAD_PATTERN = '**/voiceCinema/upload';
 
-for (const [width, height] of [[1440, 900], [768, 1024], [390, 664]]) {
+// 휴대폰(11/9 시안 — 팀장 제안 A~D, 팀장 전달)은 QR 대신 포스터를 눌러 보기 · «내 폰에 저장하기» · 보관 기한 한 줄이고,
+// «다른 더빙하기»는 흰 바탕 · 빨간 테두리다. PC · 패드는 QR 그대로다.
+for (const [width, height] of [[1440, 900], [768, 1024], [390, 664], [390, 844]]) {
   test(`${width}×${height}: 완성 화면 그림·로고·제목·단추`, async ({ page }) => {
+    const phone = width <= 600;
     await page.setViewportSize({ width, height });
     let release;
     const gate = new Promise((resolve) => { release = resolve; });
@@ -26,7 +29,7 @@ for (const [width, height] of [[1440, 900], [768, 1024], [390, 664]]) {
     await expect(page.locator('#loading')).toBeVisible();
     const before = await poster.boundingBox();
     release();
-    await expect(page.locator('#qrbox')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator(phone ? '#phoneSaveBtn' : '#qrbox')).toBeVisible({ timeout: 60000 });
     const after = await poster.boundingBox();
     // «개인정보처리방침» 줄이 그림 위에 얹히지 않는다 — 휴대폰에서 글자가 그림 위 가장자리에 닿아 있었다(11/8 해상도 전수)
     const link = await page.locator('#result .privacylink').boundingBox();
@@ -66,17 +69,31 @@ for (const [width, height] of [[1440, 900], [768, 1024], [390, 664]]) {
     expect(inky.x + inky.width).toBeLessThan(education.x);
 
     await expect(page.locator('#savemode')).toHaveCount(0);
-    await expect(page.locator('#result')).not.toContainText('11월 30일');
     await expect(page.locator('#qrbox')).not.toContainText('내 영화 받기');
+    if (phone) {
+      // 휴대폰은 자기 화면의 QR을 찍을 수 없다 — QR · «내 영화 열기» 대신 포스터 누르기 · «내 폰에 저장하기» · 보관 기한 한 줄
+      await expect(page.locator('#qrbox')).toBeHidden();
+      await expect(page.locator('#openMovieBtn')).toHaveCount(0);
+      await expect(page.locator('#posterPlayBtn')).toBeVisible();
+      await expect(page.locator('#phoneSaveBtn')).toHaveText('내 폰에 저장하기');
+      // 날짜는 자동 삭제 일정(2026-12-01 00:00 KST)의 전날
+      await expect(page.locator('#retentionNote')).toHaveText('이 영화는 11월 30일까지 보관돼요');
+    } else {
+      // PC · 패드는 QR 그대로 — 휴대폰 요소는 보이지 않고 11/30 줄도 없다(10/20 대표님)
+      await expect(page.locator('#result')).not.toContainText('11월 30일', { useInnerText: true });
+      for (const sel of ['#posterPlayBtn', '#phoneSaveBtn']) await expect(page.locator(sel), sel).toBeHidden();
+    }
     const home = page.locator('#doneHomeBtn');
     await expect(home).toHaveText('다른 더빙하기');
     await expect(home.locator('svg.action-icon')).toHaveCount(1);
-    // «다른 더빙하기»는 모든 끝 화면에서 빨간 주 단추 — 메일 칸 «다음»과 같은 높이 48 · 모서리 10 · 16px 굵기 600(11/9 Bumm님 «빨간걸로»).
+    // «다른 더빙하기»는 빨간 주 단추 — 메일 칸 «다음»과 같은 높이 48 · 모서리 10 · 16px 굵기 600(11/9 Bumm님 «빨간걸로»).
+    // 휴대폰 완성 화면은 «내 폰에 저장하기»가 주 단추라 흰 바탕 · 빨간 테두리로 한 단계 약하게(11/9 시안 D).
     // 넓은 화면은 «다음»과 같은 폭 248, 휴대폰은 다른 단추처럼 가로를 채운다. 마우스가 올라가 있지 않은 색으로 잰다
     await page.mouse.move(1, 1);
-    await expect.poll(() => home.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(229, 35, 32)');
+    await expect.poll(() => home.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(phone ? 'rgb(255, 255, 255)' : 'rgb(229, 35, 32)');
     const look = await home.evaluate((el) => { const s = getComputedStyle(el); return { radius: s.borderTopLeftRadius, size: s.fontSize, weight: s.fontWeight, color: s.color }; });
-    expect(look).toEqual({ radius: '10px', size: '16px', weight: '600', color: 'rgb(255, 255, 255)' });
+    expect(look).toEqual({ radius: '10px', size: '16px', weight: '600', color: phone ? 'rgb(229, 35, 32)' : 'rgb(255, 255, 255)' });
+    if (phone) expect(await home.evaluate((el) => getComputedStyle(el).borderTopColor), '흰 단추에 빨간 테두리가 없다').toBe('rgb(229, 35, 32)');
     const homeBox = await home.boundingBox();
     // 휴대폰은 다른 단추처럼 높이 52 — 48이면 폭 320 휴대폰(비율 0.82)에서 손가락 칸이 39px다
     expect(Math.round(homeBox.height)).toBe(width > 600 ? 48 : 52);
@@ -95,9 +112,9 @@ for (const [width, height] of [[1440, 900], [768, 1024], [390, 664]]) {
       expect((await home.boundingBox()).width).toBeLessThan(details.width * .6);
       expect(Math.abs(after.height - details.content)).toBeLessThanOrEqual(40);
     }
-    if (width > 600 && height > 700) {
+    if (height > 700) {
       // 그림 · 글 덩어리는 머리글과 바닥글 글자 사이 세로 가운데에 있다 — 카드 위 1몫 · 아래 2몫으로 나뉘어 아래가 비었다
-      // (11/8 Bumm님 «아래쪽이 너무 비어 보입니다», 2560×1369에서 위 170 · 아래 340px). 휴대폰 · 낮은 창은 위에서 시작한다
+      // (11/8 Bumm님 «아래쪽이 너무 비어 보입니다», 2560×1369에서 위 170 · 아래 340px). 키 큰 휴대폰도 같다(11/9 시안). 낮은 창은 위에서 시작한다
       const gap = await page.evaluate(() => {
         const r = (sel) => document.querySelector(sel).getBoundingClientRect();
         const footer = document.querySelector('#result .workflow-footer');
@@ -122,7 +139,8 @@ for (const [width, height] of [[932, 380], [844, 340], [780, 304], [667, 331], [
     await page.locator('#recBtn').click();
     await expect(page.locator('#afterRow')).toBeVisible({ timeout: 40000 });
     await page.locator('#saveBtn').click();
-    await expect(page.locator('#qrbox')).toBeVisible({ timeout: 60000 });
+    // 휴대폰은 QR 대신 «내 폰에 저장하기»(11/9 시안)
+    await expect(page.locator('#phoneSaveBtn')).toBeVisible({ timeout: 60000 });
     const poster = await page.locator('.result-poster').boundingBox();
     const inky = await page.locator('.poster-logo-inky').boundingBox();
     const education = await page.locator('.poster-logo-education').boundingBox();
