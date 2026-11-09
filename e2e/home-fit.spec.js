@@ -181,6 +181,33 @@ for (const [width, height] of [[320, 568], [360, 640], [375, 553], [390, 664], [
   });
 }
 
+// 머리글 양쪽 로고(CGV × 교육청 · InKY Film Festival)는 노트북 기본 화면(1366×768)보다 작은 앱 화면에서 넓이 비율만큼 줄고, 가장 작게는
+// 900 이하 머리글의 CGV 크기(58px)까지다 — 1366×768 이상은 그대로 76px(11/10 Bumm님 «1024×768 · 1180×820 · 1280×720 양쪽 로고 크기를 줄입니다»).
+// 크기마다 숫자를 두지 않으므로 넓이 비율에서 기대값을 계산한다. 첫 페이지 · 완성 화면이 같은 머리글이다
+for (const [width, height] of [[1024, 768], [1180, 820], [1280, 720], [1280, 800], [1366, 768], [1600, 900], [2560, 1305]]) {
+  test(`${width}×${height}: 머리글 양쪽 로고는 넓이 비율로 줄고 1366×768 이상은 그대로다`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.locator('#splash').waitFor({ state: 'detached' });
+    const scale = Math.max(58 / 76, Math.min(1, (width * height) / (1366 * 768)));
+    const sizes = await page.evaluate(() => {
+      const w = (sel) => document.querySelector(sel).getBoundingClientRect().width;
+      return { cgv: w('#home .partner-cgv'), education: w('#home .partner-education'), symbol: w('#home .festival-symbol'), font: parseFloat(getComputedStyle(document.querySelector('#home .festival-signature')).fontSize) };
+    });
+    expect(sizes.cgv, 'CGV').toBeCloseTo(76 * scale, 0);
+    expect(sizes.education, '교육청').toBeCloseTo(174 * scale, 0);
+    expect(sizes.symbol, 'InKY 카메라').toBeCloseTo(45 * scale, 0);
+    expect(sizes.font, '«InKY Film Festival» 글자').toBeCloseTo(16 * scale, 0);
+    // 두 로고 줄은 머리글 가운데 단계 표시와 겹치지 않는다
+    const boxes = await page.evaluate(() => ['#home .festival-partners', '#home .festival-steps', '#home .festival-signature'].map((sel) => {
+      const r = document.querySelector(sel).getBoundingClientRect();
+      return { left: r.left, right: r.right };
+    }));
+    expect(boxes[0].right, 'CGV × 교육청이 단계 표시에 닿는다').toBeLessThan(boxes[1].left);
+    expect(boxes[1].right, '단계 표시가 InKY Film Festival에 닿는다').toBeLessThan(boxes[2].left);
+  });
+}
+
 for (const [width, height] of [[1366, 768], [1440, 900], [1920, 1080]]) {
   test(`${width}×${height}: 왼쪽 제목은 한 줄이고 작은 마이크는 소개 위에 왼쪽 정렬된다`, async ({ page }) => {
     await page.setViewportSize({ width, height });

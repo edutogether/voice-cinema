@@ -1,13 +1,14 @@
 import { test, expect } from '@playwright/test';
 
-// 완성 화면(10/20 대표님 PC 시사): 왼쪽 그림은 QR이 생기기 전·후 같은 크기이고 오른쪽 높이에 맞춘다. 그림 위에는
+// 완성 화면(10/20 대표님 PC 시사): 왼쪽 그림은 오른쪽 높이에 맞춘다 — 넓은 화면은 글 맨 위부터 «다른 더빙하기» 아래 끝까지(11/10 Bumm님),
+// 그 사이 크기가 바뀌는 것은 흰 대기 화면이 덮어 보이지 않는다. 900 이하는 QR이 생기기 전·후 같은 크기다. 그림 위에는
 // 왼쪽 InKY Film Festival·오른쪽 인천광역시교육청 로고, 큰 글자는 영화 제목·그 아래는 장르. QR 위 두 줄과 «내 영화 받기»는
 // 없고, «다른 더빙하기»는 Lucide 아이콘을 앞에 단 빨간 주 단추다 — 메일 칸 «다음»과 같은 크기 · 높이 · 모서리 · 글자(11/9 Bumm님).
 const UPLOAD_PATTERN = '**/voiceCinema/upload';
 
 // 휴대폰(11/9 시안 — 팀장 제안 A~D, 팀장 전달)은 QR 대신 포스터를 눌러 보기 · «내 폰에 저장하기» · 보관 기한 한 줄이고,
 // «다른 더빙하기»는 흰 바탕 · 빨간 테두리다. PC · 패드는 QR 그대로다.
-for (const [width, height] of [[1440, 900], [768, 1024], [390, 664], [390, 844]]) {
+for (const [width, height] of [[1440, 900], [1024, 768], [1180, 820], [768, 1024], [390, 664], [390, 844]]) {
   test(`${width}×${height}: 완성 화면 그림·로고·제목·단추`, async ({ page }) => {
     const phone = width <= 600;
     await page.setViewportSize({ width, height });
@@ -27,6 +28,12 @@ for (const [width, height] of [[1440, 900], [768, 1024], [390, 664], [390, 844]]
 
     const poster = page.locator('.result-poster');
     await expect(page.locator('#loading')).toBeVisible();
+    // 저장하는 동안은 흰 대기 화면(11/9)이 화면 전체를 덮는다 — 그 뒤에서 그림이 오른쪽 글 높이로 커져도(11/10) 보이지 않는다
+    const covered = await page.locator('#loading').evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return el.open && r.left <= 0 && r.top <= 0 && r.right >= innerWidth && r.bottom >= innerHeight && getComputedStyle(el).backgroundColor === 'rgb(255, 255, 255)';
+    });
+    expect(covered, '저장하는 동안 흰 대기 화면이 화면 전체를 덮지 않는다').toBe(true);
     const before = await poster.boundingBox();
     release();
     await expect(page.locator(phone ? '#phoneSaveBtn' : '#qrbox')).toBeVisible({ timeout: 60000 });
@@ -36,8 +43,11 @@ for (const [width, height] of [[1440, 900], [768, 1024], [390, 664], [390, 844]]
     if (link.x + link.width > after.x && link.x < after.x + after.width) expect(after.y, '방침 링크 줄이 그림에 얹혔다').toBeGreaterThanOrEqual(link.y + link.height - 1);
     await expect(page.locator('#result .download-link'), '설치 파일 아이콘은 첫 화면에만 있다').toHaveCount(0);
     expect(after.width).toBeGreaterThan(200);
-    expect(after.width).toBeCloseTo(before.width, 0);
-    expect(after.height).toBeCloseTo(before.height, 0);
+    if (width <= 900) {
+      // 900 이하(패드 세로 · 휴대폰)는 그림이 폭으로만 크기를 정해 QR이 생기기 전·후 같은 크기다(10/20)
+      expect(after.width).toBeCloseTo(before.width, 0);
+      expect(after.height).toBeCloseTo(before.height, 0);
+    }
 
     await expect(poster.locator('.poster-logo-inky')).toContainText('InKY Film Festival');
     await expect(poster.locator('.poster-logo-inky img')).toHaveAttribute('src', '/brands/inky.png');
@@ -109,8 +119,15 @@ for (const [width, height] of [[1440, 900], [768, 1024], [390, 664], [390, 844]]
         const s = getComputedStyle(el);
         return { width: el.clientWidth, content: el.clientHeight - parseFloat(s.paddingTop) - parseFloat(s.paddingBottom) };
       });
-      expect((await home.boundingBox()).width).toBeLessThan(details.width * .6);
+      // 단추는 칸 폭으로 늘지 않는다(폭 248은 위에서 본다) — 1024×768은 그림이 글 높이까지 커져 오른쪽 칸이 320px라 비율로는 재지 않는다
+      expect((await home.boundingBox()).width).toBeLessThan(details.width - 1);
       expect(Math.abs(after.height - details.content)).toBeLessThanOrEqual(40);
+      // 왼쪽 그림은 오른쪽 글 맨 위 «내 영화가 완성됐어요»부터 맨 아래 «다른 더빙하기»까지의 높이를 다 차지한다
+      // (11/10 Bumm님 «왼쪽 화면이 우측 상단 글씨부터 하단 버튼까지의 높이를 다 차지하도록» — 1024×768 · 1180×820에서 그림이 글보다 짧았다)
+      const eyebrow = await page.locator('#result .result-eyebrow').boundingBox();
+      const end = await home.boundingBox();
+      expect(after.y, '그림이 글 맨 위보다 아래에서 시작한다').toBeLessThanOrEqual(eyebrow.y + 1);
+      expect(after.y + after.height, '그림이 «다른 더빙하기» 아래 끝보다 먼저 끝난다').toBeGreaterThanOrEqual(end.y + end.height - 1);
     }
     if (height > 700) {
       // 그림 · 글 덩어리는 머리글과 바닥글 글자 사이 세로 가운데에 있다 — 카드 위 1몫 · 아래 2몫으로 나뉘어 아래가 비었다

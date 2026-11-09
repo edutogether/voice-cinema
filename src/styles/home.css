@@ -19,10 +19,13 @@ body:has(#home.active) { background:#fff; }
 .festival-restart:focus-visible { outline:2px solid #ed3124; outline-offset:6px; }
 /* 머리글 로고는 누르면 처음 화면으로 돌아간다. 손가락으로 누르는 기기에서는 모양과 자리를 그대로 두고 누르는 칸만 머리글 안에서 넓힌다 — 줄 높이를 다 쓰고 위아래로 10px(머리글 여백 · 단계 표시와의 간격)까지. 화면 위로 넘어가거나 단계 표시를 덮지 않는다. 손가락 크기는 화면 기준이라 칸 높이의 하한은 화면 전체 비율을 되돌려 정한다(화면 40px + 반올림 여유 1px) — 폭 320에서 칸이 39px로 작았다. 비율 0.85 위에서는 줄 높이가 이미 넘어 이 하한이 일하지 않는다. */
 @media (pointer:coarse) { .festival-restart { align-self:stretch; padding-block:10px; margin-block:-10px; min-height:calc(41px * var(--fit-undo)); } }
-.festival-partners { display:flex; align-items:center; gap:12px; }
-.festival-partners > span { color:#aaa; font-size:1.125rem; }
-.partner-cgv { width:76px; height:auto; }
-.partner-education { width:174px; height:auto; }
+/* 양쪽 로고(CGV × 교육청 · InKY Film Festival)는 --logo 배율을 곱한다 — 노트북 기본 화면(1366×768)보다 작은 앱 화면에서 넓이 비율만큼 작아진다
+   (11/10 Bumm님, 배율은 public/fit.js의 --brand-scale). 단계 표시 글자는 그대로다. 900 이하는 아래에서 1로 되돌린다(자기 크기를 따로 쓴다). */
+.festival-header { --logo:var(--brand-scale,1); }
+.festival-partners { display:flex; align-items:center; gap:calc(12px * var(--logo,1)); }
+.festival-partners > span { color:#aaa; font-size:calc(1.125rem * var(--logo,1)); }
+.partner-cgv { width:calc(76px * var(--logo,1)); height:auto; }
+.partner-education { width:calc(174px * var(--logo,1)); height:auto; }
 .festival-steps { display:flex; align-items:center; gap:20px; list-style:none; padding:0; margin:0; font-size:.8125rem; color:#757575; }
 .festival-steps li { display:flex; align-items:center; gap:8px; white-space:nowrap; }
 .festival-steps li + li::before { content:''; width:20px; height:1px; margin-right:12px; background:#ddd; }
@@ -31,10 +34,10 @@ body:has(#home.active) { background:#fff; }
 .festival-steps [aria-current] { color:#171717; }
 .festival-steps [aria-current] > span { color:white; background:#171717; border-color:#171717; }
 .festival-steps [aria-current] b { font-weight:700; }
-.festival-signature { justify-self:end; display:flex; align-items:center; gap:8px; font-size:1rem; line-height:1.2; font-weight:400; letter-spacing:-.4px; white-space:nowrap; }
+.festival-signature { justify-self:end; display:flex; align-items:center; gap:calc(8px * var(--logo,1)); font-size:calc(1rem * var(--logo,1)); line-height:1.2; font-weight:400; letter-spacing:-.4px; white-space:nowrap; }
 .festival-signature strong { font-weight:800; }
-.festival-symbol { position:relative; display:block; overflow:hidden; width:45px; height:32px; flex-shrink:0; }
-.festival-symbol img { position:absolute; left:-38px; top:0; width:254px; height:auto; max-width:none; }
+.festival-symbol { position:relative; display:block; overflow:hidden; width:calc(45px * var(--logo,1)); height:calc(32px * var(--logo,1)); flex-shrink:0; }
+.festival-symbol img { position:absolute; left:calc(-38px * var(--logo,1)); top:0; width:calc(254px * var(--logo,1)); height:auto; max-width:none; }
 
 .festival-header { position:relative; margin-inline:-28px; }
 .chart-layout { --chart-aside-width:clamp(13.5rem,calc(15 * var(--vw)),14.5rem); --scene-strip-height:calc(var(--scene-thumbnail-height) + 68px); display:flex; flex:1; min-height:0; gap:28px; padding-top:26px; }
@@ -117,7 +120,7 @@ html[data-fit="none"] .download-link { display:none; }
   .festival-steps { gap:12px; }
 }
 @container app (max-width:900px) {
-  .festival-header { grid-template-columns:1fr auto; gap:10px 16px; padding:10px 20px; }
+  .festival-header { --logo:1; grid-template-columns:1fr auto; gap:10px 16px; padding:10px 20px; }
   .festival-steps { grid-column:1 / -1; grid-row:2; justify-content:center; }
   .partner-cgv { width:58px; }
   .partner-education { width:145px; }

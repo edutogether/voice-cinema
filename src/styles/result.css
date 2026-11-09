@@ -3,9 +3,16 @@ body:has(#result.active) { background:#fff; }
 #result { width:var(--app-w); margin-inline:calc((100% - var(--app-w)) / 2); min-height:var(--app-h); background:#fff; color:#171717; }
 #result.active { animation:none; }
 #result .festival-header { margin-inline:0; }
-.result-card { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); align-items:center; width:min(calc(100% - 80px),1280px); margin:52px auto 24px; gap:clamp(32px,calc(4 * var(--vw)),64px); }
-/* 그림 크기는 오른쪽 내용과 상관없이 폭으로만 정한다 — QR이 생기기 전·후 같은 크기(10/20 대표님). 비율은 QR이 생긴 뒤 오른쪽 높이에 맞춘 값이다. */
+/* 카드 폭 · 칸 사이 · 오른쪽 위아래 안쪽 여백은 변수로 둔다 — 아래 완성 화면 그림이 같은 값으로 자기 크기를 정한다. 카드 폭은 #result 폭(--app-w)에서 잰다. */
+.result-card { --card-w:min(calc(100 * var(--vw) - 80px),1280px); --result-gap:clamp(32px,calc(4 * var(--vw)),64px); --details-pad:26px; display:grid; grid-template-columns:minmax(min-content,1.1fr) minmax(0,1fr); align-items:center; width:var(--card-w); margin:52px auto 24px; gap:var(--result-gap); }
+/* 그림은 폭으로 정한 5:4가 기본이다(그림 안의 것은 모두 떠 있어 왼쪽 칸을 넓히지 않는다).
+   완성(QR) 화면에서 오른쪽 글(맨 위 «내 영화가 완성됐어요» ~ 맨 아래 «다른 더빙하기»)이 그림보다 길면 그 높이까지 5:4 그대로 키운다 — 왼쪽 칸이 그 폭만큼 넓어진다
+   (11/10 Bumm님 «왼쪽 화면이 우측 상단 글씨부터 하단 버튼까지의 높이를 다 차지하도록», 해상도 1024×768 · 1180×820). 오른쪽 칸은 «다른 더빙하기» 폭(15.5rem)보다
+   좁아지지 않는다 — 그보다 좁아질 창(폭 901~1000 남짓이면서 높이 801 이상)에서는 그림이 5:4보다 조금 길어진다(cover라 양옆이 조금 더 잘린다).
+   저장하는 동안은 흰 대기 화면(11/9)이 카드를 덮어 그림이 커지는 순간이 보이지 않는다 — 10/20 «QR 전 · 후 같은 크기»가 지키려던 것이 이것이다.
+   메일 칸은 오른쪽이 적는 칸이라 키우지 않는다. 900 이하(패드 세로 · 휴대폰)는 아래에서 되돌린다. */
 .result-poster { position:relative; aspect-ratio:5 / 4; overflow:hidden; border-radius:16px; background:#191919; color:white; }
+.result-cloud .result-poster { min-height:calc(100% - 2 * var(--details-pad)); max-width:calc(var(--card-w) - var(--result-gap) - 15.5rem); }
 .result-poster > .pic > img { position:absolute; width:100%; height:100%; inset:0; object-fit:cover; }
 .result-poster::after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(0,0,0,.25),transparent 28%,rgba(0,0,0,.06) 48%,rgba(0,0,0,.82)); }
 /* 왼쪽 위 InKY Film Festival, 오른쪽 위 인천광역시교육청 — 방송국 로고처럼 바탕 없이 흰 로고만 그림 위에 얹는다(11/8 Bumm님 «흰 둥근 바탕을 없앱니다»).
@@ -25,7 +32,7 @@ body:has(#result.active) { background:#fff; }
 .poster-credit p { margin:0 0 12px; font-size:.9375rem; line-height:1.6; }
 .poster-credit strong { display:block; font-size:clamp(36px,calc(3.5 * var(--vw)),56px); font-weight:750; line-height:1.2; letter-spacing:-.045em; }
 .poster-credit > span { display:block; margin-top:20px; font-size:.875rem; color:#eee; }
-.result-details { min-width:0; padding:26px 0; align-self:center; }
+.result-details { min-width:0; padding:var(--details-pad) 0; align-self:center; }
 .result-details .result-eyebrow { color:#e52320; font-size:.875rem; font-weight:700; margin:0 0 22px; }
 .result-details h2 { font-size:clamp(26px,calc(2.15 * var(--vw)),34px); font-weight:750; line-height:1.35; letter-spacing:-.04em; margin:0 0 14px; word-break:keep-all; }
 .result-details h2:focus { outline:none; }
@@ -58,17 +65,15 @@ body:has(#result.active) { background:#fff; }
 .errbox b { font-weight:700; }
 #result .workflow-footer { color:#737373; padding:20px 24px; font-size:.8125rem; }
 @container app (max-height:800px) and (min-width:601px) {
- .result-card { margin-top:40px; }
- .result-details { padding:0; }
+ .result-card { margin-top:40px; --details-pad:0px; }
  .result-symbol { margin-bottom:14px; }
  .qrbox img { width:152px; height:152px; }
 }
 /* 낮은 창(세로 휴대폰 제외): 완성 화면이 스크롤 없이 한 화면에 들게 여백을 줄이고, 그림은 머리글 · 바닥글을 뺀 높이까지만 쓴다.
    PC · 태블릿은 화면 맞춤이 높이 640을 지켜 주므로 600 아래는 가로로 눕힌 휴대폰뿐이다 — 어차피 스크롤하는 화면이라 그림을 줄이지 않는다(11/8 해상도 전수, 폭 233px로 줄어 두 로고가 겹치고 포스터 글이 위로 잘렸다). */
 @container app (min-height:600px) and (max-height:700px) and (min-width:601px) {
- .result-card { margin-block:20px 16px; }
+ .result-card { margin-block:20px 16px; --details-pad:0px; }
  .result-poster { max-height:calc(var(--app-h) - 154px); }
- .result-details { padding:0; }
  .result-details .result-eyebrow { margin-bottom:10px; }
  .result-symbol { display:none; }
  #doneMsg { margin-bottom:16px; }
@@ -89,7 +94,7 @@ body:has(#result.active) { background:#fff; }
 }
 /* 넓고 높은 창: 실제 크기 그대로 두면 위쪽에 작게 붙고 아래가 빈다(11/7) — 창 높이만큼 넓힌다. */
 @container app (min-width:901px) and (min-height:801px) {
- .result-card { width:min(calc(100% - 80px),max(1280px,calc(var(--app-h) * 1.3))); }
+ .result-card { --card-w:min(calc(100 * var(--vw) - 80px),max(1280px,calc(var(--app-h) * 1.3))); }
 }
 /* 세로로는 머리글과 바닥글 사이 가운데에 둔다(11/8 Bumm님 «아래쪽이 너무 비어 보입니다») — 바닥글의 위 여백도 auto라 남는 높이를 셋으로 나눠
    카드 위에 1몫, 아래에 2몫이 갔다(2560×1369: 위 170px · 아래 340px). 남는 높이가 없으면 auto가 0이 되고, 그때의 위아래 간격은 안쪽 여백이 맡는다
@@ -102,6 +107,8 @@ body:has(#result.active) { background:#fff; }
    들어가지 않아 교육청 로고가 «InKY Film Festival» 끝을 가렸다(11/2 해상도 전수 · 라이브에도 있던 것). */
 @container app (max-width:900px) {
  .result-card { width:calc(100% - 48px); gap:28px; }
+ /* 좁은 두 칸 · 휴대폰은 그림을 폭으로만 정한다(위의 완성 화면 키우기를 쓰지 않는다) */
+ .result-cloud .result-poster { min-height:auto; max-width:none; }
  .result-poster::before { height:72px; }
  .poster-logo { top:14px; height:22px; font-size:.8125rem; gap:6px; }
  .poster-logo-inky { left:16px; }
