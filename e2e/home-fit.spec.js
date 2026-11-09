@@ -27,7 +27,7 @@ for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [
         await expect(page.locator(selector), selector).toBeInViewport({ ratio: 1 });
       }
       await expect(page.locator('.chart-heading h1')).toHaveText('내 목소리로 완성하는 10초의 영화.', { useInnerText: true });
-      for (const selector of ['.chart-heading > p', '.chart-aside h2', '.scene-shell.is-current .tile-copy']) {
+      for (const selector of ['.chart-aside h2', '.scene-shell.is-current .tile-copy']) {
         await expect(page.locator(selector), `${selector}는 휴대폰에서 접는다`).toBeHidden();
       }
       // 제목은 오른쪽 위 «개인정보처리방침»과 겹치지 않는다(안내 줄을 접는 낮은 화면에서 실제로 겹쳤다)
@@ -131,21 +131,16 @@ test('PC: 선택한 카드만 경량 영상으로 재생하고 녹음실 진입 
 });
 
 
-// 폭 761 이상: 오른쪽 위 «개인정보처리방침» 줄 바로 아래에 설명 글이 붙지 않고, 어느 폭에서도 가운데 장면에 «더빙하기»가 보인다
-// (11/8 해상도 전수 — 설명 글이 링크 글자에 닿을 듯 붙었고, 761~900 폭에는 단추가 아예 없어 무엇을 눌러야 할지 보이지 않았다.
-// 같은 날 1250보다 넓은 1280×800 태블릿에서도 붙은 것을 찾아 넣었다 — 처음 고침이 1250 이하에만 걸렸다)
+// 어느 폭에서도 가운데 장면에 «더빙하기»가 보인다(11/8 해상도 전수 — 761~900 폭에는 단추가 아예 없어 무엇을 눌러야 할지 보이지 않았다).
+// 터치 기기의 설명 글 «옆으로 넘겨 고르고, 가운데 장면을 누르면 녹음실로 들어가요.»는 시키지 않은 글이라 뺐다(11/9 Bumm님) — 다시 생기면 여기서 걸린다
 for (const [width, height, touch] of [[768, 1024, true], [820, 1180, true], [1024, 768, true], [1180, 820, true], [1280, 800, true], [1366, 1024, true], [800, 600, false], [844, 340, true]]) {
-  test(`${width}×${height}: 설명 글이 방침 링크 줄 아래에 있고 «더빙하기»가 보인다`, async ({ browser }) => {
+  test(`${width}×${height}: «더빙하기»가 보이고 설명 글은 없다`, async ({ browser }) => {
     const page = await browser.newPage({ viewport: { width, height }, hasTouch: touch, isMobile: touch });
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
     await expect(page.locator('.scene-shell.is-current .tile-enter')).toBeVisible();
-    // 설명 글(«옆으로 넘겨 고르고…»)은 터치 기기에만 있다
-    if (touch) {
-      const link = await page.locator('.privacylink').boundingBox();
-      const note = await page.locator('.chart-heading > p').boundingBox();
-      expect(note.y, '설명 글이 방침 링크 줄에 붙었다').toBeGreaterThanOrEqual(link.y + link.height - 1);
-    }
+    await expect(page.locator('.chart-heading > p')).toHaveCount(0);
+    await expect(page.getByText('옆으로 넘겨 고르고')).toHaveCount(0);
     await page.close();
   });
 }

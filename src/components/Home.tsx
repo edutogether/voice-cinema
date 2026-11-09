@@ -1,5 +1,4 @@
 import { GENRES, type Genre } from '../genres';
-import { SUPPORTS_HOVER } from '../lib/pointer';
 import { FestivalHeader } from './FestivalHeader';
 import { SceneCarousel } from './SceneCarousel';
 
@@ -32,9 +31,8 @@ export function Home({ active, onSelect }: Props) {
         </aside>
         <div className="chart-main">
           <div className="chart-heading">
-            {/* 휴대폰 폭에서는 제목 자리에 «내 목소리로 완성하는 10초의 영화.»를 두고 아래 설명 줄은 접는다(10/19 대표님, home.css) */}
+            {/* 휴대폰 폭에서는 제목 자리에 «내 목소리로 완성하는 10초의 영화.»를 둔다(10/19 대표님, home.css) */}
             <div><p className="chart-eyebrow">오늘, 내가 출연할 영화</p><h1><b className="chart-title"><em>더빙</em>할 영화 고르기</b> <span>{GENRES.length}</span><b className="chart-title chart-title-phone">내 목소리로 완성하는 <em>10초의 영화.</em></b></h1></div>
-            {!SUPPORTS_HOVER && <p>옆으로 넘겨 고르고, 가운데 장면을 누르면 녹음실로 들어가요.</p>}
           </div>
 
           <SceneCarousel active={active} onSelect={onSelect} />
