@@ -176,6 +176,12 @@ html:is([data-fit="phone"],[data-fit="none"]) .result-cloud #doneHomeBtn { backg
  /* 아래 안쪽 여백 10px + 바닥글 위 여백 20px = 위 30px — 머리글과 바닥글 글자 사이 가운데 */
  html:is([data-fit="phone"],[data-fit="none"]) :is(.result-merging,.result-uploading,.result-cloud) { margin-block:auto; padding-block:30px 10px; }
  html:is([data-fit="phone"],[data-fit="none"]) #result:has(.result-merging,.result-uploading,.result-cloud) .workflow-footer { margin-top:0; }
+ /* 11/10 MA 확정(Bumm님 «그림을 화면 끝까지», 팀장 전달): 포스터를 화면 폭 끝까지(모서리 없이) PC와 같은 5:4로 — 10/20 «휴대폰 16:9»를 바꾼 것이다.
+    저장 중부터 같은 크기다. 이 칸에서 영화를 틀면 위아래에 검은 띠가 생기는데, 그것은 Bumm님께 여쭌다(결정판).
+    높이는 남는 높이만큼만 — 그림 밖 몫(머리글 · 카드 여백 · 글 · 단추 · 바닥글, 잰 값 504px + «내 폰에 저장하기»가 화면 높이로 커지는 몫까지 516px)을 빼고
+    16:9에서 5:4 사이다. 5:4를 그대로 두면 실제 브라우저 높이(360×668 · 384×712 — 주소창을 뺀 갤럭시 크롬)에서 «다른 더빙하기»가 첫 화면 끝에 걸렸다.
+    결정판 1~5번 크기(기준 높이 844 이상)는 5:4 그대로다. 저장 중 · 완성이 같은 값이라 그림 크기가 바뀌지 않는다. */
+ html:is([data-fit="phone"],[data-fit="none"]) :is(.result-merging,.result-uploading,.result-cloud) .result-poster { aspect-ratio:auto; height:clamp(calc(var(--app-w) * 9 / 16), calc(var(--app-h) - 516px), calc(var(--app-w) * 4 / 5)); margin-inline:calc(50% - var(--app-w) / 2); border-radius:0; }
 }
 /* 가로로 눕힌 휴대폰: QR이 빠져 글이 그림보다 짧아져도 그림과 글을 위에서 함께 시작한다(11/8 «가로로 눕힌 휴대폰» 규칙과 같은 뜻) */
 @container app (max-height:599px) and (min-width:601px) {

@@ -8,7 +8,7 @@ const UPLOAD_PATTERN = '**/voiceCinema/upload';
 
 // 휴대폰(11/9 시안 — 팀장 제안 A~D, 팀장 전달)은 QR 대신 포스터를 눌러 보기 · «내 폰에 저장하기» · 보관 기한 한 줄이고,
 // «다른 더빙하기»는 흰 바탕 · 빨간 테두리다. PC · 패드는 QR 그대로다.
-for (const [width, height] of [[1440, 900], [1024, 768], [1180, 820], [768, 1024], [390, 664], [390, 844]]) {
+for (const [width, height] of [[1440, 900], [1024, 768], [1180, 820], [768, 1024], [390, 664], [390, 724], [390, 844]]) {
   test(`${width}×${height}: 완성 화면 그림·로고·제목·단추`, async ({ page }) => {
     const phone = width <= 600;
     await page.setViewportSize({ width, height });
@@ -31,7 +31,7 @@ for (const [width, height] of [[1440, 900], [1024, 768], [1180, 820], [768, 1024
     // 저장하는 동안은 흰 대기 화면(11/9)이 화면 전체를 덮는다 — 그 뒤에서 그림이 오른쪽 글 높이로 커져도(11/10) 보이지 않는다
     const covered = await page.locator('#loading').evaluate((el) => {
       const r = el.getBoundingClientRect();
-      return el.open && r.left <= 0 && r.top <= 0 && r.right >= innerWidth && r.bottom >= innerHeight && getComputedStyle(el).backgroundColor === 'rgb(255, 255, 255)';
+      return el.open && r.left <= 0 && r.top <= 0 && r.right >= window.innerWidth && r.bottom >= window.innerHeight && getComputedStyle(el).backgroundColor === 'rgb(255, 255, 255)';
     });
     expect(covered, '저장하는 동안 흰 대기 화면이 화면 전체를 덮지 않는다').toBe(true);
     const before = await poster.boundingBox();
@@ -47,6 +47,19 @@ for (const [width, height] of [[1440, 900], [1024, 768], [1180, 820], [768, 1024
       // 900 이하(패드 세로 · 휴대폰)는 그림이 폭으로만 크기를 정해 QR이 생기기 전·후 같은 크기다(10/20)
       expect(after.width).toBeCloseTo(before.width, 0);
       expect(after.height).toBeCloseTo(before.height, 0);
+    }
+    if (phone) {
+      // 키 큰 휴대폰(기준 화면 높이 720 이상)은 포스터를 화면 폭 끝까지, PC와 같은 5:4로, 모서리 없이 둔다(11/10 MA 확정 — 10/20 «휴대폰 16:9»를 바꿈).
+      // 낮은 휴대폰은 16:9 그대로다. 높이가 모자라면 5:4에서 16:9 쪽으로 줄여 «다른 더빙하기»까지 첫 화면에 든다 — 390×724는 주소창을 뺀
+      // 갤럭시 크롬 360×668과 기준 화면 크기(390×724)가 같다(이 시험의 px 값이 비율 1을 전제해 390 폭으로 잰다). 5:4 그대로였을 때 문서가 화면보다 92px 길었다
+      if (height / (width / 390) >= 720) {
+        expect(Math.abs(after.width - width), '포스터가 화면 폭 끝까지가 아니다').toBeLessThanOrEqual(1);
+        if (height / (width / 390) >= 844) expect(Math.abs(after.height - width * 4 / 5), '포스터가 5:4가 아니다').toBeLessThanOrEqual(1);
+        else expect(after.height, '포스터가 16:9보다 낮다').toBeGreaterThanOrEqual(width * 9 / 16 - 1);
+        expect(await poster.evaluate((el) => getComputedStyle(el).borderTopLeftRadius)).toBe('0px');
+        const fits = await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1);
+        expect(fits, '완성 화면이 첫 화면보다 길다 — «다른 더빙하기»가 화면 끝에 걸린다').toBe(true);
+      } else expect(Math.abs(after.height - after.width * 9 / 16), '포스터가 16:9가 아니다').toBeLessThanOrEqual(1);
     }
 
     await expect(poster.locator('.poster-logo-inky')).toContainText('InKY Film Festival');
