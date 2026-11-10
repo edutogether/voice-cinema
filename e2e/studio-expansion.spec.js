@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { pauseScenes } from './pause-scenes.js';
 
-for (const origin of ['중앙 카드', '아래 썸네일']) {
-  test(`${origin} 중심에서 실제 플레이어 하나가 비율을 유지하며 확대된다`, async ({ page }) => {
+// 움직임 줄이기 신호가 있어도 똑같이 확대된다(11/11 Bumm님, 팀장 전달 — 전에는 신호가 있으면 확대 없이 바로 바꿨다)
+for (const reducedMotion of ['reduce', 'no-preference']) for (const origin of ['중앙 카드', '아래 썸네일']) {
+  test(`움직임 줄이기 ${reducedMotion}: ${origin} 중심에서 실제 플레이어 하나가 비율을 유지하며 확대된다`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion });
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
@@ -43,17 +45,15 @@ for (const origin of ['중앙 카드', '아래 썸네일']) {
   });
 }
 
-test('움직임 줄이기는 확대 없이 바로 재생하고 진입 중 뒤로가기도 정리된다', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/');
-  await page.locator('#splash').waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();
-  await expect(page.locator('.studio-video-frame')).toHaveCSS('transform', 'none');
-  await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'previewing');
-  await page.goBack();
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();
-  await page.goBack();
-  await expect(page.locator('#home')).toBeVisible();
-  await expect(page.locator('#studio')).toHaveCount(0);
-});
+for (const reducedMotion of ['reduce', 'no-preference']) {
+  test(`움직임 줄이기 ${reducedMotion}: 확대하는 도중에 뒤로 가도 정리된다`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion });
+    await page.goto('/');
+    await page.locator('#splash').waitFor({ state: 'detached' });
+    await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();
+    await expect(page.locator('.studio-video-frame')).toHaveClass(/is-entering/);
+    await page.goBack();
+    await expect(page.locator('#home')).toBeVisible();
+    await expect(page.locator('#studio')).toHaveCount(0);
+  });
+}

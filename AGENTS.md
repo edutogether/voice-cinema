@@ -50,5 +50,6 @@ npm run test:e2e
 - 스플래시는 `_docs/ops/microphone-asset.md`의 마이크 PNG를 유지한다. 파비콘은 InKY 로고의 노란 카메라(`public/icons/favicon-inky.png`, Poster Studio·InKY Calculator와 같은 파일) 하나이고 탭 상태에 따라 바꾸지 않는다(회색 전환 폐기, 2026-10-07). 로고의 `filter: drop-shadow`·`will-change`를 추가하지 않고, 로딩바 두 바퀴 하한 `--hold: calc(var(--bar-cycle) * 2)`를 유지한다.
 - 터치 기기의 카드 미리보기는 전부 음소거 재생한다. 동시 재생 제한은 UA가 아닌 반복 play 거부로 판정하고, 콜백을 안정적으로 유지해 엔진 다운로드 중 재생이 끊기지 않게 한다.
 - 프론트 변경은 엔진 캐시 재다운로드 영향을 확인한다. 인라인 script와 `color-mix()`를 추가하지 않는다.
+- 움직임 줄이기(`prefers-reduced-motion`) 신호를 읽어 멈추거나 건너뛰지 않는다 — 신호가 있어도 늘 정상처럼 돈다(2026-11-11 Bumm님, 원격 접속 · Windows 애니메이션 효과 끔에서 크롬이 `reduce`를 보고한다). 움직임 확인은 `reduce` · `no-preference` 두 조건으로 한다(`e2e/motion-always.spec.js`, `test/motion-always.test.js`).
 - 화면 묶음의 Windows 기준선은 `e2e/release-baseline.spec.js`를 `VOICE_VISUAL_BASELINE=1`로 실행한다. 승인된 변경을 대조한 뒤에만 갱신하고 갱신 옵션 없이 재검증한다. PNG와 레이아웃·조작 의미 JSON을 함께 보존한다.
 - 배포 점검 명령·검증 범위는 `_docs/ops/release-20261003.md`를 참고한다. `tools/release-browser-stress.js`는 로컬 산출물만, `tools/verify-release.js`는 운영 산출물과 실제 녹음 경로를 검사한다. 자동 검사 마이크를 실기기 검증으로 보고하지 않는다.

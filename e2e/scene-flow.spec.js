@@ -72,12 +72,17 @@ test('하단 흐름: 키보드는 여덟 원본만 탐색하며 모두 온전히
   await expect(page.locator('#chipName')).toHaveText('SF');
 });
 
-test('하단 흐름: 움직임 줄이기에서는 자동으로 흐르지 않는다', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await open(page);
-  await expect(page.locator('.scene-choice-track')).toHaveCSS('animation-name', 'none');
-  for (const choice of await page.locator('.scene-choice').all()) await expect(choice).toBeInViewport({ ratio: 1 });
-});
+// 움직임 줄이기 신호가 있어도 그대로 흐른다(11/11 Bumm님, 팀장 전달 — 전에는 신호가 있으면 멈추고 여덟 장을 펼쳐 놓았다)
+for (const reducedMotion of ['reduce', 'no-preference']) {
+  test(`하단 흐름: 움직임 줄이기 ${reducedMotion}에서도 흐른다`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion });
+    await open(page);
+    await expect(page.locator('.scene-choice-track')).not.toHaveCSS('animation-name', 'none');
+    const start = await offset(page);
+    await page.waitForTimeout(500);
+    expect(await offset(page)).toBeLessThan(start - 2);
+  });
+}
 
 for (const width of [655, 1440]) {
   test(`${width}px: 하단 흐름은 같은 속도로 움직이고 순환 경계가 이어진다`, async ({ page }) => {

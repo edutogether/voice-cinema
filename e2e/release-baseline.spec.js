@@ -2,9 +2,10 @@ import { test, expect } from '@playwright/test';
 
 // Windows에서 화면 묶음 마무리 시 명시적으로 실행한다. Linux 글꼴 렌더링과 혼합하지 않는다.
 test.skip(process.platform !== 'win32' || process.env.VOICE_VISUAL_BASELINE !== '1', 'Windows 배포 기준선 전용');
-test.use({ serviceWorkers: 'block', reducedMotion: 'reduce' });
+test.use({ serviceWorkers: 'block' });
 
-for (const [name, width, height, screen, touch] of [
+// 움직임 줄이기 신호가 있어도 화면이 같아야 한다 — 두 조건이 같은 기준선을 쓴다(11/11 Bumm님, 팀장 전달)
+for (const reducedMotion of ['reduce', 'no-preference']) for (const [name, width, height, screen, touch] of [
   ['home-pc', 1440, 900, 'home', false],
   ['home-phone', 375, 812, 'home', true],
   ['studio-pc', 1440, 900, 'studio', false],
@@ -12,9 +13,9 @@ for (const [name, width, height, screen, touch] of [
   ['recorded-pc', 1440, 900, 'recorded', false],
   ['result-pc', 1440, 900, 'result', false],
 ]) {
-  test(`배포 기준선 ${name}`, async ({ browser }) => {
+  test(`배포 기준선 ${name} · 움직임 줄이기 ${reducedMotion}`, async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width, height }, hasTouch: touch, isMobile: touch,
-      permissions: ['microphone'], serviceWorkers: 'block', reducedMotion: 'reduce' });
+      permissions: ['microphone'], serviceWorkers: 'block', reducedMotion });
     const page = await context.newPage();
     // 실제 브라우저 녹음과 WASM 합성은 실행하고 운영 Storage에 쓰는 요청만 격리한다.
     await page.route('**/voiceCinema/upload', route => route.fulfill({ status: 200,

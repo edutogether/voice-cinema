@@ -55,34 +55,38 @@ async function reachSave(page, gate, afterBoot = async () => {}) {
 
 // 결과 화면 전에 대기 장면 두 편은 끝까지 본다(11/9 Bumm님 «보이스 기본 8.4초니까 2개는 로딩영상이 재생되게 해 그게 최소», 팀장 전달).
 // 합성 · 올리기가 1초도 안 걸려도(이 시험은 올리기를 곧바로 답한다) 결과는 둘째 영상이 끝난 뒤에 뜨고, 셋째 편은 시작하지 않는다.
-test('빠른 합성 · 올리기에서도 결과는 대기 영상 두 편이 끝난 뒤에 — 셋째 편은 시작하지 않는다', async ({ page }, testInfo) => {
-  test.setTimeout(150000);
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await reachSave(page, Promise.resolve());
-  await expect(page.locator('#loading')).toBeVisible();
-  await expect(page.locator('#qrbox')).toBeVisible({ timeout: 60000 });
-  const log = await page.evaluate(() => window.__wait);
-  const shown = log.videos.filter((entry) => entry.shownAt !== null);
-  expect(shown.length, '대기 영상은 두 편만 보였다').toBe(2);
-  for (const [index, entry] of shown.entries()) expect(entry.endedAt, `${index + 1}번째 영상을 끝까지 틀었다`).not.toBeNull();
-  expect(log.scenes.map((entry) => entry.scene), '장면은 0 → 1까지만').toEqual(['0', '1']);
-  expect(shown[1].shownAt, '둘째 영상은 첫 영상이 끝난 뒤에 시작했다').toBeGreaterThanOrEqual(shown[0].endedAt);
-  expect(log.uploadAt, '합성은 첫 영상이 끝나기 전에 끝났다').toBeLessThan(shown[0].endedAt);
-  expect(log.qrAt, '결과 화면은 둘째 영상이 끝난 뒤에').toBeGreaterThanOrEqual(shown[1].endedAt);
-  expect(log.qrAt - shown[1].endedAt, '끝나면 곧바로 결과를 보인다').toBeLessThan(1500);
-  const s = (ms) => Math.round(ms) / 1000;
-  const numbers = {
-    합성: s(log.uploadAt - log.saveAt),
-    첫영상시작: s(shown[0].shownAt - log.saveAt),
-    첫영상끝: s(shown[0].endedAt - log.saveAt),
-    둘째영상시작: s(shown[1].shownAt - log.saveAt),
-    둘째영상끝: s(shown[1].endedAt - log.saveAt),
-    결과: s(log.qrAt - log.saveAt),
-    둘째끝에서결과까지: s(log.qrAt - shown[1].endedAt),
-  };
-  await testInfo.attach('wait-timing.json', { body: JSON.stringify(numbers), contentType: 'application/json' });
-  console.log('[대기 화면 시각, 저장 누른 때부터 초]', JSON.stringify(numbers));
-});
+// 움직임 줄이기 신호가 있어도 대기 영상을 그대로 튼다(11/11 Bumm님, 팀장 전달 — 전에는 신호가 있으면 영상 없이 정지 그림만 보였다)
+for (const reducedMotion of ['reduce', 'no-preference']) {
+  test(`움직임 줄이기 ${reducedMotion}: 빠른 합성 · 올리기에서도 결과는 대기 영상 두 편이 끝난 뒤에 — 셋째 편은 시작하지 않는다`, async ({ page }, testInfo) => {
+    test.setTimeout(150000);
+    await page.emulateMedia({ reducedMotion });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await reachSave(page, Promise.resolve());
+    await expect(page.locator('#loading')).toBeVisible();
+    await expect(page.locator('#qrbox')).toBeVisible({ timeout: 60000 });
+    const log = await page.evaluate(() => window.__wait);
+    const shown = log.videos.filter((entry) => entry.shownAt !== null);
+    expect(shown.length, '대기 영상은 두 편만 보였다').toBe(2);
+    for (const [index, entry] of shown.entries()) expect(entry.endedAt, `${index + 1}번째 영상을 끝까지 틀었다`).not.toBeNull();
+    expect(log.scenes.map((entry) => entry.scene), '장면은 0 → 1까지만').toEqual(['0', '1']);
+    expect(shown[1].shownAt, '둘째 영상은 첫 영상이 끝난 뒤에 시작했다').toBeGreaterThanOrEqual(shown[0].endedAt);
+    expect(log.uploadAt, '합성은 첫 영상이 끝나기 전에 끝났다').toBeLessThan(shown[0].endedAt);
+    expect(log.qrAt, '결과 화면은 둘째 영상이 끝난 뒤에').toBeGreaterThanOrEqual(shown[1].endedAt);
+    expect(log.qrAt - shown[1].endedAt, '끝나면 곧바로 결과를 보인다').toBeLessThan(1500);
+    const s = (ms) => Math.round(ms) / 1000;
+    const numbers = {
+      합성: s(log.uploadAt - log.saveAt),
+      첫영상시작: s(shown[0].shownAt - log.saveAt),
+      첫영상끝: s(shown[0].endedAt - log.saveAt),
+      둘째영상시작: s(shown[1].shownAt - log.saveAt),
+      둘째영상끝: s(shown[1].endedAt - log.saveAt),
+      결과: s(log.qrAt - log.saveAt),
+      둘째끝에서결과까지: s(log.qrAt - shown[1].endedAt),
+    };
+    await testInfo.attach('wait-timing.json', { body: JSON.stringify(numbers), contentType: 'application/json' });
+    console.log('[대기 화면 시각, 저장 누른 때부터 초]', JSON.stringify(numbers));
+  });
+}
 
 // 두 편은 시간이 아니라 «영상이 끝났는가»로 센다 — 대기 영상이 늦게 오면 결과도 그만큼 뒤로 밀린다(팀장 전달 «2편 하한은 영상이 화면에 실제로 뜬 때부터»).
 test('대기 영상이 늦게 뜨면 결과도 그만큼 늦게 — 두 편이 화면에서 끝까지 돈 뒤에', async ({ page }) => {
@@ -188,23 +192,4 @@ test('대기 화면의 그림 주소에 닿지 못해도 미리 받아 둔 정�
   }
   release();
   await expect(page.locator('#qrbox')).toBeVisible({ timeout: 30000 });
-});
-
-test('움직임 줄이기: 영상 없이 정지 그림만, 결과는 준비되면 곧바로', async ({ page }) => {
-  test.setTimeout(120000);
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.setViewportSize({ width: 390, height: 664 });
-  let release;
-  const gate = new Promise((resolve) => { release = resolve; });
-  await reachSave(page, gate);
-  const wait = page.locator('#loading');
-  await expect(wait).toBeVisible();
-  await expect(wait.locator('img.generation-robot-still')).toHaveAttribute('data-active', 'true');
-  await page.waitForTimeout(1500);
-  await expect(wait.locator('video')).toHaveCount(0);
-  await page.evaluate(() => { window.__releaseAt = performance.now(); });
-  release();
-  await expect(page.locator('#qrbox')).toBeVisible({ timeout: 30000 });
-  const gap = await page.evaluate(() => (window.__wait.qrAt ?? performance.now()) - window.__releaseAt);
-  expect(gap, '기다릴 영상이 없으면 곧바로').toBeLessThan(3000);
 });

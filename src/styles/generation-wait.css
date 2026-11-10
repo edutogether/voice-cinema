@@ -28,7 +28,6 @@
 .generation-dots i:nth-child(2) { animation-delay: -2.1s; }
 .generation-dots i:nth-child(3) { animation-delay: -1.8s; }
 @keyframes generation-dot-wave { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
-.generation-wait[data-paused="true"] .generation-dots i { animation-play-state: paused; }
 @container app (min-width: 761px) and (max-height: 850px) {
   .generation-film { width: 270px; margin-bottom: 8px; }
   .movie-fact { margin-top: 0; }
@@ -46,10 +45,6 @@
   .movie-fact-titles > *, .movie-fact-bodies > * { align-self: start; }
   /* 설명 글의 \n(waitingSets.ts)에서만 줄을 바꾼다. PC는 그대로 한 덩어리 */
   .movie-fact-bodies > p { white-space: pre-line; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .generation-copy-stack > *, .generation-robot-film, .generation-dots i { transition: none; }
-  .generation-dots i { animation: none; opacity: .65; }
 }
 /* 원화는 보존한다. 피사체 하단을 상자 높이 94%에 맞추고 장면별 체감 크기만 소폭 보정한다(Poster Studio waiting-art.css) */
 .waiting-art-frame { overflow: hidden; }

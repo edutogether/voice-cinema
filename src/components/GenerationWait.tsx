@@ -41,7 +41,7 @@ export function createWaitSequence() {
   return sequence;
 }
 
-/* 재생 중인 대기 영상이 끝날 때까지 기다린다 — 보이기 시작한 영상이 없으면(정지 그림 · 움직임 줄이기 · 아직 받는 중 · 이미 끝나 마지막 프레임에 머묾) 바로 끝난다.
+/* 재생 중인 대기 영상이 끝날 때까지 기다린다 — 보이기 시작한 영상이 없으면(정지 그림 · 아직 받는 중 · 이미 끝나 마지막 프레임에 머묾) 바로 끝난다.
    영상이 실패해 떼어 내지면(emptied) 그때 끝난다. 한도는 남은 길이 + 0.3초(«ended»가 오지 않는 경우), 많아야 9초(Poster Studio sceneEnd와 같은 값). */
 function untilVideoEnds(root: HTMLElement | null) {
   return new Promise<void>((resolve) => {
@@ -64,15 +64,13 @@ function untilVideoEnds(root: HTMLElement | null) {
 export function GenerationWait({ sceneEndRef }: { sceneEndRef: { current: SceneEnd | null } }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
-  const [reduced, setReduced] = useState(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
   const [scenes] = useState(createWaitSequence);
   const [sceneIndex, setSceneIndex] = useState(0);
   const holdRef = useRef(false);
   // 끝난 장면 수와, 장면이 모자라 결과가 기다리는 중이면 그 결과를 풀어 줄 함수
   const doneRef = useRef(0);
   const readyRef = useRef<(() => void) | null>(null);
-  // 로딩 화면은 멈추는 화면이 아니다 — 자동 넘김은 «움직임 줄이기» 설정에서만 멈춘다(Poster Studio 10/6 Bumm님 결정 118)
-  const still = reduced;
+  // 로딩 화면은 멈추는 화면이 아니다 — «움직임 줄이기» 신호가 있어도 그대로 넘어간다(11/11 Bumm님 «움직임 줄이기와 상관없이 늘 정상처럼 돌게», 팀장 전달)
   const scene = scenes[sceneIndex];
 
   useEffect(() => {
@@ -82,18 +80,13 @@ export function GenerationWait({ sceneEndRef }: { sceneEndRef: { current: SceneE
     if (typeof element.showModal === 'function') element.showModal();
     else element.setAttribute('open', '');
     heading.current?.focus();
-    const media = window.matchMedia?.('(prefers-reduced-motion: reduce)');
-    const update = () => setReduced(media?.matches ?? false);
-    media?.addEventListener?.('change', update);
     return () => {
       document.documentElement.style.overflow = previousOverflow;
-      media?.removeEventListener?.('change', update);
       if (element.open && typeof element.close === 'function') element.close();
     };
   }, []);
 
   useEffect(() => {
-    if (still) return;
     let cancelled = false;
     const timer = window.setTimeout(() => {
       void untilVideoEnds(dialog.current).then(() => {
@@ -110,19 +103,16 @@ export function GenerationWait({ sceneEndRef }: { sceneEndRef: { current: SceneE
       });
     }, SCENE_MS);
     return () => { cancelled = true; window.clearTimeout(timer); };
-  }, [still, sceneIndex, scenes.length]);
+  }, [sceneIndex, scenes.length]);
 
   useEffect(() => {
-    // 움직임 줄이기는 장면이 넘어가지 않는다 — 기다리던 결과가 있으면 바로 보인다
-    if (still && readyRef.current) { const ready = readyRef.current; readyRef.current = null; ready(); }
     sceneEndRef.current = () => {
-      if (still) return Promise.resolve();
       if (doneRef.current < MIN_SCENES) return new Promise<void>((resolve) => { readyRef.current = resolve; });
       holdRef.current = true;
       return untilVideoEnds(dialog.current);
     };
     return () => { sceneEndRef.current = null; };
-  }, [sceneEndRef, still]);
+  }, [sceneEndRef]);
   // 대기 화면을 떠나면(뒤로 가기) 기다리던 결과를 풀어 준다 — 돌아왔을 때 결과가 보인다(영상이 떼어 질 때 풀리던 untilVideoEnds와 같다)
   useEffect(() => () => { const ready = readyRef.current; readyRef.current = null; ready?.(); }, []);
 
@@ -139,15 +129,15 @@ export function GenerationWait({ sceneEndRef }: { sceneEndRef: { current: SceneE
   useEffect(() => { current.current = sceneIndex; }, [sceneIndex]);
   const onSceneLoaded = () => {
     const at = sceneIndex;
-    const video = reduced ? undefined : approvedWaitingVideo(scenes[(at + 1) % scenes.length].id);
+    const video = approvedWaitingVideo(scenes[(at + 1) % scenes.length].id);
     if (video && alive.current && current.current === at) void prefetchWaitingVideo(video);
   };
 
   return (
-    <dialog ref={dialog} id="loading" className="generation-wait" data-paused={still} data-scene={sceneIndex} data-set-id={scene.id} aria-labelledby="generationTitle" onCancel={(event) => event.preventDefault()}>
+    <dialog ref={dialog} id="loading" className="generation-wait" data-scene={sceneIndex} data-set-id={scene.id} aria-labelledby="generationTitle" onCancel={(event) => event.preventDefault()}>
       <div className="generation-content">
         <div className="generation-film waiting-art-frame" data-art={scene.id}>
-          <WaitingArtwork key={scene.id} image={scene.image} theme={scene.theme} video={approvedWaitingVideo(scene.id)} paused={still} reduced={reduced} onLoaded={onSceneLoaded} />
+          <WaitingArtwork key={scene.id} image={scene.image} theme={scene.theme} video={approvedWaitingVideo(scene.id)} onLoaded={onSceneLoaded} />
         </div>
         <h1 ref={heading} tabIndex={-1} id="generationTitle" className="generation-copy-stack">
           {scenes.map(({ id, title }, index) => <span key={id} className="generation-copy" data-active={index === sceneIndex} aria-hidden={index !== sceneIndex}>{title}</span>)}

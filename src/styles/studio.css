@@ -162,7 +162,6 @@ body:has(#studio.active) { background:#fff; }
  .controls-copy { flex-basis:220px; }
  .controls h2 { font-size:1.125rem; }
 }
-@media (prefers-reduced-motion:reduce) { .count,:is(.studio-cue,.scene-turn-cue) strong { animation:none; } :is(.btn,.back) { transition:none; } }
 
 /* 짧은 로딩에는 번쩍이지 않고, 실제 대기만 알린다. */
 .studio-buffering { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); padding:12px 18px; border-radius:999px; background:#171717cc; color:#fff; font-size:.875rem; font-variant-numeric:tabular-nums; pointer-events:none; animation:bufferNotice .2s .3s both; }
@@ -175,4 +174,3 @@ body:has(#studio.active) { background:#fff; }
  .studio-pause-title p { margin-top:8px; font-size:.8125rem; }
 }
 @container app (max-height:500px) and (orientation:landscape) { .studio-pause-title { bottom:14px; } .studio-pause-title strong { font-size:1.125rem; } .studio-pause-title p { display:none; } }
-@media (prefers-reduced-motion:reduce) { .studio-pause-shade,.studio-pause-title { transition:none; } }

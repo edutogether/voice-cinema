@@ -3,7 +3,7 @@ export interface SceneEntrance {
 }
 
 export function captureSceneEntrance(source?: HTMLElement): SceneEntrance | null {
-  if (!source || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
+  if (!source) return null;
   const media = source.querySelector<HTMLElement>('.tile-media') ?? source.querySelector('img');
   if (!media) return null;
   const rect = media.getBoundingClientRect();

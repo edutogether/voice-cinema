@@ -63,9 +63,6 @@ body:has(#home.active) { background:#fff; }
 .chart-title em { color:#df291f; font-style:normal; }
 .chart-title-phone { display:none; }
 .chart-heading h1 span { display:grid; place-items:center; width:26px; height:26px; background:#f3f3f3; border-radius:50%; font-size:.875rem; letter-spacing:0; font-weight:600; }
-/* 설명 글(마우스가 없는 기기에만 있다)은 오른쪽 위 «개인정보처리방침» 줄 바로 아래에 온다 — 위 여백 10px로 링크 칸(머리글 아래 3 + 24px)을 비켜 내린다
-   (11/8 해상도 전수에서 1250 이하만 고쳤고, 같은 날 1280×800 태블릿에서 글자 사이가 4px로 붙은 것을 찾아 모든 폭으로 넓혔다). */
-.chart-heading > p { margin:10px 0 0; max-width:290px; color:#626262; font-size:.875rem; line-height:1.6; word-break:keep-all; }
 .tile { position:relative; display:flex; flex-direction:column; width:100%; min-width:0; min-height:0; appearance:none; border:0; padding:0; text-align:left; background:white; color:#171717; font:inherit; cursor:pointer; border-radius:12px; }
 .tile-media { display:block; position:relative; flex:1; min-height:0; width:100%; overflow:hidden; background:#181818; }
 /* 카드를 채우는 자식도 자신의 모서리를 갖는다 — iOS는 transform이 걸린 카드(캐러셀의 크기 변화)에서
@@ -124,7 +121,6 @@ html[data-fit="none"] .download-link { display:none; }
   .festival-steps { grid-column:1 / -1; grid-row:2; justify-content:center; }
   .partner-cgv { width:58px; }
   .partner-education { width:145px; }
-  .chart-heading > p { max-width:230px; }
   .cinema-steps { gap:20px; }
   .cinema-header { flex-wrap:wrap; padding:20px 0 0; gap:16px; }
   .cinema-steps { flex-basis:100%; justify-content:space-between; }
@@ -150,7 +146,6 @@ html[data-fit="none"] .download-link { display:none; }
   .festival-steps li + li::before { width:14px; margin-right:4px; }
   .chart-heading { display:block; }
   .chart-eyebrow { display:none; }
-  .chart-heading > p { max-width:none; }
   .cinema-footer { gap:8px; font-size:.6875rem; line-height:1.36; }
   .cinema-footer p span { display:none; }
   .header-links { right:16px; }
@@ -218,10 +213,6 @@ html[data-fit="none"] .download-link { display:none; }
 .scene-choices[data-paused=true] .scene-choice-track,
 body:has(#splash) .scene-choice-track { animation-play-state:paused; }
 .scene-choices[data-keyboard=true] .scene-choice-track { animation:none; transform:none; width:300%; }
-@media (prefers-reduced-motion:reduce) {
- .scene-choice-track { animation:none; transform:none; width:300%; }
- .scene-choice-row::before,.scene-choice-row::after { display:none; }
-}
 .scene-choice-card { border:0; padding:0; min-width:0; background:none; color:#666; cursor:pointer; font:inherit; }
 .scene-choice-card img { width:100%; height:var(--scene-thumbnail-height); display:block; object-fit:cover; border-radius:7px; }
 .scene-choice-card > span { display:flex; justify-content:center; align-items:center; gap:6px; margin-top:8px; font-size:.875rem; font-weight:600; line-height:1.5; white-space:nowrap; }
@@ -289,7 +280,7 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
  .chart-main { position:relative; justify-content:flex-start; }
  .chart-main::before { content:""; flex:1 0 0; }
  .chart-heading { padding-bottom:2px; }
- .chart-heading h1 > :not(.chart-title-phone),.chart-heading > p { display:none; }
+ .chart-heading h1 > :not(.chart-title-phone) { display:none; }
  .chart-title-phone { display:inline; }
  .chart-heading h1 { font-size:1.3125rem; line-height:1.35; letter-spacing:-.055em; }
  /* 카드 폭은 양옆 여백까지 넓힌 장면 칸의 94%(컨테이너 단위, 못 쓰는 브라우저는 화면 폭 기준). 휴대폰은 늘 이 폭이고, 넓고 낮은 창(마우스로 좁힌
@@ -355,8 +346,6 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
  .chart-layout { padding-top:28px; }
  .scene-carousel { --vc-reserve:332px; }
 }
-/* 움직임 줄이기에서는 바로가기 줄이 흐르지 않으므로 손가락으로 밀어 볼 수 있게 한다. */
-@media (prefers-reduced-motion:reduce) { @container app (max-width:760px) { .scene-choices { overflow-x:auto; } } }
 @container app (max-height:700px) and (min-width:1251px) {
  .chart-invitation { padding-block:4px; }
  .chart-invitation .chart-label { margin-bottom:8px; }
@@ -364,5 +353,4 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
  .chart-invitation img { margin-bottom:10px; }
  .chart-guide { padding-top:8px; }
 }
-@media (prefers-reduced-motion:reduce) { .scene-shell .tile-body,.scene-shell .tile-tag,.scene-shell .tile-media .preview,.scene-arrow,.scene-arrow svg { transition:none; } }
 

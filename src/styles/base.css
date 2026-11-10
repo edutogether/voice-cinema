@@ -86,7 +86,6 @@ body {
 }
 @container app (max-width: 900px) { .wrap { padding: 0 24px; } }
 @container app (max-width: 600px) { .wrap { padding: 0 20px; } }
-@media (prefers-reduced-motion: reduce) { .view.active { animation: none; } }
 @keyframes fade {
   from {
     opacity: 0;
