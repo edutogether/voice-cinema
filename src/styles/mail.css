@@ -65,8 +65,7 @@
 .mail-startup h2 { margin-bottom:10px; font-size:1.375rem; line-height:1.4; word-break:keep-all; }
 .mail-startup p { margin:0; color:#262626; font-size:1rem; line-height:1.6; word-break:keep-all; }
 .mail-startup-bar { height:8px; margin-top:18px; overflow:hidden; border-radius:999px; background:#ececec; }
-.mail-startup-bar i { display:block; height:100%; border-radius:inherit; background:#e52320; }
-@media (prefers-reduced-motion:no-preference) { .mail-startup-bar i { transition:width .3s ease-out; } }
+.mail-startup-bar i { display:block; height:100%; border-radius:inherit; background:#e52320; transition:width .3s ease-out; }
 .mail-startup-buttons { display:flex; justify-content:flex-end; gap:8px; margin-top:22px; }
 .mail-startup .mail-startup-buttons button { padding:10px 20px; border-radius:10px; font-size:1rem; }
 .mail-startup .mail-startup-buttons button.primary { border-color:#e52320; background:#e52320; color:#fff; }
