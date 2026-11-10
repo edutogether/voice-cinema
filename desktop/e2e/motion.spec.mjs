@@ -1,28 +1,43 @@
 // 설치판도 «움직임 줄이기» 신호와 상관없이 늘 정상처럼 돈다(11/11 Bumm님 «여덟 앱 모두, 움직임 줄이기와 상관없이 늘 정상처럼 돌게», 팀장 전달).
-// 웹의 e2e/motion-always.spec.js와 같은 것을 빌드한 설치판으로 본다. 설치판은 브라우저 흉내 대신 Chromium 실행 인자로 신호를 넣는다 —
-// Windows «애니메이션 효과»를 끈 PC나 원격 데스크톱에서 설치판이 실제로 받는 것과 같은 신호다(시스템 설정은 바꾸지 않는다).
-// 신호를 보고 멈추던 코드로 되돌리면 'reduce' 쪽이 빨간불이다.
+// 웹의 e2e/motion-always.spec.js와 같은 것을 빌드한 설치판으로 본다. 신호는 웹 E2E처럼 Playwright 흉내(emulateMedia)로 넣는다 —
+// Electron 44는 실행 인자 --force-prefers-reduced-motion을 듣지 않는다(11/11 확인: 넣어도 matchMedia가 no-preference). 시스템 설정은 바꾸지 않는다.
+// 흉내를 건 뒤 스플래시 기록(sessionStorage)을 지우고 다시 열어, 스플래시부터 그 신호로 뜨게 한다. 신호를 보고 멈추던 코드로 되돌리면 'reduce' 쪽이 빨간불이다.
 import { test, expect, _electron } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const EXE = process.env.VC_DESKTOP_EXE ?? path.join(HERE, '..', 'release', 'win-unpacked', 'Voice Cinema.exe');
-const CONDITIONS = [
-  ['reduce', '--force-prefers-reduced-motion'],
-  ['no-preference', '--force-prefers-no-reduced-motion'],
-];
 
-for (const [reducedMotion, flag] of CONDITIONS) {
+for (const reducedMotion of ['reduce', 'no-preference']) {
   test(`움직임 줄이기 ${reducedMotion}: 스플래시 · 미리보기 · 그림 띠 · 6초 자동 넘김 · 입체 이동 · 녹음실 확대 · 3·2·1이 그대로 돈다`, async () => {
     // 새 프로필 · 가짜 마이크 · 소리 끔. 창은 가장 작은 모니터에 뜬다(시험 전용 VC_TEST_SMALLEST_DISPLAY — main.js)
     const app = await _electron.launch({
       executablePath: EXE,
-      args: [`--user-data-dir=${test.info().outputPath('profile')}`, '--mute-audio', '--use-fake-device-for-media-stream', flag],
+      args: [`--user-data-dir=${test.info().outputPath('profile')}`, '--mute-audio', '--use-fake-device-for-media-stream'],
       env: { ...process.env, VC_TEST_SMALLEST_DISPLAY: '1' },
     });
     try {
       const page = await app.firstWindow();
+      await page.emulateMedia({ reducedMotion });
+      // 장면이 넘어올 때 입체 이동(data-moving), 녹음실 확대(is-entering), 문구 · 숫자의 애니메이션 이름을 페이지 안에서 적는다 — 짧은 순간이라 바깥에서 기다리면 놓친다
+      await app.context().addInitScript(() => {
+        const log = { moved: false, entering: false, cue: null, count: [] };
+        window.__motion = log;
+        new window.MutationObserver(() => {
+          if (document.querySelector('.scene-stage[data-moving="true"]')) log.moved = true;
+          if (document.querySelector('.studio-video-frame.is-entering')) log.entering = true;
+          const cue = document.querySelector('#cue strong');
+          if (cue && log.cue === null) log.cue = window.getComputedStyle(cue).animationName;
+          const count = document.querySelector('#count');
+          if (count && !log.count.some((entry) => entry.text === count.textContent)) {
+            log.count.push({ text: count.textContent, name: window.getComputedStyle(count).animationName });
+          }
+        }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'data-moving'] });
+      });
+      await page.waitForLoadState('domcontentloaded');
+      await page.evaluate(() => window.sessionStorage.clear());
+      await page.reload();
       await page.locator('#splash .sbar i').waitFor({ state: 'attached', timeout: 60000 });
       expect(await page.evaluate(() => (window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'reduce' : 'no-preference')), '설치판이 받은 신호').toBe(reducedMotion);
 
@@ -43,22 +58,6 @@ for (const [reducedMotion, flag] of CONDITIONS) {
       expect(splash.bar, '로딩 막대').toBe('splashBar');
       expect(splash.running, '로딩 막대가 돈다').toBe(true);
       expect(splash.moved, '0.25초 사이 막대가 움직였다(px)').toBeGreaterThan(5);
-
-      // 장면이 넘어올 때 입체 이동(data-moving), 녹음실 확대(is-entering), 문구 · 숫자의 애니메이션 이름을 페이지 안에서 적는다 — 짧은 순간이라 바깥에서 기다리면 놓친다
-      await page.evaluate(() => {
-        const log = { moved: false, entering: false, cue: null, count: [] };
-        window.__motion = log;
-        new window.MutationObserver(() => {
-          if (document.querySelector('.scene-stage[data-moving="true"]')) log.moved = true;
-          if (document.querySelector('.studio-video-frame.is-entering')) log.entering = true;
-          const cue = document.querySelector('#cue strong');
-          if (cue && log.cue === null) log.cue = window.getComputedStyle(cue).animationName;
-          const count = document.querySelector('#count');
-          if (count && !log.count.some((entry) => entry.text === count.textContent)) {
-            log.count.push({ text: count.textContent, name: window.getComputedStyle(count).animationName });
-          }
-        }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'data-moving'] });
-      });
       await page.locator('#splash').waitFor({ state: 'detached', timeout: 60000 });
 
       const current = page.locator('.scene-shell.is-current');
