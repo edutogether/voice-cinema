@@ -38,7 +38,6 @@ export function useSceneMotion(selected: number, count: number, active: boolean)
     state.target += wrap(selected - state.target, count);
     const start = { ...state };
     const stage = shells.current[0]?.parentElement;
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     const animations: Animation[] = [];
     const timers: number[] = [];
     let settled = false;
@@ -66,9 +65,8 @@ export function useSceneMotion(selected: number, count: number, active: boolean)
       stage?.setAttribute('data-moving', 'false');
     };
     const stopWhenHidden = () => { if (document.hidden) settle(); };
-    const reduceMotion = () => { if (reduced.matches) settle(); };
 
-    if (!active || reduced.matches || document.hidden || Math.abs(state.position - state.target) < .0001) settle();
+    if (!active || document.hidden || Math.abs(state.position - state.target) < .0001) settle();
     else {
       stage?.setAttribute('data-moving', 'true');
       const positions = Array.from({ length: SAMPLES + 1 }, (_, sample) =>
@@ -118,7 +116,6 @@ export function useSceneMotion(selected: number, count: number, active: boolean)
       Promise.all(animations.map(animation => animation.finished)).then(() => { if (!disposed) settle(); }).catch(() => {});
     }
     document.addEventListener('visibilitychange', stopWhenHidden);
-    reduced.addEventListener('change', reduceMotion);
     return () => {
       disposed = true;
       if (!settled) {
@@ -129,7 +126,6 @@ export function useSceneMotion(selected: number, count: number, active: boolean)
       }
       clear();
       document.removeEventListener('visibilitychange', stopWhenHidden);
-      reduced.removeEventListener('change', reduceMotion);
     };
   }, [selected, count, active]);
 

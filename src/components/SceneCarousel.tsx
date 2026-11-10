@@ -18,17 +18,13 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const currentCardHovered = hoveredCard === selected;
   const [keyboardPaused, setKeyboardPaused] = useState(false);
-  const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   useEffect(() => {
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const update = () => setReducedMotion(reduced.matches);
-    reduced.addEventListener('change', update);
     const observer = new MutationObserver(() => {
       if (!document.getElementById('splash')) { setReady(true); observer.disconnect(); }
     });
     if (!document.getElementById('splash')) setReady(true);
     else observer.observe(document.body, { childList: true, subtree: true });
-    return () => { observer.disconnect(); reduced.removeEventListener('change', update); };
+    return () => observer.disconnect();
   }, []);
   const shells = useSceneMotion(selected, GENRES.length, active);
   useEffect(() => {
@@ -66,12 +62,12 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
     };
   }, []);
   useEffect(() => {
-    if (!active || !ready || !visible || autoPaused || currentCardHovered || keyboardPaused || reducedMotion) return;
+    if (!active || !ready || !visible || autoPaused || currentCardHovered || keyboardPaused) return;
     const timer = window.setTimeout(() => {
       setSelected(index => (index + 1) % GENRES.length);
     }, previewStarted === selected ? AUTO_ADVANCE_MS : PREVIEW_WAIT_MAX_MS);
     return () => window.clearTimeout(timer);
-  }, [active, ready, visible, autoPaused, currentCardHovered, keyboardPaused, reducedMotion, selected, previewStarted]);
+  }, [active, ready, visible, autoPaused, currentCardHovered, keyboardPaused, selected, previewStarted]);
   const choiceViewport = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => { if (keyboardChoices && choiceViewport.current) choiceViewport.current.scrollLeft = 0; }, [keyboardChoices]);
   useLayoutEffect(() => {

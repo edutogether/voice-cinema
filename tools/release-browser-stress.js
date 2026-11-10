@@ -13,7 +13,9 @@ const started = performance.now();
 try {
   const results = await Promise.all(names.map(async (name, index) => {
     const context = await browser.newContext({ viewport: { width: 1366, height: 768 },
-      permissions: ['microphone'], serviceWorkers: 'block', reducedMotion: 'reduce' });
+      permissions: ['microphone'], serviceWorkers: 'block',
+      // 움직임 줄이기 신호가 있어도 똑같이 돈다 — 참가자를 두 조건으로 나눈다(11/11 Bumm님, 팀장 전달)
+      reducedMotion: index % 2 ? 'no-preference' : 'reduce' });
     const page = await context.newPage();
     const errors = [];
     let uploads = 0;

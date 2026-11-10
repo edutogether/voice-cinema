@@ -155,15 +155,6 @@ html[data-fit="tablet"] #splash .splash-education {
     transform: scale(1);
   }
 }
-/* 움직임을 줄이도록 설정한 사용자에게는 장식 애니메이션(로고 팝·로딩바)만 끈다.
-   스플래시 자체의 유지·페이드까지 없애면 덜 그려진 화면을 가려주는 역할이 사라지므로
-   그건 그대로 둔다. */
-@media (prefers-reduced-motion: reduce) {
-  #splash .logo,
-  #splash .sbar i {
-    animation: none;
-  }
-}
 
 @keyframes splashBar {
   0% {

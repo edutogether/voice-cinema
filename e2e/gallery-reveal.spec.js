@@ -280,15 +280,19 @@ test('PC: 순환 카드는 보이지 않는 뒤편에서 이동하고 연속 호
   await expect(page.locator('.scene-choice[aria-pressed="true"]')).toHaveAttribute('aria-label', '뮤지컬 미리보기 선택');
 });
 
-test('PC: 움직임 줄이기 설정에서는 입체 전환 없이 즉시 고른다', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/');
-  await page.locator('#splash').waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: '스릴러 미리보기 선택' }).hover();
-  await expect(page.locator('.scene-stage')).toHaveAttribute('data-moving', 'false');
-  await expect(page.locator('.scene-shell.is-current')).toHaveAttribute('data-index', '4');
-  await expect(page.locator('.scene-shell.is-current .tile-body')).toHaveCSS('transition-duration', '0s');
-});
+// 움직임 줄이기 신호가 있어도 없을 때와 똑같이 입체로 넘어간다(11/11 Bumm님, 팀장 전달 — 전에는 신호가 있으면 즉시 바꿨다)
+for (const reducedMotion of ['reduce', 'no-preference']) {
+  test(`PC: 움직임 줄이기 ${reducedMotion}에서도 입체 전환으로 고른다`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion });
+    await page.goto('/');
+    await page.locator('#splash').waitFor({ state: 'detached' });
+    await pointChoice(page, '스릴러');
+    await expect(page.locator('.scene-stage')).toHaveAttribute('data-moving', 'true');
+    await expect(page.locator('.scene-stage')).toHaveAttribute('data-moving', 'false');
+    await expect(page.locator('.scene-shell.is-current')).toHaveAttribute('data-index', '4');
+    await expect(page.locator('.scene-shell.is-current .tile-body')).toHaveCSS('transition-duration', '0.18s');
+  });
+}
 
 
 test('PC: 썸네일에서 이동 중인 중앙으로 마우스를 옮겨도 선택이 되돌아가지 않는다', async ({ page }) => {

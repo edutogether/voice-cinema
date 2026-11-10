@@ -213,10 +213,6 @@ html[data-fit="none"] .download-link { display:none; }
 .scene-choices[data-paused=true] .scene-choice-track,
 body:has(#splash) .scene-choice-track { animation-play-state:paused; }
 .scene-choices[data-keyboard=true] .scene-choice-track { animation:none; transform:none; width:300%; }
-@media (prefers-reduced-motion:reduce) {
- .scene-choice-track { animation:none; transform:none; width:300%; }
- .scene-choice-row::before,.scene-choice-row::after { display:none; }
-}
 .scene-choice-card { border:0; padding:0; min-width:0; background:none; color:#666; cursor:pointer; font:inherit; }
 .scene-choice-card img { width:100%; height:var(--scene-thumbnail-height); display:block; object-fit:cover; border-radius:7px; }
 .scene-choice-card > span { display:flex; justify-content:center; align-items:center; gap:6px; margin-top:8px; font-size:.875rem; font-weight:600; line-height:1.5; white-space:nowrap; }
@@ -350,8 +346,6 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
  .chart-layout { padding-top:28px; }
  .scene-carousel { --vc-reserve:332px; }
 }
-/* 움직임 줄이기에서는 바로가기 줄이 흐르지 않으므로 손가락으로 밀어 볼 수 있게 한다. */
-@media (prefers-reduced-motion:reduce) { @container app (max-width:760px) { .scene-choices { overflow-x:auto; } } }
 @container app (max-height:700px) and (min-width:1251px) {
  .chart-invitation { padding-block:4px; }
  .chart-invitation .chart-label { margin-bottom:8px; }
@@ -359,5 +353,4 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
  .chart-invitation img { margin-bottom:10px; }
  .chart-guide { padding-top:8px; }
 }
-@media (prefers-reduced-motion:reduce) { .scene-shell .tile-body,.scene-shell .tile-tag,.scene-shell .tile-media .preview,.scene-arrow,.scene-arrow svg { transition:none; } }
 
