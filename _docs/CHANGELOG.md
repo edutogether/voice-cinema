@@ -4,6 +4,8 @@
   신호를 읽어 멈추거나 건너뛰던 곳을 모두 없앴다 — CSS 6파일 8묶음(스플래시 로고 · 막대, 화면 페이드, 그림 띠 흐름 · 휴대폰 손 밀기, 장면 전환, 문구 · 3·2·1 · 단추 전환, 저장 대기 점 · 글 전환)과
   TS 5파일(자동 넘김 `SceneCarousel`, 입체 이동 `useSceneMotion`, 녹음실 확대 `sceneEntrance`, 저장 대기 영상 · 장면 넘김 `GenerationWait` · `WaitingArtwork`). 웹만 — 설치판은 아직 옛 코드.
 - 시험: `e2e/motion-always.spec.js` · `test/motion-always.test.js`(새로), 줄이기 시험이 있던 다섯 파일과 확인 도구 둘을 두 조건(`reduce` · `no-preference`)으로. 옛 코드에서 `reduce` 쪽 E2E 10개 · 유닛 1개 빨간불 확인.
+- 라이브 11/11 01:49: `f313d60`(동결 주간, 팀장 승인 · CI 42850940584 E2E 306 통과 · 12 건너뜀 · 배포 42858028107, 번들 `main-BVLPmI-c.js` · 엔진 캐시 `3a3682eeb407` 그대로라 부스 기기는 엔진을 다시 받지 않음).
+  태그 `voice-cinema-freeze-20261111-motion-always`, 되돌림 지점 `1c3a376`. 라이브를 PC 2560×1305 · 휴대폰 390×844에서 두 조건으로 재 보니 같았다(배포 전에는 `reduce`에서 전부 멈춤).
 
 ## 메인 — 터치 기기 설명 글을 뺌 (2026-11-09, 지시 Bumm님 · 팀장 전달)
 
