@@ -1,8 +1,20 @@
+## 설치판 2.0.1 — 움직임 줄이기 신호로 멈추지 않는다 (2026-11-11, 지시 Bumm님 · 팀장 전달)
+
+- 아래 웹 수정을 설치판에도 넣었다(«여덟 앱 모두 같은 규칙» — 설치판을 여는 순간 같은 증상이 나오면 안 된다). 설치판 가지 `feat/vc-desktop-mail`에 master `f313d60`을 합치고(`ecbb88b`),
+  설치판에만 있는 메일 시작 창 막대(`src/styles/mail.css`)의 «움직임 줄이기 끔일 때만 움직임» 묶음도 풀었다(`f45710a` — 정책 시험 `test/motion-always.test.js`가 그 파일로 빨간불이었다).
+  판 번호 2.0.0 → 2.0.1. 휴대폰 MA 커밋은 넣지 않았다(띠 결정 대기).
+- 시험: 설치판 가지 `desktop/e2e/motion.spec.mjs`(새로, `c698444`) — 설치된 앱을 `reduce` · `no-preference`로 띄워 스플래시 · 미리보기 · 그림 띠 · 6초 자동 넘김 · 입체 이동 · 녹음실 확대 · 문구와 3·2·1을 본다.
+  Electron 44는 실행 인자 `--force-prefers-reduced-motion`을 듣지 않아(넣어도 `no-preference`) 웹 E2E처럼 Playwright 흉내로 신호를 넣는다. 옛 설치판(11/8)은 `reduce`에서 스플래시부터 빨간불.
+- 이 PC에 덮어 설치(«나만» 설치를 조용히 `/S /currentuser`): 2.0.1 · 화면 번들 `main-6Xm5PPAL.js`(설치된 번들에 `prefers-reduced-motion` 0개). 두 조건 통과, 설치판 E2E 13개 통과(8.9분),
+  유닛 139 + 146 · 설치판 유닛 34 통과, 린트 0(추적하지 않는 옛 빌드 폴더 `desktop/release-1108c/` 제외).
+- 공개 설치 파일 교체(11/11 02:18 KST): 250,474,338바이트, SHA-256 `e8ac3d5a…d455a018` — 사이트 링크 302 → 200(attachment)으로 받아 지문 같음, 버킷 목록 익명 403 · 401.
+  태그 `voice-cinema-freeze-20261111-desktop-motion`(`c698444`).
+
 ## 움직임 줄이기 신호로 멈추지 않는다 (2026-11-11, 지시 Bumm님 · 팀장 전달)
 
 - Bumm님이 원격으로 연 브라우저가 «움직임 줄이기»를 보고해 화면이 멈춰 보였다(켠 적 없는 설정). Bumm님 «여덟 앱 모두, 움직임 줄이기와 상관없이 늘 정상처럼 돌게».
   신호를 읽어 멈추거나 건너뛰던 곳을 모두 없앴다 — CSS 6파일 8묶음(스플래시 로고 · 막대, 화면 페이드, 그림 띠 흐름 · 휴대폰 손 밀기, 장면 전환, 문구 · 3·2·1 · 단추 전환, 저장 대기 점 · 글 전환)과
-  TS 5파일(자동 넘김 `SceneCarousel`, 입체 이동 `useSceneMotion`, 녹음실 확대 `sceneEntrance`, 저장 대기 영상 · 장면 넘김 `GenerationWait` · `WaitingArtwork`). 웹만 — 설치판은 아직 옛 코드.
+  TS 5파일(자동 넘김 `SceneCarousel`, 입체 이동 `useSceneMotion`, 녹음실 확대 `sceneEntrance`, 저장 대기 영상 · 장면 넘김 `GenerationWait` · `WaitingArtwork`). 웹만 — 설치판은 같은 날 2.0.1로 따로 냈다(위).
 - 시험: `e2e/motion-always.spec.js` · `test/motion-always.test.js`(새로), 줄이기 시험이 있던 다섯 파일과 확인 도구 둘을 두 조건(`reduce` · `no-preference`)으로. 옛 코드에서 `reduce` 쪽 E2E 10개 · 유닛 1개 빨간불 확인.
 - 라이브 11/11 01:49: `f313d60`(동결 주간, 팀장 승인 · CI 42850940584 E2E 306 통과 · 12 건너뜀 · 배포 42858028107, 번들 `main-BVLPmI-c.js` · 엔진 캐시 `3a3682eeb407` 그대로라 부스 기기는 엔진을 다시 받지 않음).
   태그 `voice-cinema-freeze-20261111-motion-always`, 되돌림 지점 `1c3a376`. 라이브를 PC 2560×1305 · 휴대폰 390×844에서 두 조건으로 재 보니 같았다(배포 전에는 `reduce`에서 전부 멈춤).
