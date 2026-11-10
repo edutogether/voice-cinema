@@ -1164,7 +1164,8 @@ Bumm님이 이 PC에 원격으로 들어와 웹을 열자 브라우저가 «움�
   옛 코드에서 `reduce` 쪽 E2E 10개와 유닛 1개가 빨간불인 것을 확인했다
 - 🟠 **함정: 세션이 띄우는 Playwright · 헤드리스는 기본이 `no-preference`라 이 결함이 안 보인다.** 원격 데스크톱으로 들어가거나 Windows «애니메이션 효과»(설정 → 접근성 → 시각 효과)를 끄면
   크롬이 `reduce`를 보고한다. «화면이 멈춰 있다»는 말이 나오면 먼저 그 창에서 `matchMedia('(prefers-reduced-motion: reduce)').matches`를 본다
-- 🟠 **설치판(`feat/vc-desktop-mail`)은 아직 옛 코드다** — 설치 파일을 다시 만들 때 이 수정이 함께 들어가야 한다
+- 🟢 **설치판도 같다**(11/11 2.0.1, `feat/vc-desktop-mail` `c698444` — 설치판에만 있는 메일 시작 창 막대 `src/styles/mail.css`까지). 설치판 가지의 `desktop/e2e/motion.spec.mjs`가 설치된 앱을 두 조건으로 띄워 본다.
+  🟠 **Electron 44는 실행 인자 `--force-prefers-reduced-motion`을 듣지 않는다** — 넣어도 `matchMedia`가 `no-preference`라 시험이 헛돈다(옛 설치판에서 확인). `page.emulateMedia({ reducedMotion })`로 걸고 스플래시 기록(sessionStorage)을 지운 뒤 다시 연다
 - 세 화면(`#home` · `#studio` · `#result`)은 원래부터 화면 전환 페이드를 끈다(`animation:none`) — `.view.active`의 `fade`가 `#home` 등에서 `none`인 것은 이 일과 무관하다
 
 ## 부스 장비 — 교육청 제출 운영계획(9/7 판)이 기준이다 (2026-11-07 팀장 전달)

@@ -17,7 +17,7 @@
 | 항목 | 파일 |
 |---|---|
 | 정적 마크업(`#splash > .logo/.name/.stagline/.sbar > i`) | `index.html` — `#root`보다 위 |
-| 타이밍·로드 게이트·reduced-motion | `src/styles/splash.css` |
+| 타이밍·로드 게이트 | `src/styles/splash.css` |
 | 노드 제거와 안전판 | `src/lib/splash.ts` |
 | 준비 신호(`app-ready`) | `src/App.tsx` |
 
@@ -40,9 +40,9 @@
 같이 늦게 시작하므로, 게이트 없이도 노출이 없었다 — Fast 3G에서 타일 1,644ms · 소멸 3,758ms,
 Slow 3G에서 타일 5,804ms · 소멸 7,092ms. 게이트는 **두 자산의 도착 시각이 어긋날 때**를 막는다.
 
-**`prefers-reduced-motion: reduce`** — 로고 팝과 로딩바 애니메이션만 꺼지고(실측 `animationName: none`)
-유지·페이드 타이밍은 그대로다(투명해짐 2,337ms / 소멸 2,505ms). 스플래시의 유지까지 없애면
-덜 그려진 화면을 가려주는 역할이 사라지므로 일부러 남겨뒀다.
+**`prefers-reduced-motion: reduce`** — 신호와 상관없이 로고 팝 · 로딩바가 그대로 돌고 유지 · 페이드 타이밍도 같다
+(2026-11-11 Bumm님 «여덟 앱 모두, 움직임 줄이기와 상관없이 늘 정상처럼» — 전에는 두 애니메이션만 꺼졌다).
+`e2e/motion-always.spec.js`가 두 조건으로 본다. 조직 공용 표준의 «범위를 좁힌다» 절은 이 결정 전 내용이다.
 
 **시각 회귀 하네스는 스플래시 프레임을 잡지 않는다** — `tools/compare-visual.js`와
 `tools/compare-attributes.js`가 캡처 전에 `#splash`가 사라질 때까지 명시적으로 기다린다.
