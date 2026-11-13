@@ -151,7 +151,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
             {/* 메인과 같은 로고 줄 · 단계 표시(«2 목소리 녹음») — 키 큰 세로 휴대폰에서만 보인다(11/9 시안, studio.css) */}
             <FestivalHeader step={2} />
             <div className="studio-heading">
-              <button className="back" id="studioBackBtn" onClick={onHome}><ActionIcon name="back" /> 다른 영화 고르기</button>
+              <button className="back" id="studioBackBtn" onClick={onHome}><ActionIcon name="back" /> <span className="studio-btn-label">다른 영화 고르기</span></button>
               <div className="studio-scene-title">
                 <span className="studio-scene-label"><span id="chipName">{genre.name}</span>{sampleMode && ' · 녹음 샘플 체험'}</span>
                 <h1 ref={titleRef} tabIndex={-1}>{genre.summary}</h1>
@@ -200,14 +200,14 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
                 </div>
                 {!done && <div className="record-actions">
                   {(phase === 'idle' || previewing) && <button className="btn btn-ghost" id="previewBtn" type="button" onClick={previewing ? dub.reset : dub.preview}>
-                    <ActionIcon name={previewing ? 'stop' : 'play'} /> {previewing ? '미리보기 멈춤' : '미리보기'}
+                    <ActionIcon name={previewing ? 'stop' : 'play'} /> <span className="studio-btn-label">{previewing ? '미리보기 멈춤' : '미리보기'}</span>
                   </button>}
                   <button className="btn btn-rec" id="recBtn" ref={startButtonRef} disabled={inTake} onClick={dub.startTake}>
                     <span className="record-dot" aria-hidden="true" /><span>{inTake ? TIMELINE_STATE[phase] : '장면 시작'}</span>
                   </button>
                 </div>}
                 {done && <div className="row" id="afterRow">
-                  <button className="btn btn-ghost" id="resetBtn" onClick={dub.startTake}><ActionIcon name="retry" /> 다시 녹음</button>
+                  <button className="btn btn-ghost" id="resetBtn" onClick={dub.startTake}><ActionIcon name="retry" /> <span className="studio-btn-label">다시 녹음</span></button>
                   <button className="btn btn-save" id="saveBtn" ref={saveButtonRef} onClick={save}>{sampleMode ? '다운로드' : '저장하기'} <ActionIcon name="arrow" /></button>
                 </div>}
               </div>

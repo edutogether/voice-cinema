@@ -228,3 +228,35 @@ for (const [width, height] of [[375, 553], [360, 640], [390, 664]]) {
     await page.close();
   });
 }
+
+// 낮은 갤럭시 크롬(360×668 · 384×712 — 주소창을 뺀 높이)의 «이 기기에 저장» 화면: «다른 더빙하기»가 첫 화면 안에 든다 —
+// 13 · 14px 걸려 잘려 보였다(11/14 해상도 점검, 결정판 B). 사이 여백만 줄였다(그림↔글 12 · 저장 줄 위아래 20 · 16 · «다른 더빙하기» 위 16)
+for (const [width, height] of [[360, 668], [384, 712]]) {
+  test(`${width}×${height} 세로 휴대폰: «이 기기에 저장» 화면의 «다른 더빙하기»가 첫 화면에 든다`, async ({ browser }) => {
+    test.setTimeout(90000);
+    const page = await browser.newPage({ viewport: { width, height }, hasTouch: true, isMobile: true });
+    let uploads = 0;
+    await page.route(UPLOAD_PATTERN, (route) => { uploads++; return route.fulfill({ status: 500, contentType: 'application/json', body: '{"ok":false}' }); });
+    await page.goto('/');
+    await page.locator('#splash').waitFor({ state: 'detached' });
+    await page.locator('.tile', { hasText: 'SF' }).first().click();
+    await page.locator('#recBtn').click();
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: 40000 });
+    // 끊긴 채 저장하면 올리지 않고 곧바로 «이 기기에 저장»(휴대폰)
+    await page.evaluate(() => {
+      Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false });
+      window.dispatchEvent(new window.Event('offline'));
+    });
+    await page.locator('#saveBtn').click();
+    await expect(page.locator('#downloadRow')).toBeVisible({ timeout: 60000 });
+    await page.evaluate(() => window.scrollTo(0, 0));
+    const m = await page.evaluate(() => {
+      const r = (s) => document.querySelector(s).getBoundingClientRect();
+      return { home: r('#doneHomeBtn').bottom, H: window.innerHeight, gap: getComputedStyle(document.querySelector('.result-fallback')).rowGap };
+    });
+    expect(m.home, `«다른 더빙하기» 아래 ${Math.round(m.home - m.H)}px가 첫 화면 밖`).toBeLessThanOrEqual(m.H);
+    expect(m.gap).toBe('12px');
+    expect(uploads).toBe(0);
+    await page.close();
+  });
+}

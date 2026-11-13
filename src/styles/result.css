@@ -191,3 +191,11 @@ html:is([data-fit="phone"],[data-fit="none"]) .result-cloud #doneHomeBtn { backg
 @container app (max-height:599px) and (min-width:601px) {
  html:is([data-fit="phone"],[data-fit="none"]) .result-cloud .result-details { align-self:start; }
 }
+/* 낮은 갤럭시 크롬(360×668 · 384×712 — 주소창을 뺀 높이, 앱 높이 723~724)의 «이 기기에 저장» 화면: «다른 더빙하기»가 첫 화면 끝에 13 · 14px 걸렸다
+   (11/14 해상도 점검, 결정판 B — Bumm님 «⭐ 고침(시안대로) — 지금 즉시 배포까지», 팀장 전달). 그림 · 글 · 단추 크기는 그대로 두고 사이 여백만 줄인다.
+   키 큰 휴대폰(앱 높이 761 이상) · 낮은 휴대폰(720 미만) · PC · 패드는 이 묶음에 들지 않는다. */
+@container app (max-width:600px) and (min-height:720px) and (max-height:760px) {
+ .result-fallback { gap:12px; }
+ .result-fallback #downloadRow { margin:20px 0 16px; }
+ .result-fallback .result-actions { margin-top:16px; }
+}
