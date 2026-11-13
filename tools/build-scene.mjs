@@ -8,9 +8,11 @@
 // 만드는 것(app-plan §2-5): public/clips/<장르>.mp4(1920×1080 H.264/AAC, 30fps, 키프레임 1초 간격 — 5.0초 포함,
 // 자막 없음), previews/<장르>.mp4(0~5.0초 무음, 1280×720 — 최고조까지만, 해소는 아낀다),
 // thumbs/<장르>.jpg(640×360)와 stills/<장르>.jpg(1280×720) — 둘 다 5.0초 멈춤 화면. 같은 그림의 AVIF도 옆에 만든다(tools/build-avif.mjs, 10/24).
-// 내려받는 영상에는 로고 띠(tools/video-logos.png — 왼쪽 위 InKY Film Festival, 오른쪽 위 인천광역시교육청)가 들어간다(10/20 대표님).
+// 내려받는 영상에는 로고(tools/video-logos.png — 왼쪽 위 InKY Film Festival, 오른쪽 위 인천광역시교육청)가 들어간다(10/20 대표님,
+// 11/13 Bumm님 «흰 바 없이 완성 그림처럼»). 로고만 바꿀 때는 --final로 합성용 원판만 다시 만든다.
+//   node tools/build-scene.mjs <장르> --final
 // 합성은 영상을 다시 인코딩하지 않으므로(-c:v copy) 로고를 구운 합성용 원판 final/<장르>.mp4를 따로 만든다 — 녹음실은 로고 없는
-// <장르>.mp4를 튼다. PC 녹음실은 영상을 위아래로 잘라 꽉 채우므로(원판 기준 위 83~166px) 위 모서리 로고가 잘려 흰 조각만 남는다.
+// <장르>.mp4를 튼다. PC 녹음실은 영상을 위아래로 잘라 꽉 채우므로(원판 기준 위 83~166px) 위 모서리 로고가 잘려 조각만 남는다.
 // 미리보기·정지·썸네일도 로고 없는 그림에서 만든다 — 완성 화면 그림은 같은 로고를 화면에서 얹는다(Result.tsx).
 // 미리보기는 PC 가운데 카드(약 650px, 화면 배율 2면 1300px)와 휴대폰 카드(폭 94%, 3배면 약 1100px)에 크게 보인다 —
 // 10/19까지의 640×360·약 350kbps는 원화와 SSIM 0.86으로 눈에 띄게 뭉개졌다(10/20 대표님 «화질이 많이 열화»).
@@ -29,15 +31,33 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const clips = join(root, 'public', 'clips');
 const logos = join(root, 'tools', 'video-logos.png');
 const [genre, mode, ...rest] = process.argv.slice(2);
-if (!/^[a-z]+$/.test(genre ?? '') || !['--parts', '--slides'].includes(mode)) {
-  console.error('사용: node tools/build-scene.mjs <장르> --parts A.mp4 B.mp4 [--audio 소리.wav] | --slides <그림 폴더> [--audio 소리.wav]');
+if (!/^[a-z]+$/.test(genre ?? '') || !['--parts', '--slides', '--final'].includes(mode)) {
+  console.error('사용: node tools/build-scene.mjs <장르> --parts A.mp4 B.mp4 [--audio 소리.wav] | --slides <그림 폴더> [--audio 소리.wav] | --final');
   process.exit(2);
 }
-if (!existsSync(logos)) throw new Error('로고 띠(tools/video-logos.png)가 없다 — node tools/build-video-logos.mjs');
+if (!existsSync(logos)) throw new Error('로고(tools/video-logos.png)가 없다 — node tools/build-video-logos.mjs');
+const ff = (args) => execFileSync('ffmpeg', ['-y', '-v', 'error', ...args], { stdio: ['ignore', 'inherit', 'inherit'] });
+const duration = (file) => Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]).toString());
+// 키프레임 1초 간격(-g 30, 장면 전환으로 끼어드는 키프레임 없음) + 5.0초를 명시 — 5.0초 멈춤 탐색이 정확하고 빠르다.
+const VIDEO = ['-c:v', 'libx264', '-profile:v', 'high', '-preset', 'slow', '-crf', '20', '-maxrate', '8M', '-bufsize', '16M',
+  '-g', '30', '-keyint_min', '30', '-sc_threshold', '0', '-force_key_frames', `0,${PAUSE}`, '-pix_fmt', 'yuv420p'];
+
+// --final: 로고만 바꿨을 때 합성용 원판 final/<장르>.mp4만 다시 만든다(11/13 Bumm님 «흰 바 없이»). 원판을 만들던 중간 그림은
+// 남기지 않으므로, 같은 길로 이미 만든 로고 없는 원판 <장르>.mp4를 풀어 로고를 얹고 같은 설정으로 인코딩한다. 소리는 원판 것을
+// 그대로 복사한다. 녹음실 원판 · 미리보기 · 정지 · 썸네일은 건드리지 않는다(부스 기기가 다시 받지 않게).
+if (mode === '--final') {
+  const main = join(clips, `${genre}.mp4`);
+  const final = join(clips, 'final', `${genre}.mp4`);
+  if (!existsSync(main)) throw new Error(`${main}이 없다 — 원판부터 만든다`);
+  ff(['-i', main, '-i', logos, '-filter_complex', '[0:v][1:v]overlay=0:0,format=yuv420p[v]', '-map', '[v]', '-map', '0:a:0',
+    '-t', String(SECONDS), ...VIDEO, '-c:a', 'copy', '-movflags', '+faststart', final]);
+  if (Math.abs(duration(final) - SECONDS) > 0.05) throw new Error(`${final}: 길이 ${duration(final)}초 — 정확히 ${SECONDS}초여야 한다`);
+  console.log(`${genre}: 합성용(로고) ${(statSync(final).size / 1048576).toFixed(1)}MB`);
+  process.exit(0);
+}
 const audioAt = rest.indexOf('--audio');
 const audio = audioAt >= 0 ? rest[audioAt + 1] : null;
 const inputs = audioAt >= 0 ? rest.slice(0, audioAt) : rest;
-const ff = (args) => execFileSync('ffmpeg', ['-y', '-v', 'error', ...args], { stdio: ['ignore', 'inherit', 'inherit'] });
 const work = mkdtempSync(join(tmpdir(), `vc2-${genre}-`));
 const picture = join(work, 'picture.mp4');
 
@@ -79,10 +99,7 @@ mkdirSync(join(clips, 'stills'), { recursive: true });
 mkdirSync(join(clips, 'final'), { recursive: true });
 const main = join(clips, `${genre}.mp4`);
 const final = join(clips, 'final', `${genre}.mp4`);
-// 키프레임 1초 간격(-g 30, 장면 전환으로 끼어드는 키프레임 없음) + 5.0초를 명시 — 5.0초 멈춤 탐색이 정확하고 빠르다.
-const encode = (video, out) => ff(['-i', picture, '-i', sound, ...video, '-map', '1:a:0', '-t', String(SECONDS),
-  '-c:v', 'libx264', '-profile:v', 'high', '-preset', 'slow', '-crf', '20', '-maxrate', '8M', '-bufsize', '16M',
-  '-g', '30', '-keyint_min', '30', '-sc_threshold', '0', '-force_key_frames', `0,${PAUSE}`, '-pix_fmt', 'yuv420p',
+const encode = (video, out) => ff(['-i', picture, '-i', sound, ...video, '-map', '1:a:0', '-t', String(SECONDS), ...VIDEO,
   '-af', `apad,atrim=0:${SECONDS}`, '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-movflags', '+faststart', out]);
 encode(['-map', '0:v:0'], main);
 encode(['-i', logos, '-filter_complex', '[0:v][2:v]overlay=0:0,format=yuv420p[v]', '-map', '[v]'], final);
@@ -94,7 +111,6 @@ ff(['-ss', String(PAUSE), '-i', picture, '-frames:v', '1', '-vf', 'scale=640:360
 buildAvif([genre]);
 
 rmSync(work, { recursive: true, force: true });
-const duration = (file) => Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]).toString());
 for (const file of [main, final]) {
   if (Math.abs(duration(file) - SECONDS) > 0.05) throw new Error(`${file}: 길이 ${duration(file)}초 — 정확히 ${SECONDS}초여야 한다`);
 }
