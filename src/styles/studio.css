@@ -48,7 +48,7 @@ body:has(#studio.active) { background:#fff; }
 /* 5.0초에서 멈춘 직후 «이제 당신의 차례입니다 !» — 앱 글씨라 영상·완성본에 굽지 않는다. */
 .studio-cue { position:absolute; inset:0; z-index:3; display:grid; place-items:center; padding:24px; background:#0007; pointer-events:none; animation:cueShade .25s ease-out; }
 /* 어두운 막은 흐려졌다 나타나기만 하고(처음부터 영상 전체를 덮는다) 글자만 살짝 커지며 나타난다 — 막까지 0.9배에서 키우면 어두운 네모가 화면 안에서 자라 보였다(11/8) */
-:is(.studio-cue,.scene-turn-cue) strong { animation:countIn .25s ease-out; color:#fff; font-size:clamp(1.75rem,calc(4.2 * var(--vw)),3.5rem); font-weight:700; letter-spacing:-.02em; line-height:1.3; text-align:center; word-break:keep-all; text-shadow:0 4px 24px #0009; }
+:is(.studio-cue,.scene-turn-cue) strong { animation:countIn .25s ease-out; color:#fff; font-size:clamp(1.75rem,calc(4.2 * var(--vw)),3.5rem); font-weight:700; letter-spacing:-.02em; line-height:1.3; text-align:center; word-break:keep-all; text-shadow:0 4px 24px #0009; text-wrap-style:balance; }
 /* 녹음 3.5초 중 남은 시간 */
 .record-left { position:absolute; z-index:4; left:0; right:0; bottom:0; height:8px; background:#ffffff40; }
 .record-left > i { display:block; height:100%; background:#df291f; transform-origin:left center; }
@@ -77,7 +77,7 @@ body:has(#studio.active) { background:#fff; }
 .controls { display:flex; flex-wrap:wrap; gap:20px 32px; align-items:center; justify-content:space-between; }
 .controls-copy { flex:1 1 320px; min-width:0; }
 .controls h2 { font-size:1.375rem; font-weight:700; letter-spacing:-.025em; margin:0 0 6px; line-height:1.4; word-break:keep-all; }
-.hint { color:#626262; font-size:.9375rem; line-height:1.65; word-break:keep-all; }
+.hint { color:#626262; font-size:.9375rem; line-height:1.65; word-break:keep-all; text-wrap-style:pretty; }
 .record-actions,#afterRow { display:flex; flex-wrap:wrap; gap:12px; align-items:center; width:auto; margin-left:auto; }
 #studio .btn,#result .btn { display:inline-flex; align-items:center; justify-content:center; gap:9px; font:inherit; font-size:1rem; font-weight:600; line-height:1.5; min-height:52px; border-radius:6px; padding:13px 20px; max-width:none; min-width:0; white-space:nowrap; transition:background .18s,border-color .18s; }
 #studio .btn { border-radius:999px; padding-inline:24px; }
@@ -235,7 +235,9 @@ body:has(#studio.active) { background:#fff; }
  .studio-timeline { flex:none; margin:14px 16px 0; }
  .progress-turn { display:block; position:absolute; top:7.5px; height:9px; border-radius:3px; background:#df291f4d; }
  .controls-copy { flex:none; margin:auto 16px 0; }
- .record-actions,#afterRow { display:grid; grid-template-rows:1fr 1fr; gap:12px; width:calc(100% - 32px); margin:auto auto 0; }
+ .record-actions,#afterRow { display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:1fr 1fr; gap:12px; width:calc(100% - 32px); margin:auto auto 0; }
  .record-actions .btn,#afterRow .btn { width:100%; }
+ /* «다시 녹음 · 저장하기»(#afterRow)는 .row(가운데 맞춤)이고 .record-actions 밖이라 위 열 크기 · 아래 글자 크기가 따로 걸렸다 — «미리보기 · 장면 시작»과 같은 폭 · 글자로(11/14 화면 전수 검토) */
+ #studio #afterRow .btn { font-size:.9375rem; }
  #recBtn { grid-row:2; }
 }

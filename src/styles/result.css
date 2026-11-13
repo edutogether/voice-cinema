@@ -36,9 +36,9 @@ body:has(#result.active) { background:#fff; }
 .poster-credit p span { border-left:1px solid #ffffff5c; padding-left:14px; font-variant-numeric:tabular-nums; }
 .result-details { min-width:0; padding:var(--details-pad) 0; align-self:center; }
 .result-details .result-eyebrow { color:#e52320; font-size:.875rem; font-weight:700; margin:0 0 22px; }
-.result-details h2 { font-size:clamp(26px,calc(2.15 * var(--vw)),34px); font-weight:750; line-height:1.35; letter-spacing:-.04em; margin:0 0 14px; word-break:keep-all; }
+.result-details h2 { font-size:clamp(26px,calc(2.15 * var(--vw)),34px); font-weight:750; line-height:1.35; letter-spacing:-.04em; margin:0 0 14px; word-break:keep-all; text-wrap-style:balance; }
 .result-details h2:focus { outline:none; }
-.result-details p { font-size:1rem; line-height:1.7; word-break:keep-all; }
+.result-details p { font-size:1rem; line-height:1.7; word-break:keep-all; text-wrap-style:pretty; }
 #doneMsg { margin:0 0 24px; color:#626262; }
 /* QR 안내(11/13 Bumm님 문장)는 PC · 패드 모든 크기에서 고른 두 줄이다(balance는 블록에만 듣는다). 칸 폭에 따라 한 줄 · 두 줄로 바뀌면
    그림 높이(오른쪽 글 높이를 따른다, 위) → 그림 폭 → 오른쪽 칸 폭 → 줄 수가 서로 물려, 1180×820에서 두 줄이 된 글이 카드 밖으로 27px 넘쳐 세로 가운데가 어긋났다 */

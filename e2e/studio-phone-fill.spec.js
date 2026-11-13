@@ -79,6 +79,7 @@ for (const [width, height] of [[360, 640], [390, 844], [430, 932]]) {
     // 진행 막대는 시간 글자 바로 앞까지 온다(둘 사이는 줄 간격 12px뿐)
     expect(idle.barToTime).toBeLessThanOrEqual(12);
 
+    const idleFont = await page.locator('#recBtn').evaluate((el) => getComputedStyle(el).fontSize);
     await page.locator('#recBtn').click();
     await expect(page.locator('#count')).toBeVisible({ timeout: 15000 });
     const countdown = await measure(page);
@@ -92,5 +93,14 @@ for (const [width, height] of [[360, 640], [390, 844], [430, 932]]) {
     expect(countdown.recTop).toBe(idle.recTop);
     // 녹음 뒤에는 «다시 녹음 · 저장하기» 두 단추만(10/20 «다시 듣기» 없앰)
     await expect(page.locator('#afterRow button')).toHaveText([/다시 녹음/, /저장하기/]);
+    if (tall) {
+      // 녹음 뒤 두 단추도 «미리보기 · 장면 시작»과 같은 폭 · 글자 크기다 — 11/14 전수 검토 전에는 글자 폭 알약(121px)으로 가운데 몰리고 글자만 19px였다
+      const fit = width / 390;
+      for (const id of ['#resetBtn', '#saveBtn']) {
+        const b = await page.locator(id).boundingBox();
+        expect(Math.abs(b.width - (width - 32 * fit)), `${id} 폭 ${b.width}`).toBeLessThanOrEqual(1);
+        expect(await page.locator(id).evaluate((el) => getComputedStyle(el).fontSize), `${id} 글자 크기`).toBe(idleFont);
+      }
+    }
   });
 }
