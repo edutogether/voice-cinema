@@ -48,7 +48,7 @@ body:has(#result.active) { background:#fff; }
 .qrbox { display:flex; flex-direction:column; align-items:center; width:fit-content; padding:16px 20px; margin:0 0 22px; background:#fff; border:1px solid #e5e5e5; border-radius:12px; }
 .qrbox img { display:block; width:180px; height:180px; max-width:100%; }
 .qrbox span { margin-top:8px; font-size:.875rem; font-weight:650; color:#333; }
-.savemode { font-size:.875rem; color:#626262; line-height:1.7; word-break:keep-all; }
+.savemode { font-size:.875rem; color:#626262; line-height:1.7; word-break:keep-all; text-wrap-style:pretty; }
 .result-details p.savemode { font-size:.875rem; }
 .result-details p.retention-note { margin:8px 0 0; font-size:.8125rem; color:#626262; }
 .result-actions { margin-top:28px; }
@@ -66,7 +66,7 @@ body:has(#result.active) { background:#fff; }
 #result .btn:focus-visible { outline:3px solid #e52320; outline-offset:4px; }
 #downloadRow { margin:28px 0 24px; }
 .result-fallback .savemode { padding:18px 20px; border:1px solid #e5e5e5; border-radius:10px; background:#f7f7f7; }
-.errbox { margin:24px 0; padding:18px 20px; color:#642a26; background:#fff3f2; border:1px solid #f3d2cf; border-radius:10px; font-size:.9375rem; line-height:1.7; word-break:keep-all; }
+.errbox { margin:24px 0; padding:18px 20px; color:#642a26; background:#fff3f2; border:1px solid #f3d2cf; border-radius:10px; font-size:.9375rem; line-height:1.7; word-break:keep-all; text-wrap-style:pretty; }
 .errbox b { font-weight:700; }
 #result .workflow-footer { color:#737373; padding:20px 24px; font-size:.8125rem; }
 @container app (max-height:800px) and (min-width:601px) {
