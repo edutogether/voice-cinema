@@ -184,6 +184,7 @@ export function Result({ active, job, onHome, onBack }: Props) {
   };
 
   const loading = stage.kind === 'merging' || stage.kind === 'uploading';
+  const eyebrow = <p className="result-eyebrow">{stage.kind === 'sample' ? '샘플 체험 완료' : stage.kind === 'cloud' ? '나만의 영화가 완성됐어요 !' : loading ? '목소리가 영화가 되는 순간' : stage.kind === 'error' ? '녹화 보관 중' : '내 영화 보관하기'}</p>;
 
   return (
     <section id="result" className={`view${active ? ' active' : ''}`}>
@@ -194,7 +195,8 @@ export function Result({ active, job, onHome, onBack }: Props) {
           {/* 왼쪽 위 InKY Film Festival, 오른쪽 위 인천광역시교육청 — 바탕 없이 로고만(11/8 Bumm님, 교육청 엠블럼은 공식 색 · 글자는 흰색). 내려받는 영상에도 같은 모양 · 크기로 구워져 있다(10/20 대표님, 11/13 Bumm님 «흰 바 없이», tools/build-video-logos.mjs) */}
           <span className="poster-logo poster-logo-inky" aria-hidden="true"><span className="festival-symbol"><img src="/brands/inky.png" alt="" /></span><span><strong>InKY</strong> Film Festival</span></span>
           <span className="poster-logo poster-logo-education" aria-hidden="true"><img src="/brands/education-on-dark.svg" alt="" width="102" height="27" /></span>
-          <div className="poster-credit"><p>{job.kind === 'sample' ? '녹음 화면 샘플 체험' : '내 목소리로 완성하는 영화'}</p><strong>{job.genre.summary}</strong><span>{job.kind === 'sample' ? '다운로드 · 원본 영상' : job.genre.name}</span></div>
+          {/* 녹음실 멈춤 화면의 «내 목소리로 완성하는 영화 / 제목 / 장르 | 10초»와 같은 양식 · 같은 자리(왼쪽 아래) — 11/13 Bumm님 «아래도 9번같이 10초까지 넣어서» */}
+          <div className="poster-credit"><small>{job.kind === 'sample' ? '녹음 화면 샘플 체험' : '내 목소리로 완성하는 영화'}</small><strong>{job.genre.summary}</strong><p>{job.kind === 'sample' ? '다운로드 · 원본 영상' : job.genre.name}<span>10초</span></p></div>
           {/* 휴대폰에서만(result.css): 포스터를 누르면 그 자리에서 완성 영화가 흐른다(11/9 시안) */}
           {movieSrc && (playingMovie
             ? <video className="poster-movie" src={movieSrc} autoPlay playsInline controls />
@@ -203,10 +205,12 @@ export function Result({ active, job, onHome, onBack }: Props) {
             </button>)}
         </div>
         <div className="result-details">
-        <p className="result-eyebrow">{stage.kind === 'sample' ? '샘플 체험 완료' : stage.kind === 'cloud' ? '내 영화가 완성됐어요' : loading ? '목소리가 영화가 되는 순간' : stage.kind === 'error' ? '녹음 보관 중' : '내 영화 보관하기'}</p>
+        {/* 화면마다 아이콘 → 빨간 작은 글 → 검은 제목 순서(11/13 Bumm님 «12가 맨 위, 빨간 작은 글씨가 두 번째 줄, 검은 글씨가 세 번째 줄») */}
+        {loading && eyebrow}
         {stage.kind === 'sample' && (
           <div id="done">
             <span className="result-symbol"><ActionIcon name="download" /></span>
+            {eyebrow}
             <h2 tabIndex={-1}>원본 영상을 받아보세요</h2>
             <p id="doneMsg">샘플 체험이 완료됐어요. 마이크 녹음 없이 진행했으며, 다운로드 파일은 선택한 장면의 원본 영상입니다.</p>
             <div className="row" id="downloadRow">
@@ -225,11 +229,12 @@ export function Result({ active, job, onHome, onBack }: Props) {
         {(stage.kind === 'cloud' || stage.kind === 'fallback') && (
           <div id="done">
             <span className={`result-symbol${stage.kind === 'fallback' ? ' warning' : ''}`}><ActionIcon name={stage.kind === 'cloud' ? 'check' : 'download'} /></span>
+            {eyebrow}
             <h2 tabIndex={-1}>{stage.kind === 'cloud' ? '세상에 하나뿐인, 내 영화.' : PREVIEW ? '영화를 이 기기에 저장해 주세요' : '네트워크 장애로 QR코드를 만들지 못했어요'}</h2>
             <p id="doneMsg">
               {stage.kind === 'cloud'
                 ? <>
-                  <span className="for-qr">QR을 찍으면 내 영화를 받을 수 있어요</span>
+                  <span className="for-qr">QR코드를 카메라로 찍으면 내가 만든 영화를 다운로드 받을 수 있어요.</span>
                   {!IN_INSTALLER && <span className="for-phone">영화를 눌러 보고, 내 폰에 저장해요</span>}
                 </>
                 : PREVIEW
@@ -286,13 +291,14 @@ export function Result({ active, job, onHome, onBack }: Props) {
         )}
 
         {stage.kind === 'mail' && (
-          <MailHandoff genre={job.genre} blob={stage.blob} retrying={retrying} onRetry={() => { void retry(stage.blob); }} onHome={onHome} />
+          <MailHandoff eyebrow={eyebrow} genre={job.genre} blob={stage.blob} retrying={retrying} onRetry={() => { void retry(stage.blob); }} onHome={onHome} />
         )}
 
         {stage.kind === 'error' && (
           <>
             <span className="result-symbol warning"><ActionIcon name="warning" /></span>
-            <h2 tabIndex={-1}>녹음이 남아 있어요</h2>
+            {eyebrow}
+            <h2 tabIndex={-1}>녹화가 남아 있어요</h2>
             <div className="errbox show" id="errbox">
               <b>영화를 만드는 중 문제가 생겼어요.</b>
               <br />

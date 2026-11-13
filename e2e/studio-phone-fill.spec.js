@@ -73,7 +73,7 @@ for (const [width, height] of [[360, 640], [390, 844], [430, 932]]) {
       await expect(page.locator('.studio-scene-tag')).toBeHidden();
     }
     expect(idle.scroll).toBe(0);
-    // 제목은 머리줄에 한 번만 — 영상 위 «장면 더빙 / 제목 / 장르 | 10초»는 접는다
+    // 제목은 머리줄에 한 번만 — 영상 위 «내 목소리로 완성하는 영화 / 제목 / 장르 | 10초»는 접는다
     expect(idle.pauseTitle).toBe('none');
     await expect(page.locator('.studio-heading h1')).toHaveText('서커스 첫 무대');
     // 진행 막대는 시간 글자 바로 앞까지 온다(둘 사이는 줄 간격 12px뿐)

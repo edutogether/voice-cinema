@@ -123,7 +123,7 @@ test('끊긴 채 더빙을 마치면 메일 칸이 뜨고, 인터넷이 돌아�
 
   await enterMail(page);
   await expect(page.locator('#mailHandoff h2')).toHaveText('네트워크가 복구되면 보내 드릴게요');
-  await expect(page.locator('#doneMsg')).toHaveText('이 브라우저에 잠시 보관했다가 인터넷이 돌아오면 보내고 바로 지워요.');
+  await expect(page.locator('#doneMsg')).toHaveText('이 브라우저에 잠시 보관했다가 인터넷이 돌아오면 보내고 바로 지울게요.');
   await expect(page.locator('#mailConditions li')).toHaveText(CONDITIONS);
   expect(await stored(page)).toEqual({ items: 1, videos: 1 });
   // 맡긴 뒤 화면의 단추는 «다른 더빙하기» 하나이고 빨간 주 단추다(11/9 Bumm님 «다른 더빙하기 버튼도 빨간색인 게 나을 듯 ?»)

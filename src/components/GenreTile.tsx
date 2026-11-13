@@ -89,11 +89,12 @@ export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, ne
         <span className="tile-number">{String(sceneNumber).padStart(2, '0')}</span>
         {/* 휴대폰 폭에서만 보인다 — 장르 배지와 장면 이름을 그림 오른쪽 아래에 얹고 아래 이름 줄을 접는다(10/19 대표님, home.css) */}
         <span className="tile-tag"><b>{genre.name}</b>{genre.summary}</span>
-        <span className="tile-preview-label"><svg viewBox="0 0 24 24" fill="currentColor"><path d="m8 5 11 7-11 7z" /></svg> 미리보기 재생 중</span>
+        {/* 방송 «ON AIR» 등처럼 빨간 바탕 · 흰 글자 · 천천히 숨 쉬는 흰 점(11/13 Bumm님 «빨간색이나 방송계 온에어 느낌나게 … 칙칙함», home.css) */}
+        <span className="tile-preview-label"><i className="onair-dot" aria-hidden="true" />미리보기 재생 중</span>
       </span>
       <span className="tile-body">
         <span className="tile-copy">
-          <span className="gname">{genre.name}<span className="tile-length">10초</span></span>
+          <span className="gname">{genre.name}</span>
           <span className="gsub">{genre.summary}</span>
         </span>
         <span className="tile-enter" aria-hidden="true"><span className="tile-enter-icon"><ActionIcon name="mic" /></span>더빙하기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></span>

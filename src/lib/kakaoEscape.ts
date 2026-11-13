@@ -15,6 +15,22 @@ const NOTICE_MS = 500;
 // 이동하고도 이 화면이 남아 있으면 손으로 여는 길을 보여 준다
 const HELP_MS = 1500;
 
+// 단추 앞 Lucide 아이콘(11/13 Bumm님) — 리액트보다 먼저 도는 화면이라 SVG를 직접 만든다. 글자색을 따른다.
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const EXTERNAL_LINK = ['M15 3h6v6', 'M10 14 21 3', 'M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'];
+const ARROW_RIGHT = ['M5 12h14', 'm12 5 7 7-7 7'];
+
+function lucide(paths: string[]): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, 'svg');
+  for (const [k, v] of Object.entries({ viewBox: '0 0 24 24', width: '20', height: '20', fill: 'none', stroke: 'currentColor', 'stroke-width': '2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' })) svg.setAttribute(k, v);
+  for (const d of paths) {
+    const p = document.createElementNS(SVG_NS, 'path');
+    p.setAttribute('d', d);
+    svg.append(p);
+  }
+  return svg;
+}
+
 function alreadyTried(): boolean {
   try {
     return sessionStorage.getItem(TRIED_KEY) === '1';
@@ -58,11 +74,11 @@ export function escapeKakaoInApp(startApp: () => void): boolean {
   const open = document.createElement('a');
   open.className = 'kakao-escape-open';
   open.href = target;
-  open.textContent = '다른 브라우저로 열기';
+  open.append(lucide(EXTERNAL_LINK), '다른 브라우저로 열기');
   const stay = document.createElement('button');
   stay.type = 'button';
   stay.className = 'kakao-escape-stay';
-  stay.textContent = '여기서 계속하기';
+  stay.append(lucide(ARROW_RIGHT), '여기서 계속하기');
   stay.addEventListener('click', () => {
     box.remove();
     startApp();

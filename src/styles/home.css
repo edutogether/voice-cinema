@@ -76,13 +76,14 @@ body:has(#home.active) { background:#fff; }
 .tile-media .preview { opacity:0; }
 .tile-media .preview.playing { opacity:1; }
 .tile-number { position:absolute; bottom:10px; left:18px; color:#fff; font-size:clamp(2.5rem,calc(4 * var(--vw)),4.5rem); font-weight:800; font-style:italic; line-height:1; letter-spacing:-.06em; text-shadow:0 2px 12px #0008; }
-.tile-preview-label { display:none; position:absolute; right:12px; top:12px; align-items:center; gap:5px; background:#111d; color:white; padding:6px 9px; border-radius:20px; font-size:.6875rem; line-height:1.5; }
-.tile-preview-label svg { width:10px; height:10px; }
+/* «미리보기 재생 중»은 방송 «ON AIR» 등처럼 — 빨간 바탕 · 흰 굵은 글자 · 붉은 빛 · 천천히 숨 쉬는 흰 점(11/13 Bumm님 «빨간색이나 방송계 온에어 느낌나게 … 칙칙함») */
+.tile-preview-label { display:none; position:absolute; right:12px; top:12px; align-items:center; gap:7px; background:#e52320; color:#fff; padding:5px 11px 5px 9px; border-radius:6px; font-size:.75rem; font-weight:700; line-height:1.5; letter-spacing:.02em; box-shadow:0 0 0 1px #ff8a7a66, 0 0 16px #e5232099; }
+.onair-dot { flex-shrink:0; width:7px; height:7px; border-radius:50%; background:#fff; box-shadow:0 0 6px #fff; animation:onair 1.6s ease-in-out infinite; }
+@keyframes onair { 50% { opacity:.35; box-shadow:0 0 0 #fff0; } }
 .tile-tag { display:none; }
 .tile-body { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 2px 0; flex-shrink:0; min-width:0; }
 .tile-copy { min-width:0; }
 .gname { display:flex; align-items:center; flex-wrap:wrap; gap:8px; font-size:1.25rem; line-height:1.4; font-weight:700; letter-spacing:-.035em; word-break:keep-all; }
-.tile-length { padding:1px 5px; border-radius:4px; background:#f3f3f3; color:#686868; font-size:.6875rem; line-height:1.5; letter-spacing:0; font-weight:500; }
 .gsub { display:block; margin-top:4px; font-size:.8125rem; line-height:1.5; color:#6b6b6b; word-break:keep-all; }
 .tile-enter { display:flex; align-items:center; justify-content:center; gap:6px; flex-shrink:0; border:1px solid #dedede; border-radius:30px; padding:9px 13px; font-size:.8125rem; font-weight:600; white-space:nowrap; }
 .tile-enter svg { width:15px; height:15px; }
@@ -176,7 +177,6 @@ html[data-fit="none"] .download-link { display:none; }
 .scene-shell .tile-body { min-height:var(--scene-caption-height); padding:18px 4px 4px; gap:20px; opacity:1; transition:opacity .18s ease; }
 .scene-shell .gname { font-size:1.875rem; gap:12px; }
 .scene-shell .gsub { font-size:.9375rem; margin-top:6px; }
-.scene-shell .tile-length { font-size:.75rem; }
 .scene-shell .tile-enter { background:#df291f; color:white; border:0; padding:13px 22px; font-size:.9375rem; }
 .scene-shell .tile-number { font-size:clamp(3.5rem,calc(6 * var(--vw)),6rem); left:24px; bottom:18px; }
 .scene-shell:not(.is-current) .tile-body { opacity:0; pointer-events:none; }

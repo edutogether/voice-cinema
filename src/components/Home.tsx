@@ -32,7 +32,7 @@ export function Home({ active, onSelect }: Props) {
         <div className="chart-main">
           <div className="chart-heading">
             {/* 휴대폰 폭에서는 제목 자리에 «내 목소리로 완성하는 10초의 영화.»를 둔다(10/19 대표님, home.css) */}
-            <div><p className="chart-eyebrow">오늘, 내가 출연할 영화</p><h1><b className="chart-title"><em>더빙</em>할 영화 고르기</b> <span>{GENRES.length}</span><b className="chart-title chart-title-phone">내 목소리로 완성하는 <em>10초의 영화.</em></b></h1></div>
+            <div><p className="chart-eyebrow">오늘, 내가 주인공이 될 영화</p><h1><b className="chart-title"><em>더빙</em>할 영화 고르기</b> <span>{GENRES.length}</span><b className="chart-title chart-title-phone">내 목소리로 완성하는 <em>10초의 영화.</em></b></h1></div>
           </div>
 
           <SceneCarousel active={active} onSelect={onSelect} />

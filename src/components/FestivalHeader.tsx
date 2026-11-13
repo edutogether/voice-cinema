@@ -1,10 +1,13 @@
 import { IN_INSTALLER } from '../lib/installer';
+import { mailEnabled } from '../lib/mailDelivery';
 import { DownloadLink } from './DownloadLink';
 import { FeedbackLink } from './FeedbackLink';
+import { MailQueueChip } from './MailStatus';
 
 /**
  * 행사 공통 표기와 Voice Cinema의 현재 체험 단계를 분리한다.
  * «의견 보내기»는 웹 첫 화면에만 둔다 — 설치판은 인터넷이 안 되는 것이 기준이라 넣지 않는다(11/8 Bumm님).
+ * 웹의 «메일 대기 N건»은 «의견 보내기» 앞이다(11/13 Bumm님 «의견 보내기와 위치를 바꿔») — 설치판은 노란 설치판 표시 옆 그대로(DownloadLink).
  */
 export function FestivalHeader({ step = 1 }: { step?: 1 | 2 | 3 }) {
   return (
@@ -27,6 +30,7 @@ export function FestivalHeader({ step = 1 }: { step?: 1 | 2 | 3 }) {
         <span><strong>InKY</strong> <span className="festival-english">Film Festival</span></span>
       </button>
       <div className="header-links">
+        {step === 1 && !IN_INSTALLER && mailEnabled && <MailQueueChip />}
         {step === 1 && !IN_INSTALLER && <FeedbackLink step={step} />}
         {step === 1 && <DownloadLink />}
         <a className="privacylink" href="./privacy.html" target="_blank" rel="noopener" aria-label="개인정보처리방침 (새 탭)">개인정보처리방침</a>

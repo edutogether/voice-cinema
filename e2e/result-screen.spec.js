@@ -84,8 +84,11 @@ for (const [width, height] of [[1440, 900], [1024, 768], [1180, 820], [768, 1024
     expect(await poster.locator('.poster-logo-inky').evaluate((el) => getComputedStyle(el).color)).toBe('rgb(255, 255, 255)');
     expect(await poster.locator('.poster-logo-education img').evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
     await expect(poster).not.toContainText('Voice');
+    // 왼쪽 아래 글은 녹음실 멈춤 화면 글과 같은 양식 — 작은 글 / 제목 / «장르 | 10초»(11/13 Bumm님)
+    await expect(poster.locator('.poster-credit small')).toHaveText('내 목소리로 완성하는 영화');
     await expect(poster.locator('.poster-credit strong')).toHaveText(title);
-    await expect(poster.locator('.poster-credit > span')).toHaveText('SF');
+    await expect(poster.locator('.poster-credit p')).toHaveText(/^SF\s*10초$/);
+    await expect(poster.locator('.poster-credit p span')).toHaveText('10초');
     // 그림 위 두 로고는 겹치지 않는다 — 패드 세로(768)에서 교육청 로고가 «InKY Film Festival» 끝을 가렸다(11/2 해상도 전수)
     const inky = await poster.locator('.poster-logo-inky').boundingBox();
     const education = await poster.locator('.poster-logo-education').boundingBox();
@@ -123,9 +126,17 @@ for (const [width, height] of [[1440, 900], [1024, 768], [1180, 820], [768, 1024
     const detailsWidth = await page.locator('.result-details').evaluate((el) => el.clientWidth);
     if (width > 600) expect(Math.round(homeBox.width)).toBe(248);
     else expect(homeBox.width).toBeGreaterThan(detailsWidth * .9);
-    // QR 안내 문장은 한 줄(«있어요»만 아랫줄로 떨어지지 않게)
-    const msgLines = await page.locator('#doneMsg').evaluate((el) => Math.round(el.getBoundingClientRect().height / parseFloat(getComputedStyle(el).lineHeight)));
-    expect(msgLines).toBe(1);
+    // 안내 문장은 두 줄 안, 두 줄이면 고르게(«있어요»만 아랫줄로 떨어지지 않게 — 11/13 QR 문장이 길어져 칸에 따라 두 줄)
+    const msgLines = await page.locator('#doneMsg').evaluate((el) => {
+      const shown = [...el.children].find((c) => getComputedStyle(c).display !== 'none');
+      const range = document.createRange();
+      range.selectNodeContents(shown);
+      const rows = new Map();
+      for (const r of range.getClientRects()) if (r.width > 0) rows.set(Math.round(r.top), (rows.get(Math.round(r.top)) || 0) + r.width);
+      return [...rows.values()];
+    });
+    expect(msgLines.length).toBeLessThanOrEqual(2);
+    if (msgLines.length === 2) expect(Math.min(...msgLines) / Math.max(...msgLines), '아랫줄에 한 마디만 떨어졌다').toBeGreaterThan(.5);
     if (width > 900) {
       // 넓은 두 칸 화면: 단추는 글자 폭만큼, 그림은 오른쪽 내용 높이에 맞춘다
       const details = await page.locator('.result-details').evaluate((el) => {
@@ -135,11 +146,11 @@ for (const [width, height] of [[1440, 900], [1024, 768], [1180, 820], [768, 1024
       // 단추는 칸 폭으로 늘지 않는다(폭 248은 위에서 본다) — 1024×768은 그림이 글 높이까지 커져 오른쪽 칸이 320px라 비율로는 재지 않는다
       expect((await home.boundingBox()).width).toBeLessThan(details.width - 1);
       expect(Math.abs(after.height - details.content)).toBeLessThanOrEqual(40);
-      // 왼쪽 그림은 오른쪽 글 맨 위 «내 영화가 완성됐어요»부터 맨 아래 «다른 더빙하기»까지의 높이를 다 차지한다
+      // 왼쪽 그림은 오른쪽 글 맨 위(체크 아이콘 — 11/13부터 아이콘 → «나만의 영화가 완성됐어요 !» → 제목)부터 맨 아래 «다른 더빙하기»까지의 높이를 다 차지한다
       // (11/10 Bumm님 «왼쪽 화면이 우측 상단 글씨부터 하단 버튼까지의 높이를 다 차지하도록» — 1024×768 · 1180×820에서 그림이 글보다 짧았다)
-      const eyebrow = await page.locator('#result .result-eyebrow').boundingBox();
+      const first = await page.locator('#result #done > :first-child').boundingBox();
       const end = await home.boundingBox();
-      expect(after.y, '그림이 글 맨 위보다 아래에서 시작한다').toBeLessThanOrEqual(eyebrow.y + 1);
+      expect(after.y, '그림이 글 맨 위보다 아래에서 시작한다').toBeLessThanOrEqual(first.y + 1);
       expect(after.y + after.height, '그림이 «다른 더빙하기» 아래 끝보다 먼저 끝난다').toBeGreaterThanOrEqual(end.y + end.height - 1);
     }
     if (height > 700) {

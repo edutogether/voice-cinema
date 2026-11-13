@@ -136,7 +136,7 @@ body:has(#studio.active) { background:#fff; }
  .studio-player-dock { flex:none; border-top:0; padding-bottom:16px; }
 }
 @container app (max-width:600px) and (orientation:portrait) {
- /* 제목은 위 머리줄에 한 번만(10/20) — 영상 위의 «장면 더빙 / 제목 / 장르 | 10초»는 세로 휴대폰에서 접는다 */
+ /* 제목은 위 머리줄에 한 번만(10/20) — 영상 위의 «내 목소리로 완성하는 영화 / 제목 / 장르 | 10초»는 세로 휴대폰에서 접는다 */
  .studio-pause-title { display:none; }
  .controls { flex-direction:column; flex-wrap:nowrap; align-items:stretch; gap:24px; }
  .controls-copy { flex:none; }

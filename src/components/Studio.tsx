@@ -164,7 +164,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
                 onProgress={(e) => measureLoaded(e.currentTarget)} onLoadedMetadata={(e) => measureLoaded(e.currentTarget)} />
               <div className="studio-pause-shade" aria-hidden="true" />
               <div className="studio-pause-title" aria-hidden="true">
-                <small>장면 더빙</small>
+                <small>내 목소리로 완성하는 영화</small>
                 <strong>{genre.summary}</strong>
                 <p>{genre.name}<span>10초</span></p>
               </div>
