@@ -39,10 +39,12 @@ async function recordFrames(page) {
   });
 }
 
-const enter = async (page, name = 'SF') => {
+// 10초 장면(판타지, 5.0초 멈춤)으로 들어간다 — SF는 11/14부터 완성본(12.0초 멈춤)이라 아래 그림 띠를 멈추고 누른다(누름 안에서 재생을 부르는지는 그대로 본다)
+const enter = async (page, id = 'fantasy') => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: `${name} 더빙 시작`, exact: true }).click();
+  await pauseScenes(page);
+  await page.locator(`.scene-choice[data-genre="${id}"]`).click();
 };
 
 test('누르면 그 누름 안에서 소리를 켠 채 재생을 부르고, 멈춤·3·2·1·멈춤 화면의 막 없이 끝까지 흐른 뒤 준비 화면으로 돌아온다', async ({ page }) => {
@@ -163,8 +165,8 @@ test('대사 구간 문구는 3·2·1의 «이제 당신의 차례입니다 !»�
   expect(alpha(turn.background)).toBeGreaterThanOrEqual(alpha(look.background));
 });
 
-// 셋째 값은 멈춤 시각 — 11/14부터 애니메이션 · 히어로 · 뮤지컬은 20.6초 완성본이라 대사 구간이 12.0~15.5초다
-for (const [id, name, pause] of [['sf', 'SF', 5], ['fantasy', '판타지', 5], ['animation', '애니메이션', 12], ['hero', '히어로', 12], ['thriller', '스릴러', 5], ['drama', '드라마', 5], ['sports', '스포츠', 5], ['musical', '뮤지컬', 12]]) {
+// 셋째 값은 멈춤 시각 — 11/14부터 SF · 애니메이션 · 히어로 · 스릴러 · 드라마 · 뮤지컬은 완성본이라 대사 구간이 12.0~15.5초다
+for (const [id, name, pause] of [['sf', 'SF', 12], ['fantasy', '판타지', 5], ['animation', '애니메이션', 12], ['hero', '히어로', 12], ['thriller', '스릴러', 12], ['drama', '드라마', 12], ['sports', '스포츠', 5], ['musical', '뮤지컬', 12]]) {
   test(`${name}: 대사 구간 문구는 그 장면의 구간에서만 나오고 영상을 멈추지 않는다`, async ({ page }) => {
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
@@ -238,7 +240,8 @@ test('다시 녹음은 «장면 시작»처럼 곧바로 처음부터 녹음 흐
   // 다른 더빙은 새 누름이다 — 다시 처음부터 소리와 함께 흐른다
   await page.locator('.back').click();
   await expect(page.locator('#home')).toHaveClass(/active/);
-  await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();
+  await pauseScenes(page);
+  await page.locator('.scene-choice[data-genre="fantasy"]').click();
   await expect(phase(page)).toHaveAttribute('data-phase', 'previewing');
   await expect.poll(async () => (await state(page)).time).toBeGreaterThan(.2);
   expect((await state(page)).muted).toBe(false);

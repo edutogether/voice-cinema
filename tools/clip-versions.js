@@ -23,13 +23,41 @@ export function clipVersions({ dir }) {
     load(id) {
       if (id !== RESOLVED) return null;
       const versions = {};
+      // mp4마다 길이(초)도 함께 내보낸다 — 장면 길이를 숫자로 박지 않고 원판 파일에서 읽는다(11/14 Bumm님 «길이가 편마다 다르다»).
+      const lengths = {};
       for (const abs of listFiles(dir)) {
         const key = path.relative(dir, abs).split(path.sep).join('/');
-        versions[key] = createHash('sha256').update(readFileSync(abs)).digest('hex').slice(0, 8);
+        const bytes = readFileSync(abs);
+        versions[key] = createHash('sha256').update(bytes).digest('hex').slice(0, 8);
+        if (key.endsWith('.mp4')) lengths[key] = Math.round(mp4Seconds(bytes, key) * 1000) / 1000;
       }
-      return `export default ${JSON.stringify(versions)};`;
+      return `export default ${JSON.stringify(versions)};\nexport const lengths = ${JSON.stringify(lengths)};`;
     },
   };
+}
+
+/** mp4 길이(초) — 맨 위 상자들에서 moov를 찾고 그 안의 mvhd(동영상 머리)에서 읽는다(ffprobe 없이, CI 러너에 기대지 않는다). */
+export function mp4Seconds(bytes, name = 'mp4') {
+  const moov = findBox(bytes, 0, bytes.length, 'moov');
+  const mvhd = moov && findBox(bytes, moov.body, moov.end, 'mvhd');
+  if (!mvhd) throw new Error(`${name}: moov/mvhd 없음`);
+  const at = mvhd.body;
+  return bytes[at] === 1
+    ? Number(bytes.readBigUInt64BE(at + 24)) / bytes.readUInt32BE(at + 20)
+    : bytes.readUInt32BE(at + 16) / bytes.readUInt32BE(at + 12);
+}
+
+function findBox(bytes, from, to, type) {
+  for (let at = from; at + 8 <= to;) {
+    let size = bytes.readUInt32BE(at);
+    let head = 8;
+    if (size === 1) { size = Number(bytes.readBigUInt64BE(at + 8)); head = 16; }
+    else if (size === 0) size = to - at;
+    if (size < head) return null;
+    if (bytes.toString('latin1', at + 4, at + 8) === type) return { body: at + head, end: at + size };
+    at += size;
+  }
+  return null;
 }
 
 function listFiles(dir) {

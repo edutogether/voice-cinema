@@ -7,7 +7,7 @@
 // 리액트 전환에서는 스튜디오 진입마다 컴포넌트를 새로 마운트해 구조적으로 막았고,
 // 그게 실제로 지켜지는지 여기서 확인한다.
 import { test, expect } from '@playwright/test';
-import { pauseScenes } from './pause-scenes.js';
+import { openScene, pauseScenes } from './pause-scenes.js';
 import { stopAutoPreview } from './stop-auto-preview.js';
 
 // 이 두 테스트는 장면·녹음·이어 재생을 포함해 상호작용이 길다. 그 사이 서비스워커가 설치를
@@ -20,17 +20,17 @@ test.beforeEach(async ({ page }) => {
 
 test('홈에 나갔다 같은 장르로 다시 들어오면 이전 녹음이 남아있지 않다', async ({ page }) => {
   await page.goto('/');
-  await page.locator('.tile', { hasText: '드라마' }).first().click();
+  // 드라마는 11/14부터 22초 완성본(12.0초 멈춤) — 아래 그림 띠에서 고른다(«드라마» 카드를 바로 누르면 자동 넘김을 약 30초 기다린다)
+  await openScene(page, 'drama');
 
   // 한 번 끝까지 녹음한다.
   await page.locator('#recBtn').click();
-  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 40000 });
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 45000 });
 
   // 홈으로 나갔다가 같은 장르로 다시 들어온다.
   await page.locator('.back').click();
   await expect(page.locator('#home')).toHaveClass(/active/);
-  await page.locator('.tile', { hasText: '드라마' }).first().click();
-  await expect(page.locator('#studio')).toHaveClass(/active/);
+  await openScene(page, 'drama');
 
   // 이전 녹음이 버려져 처음 상태여야 한다.
   await expect(page.locator('#recBtn')).toBeVisible();

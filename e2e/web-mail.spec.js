@@ -3,6 +3,7 @@
 // 업로드(/upload)와 메일(/mail)은 가로채 프로덕션에 아무것도 쌓이지 않고 메일도 나가지 않는다 — 주소는 가짜다.
 // 끊김은 navigator.onLine을 시험이 쥐어 흉내 낸다(새로고침해도 끊긴 채로 시작한다). 원판 · 엔진은 로컬 서버에서 그대로 받는다.
 import { Buffer } from 'node:buffer';
+import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 
 const UPLOAD_PATTERN = '**/voiceCinema/upload';
@@ -142,7 +143,8 @@ test('끊긴 채 더빙을 마치면 메일 칸이 뜨고, 인터넷이 돌아�
   expect(seen.uploads).toHaveLength(1);
   expect(seen.uploads[0].filename).toMatch(/^dub_sf_\d+_[0-9a-f]{12}\.mp4$/);
   const mp4 = Buffer.from(seen.uploads[0].dataBase64, 'base64');
-  expect(Math.abs(mp4Duration(mp4) - 10)).toBeLessThanOrEqual(.05);
+  // SF는 11/14부터 완성본 — 합성 길이는 원판 파일 길이다(숫자로 박지 않는다)
+  expect(Math.abs(mp4Duration(mp4) - mp4Duration(readFileSync('public/clips/sf.mp4')))).toBeLessThanOrEqual(.05);
   expect(seen.mails).toEqual([{ to: TEACHER, items: [{ name: '민수', url: MOVIE_URL }] }]);
 });
 

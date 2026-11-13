@@ -10,6 +10,8 @@ const UPLOAD_PATTERN = '**/voiceCinema/upload';
 // «다른 더빙하기»는 흰 바탕 · 빨간 테두리다. PC · 패드는 QR 그대로다.
 for (const [width, height] of [[1440, 900], [1024, 768], [1180, 820], [768, 1024], [390, 664], [390, 724], [390, 844]]) {
   test(`${width}×${height}: 완성 화면 그림·로고·제목·단추`, async ({ page }) => {
+    // SF는 11/14부터 완성본(23.5초 · 12.0초 멈춤)이라 녹음 한 번이 약 32초다
+    test.setTimeout(120000);
     const phone = width <= 600;
     await page.setViewportSize({ width, height });
     let release;
@@ -84,11 +86,11 @@ for (const [width, height] of [[1440, 900], [1024, 768], [1180, 820], [768, 1024
     expect(await poster.locator('.poster-logo-inky').evaluate((el) => getComputedStyle(el).color)).toBe('rgb(255, 255, 255)');
     expect(await poster.locator('.poster-logo-education img').evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
     await expect(poster).not.toContainText('Voice');
-    // 왼쪽 아래 글은 녹음실 멈춤 화면 글과 같은 양식 — 작은 글 / 제목 / «장르 | 10초»(11/13 Bumm님)
+    // 왼쪽 아래 글은 녹음실 멈춤 화면 글과 같은 양식 — 작은 글 / 제목 / «장르 | 10초»(11/13 Bumm님). 완성본은 길이가 21~24초여도 «20초»(11/14 Bumm님 결정)
     await expect(poster.locator('.poster-credit small')).toHaveText('내 목소리로 완성하는 영화');
     await expect(poster.locator('.poster-credit strong')).toHaveText(title);
-    await expect(poster.locator('.poster-credit p')).toHaveText(/^SF\s*10초$/);
-    await expect(poster.locator('.poster-credit p span')).toHaveText('10초');
+    await expect(poster.locator('.poster-credit p')).toHaveText(/^SF\s*20초$/);
+    await expect(poster.locator('.poster-credit p span')).toHaveText('20초');
     // 그림 위 두 로고는 겹치지 않는다 — 패드 세로(768)에서 교육청 로고가 «InKY Film Festival» 끝을 가렸다(11/2 해상도 전수)
     const inky = await poster.locator('.poster-logo-inky').boundingBox();
     const education = await poster.locator('.poster-logo-education').boundingBox();

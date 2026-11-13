@@ -10,7 +10,7 @@ function formatTime(seconds: number, length: number): string {
 // 그래서 진행바는 탐색 막대가 아니라 영상 시계를 보여 주기만 한다.
 const SHOWN: readonly Phase[] = ['previewing', 'watching', 'cue', 'countdown', 'recording', 'checking', 'continuing', 'recorded'];
 
-/** seconds: 원판 길이(장르의 seconds — 10초 장면 10, 11/14 완성본 20.6). */
+/** seconds: 원판 길이(장르의 seconds — 10초 장면 10, 11/14 완성본은 원판 파일에서 읽은 길이). */
 export function ClipTimeline({ phase, videoRef, turn, seconds }: { phase: Phase; videoRef: React.RefObject<HTMLVideoElement | null>; turn?: { start: number; end: number }; seconds: number }) {
   const total = formatTime(seconds, seconds);
   const textRef = useRef<HTMLSpanElement>(null);

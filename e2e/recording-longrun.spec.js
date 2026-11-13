@@ -5,8 +5,8 @@ import { installSyntheticMic, rawTake, recordOnce } from './synthetic-mic.js';
 import { voiceInMovie } from './movie-check.js';
 
 // 목소리 높이는 서로의 배음(2배·3배)과 겹치지 않게 골랐다 — 220과 440처럼 겹치면 섞이지 않았어도 섞인 것처럼 잡힌다
-// 넷째 값은 멈춤 시각 — 11/14부터 히어로 · 뮤지컬은 20.6초 완성본이라 12.0초에 멈추고 목소리도 거기 들어간다
-const ROUNDS = [['sf', 'SF', 230, 5], ['fantasy', '판타지', 290, 5], ['hero', '히어로', 370, 12], ['drama', '드라마', 470, 5], ['musical', '뮤지컬', 590, 12]];
+// 넷째 값은 멈춤 시각 — 11/14부터 SF · 히어로 · 드라마 · 뮤지컬은 완성본이라 12.0초에 멈추고 목소리도 거기 들어간다
+const ROUNDS = [['sf', 'SF', 230, 12], ['fantasy', '판타지', 290, 5], ['hero', '히어로', 370, 12], ['drama', '드라마', 470, 12], ['musical', '뮤지컬', 590, 12]];
 
 test('아이 다섯 명이 잇달아 녹음·저장해도 자원이 쌓이지 않고 영화마다 그 아이 목소리만 들어간다', async ({ page }) => {
   test.setTimeout(600000);

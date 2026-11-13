@@ -3,6 +3,7 @@
 // →ffmpeg.wasm 섞기 합성→저장까지 진짜로 돌려서 검증한다. Cloud Functions 업로드만 page.route로 가로채
 // (a) 실제 프로덕션 Storage에 테스트 파일이 쌓이지 않게, (b) 네트워크 상태에 결과가 좌우되지 않게 한다.
 import { Buffer } from 'node:buffer';
+import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 import { countdownLog, watchCountdown } from './countdown-watch.js';
 
@@ -20,6 +21,9 @@ function mp4Duration(buffer) {
   if (version === 1) return Number(buffer.readBigUInt64BE(at + 28)) / buffer.readUInt32BE(at + 24);
   return buffer.readUInt32BE(at + 20) / buffer.readUInt32BE(at + 16);
 }
+
+// 원판 길이 — 완성본은 편마다 달라(21.0 · 22.0 · 23.5초 …) 숫자로 박지 않고 파일에서 읽는다(앱도 그렇게 한다, tools/clip-versions.js)
+const clipLength = (id) => mp4Duration(readFileSync(`public/clips/${id}.mp4`));
 
 async function openStudio(page, name) {
   await page.goto('/');
@@ -97,7 +101,8 @@ test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
   });
 
   test('상대 대사 자막은 1.6초에 나타나 3.4초에 사라지고, 흰 글씨·배경 상자 없음이다', async ({ page }) => {
-    await openStudio(page, '드라마');
+    // 10초 장면 — 드라마는 11/14부터 완성본(대사 4.5초)이다
+    await openStudio(page, '스포츠');
     // 자막이 붙고 떨어지는 순간의 영상 시각을 페이지 안에서 기록한다 — 바깥에서 폴링하면 그 지연만큼 늦게 잰다.
     // 시각은 화면에 나가는 프레임의 시각(mediaTime)으로 잰다. currentTime은 소리 시계라 프레임보다 수십 ms 늦게 읽혀
     // 제때 붙은 자막도 «일찍 붙었다»로 보인다(10/16 실측 1.556초).
@@ -115,7 +120,7 @@ test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
     await page.locator('#recBtn').click();
     const caption = page.getByTestId('scene-caption');
     await expect(caption).toBeVisible({ timeout: 5000 });
-    await expect(caption).toHaveText('이제… 아무도 몰라보셔.');
+    await expect(caption).toHaveText('너한테 맡긴다 !');
     const style = await caption.evaluate(el => {
       const s = getComputedStyle(el);
       return { color: s.color, background: s.backgroundColor, lines: Math.round(el.getBoundingClientRect().height / parseFloat(s.lineHeight)) };
@@ -173,7 +178,7 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     expect(uploaded.filename).toMatch(/^dub_sf_\d+_[0-9a-f]+\.mp4$/);
     const mp4 = Buffer.from(uploaded.dataBase64, 'base64');
     expect(mp4.length).toBeLessThan(20 * 1024 * 1024);
-    expect(Math.abs(mp4Duration(mp4) - 10)).toBeLessThanOrEqual(.05);
+    expect(Math.abs(mp4Duration(mp4) - clipLength('sf'))).toBeLessThanOrEqual(.05);
   });
 
   // 11/8 Bumm님 «웹도 끊기면 메일 칸을 띄움» — 연결은 됐다고 나오는데 올리기만 실패해도(부스 KT EGG의 LTE만 끊긴 때) 같은 장애로 보고
@@ -308,11 +313,11 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
   });
 });
 
-// 11/14 Bumm님 «폭주기관차 올려» — 애니메이션 · 히어로 · 뮤지컬은 20.6초 완성본이고 12.0초에서 멈춘다(다른 다섯 장르는 10초 · 5.0초 그대로).
-// 멈춤 · 이어 재생 자리와 합성 결과 길이(목소리를 12.0초 뒤에 넣은 20.6초 영화)를 장르의 값으로 본다.
-test.describe('완성본 장르(20.6초 · 12.0초 멈춤)', () => {
-  for (const [id, name] of [['hero', '히어로'], ['animation', '애니메이션'], ['musical', '뮤지컬']]) {
-    test(`${name}: 12.0초에서 멈추고 12.0초부터 이어 재생해 20.6초 원판 끝까지 간다`, async ({ page }) => {
+// 11/14 Bumm님 «폭주기관차 올려» — SF · 애니메이션 · 히어로 · 스릴러 · 뮤지컬은 완성본이고 12.0초에서 멈춘다(다른 세 장르는 10초 · 5.0초 그대로).
+// 완성본은 편마다 길이가 다르다(21.0 · 22.0 · 23.5초 …). 멈춤 · 이어 재생 자리와 합성 결과 길이를 원판 파일 길이로 본다.
+test.describe('완성본 장르(편마다 다른 길이 · 12.0초 멈춤)', () => {
+  for (const [id, name] of [['sf', 'SF'], ['animation', '애니메이션'], ['hero', '히어로'], ['thriller', '스릴러'], ['drama', '드라마'], ['musical', '뮤지컬']]) {
+    test(`${name}: 12.0초에서 멈추고 12.0초부터 이어 재생해 원판 끝까지 간다`, async ({ page }) => {
       test.setTimeout(120000);
       await openStudio(page, name);
       const clip = page.locator('#clip');
@@ -325,15 +330,15 @@ test.describe('완성본 장르(20.6초 · 12.0초 멈춤)', () => {
       const paused = await clip.evaluate(v => ({ paused: v.paused, time: v.currentTime, length: v.duration }));
       expect(paused.paused).toBe(true);
       expect(Math.abs(paused.time - 12)).toBeLessThanOrEqual(1 / 30);
-      expect(Math.abs(paused.length - 20.6)).toBeLessThanOrEqual(.05);
+      expect(Math.abs(paused.length - clipLength(id))).toBeLessThanOrEqual(.05);
       await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'continuing', { timeout: 6000 });
       await expect.poll(() => clip.evaluate(v => v.currentTime)).toBeGreaterThan(12.2);
-      await expect(page.locator('#afterRow')).toBeVisible({ timeout: 20000 });
-      expect(await clip.evaluate(v => v.currentTime)).toBeGreaterThan(20.4);
+      await expect(page.locator('#afterRow')).toBeVisible({ timeout: 25000 });
+      expect(await clip.evaluate(v => v.currentTime)).toBeGreaterThan(clipLength(id) - 0.2);
     });
   }
 
-  test('히어로: 합성 결과는 20.6초 · 20MB 아래이고, 업로드되면 QR이 뜬다', async ({ page }) => {
+  test('히어로: 합성 결과는 원판 길이(21.0초) · 20MB 아래이고, 업로드되면 QR이 뜬다', async ({ page }) => {
     test.setTimeout(150000);
     let uploaded = null;
     await page.route(UPLOAD_PATTERN, (route) => {
@@ -348,7 +353,7 @@ test.describe('완성본 장르(20.6초 · 12.0초 멈춤)', () => {
     expect(uploaded.filename).toMatch(/^dub_hero_\d+_[0-9a-f]+\.mp4$/);
     const mp4 = Buffer.from(uploaded.dataBase64, 'base64');
     expect(mp4.length).toBeLessThan(20 * 1024 * 1024);
-    expect(Math.abs(mp4Duration(mp4) - 20.6)).toBeLessThanOrEqual(.05);
+    expect(Math.abs(mp4Duration(mp4) - clipLength('hero'))).toBeLessThanOrEqual(.05);
   });
 });
 

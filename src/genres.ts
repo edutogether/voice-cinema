@@ -5,8 +5,11 @@
 // 격자 카드뿐이었는데 10/17 휴대폰도 캐러셀로 바꾸며 그 격자가 없어져, 지금은 화면 어디에도 쓰이지 않는다
 // (10/17 06:40 대표님: 휴대폰도 캐러셀 확정, 장르 색 질문은 끝 — 확정값이라 지우지 않고 둔다). 원작 제목은 앱 화면 어디에도 쓰지 않는다.
 
-import clipVersions from 'virtual:clip-versions';
+import clipVersions, { lengths } from 'virtual:clip-versions';
 import { CLIP_SECONDS, PAUSE_SECONDS, VOICE_WINDOW_SECONDS } from './config';
+
+/** 상대 대사 한 줄과 그 자막이 나와 있는 시각(초). */
+export interface Line { text: string; start: number; end: number }
 
 export interface Genre {
   id: string;
@@ -14,33 +17,41 @@ export interface Genre {
   color: string;
   /** 우리 장면 이름 — 카드와 녹음실 제목에 쓴다. */
   summary: string;
-  /** 상대 대사 — 앱이 영상 위에 띄우는 넷플릭스식 자막. 영상·완성본에는 굽지 않는다. */
-  line: { text: string; start: number; end: number };
+  /** 상대 대사 — 앱이 영상 위에 띄우는 넷플릭스식 자막. 영상·완성본에는 굽지 않는다. 시각 순서이고 서로 겹치지 않는다(드라마는 두 줄 — 11/14). */
+  lines: Line[];
   /** 아이 대사 구간(초) — 미리보기에서 «당신의 목소리가 들어갈 자리예요 !»가 나오는 자리. 영상을 바꾸면 그 장르의 이 값만 바꾼다. */
   turn: { start: number; end: number };
-  /** 원판 길이(초) — 10초 장면은 10, 11/14 완성본은 20.6. public/clips의 mp4 길이와 같아야 한다(test/scene-clips.test.js). */
+  /** 원판 길이(초) — 10초 장면은 10, 11/14 완성본은 원판 파일에서 읽은 길이(21.0 · 22.0 · 23.5초 …). test/scene-clips.test.js가 mp4와 맞대 본다. */
   seconds: number;
+  /** 카드 · 녹음실 · 완성 그림의 길이 글 — 10초 장면은 «10초», 완성본은 편마다 21~24초여도 «20초» 하나(11/14 Bumm님 결정, 팀장 전달). */
+  label: string;
   /** 녹음실이 멈추는 시각(초) — 목소리가 여기서부터 목소리 칸(3.5초)에 들어간다. 원판은 이 칸의 소리를 −8dB 낮춰 두었다(tools/build-scene.mjs). */
   pause: number;
 }
 
 // 10초 장면: 상대 대사는 1.6초에 시작해 3.4초 전에 끝나고(스토리보드 §0), 5.0초에 멈춘다.
-// 11/14 완성본(20.6초, Bumm님 «폭주기관차 올려»): 상대 대사 4.5~7.5초, 12.0초에 멈춘다(graybox-7-1113 «7편 동작 시간표»).
-const line = (text: string) => ({ text, start: 1.6, end: 3.4 });
-const scene10 = { seconds: CLIP_SECONDS, pause: PAUSE_SECONDS };
-const film = (text: string) => ({ line: { text, start: 4.5, end: 7.5 }, seconds: 20.6, pause: 12 });
+// 11/14 완성본(Bumm님 «폭주기관차 올려»): 상대 대사 4.5~7.5초, 12.0초에 멈춘다(graybox-7-1113 «7편 동작 시간표»).
+// 완성본은 편마다 길이가 달라(21.0 · 22.0 · 23.5초 …) 숫자로 박지 않고 원판 파일(public/clips/<장르>.mp4)에서 읽는다(tools/clip-versions.js).
+const line = (text: string): Line[] => [{ text, start: 1.6, end: 3.4 }];
+const scene10 = { seconds: CLIP_SECONDS, pause: PAUSE_SECONDS, label: '10초' };
+// 완성본 상대 대사는 보통 4.5~7.5초 한 줄이다. 시각 · 줄 수가 다른 편은 say()로 넘긴다(드라마 — 11/14 팀장 전달, 소리 파형으로 잰 값).
+const say = (text: string, start: number, end: number): Line => ({ text, start, end });
+// 멈춤은 보통 12.0초, 편마다 다를 수 있다(판타지는 15.0초 판을 만드는 중 — 11/14 팀장 알림).
+const film = (lines: string | Line[], pause = 12) =>
+  ({ lines: typeof lines === 'string' ? [say(lines, 4.5, 7.5)] : lines, pause, label: '20초' });
 // 대사 구간은 목소리 칸 그대로다(멈춤 ~ +3.5초, 합성이 쓰는 값과 같다).
 const turn = (pause: number) => ({ start: pause, end: pause + VOICE_WINDOW_SECONDS });
-const scene = (g: Omit<Genre, 'turn'>): Genre => ({ ...g, turn: turn(g.pause) });
+const scene = (g: Omit<Genre, 'turn' | 'seconds'> & { seconds?: number }): Genre =>
+  ({ ...g, seconds: g.seconds ?? lengths[`${g.id}.mp4`], turn: turn(g.pause) });
 
 export const GENRES: Genre[] = [
-  scene({ id: 'sf', name: 'SF', color: '#3fa7c9', summary: '물의 행성', line: line('저 산… 움직여 !'), ...scene10 }),
-  scene({ id: 'fantasy', name: '판타지', color: '#8a63d2', summary: '빛의 결투', line: line('나와 겨루겠다고 ?'), ...scene10 }),
+  scene({ id: 'sf', name: 'SF', color: '#3fa7c9', summary: '퍼스트 헬로', ...film('인사해 봐… 크게 !') }),
+  scene({ id: 'fantasy', name: '판타지', color: '#8a63d2', summary: '빛의 결투', lines: line('나와 겨루겠다고 ?'), ...scene10 }),
   scene({ id: 'animation', name: '애니메이션', color: '#d97b3f', summary: '날아라 미르', ...film('준비됐어 ? 하나, 둘…') }),
   scene({ id: 'hero', name: '히어로', color: '#c94f5c', summary: '폭주기관차', ...film('네가 멈춰, 지금 !') }),
-  scene({ id: 'thriller', name: '스릴러', color: '#2f9e6e', summary: '레이저 금고', line: line('레이저 바뀐다, 천천히 !'), ...scene10 }),
-  scene({ id: 'drama', name: '드라마', color: '#c9a24b', summary: '기억의 한마디', line: line('이제… 아무도 몰라보셔.'), ...scene10 }),
-  scene({ id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '마지막 슛', line: line('너한테 맡긴다 !'), ...scene10 }),
+  scene({ id: 'thriller', name: '스릴러', color: '#2f9e6e', summary: '우리 같이 놀자', ...film('우리랑… 같이 놀자.') }),
+  scene({ id: 'drama', name: '드라마', color: '#c9a24b', summary: '안녕, 설이', ...film([say('이제 출발해야지~', 0.1, 1.7), say('설이한테 꼭 다시 온다고 인사해 !', 5.3, 7.6)]) }),
+  scene({ id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '마지막 슛', lines: line('너한테 맡긴다 !'), ...scene10 }),
   scene({ id: 'musical', name: '뮤지컬', color: '#c4559e', summary: '선셋 하이웨이', ...film('음악 간다, 신호 줘 !') }),
 ];
 
@@ -50,8 +61,8 @@ export const genreById = (id: string): Genre => {
   if (!g) throw new Error(`없는 장르: ${id}`);
   return g;
 };
-/** 카드 · 완성 화면의 길이 표시(«10초» · «21초») — 원판 길이를 초 단위로 반올림한다. */
-export const lengthLabel = (g: Genre) => `${Math.round(g.seconds)}초`;
+/** 녹음실 · 완성 화면의 길이 글(«10초» · «20초») — 실제 길이를 반올림하지 않는다(완성본은 «20초» 하나, 11/14 Bumm님 결정). */
+export const lengthLabel = (g: Genre) => g.label;
 
 /**
  * 장르마다 원판(1920×1080 H.264/AAC, 키프레임 1초 간격 + 멈춤 시각, 길이는 seconds). 녹음실 재생·멈춤이 이 파일을 쓴다.

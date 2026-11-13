@@ -23,7 +23,7 @@ test('App Check 토큰이 끝내 안 와도 20초 뒤에는 토큰 없이 업로
   await page.locator('#splash').waitFor({ state: 'detached' });
   await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();
   await page.locator('#recBtn').click();
-  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 40000 });
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 60000 });
   const saved = Date.now();
   await page.locator('#saveBtn').click();
   await expect(page.locator('#qrbox')).toBeVisible({ timeout: 60000 });
@@ -71,7 +71,7 @@ test('reCAPTCHA를 처음에 받지 못해도(끊긴 채 연 창) 다음 요청 
   await page.locator('#splash').waitFor({ state: 'detached' });
   await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();
   await page.locator('#recBtn').click();
-  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 40000 });
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 60000 });
   await page.locator('#saveBtn').click();
   await expect(page.locator('#qrbox')).toBeVisible({ timeout: 90000 });
   // 앱이 미리 준비하는 때(첫 영상 뒤)와 저장의 몇 번째 시도가 겹치는지에 따라 실패한 업로드는 0~2번이다 — 마지막만 토큰을 단다

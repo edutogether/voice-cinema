@@ -1,12 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { openScene } from './pause-scenes.js';
 
 // 장면 더빙 2.0의 소리: 장면은 원판 소리(상대 대사·BGM·효과음)와 함께 재생되고, 녹음 중에는 영상이 5.0초에
 // 멈춰 스피커가 조용하다(스피커 소리가 마이크로 들어가 겹치지 않게). 이어 재생은 원판 소리가 다시 난다.
 // 들어가면 저절로 흐르는 미리보기도 원판 소리와 함께 재생한다(11/7 Bumm님).
 test('들어가면 흐르는 미리보기와 장면은 원판 소리를 내고, 녹음 중에는 조용하며, 이어 재생에서 원판 소리가 다시 난다', async ({ page }) => {
   await page.goto('/');
-  await page.locator('#splash').waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: '드라마 더빙 시작', exact: true }).click();
+  // 10초 장면(스포츠)을 아래 그림 띠에서 고른다 — «스포츠 더빙 시작»을 바로 누르면 자동 넘김이 그 카드를 가운데로 데려올 때까지 약 36초를 기다린다
+  await openScene(page, 'sports');
   await page.locator('#clip').evaluate(video => {
     const context = new window.AudioContext();
     const analyser = context.createAnalyser();

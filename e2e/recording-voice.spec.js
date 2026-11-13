@@ -10,10 +10,13 @@ import { duration, originalClip, tracks, voiceInMovie } from './movie-check.js';
 
 test.describe.configure({ timeout: 240000 });
 
+// 10초 장면(5.0초 멈춤)으로 본다 — SF는 11/14부터 완성본(12.0초 멈춤)이라 판타지를 아래 그림 띠에서 키보드로 고른다(그림 띠는 흐른다)
 async function openSf(page) {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();
+  await page.locator('.scene-choice[data-genre="fantasy"]').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#chipName')).toHaveText('판타지');
   await expect(page.locator('#clip')).toHaveJSProperty('readyState', 4, { timeout: 20000 });
 }
 
@@ -127,11 +130,12 @@ for (const [name, plan] of [['완전 무음', { silent: true }], ['아주 작은
     const movie = await saveAndGetMovie(page, uploads);
     const bytes = Buffer.from(movie, 'base64');
     expect(Math.abs(duration(bytes) - 10)).toBeLessThanOrEqual(0.01);
-    const v = await voiceInMovie(page, movie, 'sf');
+    const v = await voiceInMovie(page, movie, 'fantasy');
     console.log(JSON.stringify(v));
     // 원판 소리 그대로(목소리 칸까지) — 남은 차이는 소리를 다시 인코딩한 차이뿐이다
     expect(v.voiceStart).toBeNull();
-    expect(v.outsideVoice).toBeLessThan(0.003);
+    // 판타지(10초 장면, 원판 피크 0.64)는 소리를 다시 인코딩한 차이만 0.0086이다(11/14 실측, 두 시험 같은 값 — 옛 SF «물의 행성»은 0.003 아래였다)
+    expect(v.outsideVoice).toBeLessThan(0.012);
   });
 }
 
@@ -141,7 +145,7 @@ test('첫 녹음만 무음이고 «다시 녹음»에서 말하면, 저장한 �
   await openSf(page);
   expect(await recordOnce(page)).toMatchObject({ phase: 'recorded', check: 'silent' });
   expect(await recordOnce(page, '#resetBtn')).toMatchObject({ phase: 'recorded', check: 'ok' });
-  const v = await voiceInMovie(page, await saveAndGetMovie(page, uploads), 'sf');
+  const v = await voiceInMovie(page, await saveAndGetMovie(page, uploads), 'fantasy');
   console.log(JSON.stringify(v));
   expect(v.voiceStart).toBeGreaterThan(5.2);
   expect(v.voiceStart).toBeLessThan(5.45);
@@ -248,7 +252,7 @@ test('완성본: 목소리는 5.0초 + 말한 때에 그대로 들어가고(앞�
   const preview = (await previews(page)).at(-1);
   const raw = await rawTake(page, 0);
   const movie = await saveAndGetMovie(page, uploads);
-  const v = await voiceInMovie(page, movie, 'sf');
+  const v = await voiceInMovie(page, movie, 'fantasy');
   console.log(JSON.stringify({ raw, preview, movie: v }));
   // 목소리 자리: 녹음 파일 안 말소리 시작(약 0.3초) + 5.0초 — 앞부분을 하나도 잃지 않고 그대로 옮겼다
   expect(Math.abs(v.voiceStart - 5 - raw.start), '완성본 목소리 시작 = 5.0초 + 녹음 안 시작').toBeLessThan(0.015);
@@ -260,14 +264,15 @@ test('완성본: 목소리는 5.0초 + 말한 때에 그대로 들어가고(앞�
   expect(Math.abs(v.voiceEnd - 5 - raw.end), '완성본 목소리 끝 = 5.0초 + 녹음 안 끝').toBeLessThan(0.03);
   expect(v.voiceEnd).toBeLessThanOrEqual(8.5);
   // 원판 소리는 목소리 칸 밖에서 손대지 않았다(빼면 코덱 차이만 남는다) — 감쇠를 두 번 하지 않는다
-  expect(v.outsideVoice).toBeLessThan(0.003);
+  // 판타지(10초 장면, 원판 피크 0.64)는 소리를 다시 인코딩한 차이만 0.0086이다(11/14 실측, 두 시험 같은 값 — 옛 SF «물의 행성»은 0.003 아래였다)
+  expect(v.outsideVoice).toBeLessThan(0.012);
   // 미리 듣기와 같은 크기(섞은 뒤 리미터가 거의 일하지 않는다)
   expect(Math.abs(20 * Math.log10(v.voicePeak / preview.peak))).toBeLessThan(1);
   expect(v.peak).toBeLessThan(0.92);
   // 10초 · 영상은 원판 그대로(표본 크기 300개가 하나도 다르지 않다) · 소리 트랙 AAC 48kHz 2채널
   const bytes = Buffer.from(movie, 'base64');
   expect(Math.abs(duration(bytes) - 10)).toBeLessThanOrEqual(0.01);
-  const [out, ref] = [tracks(bytes), tracks(originalClip('sf'))];
+  const [out, ref] = [tracks(bytes), tracks(originalClip('fantasy'))];
   const video = out.find((t) => t.handler === 'vide');
   expect(video.codec).toBe('avc1');
   expect(video.sizes).toEqual(ref.find((t) => t.handler === 'vide').sizes);
@@ -279,7 +284,7 @@ test('완성본: 찢어질 만큼 크게 외쳐도 완성본은 −0.7dBFS를 �
   await installSyntheticMic(page, [{ delay: 0.2, dur: 3.1, amp: 1.6 }]);
   await openSf(page);
   expect(await recordOnce(page)).toMatchObject({ phase: 'recorded', check: 'ok' });
-  const v = await voiceInMovie(page, await saveAndGetMovie(page, uploads), 'sf');
+  const v = await voiceInMovie(page, await saveAndGetMovie(page, uploads), 'fantasy');
   console.log(JSON.stringify(v));
   expect(v.peak).toBeLessThan(0.92);
   expect(v.voiceEnd).toBeLessThanOrEqual(8.5);
@@ -293,7 +298,7 @@ test('다시 녹음을 거듭한 뒤 저장하면 마지막 녹음의 목소리�
   for (const [i] of freqs.entries()) {
     expect(await recordOnce(page, i === 0 ? '#recBtn' : '#resetBtn')).toMatchObject({ phase: 'recorded' });
   }
-  const v = await voiceInMovie(page, await saveAndGetMovie(page, uploads), 'sf', freqs);
+  const v = await voiceInMovie(page, await saveAndGetMovie(page, uploads), 'fantasy', freqs);
   console.log(JSON.stringify(v.tones));
   expect(v.tones[2]).toBeGreaterThan(20 * v.tones[0]);
   expect(v.tones[2]).toBeGreaterThan(20 * v.tones[1]);
