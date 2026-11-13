@@ -163,7 +163,8 @@ test('대사 구간 문구는 3·2·1의 «이제 당신의 차례입니다 !»�
   expect(alpha(turn.background)).toBeGreaterThanOrEqual(alpha(look.background));
 });
 
-for (const [id, name] of [['sf', 'SF'], ['fantasy', '판타지'], ['animation', '애니메이션'], ['hero', '히어로'], ['thriller', '스릴러'], ['drama', '드라마'], ['sports', '스포츠'], ['musical', '뮤지컬']]) {
+// 셋째 값은 멈춤 시각 — 11/14부터 애니메이션 · 히어로 · 뮤지컬은 20.6초 완성본이라 대사 구간이 12.0~15.5초다
+for (const [id, name, pause] of [['sf', 'SF', 5], ['fantasy', '판타지', 5], ['animation', '애니메이션', 12], ['hero', '히어로', 12], ['thriller', '스릴러', 5], ['drama', '드라마', 5], ['sports', '스포츠', 5], ['musical', '뮤지컬', 12]]) {
   test(`${name}: 대사 구간 문구는 그 장면의 구간에서만 나오고 영상을 멈추지 않는다`, async ({ page }) => {
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
@@ -173,12 +174,12 @@ for (const [id, name] of [['sf', 'SF'], ['fantasy', '판타지'], ['animation', 
     const clip = page.locator('#clip');
     const cue = page.locator('.scene-turn-cue');
     await expect.poll(async () => (await state(page)).time).toBeGreaterThan(.2);
-    await clip.evaluate((v) => { v.currentTime = 4.5; });
+    await clip.evaluate((v, t) => { v.currentTime = t; }, pause - .5);
     await expect(cue).toHaveCount(0);
-    await clip.evaluate((v) => { v.currentTime = 5.1; });
+    await clip.evaluate((v, t) => { v.currentTime = t; }, pause + .1);
     await expect(cue).toHaveText(CUE);
     expect((await state(page)).paused).toBe(false);
-    await clip.evaluate((v) => { v.currentTime = 8.6; });
+    await clip.evaluate((v, t) => { v.currentTime = t; }, pause + 3.6);
     await expect(cue).toHaveCount(0);
   });
 }
@@ -293,7 +294,8 @@ for (const [width, height] of [[360, 640], [390, 664]]) {
     expect(await hintLines()).toBeLessThanOrEqual(2);
     expect(await page.evaluate(() => document.scrollingElement.scrollHeight - window.innerHeight)).toBe(0);
 
-    await page.locator('#clip').evaluate((v) => { v.currentTime = 5.2; });
+    // 뮤지컬은 11/14부터 20.6초 완성본 — 대사 구간이 12.0~15.5초다
+    await page.locator('#clip').evaluate((v) => { v.currentTime = 12.2; });
     const cue = page.locator('.scene-turn-cue');
     await expect(cue).toHaveText(CUE);
     const inside = await page.evaluate(() => {

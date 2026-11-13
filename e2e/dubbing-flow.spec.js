@@ -9,7 +9,8 @@ import { countdownLog, watchCountdown } from './countdown-watch.js';
 const UPLOAD_PATTERN = '**/voiceCinema/upload';
 const GENRE_NAMES = ['SF', '판타지', '애니메이션', '히어로', '스릴러', '드라마', '스포츠', '뮤지컬'];
 // 장면 5초 + 문구 1초 + 3·2·1 3초 + 녹음 3~3.5초 + 녹음 확인 + 이어 재생 5초 ≈ 18초. 느린 러너 여유를 둔다.
-const TAKE_MS = 40000;
+// 11/14부터 애니메이션 · 히어로 · 뮤지컬은 20.6초 완성본이라(12.0초 멈춤 + 이어 재생 8.6초) 약 29초가 걸린다.
+const TAKE_MS = 60000;
 
 /** mp4의 mvhd 상자에서 길이(초)를 읽는다 — 완성본이 정확히 10.0초인지 본다. */
 function mp4Duration(buffer) {
@@ -178,6 +179,7 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
   // 11/8 Bumm님 «웹도 끊기면 메일 칸을 띄움» — 연결은 됐다고 나오는데 올리기만 실패해도(부스 KT EGG의 LTE만 끊긴 때) 같은 장애로 보고
   // 담임교사 메일 칸으로 간다(PC · 패드). 보내고 지우는 흐름과 «다시 제작하기»는 e2e/web-mail.spec.js가 본다.
   test('실패 경로: 클라우드 업로드가 실패하면 다시 시도한 뒤 담임교사 메일 칸을 띄운다', async ({ page }) => {
+    test.setTimeout(150000); // 히어로는 11/14부터 20.6초 완성본 — 녹음 약 29초 + 합성 + 다시 시도
     let callCount = 0;
     await page.route(UPLOAD_PATTERN, (route) => {
       callCount++;
@@ -230,6 +232,7 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
   // 합성은 fetchFile()이 window.fetch()로 로고를 구운 합성용 원판(final/)을 읽으므로
   // fetch만 그 시점에 실패하도록 패치한다(page.route는 <video src> 요청을 가로채지 못한다).
   test('합성 실패 경로: 원판을 불러올 수 없으면 에러 화면이 뜨고 돌아가기로 녹음이 보존된다', async ({ page }) => {
+    test.setTimeout(120000); // 애니메이션은 11/14부터 20.6초 완성본 — 녹음만 약 29초
     await page.addInitScript(() => {
       const originalFetch = window.fetch;
       window.fetch = (input, init) => {
@@ -258,6 +261,7 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
 
   // 11/7 Bumm님(공식 행사, 아이 · 교사가 읽는 화면) — 합성 명령이 실패하면 FFmpeg 기록 8줄이 화면에 그대로 나왔다. 원문은 콘솔로만 남긴다.
   test('합성 실패 경로: FFmpeg가 실패해도 아이 화면에 오류 원문이 나오지 않고 콘솔에만 남는다', async ({ page }) => {
+    test.setTimeout(120000); // 애니메이션은 11/14부터 20.6초 완성본 — 녹음만 약 29초
     const errors = [];
     page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
     await page.addInitScript(() => {
@@ -301,6 +305,50 @@ test.describe('녹음 → 합성 → 저장 (실사용 흐름)', () => {
     await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
     // 마우스로 눌렀으면 다음 단추로 초점을 옮기지 않는다 — 옮기면 빨간 초점 띠가 남는다(10/20, src/lib/inputModality.ts)
     await expect(page.locator('#saveBtn')).not.toBeFocused();
+  });
+});
+
+// 11/14 Bumm님 «폭주기관차 올려» — 애니메이션 · 히어로 · 뮤지컬은 20.6초 완성본이고 12.0초에서 멈춘다(다른 다섯 장르는 10초 · 5.0초 그대로).
+// 멈춤 · 이어 재생 자리와 합성 결과 길이(목소리를 12.0초 뒤에 넣은 20.6초 영화)를 장르의 값으로 본다.
+test.describe('완성본 장르(20.6초 · 12.0초 멈춤)', () => {
+  for (const [id, name] of [['hero', '히어로'], ['animation', '애니메이션'], ['musical', '뮤지컬']]) {
+    test(`${name}: 12.0초에서 멈추고 12.0초부터 이어 재생해 20.6초 원판 끝까지 간다`, async ({ page }) => {
+      test.setTimeout(120000);
+      await openStudio(page, name);
+      const clip = page.locator('#clip');
+      expect(await clip.evaluate(v => v.src)).toMatch(new RegExp(`/clips/${id}\\.mp4\\?v=[0-9a-f]{8}$`));
+      await page.locator('#recBtn').click();
+      await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'watching');
+      // 10초 장면의 멈춤 자리(5.0초)는 지나간다
+      await expect.poll(() => clip.evaluate(v => !v.paused && v.currentTime > 5.5), { timeout: 15000 }).toBe(true);
+      await expect(page.locator('#recpill')).toBeVisible({ timeout: 20000 });
+      const paused = await clip.evaluate(v => ({ paused: v.paused, time: v.currentTime, length: v.duration }));
+      expect(paused.paused).toBe(true);
+      expect(Math.abs(paused.time - 12)).toBeLessThanOrEqual(1 / 30);
+      expect(Math.abs(paused.length - 20.6)).toBeLessThanOrEqual(.05);
+      await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'continuing', { timeout: 6000 });
+      await expect.poll(() => clip.evaluate(v => v.currentTime)).toBeGreaterThan(12.2);
+      await expect(page.locator('#afterRow')).toBeVisible({ timeout: 20000 });
+      expect(await clip.evaluate(v => v.currentTime)).toBeGreaterThan(20.4);
+    });
+  }
+
+  test('히어로: 합성 결과는 20.6초 · 20MB 아래이고, 업로드되면 QR이 뜬다', async ({ page }) => {
+    test.setTimeout(150000);
+    let uploaded = null;
+    await page.route(UPLOAD_PATTERN, (route) => {
+      uploaded = JSON.parse(route.request().postData());
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, url: 'https://storage.googleapis.com/fake/dub_hero.mp4' }) });
+    });
+    await openStudio(page, '히어로');
+    await page.locator('#recBtn').click();
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: 60000 });
+    await page.locator('button', { hasText: '저장하기' }).click();
+    await expect(page.locator('#qrbox')).toBeVisible({ timeout: 90000 });
+    expect(uploaded.filename).toMatch(/^dub_hero_\d+_[0-9a-f]+\.mp4$/);
+    const mp4 = Buffer.from(uploaded.dataBase64, 'base64');
+    expect(mp4.length).toBeLessThan(20 * 1024 * 1024);
+    expect(Math.abs(mp4Duration(mp4) - 20.6)).toBeLessThanOrEqual(.05);
   });
 });
 

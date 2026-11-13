@@ -44,15 +44,15 @@ test('녹음 도중 홈으로 나가면 그 녹음 결과가 화면에 반영되
   await page.locator('.tile', { hasText: '애니메이션' }).first().click();
   await page.locator('#recBtn').click();
 
-  // 카운트다운이 끝나고 녹음이 시작된 뒤에 나간다.
-  await expect(page.locator('.recpill')).toBeVisible({ timeout: 15000 });
+  // 카운트다운이 끝나고 녹음이 시작된 뒤에 나간다(애니메이션은 11/14부터 12.0초에 멈춘다).
+  await expect(page.locator('.recpill')).toBeVisible({ timeout: 25000 });
   await page.locator('.back').click();
   await expect(page.locator('#home')).toHaveClass(/active/);
 
   // 기다리는 동안 장면이 넘어가 같은 카드가 뒤편으로 가지 않게 자동 넘김을 멈춘다(8장면에서는 두 칸 넘어간 카드가 가려진다).
   await pauseScenes(page);
-  // 원래 녹음·이어 재생이 끝났을 시간(최대 3.5초 + 5초 + 여유)을 지나도 다른 화면으로 넘어가면 안 된다.
-  await page.waitForTimeout(14000);
+  // 원래 녹음·이어 재생이 끝났을 시간(최대 3.5초 + 이어 재생 8.6초 + 여유)을 지나도 다른 화면으로 넘어가면 안 된다.
+  await page.waitForTimeout(16000);
   await expect(page.locator('#home')).toHaveClass(/active/);
 
   // 다시 들어가도 처음 상태다.

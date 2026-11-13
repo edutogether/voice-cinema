@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { clipUrl, stillUrl, type Genre } from '../genres';
+import { clipUrl, lengthLabel, stillUrl, type Genre } from '../genres';
 import { useDubbing, type Phase } from '../hooks/useDubbing';
 import { RECORD_BASE_SECONDS } from '../config';
 import { STUDIO_COPY } from '../copy';
@@ -166,7 +166,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
               <div className="studio-pause-title" aria-hidden="true">
                 <small>내 목소리로 완성하는 영화</small>
                 <strong>{genre.summary}</strong>
-                <p>{genre.name}<span>10초</span></p>
+                <p>{genre.name}<span>{lengthLabel(genre)}</span></p>
               </div>
               {/* 메인 카드처럼 장르 배지 + 장면 이름을 영상 왼쪽 아래에 — 키 큰 세로 휴대폰에서만(11/9 시안). 그때 위 머리줄의 제목은 화면 읽기용으로만 남긴다 */}
               <div className="studio-scene-tag" aria-hidden="true"><b>{genre.name}</b>{genre.summary}</div>
@@ -191,7 +191,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
                 <span className="timeline-state">{(Object.keys(TIMELINE_STATE) as Phase[]).map((p) => (
                   <span key={p} className={p === phase ? 'on' : undefined}>{TIMELINE_STATE[p]}</span>
                 ))}</span>
-                <ClipTimeline phase={phase} videoRef={videoRef} turn={genre.turn} />
+                <ClipTimeline phase={phase} videoRef={videoRef} turn={genre.turn} seconds={genre.seconds} />
               </div>
               <div className={`controls${inTake ? ' is-recording' : ''}${done ? ' is-recorded' : ''}`}>
                 <div className="controls-copy">

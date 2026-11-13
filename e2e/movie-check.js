@@ -49,9 +49,10 @@ export const originalClip = (genre) => readFileSync(`public/clips/final/${genre}
 /**
  * 페이지 안에서 완성본과 원판 소리를 풀어 빼고, 남은 소리(목소리)의 시작·끝·피크와 완성본 전체 피크·목소리 칸 밖에 남은 소리를 잰다.
  * 디코더가 앞머리(AAC 준비 표본)를 어떻게 다루든 두 파일이 같은 방식으로 풀리므로 빼기에는 영향이 없다 — 시각은 원판과의 어긋남을 찾아 맞춘다.
+ * pause: 그 장르의 멈춤 시각(10초 장면 5.0, 11/14 완성본 12.0) — 목소리 칸은 pause ~ pause + 3.5초다.
  */
-export async function voiceInMovie(page, movieBase64, genre, freqs = []) {
-  return page.evaluate(async ({ movieBase64, genre, freqs }) => {
+export async function voiceInMovie(page, movieBase64, genre, freqs = [], pause = 5) {
+  return page.evaluate(async ({ movieBase64, genre, freqs, pause }) => {
     const ctx = new window.OfflineAudioContext(2, 48000 * 11, 48000);
     const bytes = Uint8Array.from(window.atob(movieBase64), (c) => c.charCodeAt(0));
     const movie = await ctx.decodeAudioData(bytes.buffer);
@@ -75,21 +76,21 @@ export async function voiceInMovie(page, movieBase64, genre, freqs = []) {
     for (let i = 0; i < res.length; i++) res[i] = m[i] - (r[i] || 0);
     const e = env(res);
     const t = (i) => i * win / 48000;
-    // 목소리는 4.9초 앞에 있을 수 없다 — 그 앞의 차이는 소리를 다시 인코딩한 차이다(대사가 큰 장면은 문턱을 넘기도 한다)
-    const on = e.findIndex((x, i) => t(i) >= 4.9 && x >= 0.01);
+    // 목소리는 멈춤 0.1초 앞에 있을 수 없다 — 그 앞의 차이는 소리를 다시 인코딩한 차이다(대사가 큰 장면은 문턱을 넘기도 한다)
+    const on = e.findIndex((x, i) => t(i) >= pause - 0.1 && x >= 0.01);
     const off = e.length - 1 - [...e].reverse().findIndex((x) => x >= 0.01);
     let outside = 0;
-    e.forEach((x, i) => { if (t(i) < 4.98 || t(i) > 8.52) outside = Math.max(outside, x); });
+    e.forEach((x, i) => { if (t(i) < pause - 0.02 || t(i) > pause + 3.52) outside = Math.max(outside, x); });
     let voicePeak = 0;
     for (const v of res) voicePeak = Math.max(voicePeak, Math.abs(v));
     // 목소리 높이별 세기(Goertzel) — 앞 녹음의 목소리가 섞였는지 본다
     const tone = (f) => {
       const k = 2 * Math.cos(2 * Math.PI * f / 48000);
       let s1 = 0, s2 = 0;
-      for (let i = Math.round(5 * 48000); i < Math.round(8.5 * 48000); i++) { const s0 = res[i] + k * s1 - s2; s2 = s1; s1 = s0; }
+      for (let i = Math.round(pause * 48000); i < Math.round((pause + 3.5) * 48000); i++) { const s0 = res[i] + k * s1 - s2; s2 = s1; s1 = s0; }
       return Math.sqrt(s1 * s1 + s2 * s2 - k * s1 * s2) / (3.5 * 48000);
     };
     return { seconds: movie.duration, channels: movie.numberOfChannels, peak, voiceStart: on < 0 ? null : t(on), voiceEnd: on < 0 ? null : t(off + 1),
       voicePeak, outsideVoice: outside, tones: freqs.map(tone) };
-  }, { movieBase64, genre, freqs });
+  }, { movieBase64, genre, freqs, pause });
 }

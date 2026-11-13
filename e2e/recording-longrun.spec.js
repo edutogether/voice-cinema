@@ -5,7 +5,8 @@ import { installSyntheticMic, rawTake, recordOnce } from './synthetic-mic.js';
 import { voiceInMovie } from './movie-check.js';
 
 // 목소리 높이는 서로의 배음(2배·3배)과 겹치지 않게 골랐다 — 220과 440처럼 겹치면 섞이지 않았어도 섞인 것처럼 잡힌다
-const ROUNDS = [['sf', 'SF', 230], ['fantasy', '판타지', 290], ['hero', '히어로', 370], ['drama', '드라마', 470], ['musical', '뮤지컬', 590]];
+// 넷째 값은 멈춤 시각 — 11/14부터 히어로 · 뮤지컬은 20.6초 완성본이라 12.0초에 멈추고 목소리도 거기 들어간다
+const ROUNDS = [['sf', 'SF', 230, 5], ['fantasy', '판타지', 290, 5], ['hero', '히어로', 370, 12], ['drama', '드라마', 470, 5], ['musical', '뮤지컬', 590, 12]];
 
 test('아이 다섯 명이 잇달아 녹음·저장해도 자원이 쌓이지 않고 영화마다 그 아이 목소리만 들어간다', async ({ page }) => {
   test.setTimeout(600000);
@@ -41,18 +42,18 @@ test('아이 다섯 명이 잇달아 녹음·저장해도 자원이 쌓이지 �
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   const snapshots = [];
-  for (const [i, [id, name]] of ROUNDS.entries()) {
+  for (const [i, [id, name, , pause]] of ROUNDS.entries()) {
     await page.getByRole('button', { name: `${name} 더빙 시작`, exact: true }).click();
     expect(await recordOnce(page)).toMatchObject({ phase: 'recorded', check: 'ok' });
     await page.locator('#saveBtn').click();
     await expect(page.locator('#qrbox')).toBeVisible({ timeout: 90000 });
     // 이 영화에는 이 아이의 목소리 높이만 있다(앞 아이들의 높이는 그 1/20 아래)
-    const v = await voiceInMovie(page, uploads.at(-1).dataBase64, id, ROUNDS.map(([, , f]) => f));
+    const v = await voiceInMovie(page, uploads.at(-1).dataBase64, id, ROUNDS.map(([, , f]) => f), pause);
     const mine = v.tones[i];
     for (const [j, other] of v.tones.entries()) if (j !== i) expect(mine, `${i + 1}번째 영화에 ${j + 1}번째 목소리`).toBeGreaterThan(20 * other);
-    // 목소리는 5.0초 + 녹음 안 말소리 시작 자리에 들어간다(시험이 예약한 때가 아니라 녹음 파일에 실제로 담긴 자리 기준)
+    // 목소리는 멈춤 시각 + 녹음 안 말소리 시작 자리에 들어간다(시험이 예약한 때가 아니라 녹음 파일에 실제로 담긴 자리 기준)
     const raw = await rawTake(page, i);
-    expect(Math.abs(v.voiceStart - 5 - raw.start), `${i + 1}번째 영화 ${JSON.stringify({ v, raw })}`).toBeLessThan(0.015);
+    expect(Math.abs(v.voiceStart - pause - raw.start), `${i + 1}번째 영화 ${JSON.stringify({ v, raw })}`).toBeLessThan(0.015);
     await page.locator('#doneHomeBtn').click();
     await expect(page.locator('#home')).toHaveClass(/active/);
     // 녹음실을 나오면 그 녹음실의 오디오 장치를 닫는다(닫기는 비동기라 잠깐 기다린다)

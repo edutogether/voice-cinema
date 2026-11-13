@@ -4,13 +4,17 @@
 //     진짜 원판: Higgsfield 두 토막(0~5.0초, 5.0~10.0초)을 이어 정확히 10.0초로 만들고 소리 트랙을 입힌다.
 //   node tools/build-scene.mjs <장르> --slides <그림 폴더> [--audio <소리.wav>]
 //     시험용 원판: 그린 키프레임(vc2_<장르>_K###.png)을 그 시각에 맞춰 넘기는 10초 슬라이드. 앱 개발·시사 준비용.
+//   node tools/build-scene.mjs <장르> --film <완성본.mp4> --pause <초>
+//     소리까지 다 들어간 완성본 한 편(11/14 Bumm님 «폭주기관차 올려» — 20.6초 · 12.0초 멈춤). 길이는 완성본 그대로이고, 멈춤 시각은
+//     src/genres.ts의 그 장르 pause와 같아야 한다. 소리는 받은 것을 쓰되 목소리 칸(멈춤 ~ +3.5초)을 −8dB로 낮춘다(build-scene-audio.mjs와 같은 칸).
+//     영상이 길어 합성본이 업로드 한도(20MB)에 가까워지지 않게 최대 비트레이트를 5Mbps로 둔다(20.6초면 약 13MB 이하).
 //
 // 만드는 것(app-plan §2-5): public/clips/<장르>.mp4(1920×1080 H.264/AAC, 30fps, 키프레임 1초 간격 — 5.0초 포함,
 // 자막 없음), previews/<장르>.mp4(0~5.0초 무음, 1280×720 — 최고조까지만, 해소는 아낀다),
 // thumbs/<장르>.jpg(640×360)와 stills/<장르>.jpg(1280×720) — 둘 다 5.0초 멈춤 화면. 같은 그림의 AVIF도 옆에 만든다(tools/build-avif.mjs, 10/24).
 // 내려받는 영상에는 로고(tools/video-logos.png — 왼쪽 위 InKY Film Festival, 오른쪽 위 인천광역시교육청)가 들어간다(10/20 대표님,
 // 11/13 Bumm님 «흰 바 없이 완성 그림처럼»). 로고만 바꿀 때는 --final로 합성용 원판만 다시 만든다.
-//   node tools/build-scene.mjs <장르> --final
+//   node tools/build-scene.mjs <장르> --final [--pause <초>]
 // 합성은 영상을 다시 인코딩하지 않으므로(-c:v copy) 로고를 구운 합성용 원판 final/<장르>.mp4를 따로 만든다 — 녹음실은 로고 없는
 // <장르>.mp4를 튼다. PC 녹음실은 영상을 위아래로 잘라 꽉 채우므로(원판 기준 위 83~166px) 위 모서리 로고가 잘려 조각만 남는다.
 // 미리보기·정지·썸네일도 로고 없는 그림에서 만든다 — 완성 화면 그림은 같은 로고를 화면에서 얹는다(Result.tsx).
@@ -25,21 +29,31 @@ import console from 'node:console';
 import process from 'node:process';
 import { buildAvif } from './build-avif.mjs';
 
-const SECONDS = 10;
-const PAUSE = 5;
+const argv = process.argv.slice(2);
+const flag = (name) => { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] : null; };
+// 10초 장면은 5.0초에서 멈춘다. 완성본(--film)과 그 합성용 원판(--final)은 --pause로 그 장르의 멈춤 시각을 받는다.
+const PAUSE = Number(flag('--pause') ?? 5);
+if (!(PAUSE > 0)) throw new Error('--pause는 0보다 큰 초');
 const root = fileURLToPath(new URL('../', import.meta.url));
 const clips = join(root, 'public', 'clips');
 const logos = join(root, 'tools', 'video-logos.png');
-const [genre, mode, ...rest] = process.argv.slice(2);
-if (!/^[a-z]+$/.test(genre ?? '') || !['--parts', '--slides', '--final'].includes(mode)) {
-  console.error('사용: node tools/build-scene.mjs <장르> --parts A.mp4 B.mp4 [--audio 소리.wav] | --slides <그림 폴더> [--audio 소리.wav] | --final');
+const [genre, mode, ...rest] = argv;
+if (!/^[a-z]+$/.test(genre ?? '') || !['--parts', '--slides', '--final', '--film'].includes(mode)) {
+  console.error('사용: node tools/build-scene.mjs <장르> --parts A.mp4 B.mp4 [--audio 소리.wav] | --slides <그림 폴더> [--audio 소리.wav] | --film 완성본.mp4 --pause 초 | --final [--pause 초]');
   process.exit(2);
 }
 if (!existsSync(logos)) throw new Error('로고(tools/video-logos.png)가 없다 — node tools/build-video-logos.mjs');
 const ff = (args) => execFileSync('ffmpeg', ['-y', '-v', 'error', ...args], { stdio: ['ignore', 'inherit', 'inherit'] });
 const duration = (file) => Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]).toString());
+// 원판 길이 — 10초 장면은 10.0초, 완성본은 받은 파일 길이(프레임 단위로 맞춘 값), 합성용 원판은 이미 만든 원판 길이다.
+const filmIn = mode === '--film' ? rest[0] : null;
+if (mode === '--film' && (!filmIn || !existsSync(filmIn))) throw new Error('--film에는 완성본 mp4 하나');
+const SECONDS = mode === '--film' ? Math.round(duration(filmIn) * 30) / 30
+  : mode === '--final' ? Math.round(duration(join(clips, `${genre}.mp4`)) * 30) / 30 : 10;
+if (PAUSE + 3.5 > SECONDS) throw new Error(`멈춤 ${PAUSE}초 + 목소리 칸 3.5초가 원판 길이 ${SECONDS}초를 넘는다`);
 // 키프레임 1초 간격(-g 30, 장면 전환으로 끼어드는 키프레임 없음) + 5.0초를 명시 — 5.0초 멈춤 탐색이 정확하고 빠르다.
-const VIDEO = ['-c:v', 'libx264', '-profile:v', 'high', '-preset', 'slow', '-crf', '20', '-maxrate', '8M', '-bufsize', '16M',
+const VIDEO = ['-c:v', 'libx264', '-profile:v', 'high', '-preset', 'slow', '-crf', '20',
+  ...(SECONDS > 10 ? ['-maxrate', '5M', '-bufsize', '10M'] : ['-maxrate', '8M', '-bufsize', '16M']),
   '-g', '30', '-keyint_min', '30', '-sc_threshold', '0', '-force_key_frames', `0,${PAUSE}`, '-pix_fmt', 'yuv420p'];
 
 // --final: 로고만 바꿨을 때 합성용 원판 final/<장르>.mp4만 다시 만든다(11/13 Bumm님 «흰 바 없이»). 원판을 만들던 중간 그림은
@@ -57,14 +71,17 @@ if (mode === '--final') {
 }
 const audioAt = rest.indexOf('--audio');
 const audio = audioAt >= 0 ? rest[audioAt + 1] : null;
-const inputs = audioAt >= 0 ? rest.slice(0, audioAt) : rest;
+const inputs = (audioAt >= 0 ? rest.slice(0, audioAt) : rest).filter((a, i, all) => a !== '--pause' && all[i - 1] !== '--pause');
 const work = mkdtempSync(join(tmpdir(), `vc2-${genre}-`));
 const picture = join(work, 'picture.mp4');
 
 // 3:2 그림·영상을 16:9로 — 가로를 1920에 맞추고 위아래를 같은 만큼 자른다(위아래 각 약 8%, 그림 규칙 1).
 const FIT = 'scale=1920:-2:flags=lanczos,crop=1920:1080,setsar=1,fps=30,format=yuv420p';
 
-if (mode === '--parts') {
+if (mode === '--film') {
+  // 완성본은 이미 1920×1080 · 30fps다(다르면 같은 맞춤으로 바꾼다). 소리는 아래에서 따로 꺼내 목소리 칸만 낮춘다.
+  ff(['-i', filmIn, '-vf', FIT, '-an', '-t', String(SECONDS), '-c:v', 'libx264', '-crf', '12', '-preset', 'fast', picture]);
+} else if (mode === '--parts') {
   if (inputs.length !== 2) throw new Error('--parts에는 A토막과 B토막 두 파일');
   // 각 토막을 정확히 5.0초로 맞춰 잇는다. 앞 토막의 끝 그림 = 뒤 토막의 첫 그림이라 이음매는 멈춤 자리다.
   ff(['-i', inputs[0], '-i', inputs[1], '-filter_complex',
@@ -84,8 +101,14 @@ if (mode === '--parts') {
 }
 
 // 소리 트랙: 받은 것이 없으면 시험용 소리(낮은 울림 + 8.5초 «빠밤» 두 화음)를 만든다 — 합성(섞기)이 늘 원판 소리를 갖도록.
-const sound = audio ?? join(work, 'placeholder.wav');
-if (!audio) {
+// 완성본은 그 소리를 쓰되 목소리 칸(멈춤 ~ +3.5초)을 −8dB로 낮춘다 — build-scene-audio.mjs의 VOICE와 같은 낮추기(앞뒤 50ms 기울기).
+const sound = audio ?? join(work, mode === '--film' ? 'film.wav' : 'placeholder.wav');
+if (mode === '--film') {
+  const k = Math.pow(10, -8 / 20), ramp = 0.05, to = PAUSE + 3.5;
+  const duck = `volume='1-${(1 - k).toFixed(4)}*clip((t-${PAUSE - ramp})/${ramp},0,1)*(1-clip((t-${to})/${ramp},0,1))':eval=frame`;
+  ff(['-i', filmIn, '-vn', '-af', `aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,asetpts=N/SR/TB,${duck},apad=whole_dur=${SECONDS},atrim=0:${SECONDS}`,
+    '-ar', '48000', '-c:a', 'pcm_s16le', sound]);
+} else if (!audio) {
   const chord = (at, hz) => `sine=f=${hz}:d=0.6,afade=t=out:st=0.2:d=0.4,volume=1.2,adelay=${at * 1000}:all=1`;
   ff(['-f', 'lavfi', '-i', `sine=f=110:d=${SECONDS},volume=0.8`, '-f', 'lavfi', '-i', chord(8.5, 523.25),
     '-f', 'lavfi', '-i', chord(8.5, 659.25), '-f', 'lavfi', '-i', chord(8.85, 783.99),

@@ -65,7 +65,7 @@ for (const [width, height] of [[360, 640], [390, 844], [430, 932]]) {
       const frame = await page.locator('.studio-video-frame').boundingBox();
       expect(tag.x - frame.x, '장면 이름이 영상 왼쪽에 있지 않다').toBeLessThan(20 * fit);
       expect(frame.y + frame.height - (tag.y + tag.height), '장면 이름이 영상 아래쪽에 있지 않다').toBeLessThan(20 * fit);
-      await expect(page.locator('.studio-scene-tag')).toHaveText('뮤지컬서커스 첫 무대');
+      await expect(page.locator('.studio-scene-tag')).toHaveText('뮤지컬선셋 하이웨이');
     } else {
       // 한 덩어리: 안내와 단추가 붙어 있고(10/20 전에는 343·408px), 덩어리 위아래 여백이 같다(단추 아래 여백 16px 차이까지)
       expect(idle.copyToButtons).toBeLessThanOrEqual(40);
@@ -75,13 +75,14 @@ for (const [width, height] of [[360, 640], [390, 844], [430, 932]]) {
     expect(idle.scroll).toBe(0);
     // 제목은 머리줄에 한 번만 — 영상 위 «내 목소리로 완성하는 영화 / 제목 / 장르 | 10초»는 접는다
     expect(idle.pauseTitle).toBe('none');
-    await expect(page.locator('.studio-heading h1')).toHaveText('서커스 첫 무대');
+    await expect(page.locator('.studio-heading h1')).toHaveText('선셋 하이웨이');
     // 진행 막대는 시간 글자 바로 앞까지 온다(둘 사이는 줄 간격 12px뿐)
     expect(idle.barToTime).toBeLessThanOrEqual(12);
 
     const idleFont = await page.locator('#recBtn').evaluate((el) => getComputedStyle(el).fontSize);
     await page.locator('#recBtn').click();
-    await expect(page.locator('#count')).toBeVisible({ timeout: 15000 });
+    // 뮤지컬은 11/14부터 20.6초 완성본 — 12.0초에 멈추고 문구 1초 뒤 숫자가 나온다
+    await expect(page.locator('#count')).toBeVisible({ timeout: 25000 });
     const countdown = await measure(page);
     await expect(page.locator('#afterRow')).toBeVisible({ timeout: 30000 });
     const recorded = await measure(page);

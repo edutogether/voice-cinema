@@ -1,5 +1,5 @@
-import { PAUSE_SECONDS, VOICE_WINDOW_SECONDS } from '../config';
-import { finalClipUrl } from '../genres';
+import { VOICE_WINDOW_SECONDS } from '../config';
+import { finalClipUrl, genreById } from '../genres';
 import { pickAudioExtension } from '../logic';
 import { readInBackground } from './backgroundLoad';
 import { serviceWorkerRegistering } from './sw';
@@ -90,14 +90,14 @@ export const voiceFilter = ({ gainDb, seconds, channels }: VoicePlan) =>
   `atrim=0:${VOICE_WINDOW_SECONDS},afade=t=in:d=0.005,afade=t=out:st=${Math.max(0, Math.min(seconds, VOICE_WINDOW_SECONDS) - 0.03).toFixed(3)}:d=0.03`;
 
 /**
- * 원판(영상 + 상대 대사·배경음) 소리에 다듬은 목소리를 5.0초 자리에 섞는다(app-plan §2-4). 목소리는 3.5초 이하라
- * 언제나 5.0~8.5초 안에 들고, 완성본은 원판 길이(정확히 10.0초) 그대로다. 원판의 목소리 칸은 이미 −8dB 낮춰 구웠으므로
+ * 원판(영상 + 상대 대사·배경음) 소리에 다듬은 목소리를 멈춤 자리(10초 장면 5.0초, 11/14 완성본 12.0초)에 섞는다(app-plan §2-4).
+ * 목소리는 3.5초 이하라 언제나 멈춤 ~ +3.5초 안에 들고, 완성본은 원판 길이(10.0초 · 20.6초) 그대로다. 원판의 목소리 칸은 이미 −8dB 낮춰 구웠으므로
  * 여기서 더 낮추지 않는다. 섞은 뒤 −1dBFS에서 한 번 더 막아 찢어지지 않게 한다(자동 레벨 끔·지연 보정 — 위와 같은 까닭).
  * 한 채널 목소리는 두 채널로 그대로 복사해 섞는다 — amix에 맡기면 −3dB로 나눠 펼쳐, 한 채널을 양쪽에 그대로 내는 브라우저의
  * 미리 듣기보다 완성본 목소리가 3dB 작아진다(엔진에서 확인).
  */
-export const MIX_FILTER =
-  `[1:a]pan=stereo|c0=c0|c1=c0,adelay=${PAUSE_SECONDS * 1000}:all=1[voice];` +
+export const mixFilter = (pauseSeconds: number) =>
+  `[1:a]pan=stereo|c0=c0|c1=c0,adelay=${Math.round(pauseSeconds * 1000)}:all=1[voice];` +
   '[0:a][voice]amix=inputs=2:duration=first:dropout_transition=0:normalize=0,' +
   'alimiter=limit=0.891:level=false:latency=true[a]';
 
@@ -171,7 +171,7 @@ export async function mergeClip(genreId: string, voice: Blob): Promise<Blob> {
   // 영상까지 재인코딩하면 클립당 40초 가까이 걸려 부스에서 감당할 수 없다.
   const data = await run([
     '-i', video, '-i', audio,
-    '-filter_complex', MIX_FILTER,
+    '-filter_complex', mixFilter(genreById(genreId).pause),
     '-map', '0:v:0', '-map', '[a]',
     '-c:v', 'copy',
     '-c:a', 'aac', '-b:a', '160k',

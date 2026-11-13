@@ -198,7 +198,7 @@ test('합성: 리미터는 자동 레벨을 끄고 지연을 보정하며, 원�
   const limiters = source.match(/alimiter=[^'`,[]*/g) ?? [];
   expect(limiters).toHaveLength(2);
   for (const limiter of limiters) expect(limiter).toMatch(/level=false:latency=true$/);
-  const mix = extract(source, /export const MIX_FILTER =([\s\S]*?);\r?\n/, 'MIX_FILTER');
+  const mix = extract(source, /export const mixFilter = \(pauseSeconds: number\) =>([\s\S]*?);\r?\n/, 'mixFilter');
   expect(mix).not.toMatch(/volume|sidechaincompress|acompressor/);
   expect(source).toMatch(/'-c:v', 'copy'/);
 });

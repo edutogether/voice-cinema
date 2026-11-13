@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { finalClipUrl, stillUrl, stillAvifUrl, type Genre } from '../genres';
+import { finalClipUrl, lengthLabel, stillUrl, stillAvifUrl, type Genre } from '../genres';
 import { FestivalHeader } from './FestivalHeader';
 import { ActionIcon } from './ActionIcon';
 import { MailHandoff } from './MailHandoff';
@@ -196,7 +196,7 @@ export function Result({ active, job, onHome, onBack }: Props) {
           <span className="poster-logo poster-logo-inky" aria-hidden="true"><span className="festival-symbol"><img src="/brands/inky.png" alt="" /></span><span><strong>InKY</strong> Film Festival</span></span>
           <span className="poster-logo poster-logo-education" aria-hidden="true"><img src="/brands/education-on-dark.svg" alt="" width="102" height="27" /></span>
           {/* 녹음실 멈춤 화면의 «내 목소리로 완성하는 영화 / 제목 / 장르 | 10초»와 같은 양식 · 같은 자리(왼쪽 아래) — 11/13 Bumm님 «아래도 9번같이 10초까지 넣어서» */}
-          <div className="poster-credit"><small>{job.kind === 'sample' ? '녹음 화면 샘플 체험' : '내 목소리로 완성하는 영화'}</small><strong>{job.genre.summary}</strong><p>{job.kind === 'sample' ? '다운로드 · 원본 영상' : job.genre.name}<span>10초</span></p></div>
+          <div className="poster-credit"><small>{job.kind === 'sample' ? '녹음 화면 샘플 체험' : '내 목소리로 완성하는 영화'}</small><strong>{job.genre.summary}</strong><p>{job.kind === 'sample' ? '다운로드 · 원본 영상' : job.genre.name}<span>{lengthLabel(job.genre)}</span></p></div>
           {/* 휴대폰에서만(result.css): 포스터를 누르면 그 자리에서 완성 영화가 흐른다(11/9 시안) */}
           {movieSrc && (playingMovie
             ? <video className="poster-movie" src={movieSrc} autoPlay playsInline controls />
