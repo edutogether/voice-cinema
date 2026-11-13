@@ -37,6 +37,18 @@ const expectOneScreen = (m, label) => {
   }
 };
 
+// 동그라미 단추의 아이콘은 원 가운데에 — «다른 영화 고르기»는 11/14 첫 판에서 11px 왼쪽에 붙어 있었다(Bumm님 지적)
+const expectIconsCentered = async (page, sels, label) => {
+  for (const sel of sels) {
+    const d = await page.locator(sel).evaluate((b) => {
+      const r = b.getBoundingClientRect(); const s = b.querySelector('svg').getBoundingClientRect();
+      return { dx: s.left + s.width / 2 - (r.left + r.width / 2), dy: s.top + s.height / 2 - (r.top + r.height / 2) };
+    });
+    expect(Math.abs(d.dx), `${label}: ${sel} 아이콘이 가로로 어긋남`).toBeLessThanOrEqual(1);
+    expect(Math.abs(d.dy), `${label}: ${sel} 아이콘이 세로로 어긋남`).toBeLessThanOrEqual(1);
+  }
+};
+
 for (const [width, height] of [[932, 380], [640, 300]]) {
   test(`${width}×${height} 가로 휴대폰: 녹음실은 영상이 화면 전체, 단추는 영상 위 — 미리보기부터 녹음 끝까지 한 화면`, async ({ browser }) => {
     test.setTimeout(90000);
@@ -54,6 +66,7 @@ for (const [width, height] of [[932, 380], [640, 300]]) {
       const label = await page.locator(`${sel} .studio-btn-label`).boundingBox();
       expect(label.width, `${sel} 글자가 보인다`).toBeLessThanOrEqual(1);
     }
+    await expectIconsCentered(page, ['#studioBackBtn', '#previewBtn'], '미리보기');
     // 주 단추는 글자 그대로
     await expect(page.locator('#recBtn')).toContainText('장면 시작');
 
@@ -71,6 +84,7 @@ for (const [width, height] of [[932, 380], [640, 300]]) {
     await expect(page.locator('#afterRow')).toBeVisible({ timeout: 30000 });
     expectOneScreen(await measure(page), '녹음 끝');
     await expect(page.getByRole('button', { name: '다시 녹음' })).toBeVisible();
+    await expectIconsCentered(page, ['#studioBackBtn', '#resetBtn'], '녹음 끝');
     await expect(page.locator('#saveBtn')).toContainText('저장하기');
 
     // 아이콘 단추도 그대로 듣는다 — «다시 녹음»은 곧바로 다시 녹음 흐름, «다른 영화 고르기»는 첫 화면
