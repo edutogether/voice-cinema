@@ -19,30 +19,27 @@ export interface Genre {
   summary: string;
   /** 상대 대사 — 앱이 영상 위에 띄우는 넷플릭스식 자막. 영상·완성본에는 굽지 않는다. 시각 순서이고 서로 겹치지 않는다(드라마는 두 줄 — 11/14). */
   lines: Line[];
-  /** 아이 대사 구간(초) — 미리보기에서 «당신의 목소리가 들어갈 자리예요 !»가 나오는 자리. 영상을 바꾸면 그 장르의 이 값만 바꾼다. */
+  /** 아이 대사 구간(초) — 미리보기에서 «당신의 목소리가 들어갈 자리예요 !»가 나오는 자리. 멈춤 시각에서 계산한다(`turn()` — 멈춤 ~ +3.5초). */
   turn: { start: number; end: number };
-  /** 원판 길이(초) — 10초 장면은 10, 11/14 완성본은 원판 파일에서 읽은 길이(21.0 · 22.0 · 23.5초 …). test/scene-clips.test.js가 mp4와 맞대 본다. */
+  /** 원판 길이(초) — 원판 파일에서 읽은 길이(21.0~30.1초). test/scene-clips.test.js가 mp4와 맞대 본다. */
   seconds: number;
-  /** 카드 · 녹음실 · 완성 그림의 길이 글 — 10초 장면은 «10초», 완성본은 편마다 21~24초여도 «20초» 하나(11/14 Bumm님 결정, 팀장 전달). */
+  /** 카드 · 녹음실 · 완성 그림의 길이 글 — 완성본은 편마다 21~30초여도 «20초» 하나(11/14 Bumm님 결정, 팀장 전달). */
   label: string;
   /** 녹음실이 멈추는 시각(초) — 목소리가 여기서부터 목소리 칸(3.5초)에 들어간다. 원판은 이 칸의 소리를 −8dB 낮춰 두었다(tools/build-scene.mjs). */
   pause: number;
 }
 
-// 10초 장면: 상대 대사는 1.6초에 시작해 3.4초 전에 끝나고(스토리보드 §0), 5.0초에 멈춘다.
-// 11/14 완성본(Bumm님 «폭주기관차 올려»): 상대 대사 4.5~7.5초, 12.0초에 멈춘다(graybox-7-1113 «7편 동작 시간표»).
-// 완성본은 편마다 길이가 달라(21.0 · 22.0 · 23.5 · 28.0 · 28.7초 …) 숫자로 박지 않고 원판 파일(public/clips/<장르>.mp4)에서 읽는다(tools/clip-versions.js).
-// 완성본 상대 대사는 보통 4.5~7.5초 한 줄이다. 시각 · 줄 수가 다른 편은 say()로 넘긴다(드라마 — 11/14 팀장 전달, 소리 파형으로 잰 값).
-// 여덟 편의 글 · 시각은 원판 소리에서 다시 쟀다 — 말소리 대역(300~3400Hz) 0.1초 크기 + 구간 받아쓰기, 자막은 목소리가 나기 0.1초 전에 뜬다
-// (11/14 Bumm님 «웹앱도 설치판도 대사 타이밍과 글자를 제대로 나오게 맞춰야지 소리랑 다르면 안되지»).
+// 11/14 완성본(Bumm님 «폭주기관차 올려» 뒤 여덟 편 모두): 편마다 길이(21.0~30.1초)와 멈춤 시각이 다르다.
+// 길이는 숫자로 박지 않고 원판 파일(public/clips/<장르>.mp4)에서 읽는다(tools/clip-versions.js).
+// 상대 대사는 편마다 say('대사', 시작, 끝)으로 적는다. 여덟 편의 글 · 시각은 원판 소리에서 다시 쟀다 — 말소리 대역(300~3400Hz) 0.1초 크기 +
+// 구간 받아쓰기, 자막은 목소리가 나기 0.1초 전에 뜬다(11/14 Bumm님 «웹앱도 설치판도 대사 타이밍과 글자를 제대로 나오게 맞춰야지 소리랑 다르면 안되지»).
 const say = (text: string, start: number, end: number): Line => ({ text, start, end });
-// 멈춤은 보통 12.0초, 편마다 다르면 film('대사', 13.9)처럼 넘긴다(판타지 v8.5는 13.9초 = 30fps 417번째 프레임 — 11/14 팀장 전달).
-const film = (lines: string | Line[], pause = 12) =>
-  ({ lines: typeof lines === 'string' ? [say(lines, 4.5, 7.5)] : lines, pause, label: '20초' });
+// 멈춤은 보통 12.0초, 편마다 다르면 film([...], 13.9)처럼 넘긴다(판타지 v8.5는 13.9초 = 30fps 417번째 프레임 — 11/14 팀장 전달).
+const film = (lines: Line[], pause = 12) => ({ lines, pause, label: '20초' });
 // 대사 구간은 목소리 칸 그대로다(멈춤 ~ +3.5초, 합성이 쓰는 값과 같다).
 const turn = (pause: number) => ({ start: pause, end: pause + VOICE_WINDOW_SECONDS });
-const scene = (g: Omit<Genre, 'turn' | 'seconds'> & { seconds?: number }): Genre =>
-  ({ ...g, seconds: g.seconds ?? lengths[`${g.id}.mp4`], turn: turn(g.pause) });
+const scene = (g: Omit<Genre, 'turn' | 'seconds'>): Genre =>
+  ({ ...g, seconds: lengths[`${g.id}.mp4`], turn: turn(g.pause) });
 
 export const GENRES: Genre[] = [
   scene({ id: 'sf', name: 'SF', color: '#3fa7c9', summary: '퍼스트 헬로', ...film([say('이것 봐, 외계인이야 !', 7.5, 8.8)]) }),

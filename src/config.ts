@@ -1,15 +1,13 @@
 // 앱 전역 상수. 값이 여러 곳에 흩어지지 않도록 여기 한 곳에만 둔다.
 
-export const CLIP_SECONDS = 10;
-
-/** 첫 화면 설치 파일 아이콘의 주소 — firebase.json의 리디렉션과 같아야 한다(test/contract.test.js). 파일은 Hosting에 두지 않는다(약 240MB). */
+/** 첫 화면 설치 파일 아이콘의 주소 — firebase.json의 리디렉션과 같아야 한다(test/contract.test.js). 파일은 Hosting에 두지 않는다(11/14 2.0.x 약 350MB). */
 export const SETUP_DOWNLOAD = { href: '/download/VoiceCinema-Setup.exe', file: 'Voice Cinema Setup.exe' } as const;
 
-// 장면 더빙 2.0 박자(대표님 10/11 확정): 영상이 5.0초 최고조에서 멈추고, 녹음이 그대로
-// 5.0~8.5초 목소리 칸에 들어가 완성본은 언제나 정확히 10.0초다. 합성(src/lib/ffmpeg.ts)과
-// 녹음실(src/hooks/useDubbing.ts)이 같은 값을 쓴다.
+// 10초 장면의 멈춤 시각. 앱(녹음실 · 합성 · 진행 막대)은 이 값을 쓰지 않고 장르마다 다른 `pause`를 쓴다(src/genres.ts —
+// 11/14 완성본은 12.0 · 13.9 · 15.0초). 이 값은 10초 장면 소리를 만드는 tools/build-scene-audio.mjs의 VOICE와 맞대는
+// 계약(test/contract.test.js)에만 남는다.
 export const PAUSE_SECONDS = 5;
-/** 목소리 칸의 길이 — 원판 소리를 5.0~8.5초에서 −8dB 낮춰 둔 자리다(tools/build-scene-audio.mjs의 VOICE, test/contract.test.js가 대조). */
+/** 목소리 칸의 길이 — 멈춤 시각부터 이만큼 원판 소리를 −8dB 낮춰 둔다(tools/build-scene.mjs · build-scene-audio.mjs, test/contract.test.js가 대조). */
 export const VOICE_WINDOW_SECONDS = 3.5;
 // 녹음은 기본 3.0초이고, 그때 말이 이어지고 있으면 목소리 칸 끝(3.5초)까지 늘린다(10/24 대표님 — 말끝 보호).
 export const RECORD_BASE_SECONDS = 3;
