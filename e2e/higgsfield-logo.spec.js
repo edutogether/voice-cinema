@@ -2,8 +2,10 @@ import { test, expect } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { pauseScenes } from './pause-scenes.js';
 
-// 장면 영상을 만든 도구(Higgsfield)의 흰 로고 — Poster Studio와 같은 그림 · 같은 자리 · 같은 크기 규칙(11/14 Bumm님, 팀장 전달).
-// 자리 · 크기 = 1920×1080 영상 기준 값(그림 폭 140 · 위 19.3 · 오른쪽 24.6) × 영상이 칸을 덮는 배율(가로 · 세로 중 큰 쪽).
+// 장면 영상을 만든 도구(Higgsfield)의 흰 로고 — Poster Studio와 같은 그림(11/14 Bumm님, 팀장 전달).
+// 자리 · 크기 = 1920×1080 영상 기준 값(그림 폭 210 · 위 40 · 오른쪽 48) × 영상이 칸을 덮는 배율(가로 · 세로 중 큰 쪽).
+// 처음의 Poster Studio 값(폭 140 · 위 19.3 · 오른쪽 24.6)은 카드에서 너무 작고 모서리에 붙어 보였다(11/14 Bumm님 «힉스필드 로고도 너무 작고 끝에 붙어있어»).
+const LOGO = { width: 210, top: 40, right: 48 };
 // 첫 화면 장면 카드와 녹음실(미리보기 · 녹음 내내)에 얹고, 영상에는 굽지 않는다. «미리보기 재생 중»은 그래서 왼쪽 위로 옮겼다.
 test.use({ serviceWorkers: 'block' });
 
@@ -32,10 +34,10 @@ function expectPosterStudioFit(fit, where) {
   const scale = Math.max(fit.frame[2] / 1920, fit.frame[3] / 1080);
   expect(fit.visibility, `${where}: 로고가 숨어 있다`).toBe('visible');
   expect(fit.natural).toBe(840);
-  expect(Math.abs(fit.width - 140 * scale), `${where}: 폭 ${fit.width} (기대 ${140 * scale})`).toBeLessThan(0.6);
-  expect(Math.abs(fit.height - 140 * scale * 166 / 840), `${where}: 높이`).toBeLessThan(0.6);
-  expect(Math.abs(fit.top - 19.3 * scale), `${where}: 위 여백 ${fit.top}`).toBeLessThan(0.6);
-  expect(Math.abs(fit.right - 24.6 * scale), `${where}: 오른쪽 여백 ${fit.right}`).toBeLessThan(0.6);
+  expect(Math.abs(fit.width - LOGO.width * scale), `${where}: 폭 ${fit.width} (기대 ${LOGO.width * scale})`).toBeLessThan(0.6);
+  expect(Math.abs(fit.height - LOGO.width * scale * 166 / 840), `${where}: 높이`).toBeLessThan(0.6);
+  expect(Math.abs(fit.top - LOGO.top * scale), `${where}: 위 여백 ${fit.top}`).toBeLessThan(0.6);
+  expect(Math.abs(fit.right - LOGO.right * scale), `${where}: 오른쪽 여백 ${fit.right}`).toBeLessThan(0.6);
 }
 
 async function home(page) {
