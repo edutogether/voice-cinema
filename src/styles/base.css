@@ -25,12 +25,13 @@
 }
 
 /* 장면 영상을 만든 도구(Higgsfield)의 흰 로고(11/14 Bumm님, 팀장 전달 — Poster Studio studio.css «.camera-example-logo»와 같은 값): 영상 칸의 보이는 오른쪽 위.
-   크기 · 여백 = 1920 영상 기준 값(그림 폭 --logo-px = 140 · 위 19.3 · 오른쪽 24.6) × 영상이 칸을 덮는 배율(가로 · 세로 중 큰 쪽 — 칸 안의 영상은 cover이거나 칸이 16:9다).
+   크기 · 여백 = 1920 영상 기준 값(그림 폭 --logo-px = 140의 1.5배 · 위 40 · 오른쪽 48) × 영상이 칸을 덮는 배율(가로 · 세로 중 큰 쪽 — 칸 안의 영상은 cover이거나 칸이 16:9다).
+   처음에는 Poster Studio와 같은 140 · 19.3 · 24.6이었으나 카드에서 너무 작고 모서리에 붙어 보여 키우고 안으로 들였다(11/14 Bumm님 «힉스필드 로고도 너무 작고 끝에 붙어있어»).
    배율은 칸을 꽉 채운 틀(.higgsfield-mark)에서 잰다 — 칸 높이가 flex로 정해지는 자리에서 칸 자체를 재면 높이가 0으로 읽힌다(Poster Studio 11/13 실측).
    z-index 1은 가로 휴대폰 녹음실의 위 그림자 띠(::before) 위에 오게 하려는 것이다 — 어두운 막 · 3·2·1 · 자막 · «녹음 중»(2~4)은 그 위에 온다. 그림 폭을 읽기 전에는 숨긴다. */
 .higgsfield-mark { position:absolute; inset:0; z-index:1; container-type:size; pointer-events:none; }
-.higgsfield-mark > img { position:absolute; top:calc(max(100cqw * 19.3 / 1920, 100cqh * 19.3 / 1080) * var(--cq, 1)); right:calc(max(100cqw * 24.6 / 1920, 100cqh * 24.6 / 1080) * var(--cq, 1));
-  width:calc(var(--logo-px, 0) * max(100cqw / 1920, 100cqh / 1080) * var(--cq, 1)); height:auto; }
+.higgsfield-mark > img { position:absolute; top:calc(max(100cqw * 40 / 1920, 100cqh * 40 / 1080) * var(--cq, 1)); right:calc(max(100cqw * 48 / 1920, 100cqh * 48 / 1080) * var(--cq, 1));
+  width:calc(var(--logo-px, 0) * 1.5 * max(100cqw / 1920, 100cqh / 1080) * var(--cq, 1)); height:auto; }
 .higgsfield-mark > img:not([style]) { visibility:hidden; }
 
 /* 폭·높이 구간은 이 상자(@container app)로 판정한다 — 화면을 통째로 비율 조정해도 기준 화면 크기로 갈린다. */
