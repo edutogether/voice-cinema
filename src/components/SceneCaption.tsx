@@ -1,22 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { watchVideoTime } from '../lib/videoClock';
 import { STUDIO_COPY } from '../copy';
 import type { Genre } from '../genres';
 
 type VideoRef = React.RefObject<HTMLVideoElement | null>;
+type Span = { start: number; end: number };
 
-/** 영상 시각이 [start, end) 안에 있는지 프레임마다 본다. 페이드 없이 그 시각에 정확히 나타났다 사라진다. */
-function useVideoWindow(videoRef: VideoRef, start: number, end: number, enabled: boolean): boolean {
-  const [inside, setInside] = useState(false);
+/** 영상 시각이 든 구간 [start, end)의 번호를 프레임마다 본다(없으면 -1). 페이드 없이 그 시각에 정확히 나타났다 사라진다. */
+function useVideoWindow(videoRef: VideoRef, spans: readonly Span[], enabled: boolean): number {
+  const [index, setIndex] = useState(-1);
   useEffect(() => {
     const v = videoRef.current;
     if (!enabled || !v) {
-      setInside(false);
+      setIndex(-1);
       return;
     }
-    return watchVideoTime(v, (time) => setInside(time >= start && time < end));
-  }, [enabled, start, end, videoRef]);
-  return enabled && inside;
+    return watchVideoTime(v, (time) => setIndex(spans.findIndex((s) => time >= s.start && time < s.end)));
+  }, [enabled, spans, videoRef]);
+  return enabled ? index : -1;
 }
 
 /**
@@ -26,8 +27,9 @@ function useVideoWindow(videoRef: VideoRef, start: number, end: number, enabled:
  * 쓰지 않는다 — iOS 사파리·인앱 브라우저마다 그림자·위치가 달라 모양을 고정할 수 없다.
  */
 export function SceneCaption({ genre, videoRef, enabled }: { genre: Genre; videoRef: VideoRef; enabled: boolean }) {
-  if (!useVideoWindow(videoRef, genre.line.start, genre.line.end, enabled)) return null;
-  return <div className="scene-caption" data-testid="scene-caption"><span>{genre.line.text}</span></div>;
+  const at = useVideoWindow(videoRef, genre.lines, enabled);
+  if (at < 0) return null;
+  return <div className="scene-caption" data-testid="scene-caption"><span>{genre.lines[at].text}</span></div>;
 }
 
 /**
@@ -36,6 +38,7 @@ export function SceneCaption({ genre, videoRef, enabled }: { genre: Genre; video
  * (11/8 Bumm님 «빨간 둥근 막대는 없앱니다»). 구간은 장르 값(genre.turn)이다.
  */
 export function SceneTurnCue({ genre, videoRef, enabled }: { genre: Genre; videoRef: VideoRef; enabled: boolean }) {
-  if (!useVideoWindow(videoRef, genre.turn.start, genre.turn.end, enabled)) return null;
+  const turns = useMemo(() => [genre.turn], [genre.turn]);
+  if (useVideoWindow(videoRef, turns, enabled) < 0) return null;
   return <div className="scene-turn-cue" role="status"><strong>{STUDIO_COPY.lineNow}</strong></div>;
 }

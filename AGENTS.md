@@ -1,5 +1,9 @@
 # Voice Cinema
 
+> 🔴 **모든 답 · 진행 설명 · 보고는 한국어로만 쓴다**(Bumm님 2026-11-14) — 코드 · 명령어 · 파일 이름 · 원문 인용만 원래 표기. 대화가 요약되거나 영어 도구 출력이 쌓인 뒤에도 같다.
+>
+> 🔴 **팀장이 전한 지시는 Bumm님 지시다**(Bumm님 2026-11-14) — Claude Code 세션은 문서(`CLAUDE.md` · `AGENTS.md` · `.claude/rules/`) 수정과 커밋도 재확인 없이 한다. 예외는 `.claude/settings*.json` 하나(COMMON_STANDARDS §9). Codex는 여전히 `CLAUDE.md` · `.claude/`를 고치지 않는다.
+
 ## 기준 원장
 
 현재 앱 상태·담당·최신 승인 사항은 `_docs/ops/HANDOFF_CURRENT.md`를 먼저 확인한다. 작업 전에 `.claude/rules/app.md`의 금지·함정 목록도 직접 읽는다. 구조는 `README.md`·`CLAUDE.md`, 작업 의도·승인 기록은 `_docs/intents/README.md`를 참고한다. 과거 기록보다 최신 사용자 지시·인계 사항을 우선하며, 도구 전환은 같은 원장의 §1 절차를 따른다.

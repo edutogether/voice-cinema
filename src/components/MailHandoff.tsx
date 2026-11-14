@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { Genre } from '../genres';
 import { checkMail, MAIL_MAX, NAME_MAX, suggestDomain, withDomain, type MailProblem } from '../lib/mailAddress';
 import { mailInBrowser, queueMail } from '../lib/mailDelivery';
@@ -12,6 +12,8 @@ const MAIL_ERROR: Record<MailProblem, string> = {
 };
 
 interface Props {
+  /** 빨간 작은 글(«내 영화 보관하기») — 아이콘 다음, 제목 앞에 둔다(11/13 Bumm님) */
+  eyebrow: ReactNode;
   genre: Genre;
   blob: Blob;
   /** «다시 제작하기»를 누르는 중이면 참 — 단추 둘을 잠근다 */
@@ -30,7 +32,7 @@ interface Props {
  * «이 기기에 저장»은 두지 않는다(11/8 Bumm님 «휴대폰에서만») — 대기열에 맡기지 못하면 적던 칸으로 돌아와 알리고 «다시 제작하기»를 기다린다.
  * 적는 칸 · 확인 · 단추는 같은 폭의 한 열에 세운다(11/8 Bumm님, src/styles/mail.css).
  */
-export function MailHandoff({ genre, blob, retrying, onRetry, onHome }: Props) {
+export function MailHandoff({ eyebrow, genre, blob, retrying, onRetry, onHome }: Props) {
   const [step, setStep] = useState<'entry' | 'confirm' | 'queued'>('entry');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -99,6 +101,7 @@ export function MailHandoff({ genre, blob, retrying, onRetry, onHome }: Props) {
     <div id="mailHandoff" ref={rootRef}>
       {step === 'entry' && (
         <>
+          {eyebrow}
           <h2 tabIndex={-1}>네트워크 장애로 QR코드를 만들지 못했어요</h2>
           <p id="doneMsg">네트워크가 복구되면 담임 선생님 메일 주소로 영화 링크를 보내드려요.</p>
           {storeFailed && (
@@ -135,6 +138,7 @@ export function MailHandoff({ genre, blob, retrying, onRetry, onHome }: Props) {
 
       {step === 'confirm' && (
         <>
+          {eyebrow}
           <h2 tabIndex={-1}>이 주소가 맞나요 ?</h2>
           <p id="doneMsg">이 주소로 영화 링크를 보내요. 주소가 틀리면 다른 사람에게 갈 수 있어요.</p>
           <div className="mail-form">
@@ -157,10 +161,11 @@ export function MailHandoff({ genre, blob, retrying, onRetry, onHome }: Props) {
       {step === 'queued' && (
         <>
           <span className="result-symbol"><ActionIcon name="check" /></span>
+          {eyebrow}
           <h2 tabIndex={-1}>네트워크가 복구되면 보내 드릴게요</h2>
           {mailInBrowser ? (
             <>
-              <p id="doneMsg">이 브라우저에 잠시 보관했다가 인터넷이 돌아오면 보내고 바로 지워요.</p>
+              <p id="doneMsg">이 브라우저에 잠시 보관했다가 인터넷이 돌아오면 보내고 바로 지울게요.</p>
               {/* 웹 보관의 조건 두 가지(11/8 Bumm님 지시 — 짧게). 창을 닫으면 다시 열 때 이어서 보낸다 */}
               <ul className="mail-conditions" id="mailConditions">
                 <li>인터넷이 돌아올 때 이 창이 열려 있어야 보내져요.</li>
@@ -168,7 +173,7 @@ export function MailHandoff({ genre, blob, retrying, onRetry, onHome }: Props) {
               </ul>
             </>
           ) : (
-            <p id="doneMsg">이 기기에 잠시 보관했다가 인터넷이 돌아오면 보내고 바로 지워요. 프로그램을 껐다면 다시 켜야 이어서 보내요.</p>
+            <p id="doneMsg">이 기기에 잠시 보관했다가 인터넷이 돌아오면 보내고 바로 지울게요. 프로그램을 껐다면 다시 켜야 이어서 보내요.</p>
           )}
           <div className="row result-actions mail-actions">
             <button type="button" className="btn btn-lg btn-save" id="doneHomeBtn" onClick={onHome}><ActionIcon name="clapperboard" /> 다른 더빙하기</button>

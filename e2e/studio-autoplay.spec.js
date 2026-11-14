@@ -1,12 +1,16 @@
 import { test, expect } from '@playwright/test';
 import { pauseScenes } from './pause-scenes.js';
 import { watchCountdown, countdownLog } from './countdown-watch.js';
+import { clipLength, scenePause, TEST_SCENE } from './scene-data.js';
 
 // 녹음실 자동 재생(11/7 Bumm님 «누르고 들어가면 바로 영상 재생 … 소리도 나오고 … 멈추고 321은 빼고 … 문구만 주고 그냥 쭉 멈춤없이 지나가게 해서 아 ~ 하게»):
 // «더빙하기»를 누르면 장면이 처음부터 끝까지 소리와 함께 흐르고, 아이 대사 구간에는 문구만 나온다. 끝나면 준비 화면이다. «장면 시작» 뒤의 녹음은 그대로 멈춤·3·2·1이다.
 // 대사 구간 문구는 3·2·1과 같은 모양이다 — 영상을 살짝 어둡게 하고 큰 흰 글씨(11/8 Bumm님, 그 전에는 빨간 둥근 막대).
 // 소리는 브라우저가 «누름 안에서 부른 play()»에만 허용하므로(아이폰이 가장 엄격하다) 그 순서를 페이지 안에서 기록해 본다.
 const CUE = '당신의 목소리가 들어갈 자리예요 !';
+// 시험 장면(SF, 통과본)의 멈춤 시각 · 길이는 파일에서 읽는다(11/14 완성본 — 편마다 다르다). 대사 구간은 멈춤 ~ 멈춤 + 3.5초다.
+const PAUSE = scenePause(TEST_SCENE.id);
+const LENGTH = clipLength(TEST_SCENE.id);
 
 const state = (page) => page.locator('#clip').evaluate((v) => ({ paused: v.paused, muted: v.muted, time: v.currentTime }));
 const phase = (page) => page.locator('#studio');
@@ -39,14 +43,16 @@ async function recordFrames(page) {
   });
 }
 
-const enter = async (page, name = 'SF') => {
+// 시험 장면으로 들어간다 — 아래 그림 띠를 멈추고 누른다(누름 안에서 재생을 부르는지는 그대로 본다)
+const enter = async (page, id = TEST_SCENE.id) => {
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: `${name} 더빙 시작`, exact: true }).click();
+  await pauseScenes(page);
+  await page.locator(`.scene-choice[data-genre="${id}"]`).click();
 };
 
 test('누르면 그 누름 안에서 소리를 켠 채 재생을 부르고, 멈춤·3·2·1·멈춤 화면의 막 없이 끝까지 흐른 뒤 준비 화면으로 돌아온다', async ({ page }) => {
-  test.setTimeout(45000);
+  test.setTimeout((LENGTH + 35) * 1000);
   await recordFrames(page);
   await enter(page);
   await expect(phase(page)).toHaveAttribute('data-phase', 'previewing');
@@ -75,26 +81,26 @@ test('누르면 그 누름 안에서 소리를 켠 채 재생을 부르고, 멈�
   });
   expect(energy).toBeGreaterThan(.005);
 
-  await expect(phase(page)).toHaveAttribute('data-phase', 'idle', { timeout: 15000 });
+  await expect(phase(page)).toHaveAttribute('data-phase', 'idle', { timeout: (LENGTH + 5) * 1000 });
   const frames = await page.evaluate(() => window.__frames);
   const playing = frames.filter((f) => f.time > 0);
-  // 끝까지 흘렀다 — 뒤의 프레임이 10초 근처이고, 처음에서 끝까지 한 번도 멈추지 않았다
-  expect(playing.at(-1).time).toBeGreaterThan(9.5);
-  expect(playing.filter((f) => f.paused && f.time < 9.5)).toEqual([]);
+  // 끝까지 흘렀다 — 뒤의 프레임이 원판 끝 근처이고, 처음에서 끝까지 한 번도 멈추지 않았다
+  expect(playing.at(-1).time).toBeGreaterThan(LENGTH - 0.5);
+  expect(playing.filter((f) => f.paused && f.time < LENGTH - 0.5)).toEqual([]);
   expect(playing.every((f) => !f.muted)).toBe(true);
-  // 5.0초에서 멈추지 않았다 — 앞뒤 프레임 시각이 끊기지 않는다
-  const around = playing.filter((f) => f.time > 4.8 && f.time < 5.5);
+  // 멈춤 시각에서 멈추지 않았다 — 앞뒤 프레임 시각이 끊기지 않는다
+  const around = playing.filter((f) => f.time > PAUSE - 0.2 && f.time < PAUSE + 0.5);
   expect(around.length).toBeGreaterThan(5);
   // 3·2·1·멈춤 문구·녹음 표시·멈춤 화면의 막(.studio-pause-shade)이 한 번도 나오지 않았다 — 대사 구간의 살짝 어두운 막은 문구 자신의 것이다(11/8)
   expect(frames.filter((f) => f.turnOverlay)).toEqual([]);
   expect(frames.filter((f) => f.shade > .01)).toEqual([]);
-  // 문구는 대사 구간(5.0~8.5초)에만 나온다
+  // 문구는 대사 구간(멈춤 ~ 멈춤 + 3.5초)에만 나온다
   const cued = frames.filter((f) => f.cue);
   expect(cued[0].cue).toBe(CUE);
-  expect(cued[0].time).toBeGreaterThan(4.9);
-  expect(cued[0].time).toBeLessThan(5.2);
-  expect(cued.at(-1).time).toBeLessThan(8.6);
-  expect(cued.at(-1).time).toBeGreaterThan(8.2);
+  expect(cued[0].time).toBeGreaterThan(PAUSE - 0.1);
+  expect(cued[0].time).toBeLessThan(PAUSE + 0.2);
+  expect(cued.at(-1).time).toBeLessThan(PAUSE + 3.6);
+  expect(cued.at(-1).time).toBeGreaterThan(PAUSE + 3.2);
   // 마이크를 열지 않았다
   expect(await page.evaluate(() => window.__mic)).toBe(0);
 
@@ -134,13 +140,13 @@ for (const [width, height] of [[1366, 768], [2560, 1305], [390, 844], [360, 640]
 }
 
 test('대사 구간 문구는 3·2·1의 «이제 당신의 차례입니다 !»와 같은 모양이다 — 영상 전체를 살짝 어둡게, 큰 흰 글씨, 빨간 둥근 막대 없음', async ({ page }) => {
-  test.setTimeout(45000);
+  test.setTimeout(60000);
   await page.setViewportSize({ width: 1366, height: 768 });
   await watchCountdown(page);
   await enter(page);
   await expect(phase(page)).toHaveAttribute('data-phase', 'previewing');
   await expect.poll(async () => (await state(page)).time).toBeGreaterThan(.2);
-  await page.locator('#clip').evaluate((v) => { v.currentTime = 5.2; });
+  await page.locator('#clip').evaluate((v, t) => { v.currentTime = t; }, PAUSE + 0.2);
   const cue = page.locator('.scene-turn-cue');
   await expect(cue).toHaveText(CUE);
   const look = await cue.evaluate((el) => {
@@ -157,13 +163,15 @@ test('대사 구간 문구는 3·2·1의 «이제 당신의 차례입니다 !»�
   expect(alpha(look.background)).toBeLessThan(.6);
   // 녹음 흐름의 «이제 당신의 차례입니다 !»와 글자 크기가 같다
   await page.locator('#recBtn').click();
-  await expect(page.locator('#recpill')).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('#recpill')).toBeVisible({ timeout: (PAUSE + 12) * 1000 });
   const turn = (await countdownLog(page)).find((e) => e.key === 'cue');
   expect(look.size).toBe(turn.size);
   expect(alpha(turn.background)).toBeGreaterThanOrEqual(alpha(look.background));
 });
 
+// 멈춤 시각은 장면마다 파일에서 읽는다(11/14 완성본 — 12.0 · 15.0초). 대사 구간은 멈춤 ~ 멈춤 + 3.5초다
 for (const [id, name] of [['sf', 'SF'], ['fantasy', '판타지'], ['animation', '애니메이션'], ['hero', '히어로'], ['thriller', '스릴러'], ['drama', '드라마'], ['sports', '스포츠'], ['musical', '뮤지컬']]) {
+  const pause = scenePause(id);
   test(`${name}: 대사 구간 문구는 그 장면의 구간에서만 나오고 영상을 멈추지 않는다`, async ({ page }) => {
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
@@ -173,18 +181,18 @@ for (const [id, name] of [['sf', 'SF'], ['fantasy', '판타지'], ['animation', 
     const clip = page.locator('#clip');
     const cue = page.locator('.scene-turn-cue');
     await expect.poll(async () => (await state(page)).time).toBeGreaterThan(.2);
-    await clip.evaluate((v) => { v.currentTime = 4.5; });
+    await clip.evaluate((v, t) => { v.currentTime = t; }, pause - .5);
     await expect(cue).toHaveCount(0);
-    await clip.evaluate((v) => { v.currentTime = 5.1; });
+    await clip.evaluate((v, t) => { v.currentTime = t; }, pause + .1);
     await expect(cue).toHaveText(CUE);
     expect((await state(page)).paused).toBe(false);
-    await clip.evaluate((v) => { v.currentTime = 8.6; });
+    await clip.evaluate((v, t) => { v.currentTime = t; }, pause + 3.6);
     await expect(cue).toHaveCount(0);
   });
 }
 
 test('재생 중에 «장면 시작»을 누르면 재생을 끊고 처음부터 멈춤·3·2·1·녹음으로 간다', async ({ page }) => {
-  test.setTimeout(45000);
+  test.setTimeout(60000);
   await watchCountdown(page);
   await enter(page);
   await expect.poll(async () => (await state(page)).time).toBeGreaterThan(1);
@@ -194,7 +202,7 @@ test('재생 중에 «장면 시작»을 누르면 재생을 끊고 처음부터
   await expect(page.locator('.scene-turn-cue')).toHaveCount(0);
   await expect(phase(page)).toHaveAttribute('data-phase', 'watching');
   expect((await state(page)).time).toBeLessThan(1);
-  await expect(page.locator('#recpill')).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('#recpill')).toBeVisible({ timeout: (PAUSE + 12) * 1000 });
   const keys = (await countdownLog(page)).map((entry) => entry.key);
   expect(keys[0]).toBe('cue');
   expect(keys.filter((key) => /초 뒤 녹음 시작/.test(key)).length).toBe(3);
@@ -206,13 +214,13 @@ test('재생 중에 «장면 시작»을 누르면 재생을 끊고 처음부터
 });
 
 test('다시 녹음은 «장면 시작»처럼 곧바로 처음부터 녹음 흐름이 돌고, 저장 뒤 돌아올 때는 저절로 재생하지 않으며, 새로 들어가면 다시 재생한다', async ({ page }) => {
-  test.setTimeout(120000);
+  test.setTimeout(200000); // 두 번 녹음(한 번에 약 31초)하고 저장한다
   await page.route('**/voiceCinema/upload', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, url: 'https://storage.googleapis.com/fake/dub_e2e.mp4' }) }));
   await recordFrames(page);
   await enter(page);
   const plays = () => page.evaluate(() => window.__plays.length);
   await page.locator('#recBtn').click();
-  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 40000 });
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: (LENGTH + 25) * 1000 });
 
   // «다시 녹음»(11/8 Bumm님 «멈춘 화면으로 돌아간다 — 누르면 장면 시작처럼 바로 카운트다운»): 준비 화면에 서지 않고 처음부터 장면 → 멈춤 → 3·2·1 → 녹음
   const beforeRetry = await plays();
@@ -222,8 +230,8 @@ test('다시 녹음은 «장면 시작»처럼 곧바로 처음부터 녹음 흐
   await expect.poll(plays).toBeGreaterThan(beforeRetry);
   await expect.poll(async () => (await state(page)).time).toBeGreaterThan(.3);
   expect((await state(page)).paused).toBe(false);
-  await page.locator('#cue').waitFor({ timeout: 10000 });
-  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 40000 });
+  await page.locator('#cue').waitFor({ timeout: (PAUSE + 5) * 1000 });
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: (LENGTH + 25) * 1000 });
   await page.locator('#saveBtn').click();
   await expect(page.locator('#result')).toHaveClass(/active/);
   await page.locator('#result.active .qrbox img').waitFor({ state: 'visible', timeout: 180000 });
@@ -237,7 +245,8 @@ test('다시 녹음은 «장면 시작»처럼 곧바로 처음부터 녹음 흐
   // 다른 더빙은 새 누름이다 — 다시 처음부터 소리와 함께 흐른다
   await page.locator('.back').click();
   await expect(page.locator('#home')).toHaveClass(/active/);
-  await page.getByRole('button', { name: 'SF 더빙 시작', exact: true }).click();
+  await pauseScenes(page);
+  await page.locator(`.scene-choice[data-genre="${TEST_SCENE.id}"]`).click();
   await expect(phase(page)).toHaveAttribute('data-phase', 'previewing');
   await expect.poll(async () => (await state(page)).time).toBeGreaterThan(.2);
   expect((await state(page)).muted).toBe(false);
@@ -248,7 +257,7 @@ test('재생 중에 «다른 영화 고르기»로 나가면 소리가 바로 �
   await enter(page);
   await expect.poll(async () => (await state(page)).time).toBeGreaterThan(.3);
   await page.locator('#clip').evaluate((v) => { window.__previous = v; });
-  // 재생이 끝나기(10초)를 기다렸다 눌러도 통과하면 안 된다 — 재생하는 동안 바로 눌려야 한다
+  // 재생이 끝나기를 기다렸다 눌러도 통과하면 안 된다 — 재생하는 동안 바로 눌려야 한다
   await page.locator('#studioBackBtn').click({ timeout: 3000 });
   await expect(page.locator('#home')).toHaveClass(/active/);
   expect(await page.evaluate(() => window.__previous.paused)).toBe(true);
@@ -293,7 +302,8 @@ for (const [width, height] of [[360, 640], [390, 664]]) {
     expect(await hintLines()).toBeLessThanOrEqual(2);
     expect(await page.evaluate(() => document.scrollingElement.scrollHeight - window.innerHeight)).toBe(0);
 
-    await page.locator('#clip').evaluate((v) => { v.currentTime = 5.2; });
+    // 대사 구간(멈춤 ~ 멈춤 + 3.5초)으로 옮긴다 — 멈춤 시각은 파일에서 읽는다(11/14 완성본)
+    await page.locator('#clip').evaluate((v, t) => { v.currentTime = t; }, scenePause('musical') + 0.2);
     const cue = page.locator('.scene-turn-cue');
     await expect(cue).toHaveText(CUE);
     const inside = await page.evaluate(() => {

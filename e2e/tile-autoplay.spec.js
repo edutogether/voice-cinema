@@ -190,22 +190,28 @@ test.describe('마우스가 없는 기기', () => {
   // 자식에 transform이 걸리면 둥근 모서리 잘라내기를 놓친다 — 캐러셀 카드는 넘어갈 때마다
   // 크기(scale)가 바뀌므로 바로 그 조건이라, 각진 모서리가 둥근 모서리를 덮어 "떡네모"로 보인다
   // (2026-09-11 대표가 아이폰 카카오톡 인앱에서 발견). `-webkit-mask-image` 우회는 쓰지 않는다(app.md).
+  // 둥근 카드는 낮은 휴대폰(주소창까지 뺀 아이폰 사파리 390×664)에서 본다 — 키 큰 휴대폰(375×812)은 11/10부터 가운데 장면이
+  // 화면 폭 끝까지라 모서리가 없다(MA). 그때는 카드 · 자식이 모두 0인지 본다(한쪽만 둥글면 그것이 떡네모다).
   test('가운데 장면을 채우는 것들이 카드와 같은 모서리를 갖는다', async ({ page }) => {
-    await 첫화면(page);
-    const 반경 = await page.evaluate(() => {
-      const media = document.querySelector('.scene-shell.is-current .tile-media');
-      const 값 = (el) => parseFloat(getComputedStyle(el).borderTopLeftRadius);
-      const 자식 = ['.tile-visual', '.thumb', '.preview']
-        .map((sel) => [sel, media.querySelector(sel)])
-        .filter(([, el]) => el)
-        .map(([sel, el]) => [sel, 값(el)]);
-      return { 카드: 값(media), 자식 };
-    });
-    // 검사 대상이 0건이면 통과가 아니라 실패다(§21-1).
-    expect(반경.자식.length, '검사할 자식을 하나도 못 찾았다').toBe(3);
-    expect(반경.카드, '카드에 모서리 반경이 없다').toBeGreaterThan(0);
-    const 각진것 = 반경.자식.filter(([, r]) => r !== 반경.카드).map(([sel, r]) => `${sel}=${r}px`);
-    expect(각진것, `카드는 ${반경.카드}px인데 다른 것이 있다`).toEqual([]);
+    for (const [width, height, 둥근카드] of [[390, 664, true], [375, 812, false]]) {
+      await page.setViewportSize({ width, height });
+      await 첫화면(page);
+      const 반경 = await page.evaluate(() => {
+        const media = document.querySelector('.scene-shell.is-current .tile-media');
+        const 값 = (el) => parseFloat(getComputedStyle(el).borderTopLeftRadius);
+        const 자식 = ['.tile-visual', '.thumb', '.preview']
+          .map((sel) => [sel, media.querySelector(sel)])
+          .filter(([, el]) => el)
+          .map(([sel, el]) => [sel, 값(el)]);
+        return { 카드: 값(media), 자식 };
+      });
+      // 검사 대상이 0건이면 통과가 아니라 실패다(§21-1).
+      expect(반경.자식.length, `${width}×${height}: 검사할 자식을 하나도 못 찾았다`).toBe(3);
+      if (둥근카드) expect(반경.카드, `${width}×${height}: 카드에 모서리 반경이 없다`).toBeGreaterThan(0);
+      else expect(반경.카드, `${width}×${height}: 화면 폭 끝까지인 카드에 모서리가 있다`).toBe(0);
+      const 각진것 = 반경.자식.filter(([, r]) => r !== 반경.카드).map(([sel, r]) => `${sel}=${r}px`);
+      expect(각진것, `${width}×${height}: 카드는 ${반경.카드}px인데 다른 것이 있다`).toEqual([]);
+    }
   });
 
   test('가운데 장면을 탭하면 녹음실로, 옆 장면을 탭하면 그 장면이 가운데로 온다', async ({ page }) => {

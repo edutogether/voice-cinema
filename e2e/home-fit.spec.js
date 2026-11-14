@@ -18,13 +18,18 @@ for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [
       // 멈춤 단추는 없다(10/20 대표님) — 손가락 한 번 누르기로 멈춘다(검사 준비일 뿐, e2e/pause-scenes.js)
       await pauseScenes(page);
       // 휴대폰 폭(10/17 대표님, 10/19 첫 화면 다듬기): 위에는 «나만의 더빙 극장 / Voice Cinema» 한 덩어리, 제목 자리에는
-      // «내 목소리로 완성하는 10초의 영화.»(설명 줄 없음). 가운데 장면은 화면 폭의 94%·영화 비율(16:9), 장르 배지와 장면 이름은
+      // «내 목소리로 완성하는 10초의 영화.»(설명 줄 없음). 가운데 장면은 화면 폭의 94%·영화 비율(16:9)이고 키 큰 휴대폰은 화면 폭 끝까지(11/10 MA), 장르 배지와 장면 이름은
       // 그림 오른쪽 아래에 얹는다. 바로가기 줄은 흐르므로 여덟 칸이 한꺼번에 보이지 않는다(그 대신 이름이 겹치지 않는다).
       // 600 미만으로 낮으면 위 안내 줄을 접는다.
       const intro = height >= 600 ? ['.chart-label', '.chart-app'] : [];
       for (const selector of [...intro, '.festival-signature', '.chart-heading h1', '.scene-shell.is-current .tile-media',
         '.scene-shell.is-current .tile-tag', '.scene-shell.is-current .tile-enter', '.scene-shell.is-current .tile-enter-icon', '.scene-choices', '#home .cinema-footer']) {
-        await expect(page.locator(selector), selector).toBeInViewport({ ratio: 1 });
+        if (selector.endsWith('.tile-media')) {
+          // 키 큰 휴대폰은 가운데 장면이 화면 폭 끝까지라(11/10 MA) 비율이 1이 아닌 폭에서 IntersectionObserver가 왼쪽 끝을 0.5px로 반올림해
+          // 1보다 작게 잰다(375×812에서 0.9987 — getBoundingClientRect는 0~375). 상자로 잰다
+          const box = await page.locator(selector).boundingBox();
+          expect(box.x >= -1 && box.x + box.width <= width + 1 && box.y >= 0 && box.y + box.height <= height, `${selector}가 화면 밖에 걸린다`).toBe(true);
+        } else await expect(page.locator(selector), selector).toBeInViewport({ ratio: 1 });
       }
       await expect(page.locator('.chart-heading h1')).toHaveText('내 목소리로 완성하는 10초의 영화.', { useInnerText: true });
       for (const selector of ['.chart-aside h2', '.scene-shell.is-current .tile-copy']) {
@@ -40,9 +45,27 @@ for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [
         const app = await page.locator('.chart-app').boundingBox();
         expect(label.bg, '«나만의 더빙 극장»에 띠가 남아 있다').toBe('rgba(0, 0, 0, 0)');
         expect(label.bottom, '«나만의 더빙 극장»이 Voice Cinema 위에 있지 않다').toBeLessThanOrEqual(app.y + 1);
-        // 맨 위 줄은 오른쪽 위 «개인정보처리방침» 줄 아래에서 시작한다(10/19 대표님 «더 아래로»)
-        const top = await page.locator('.chart-aside').boundingBox();
-        expect(top.y, '맨 위 줄이 개인정보처리방침 줄과 겹친다').toBeGreaterThanOrEqual(privacy.y + privacy.height);
+        if (height / (width / 390) >= 720) {
+          // 키 큰 휴대폰(기준 화면 높이 720 이상, 11/9 시안 ①): «나만의 더빙 극장» 줄을 오른쪽 위 링크 줄과 같은 높이에 두되, 로고 묶음은 링크 줄과 겹치지 않는다
+          const links = await page.locator('#home .header-links').boundingBox();
+          const labelBox = await page.locator('.chart-label').boundingBox();
+          expect(Math.abs((labelBox.y + labelBox.height / 2) - (privacy.y + privacy.height / 2)), '«나만의 더빙 극장» 줄이 링크 줄과 같은 높이가 아니다').toBeLessThanOrEqual(2);
+          for (const selector of ['.chart-invitation img', '.chart-label', '.chart-app']) {
+            // 글은 글자가 그려진 자리로 잰다 — 칸 상자는 오른쪽 끝까지 뻗는다
+            const b = await page.locator(selector).evaluate((el) => {
+              if (el.tagName === 'IMG') return el.getBoundingClientRect().toJSON();
+              const range = document.createRange();
+              range.selectNodeContents(el);
+              return range.getBoundingClientRect().toJSON();
+            });
+            const overlap = b.x < links.x + links.width && b.x + b.width > links.x && b.y < links.y + links.height && b.y + b.height > links.y;
+            expect(overlap, `${selector}가 링크 줄과 겹친다`).toBe(false);
+          }
+        } else {
+          // 맨 위 줄은 오른쪽 위 «개인정보처리방침» 줄 아래에서 시작한다(10/19 대표님 «더 아래로»)
+          const top = await page.locator('.chart-aside').boundingBox();
+          expect(top.y, '맨 위 줄이 개인정보처리방침 줄과 겹친다').toBeGreaterThanOrEqual(privacy.y + privacy.height);
+        }
       }
       // «01 / 08» 줄은 휴대폰에서 없앤다(10/19 대표님). 멈춤 단추는 10/20부터 어느 폭에도 없다
       await expect(page.locator('.scene-navigation'), '.scene-navigation는 휴대폰에서 없앤다').toBeHidden();
@@ -59,9 +82,14 @@ for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [
         expect(stage.width, '장면 칸이 화면 폭과 다르다').toBeCloseTo(width, 0);
         expect(media.width / stage.width, '가운데 장면이 화면 폭의 90%보다 좁다').toBeGreaterThanOrEqual(.9);
       }
+      if (height / (width / 390) >= 720) {
+        // 키 큰 휴대폰(기준 화면 높이 720 이상)은 가운데 장면을 화면 폭 끝까지, 모서리 없이 둔다(11/10 MA 확정 — 10/19 «94% · 양옆 장면은 살짝»을 바꿈)
+        expect(Math.abs(media.width - width), '가운데 장면이 화면 폭 끝까지가 아니다').toBeLessThanOrEqual(1);
+        expect(await page.locator('.scene-shell.is-current .tile-media').evaluate(el => getComputedStyle(el).borderTopLeftRadius), '가운데 장면에 둥근 모서리가 남아 있다').toBe('0px');
+      }
       // 장르는 작은 배지, 장면 이름은 그냥 글씨로 그림 오른쪽 아래에 얹는다. «10초»는 장면마다 같아 뺐다.
       await expect(page.locator('.tile[data-genre="sf"] .tile-tag b')).toHaveText('SF');
-      await expect(page.locator('.tile[data-genre="sf"] .tile-tag')).toHaveText('SF물의 행성');
+      await expect(page.locator('.tile[data-genre="sf"] .tile-tag')).toHaveText('SF퍼스트 헬로');
       const tag = page.locator('.scene-shell.is-current .tile-tag');
       const tagBox = await tag.boundingBox();
       expect(media.x + media.width - (tagBox.x + tagBox.width), '장면 이름이 그림 오른쪽 끝에 붙어 있지 않다').toBeLessThan(20);
@@ -87,9 +115,12 @@ for (const [width, height, touch] of [[1366, 768, false], [1920, 1080, false], [
       expect(Math.abs(thumb.width * 9 / 16 - thumb.height), '바로가기 그림이 영화 비율이 아니다').toBeLessThan(1.5);
       expect(await page.locator('.scene-choice').evaluateAll(cards => cards
         .filter(card => card.querySelector('span').scrollWidth > card.clientWidth + 1).map(card => card.dataset.genre)), '바로가기 이름이 칸을 넘는다').toEqual([]);
-      // 더빙하기 버튼은 가운데 장면 폭을 꽉 채운다.
+      // 더빙하기 버튼은 가운데 장면 폭을 꽉 채운다 — 키 큰 휴대폰은 장면이 화면 폭 끝까지라(11/10 MA) 단추는 양옆 16px(기준 화면 px) 안으로 들인다
       const button = await page.locator('.scene-shell.is-current .tile-enter').boundingBox();
-      expect(button.width).toBeGreaterThan(media.width - 8);
+      if (height / (width / 390) >= 720) {
+        const k = width / 390;
+        expect(Math.abs(button.x - 16 * k) <= 1 && Math.abs(button.width - (390 - 32) * k) <= 1, '«더빙하기»가 양옆 16px 안쪽 폭이 아니다').toBe(true);
+      } else expect(button.width).toBeGreaterThan(media.width - 8);
       // 단추는 마이크 아이콘을 앞에 달고 그림에서 조금 떨어진다(10/19 대표님)
       expect(button.y - (media.y + media.height), '«더빙하기»가 그림에 너무 붙어 있다').toBeGreaterThanOrEqual(14);
       const icon = await page.locator('.scene-shell.is-current .tile-enter-icon').boundingBox();
@@ -160,6 +191,33 @@ for (const [width, height] of [[320, 568], [360, 640], [375, 553], [390, 664], [
       if (stacked) expect(box.y + box.height, `${selector}가 단계 표시를 덮는다`).toBeLessThanOrEqual(steps.y + 0.5);
     }
     await page.close();
+  });
+}
+
+// 머리글 양쪽 로고(CGV × 교육청 · InKY Film Festival)는 노트북 기본 화면(1366×768)보다 작은 앱 화면에서 넓이 비율만큼 줄고, 가장 작게는
+// 900 이하 머리글의 CGV 크기(58px)까지다 — 1366×768 이상은 그대로 76px(11/10 Bumm님 «1024×768 · 1180×820 · 1280×720 양쪽 로고 크기를 줄입니다»).
+// 크기마다 숫자를 두지 않으므로 넓이 비율에서 기대값을 계산한다. 첫 페이지 · 완성 화면이 같은 머리글이다
+for (const [width, height] of [[1024, 768], [1180, 820], [1280, 720], [1280, 800], [1366, 768], [1600, 900], [2560, 1305]]) {
+  test(`${width}×${height}: 머리글 양쪽 로고는 넓이 비율로 줄고 1366×768 이상은 그대로다`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/');
+    await page.locator('#splash').waitFor({ state: 'detached' });
+    const scale = Math.max(58 / 76, Math.min(1, (width * height) / (1366 * 768)));
+    const sizes = await page.evaluate(() => {
+      const w = (sel) => document.querySelector(sel).getBoundingClientRect().width;
+      return { cgv: w('#home .partner-cgv'), education: w('#home .partner-education'), symbol: w('#home .festival-symbol'), font: parseFloat(getComputedStyle(document.querySelector('#home .festival-signature')).fontSize) };
+    });
+    expect(sizes.cgv, 'CGV').toBeCloseTo(76 * scale, 0);
+    expect(sizes.education, '교육청').toBeCloseTo(174 * scale, 0);
+    expect(sizes.symbol, 'InKY 카메라').toBeCloseTo(45 * scale, 0);
+    expect(sizes.font, '«InKY Film Festival» 글자').toBeCloseTo(16 * scale, 0);
+    // 두 로고 줄은 머리글 가운데 단계 표시와 겹치지 않는다
+    const boxes = await page.evaluate(() => ['#home .festival-partners', '#home .festival-steps', '#home .festival-signature'].map((sel) => {
+      const r = document.querySelector(sel).getBoundingClientRect();
+      return { left: r.left, right: r.right };
+    }));
+    expect(boxes[0].right, 'CGV × 교육청이 단계 표시에 닿는다').toBeLessThan(boxes[1].left);
+    expect(boxes[1].right, '단계 표시가 InKY Film Festival에 닿는다').toBeLessThan(boxes[2].left);
   });
 }
 

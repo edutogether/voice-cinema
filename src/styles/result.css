@@ -3,9 +3,16 @@ body:has(#result.active) { background:#fff; }
 #result { width:var(--app-w); margin-inline:calc((100% - var(--app-w)) / 2); min-height:var(--app-h); background:#fff; color:#171717; }
 #result.active { animation:none; }
 #result .festival-header { margin-inline:0; }
-.result-card { display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); align-items:center; width:min(calc(100% - 80px),1280px); margin:52px auto 24px; gap:clamp(32px,calc(4 * var(--vw)),64px); }
-/* 그림 크기는 오른쪽 내용과 상관없이 폭으로만 정한다 — QR이 생기기 전·후 같은 크기(10/20 대표님). 비율은 QR이 생긴 뒤 오른쪽 높이에 맞춘 값이다. */
+/* 카드 폭 · 칸 사이 · 오른쪽 위아래 안쪽 여백은 변수로 둔다 — 아래 완성 화면 그림이 같은 값으로 자기 크기를 정한다. 카드 폭은 #result 폭(--app-w)에서 잰다. */
+.result-card { --card-w:min(calc(100 * var(--vw) - 80px),1280px); --result-gap:clamp(32px,calc(4 * var(--vw)),64px); --details-pad:26px; display:grid; grid-template-columns:minmax(min-content,1.1fr) minmax(0,1fr); align-items:center; width:var(--card-w); margin:52px auto 24px; gap:var(--result-gap); }
+/* 그림은 폭으로 정한 5:4가 기본이다(그림 안의 것은 모두 떠 있어 왼쪽 칸을 넓히지 않는다).
+   완성(QR) 화면에서 오른쪽 글(맨 위 체크 아이콘 ~ 맨 아래 «다른 더빙하기»)이 그림보다 길면 그 높이까지 5:4 그대로 키운다 — 왼쪽 칸이 그 폭만큼 넓어진다
+   (11/10 Bumm님 «왼쪽 화면이 우측 상단 글씨부터 하단 버튼까지의 높이를 다 차지하도록», 해상도 1024×768 · 1180×820). 오른쪽 칸은 «다른 더빙하기» 폭(15.5rem)보다
+   좁아지지 않는다 — 그보다 좁아질 창(폭 901~1000 남짓이면서 높이 801 이상)에서는 그림이 5:4보다 조금 길어진다(cover라 양옆이 조금 더 잘린다).
+   저장하는 동안은 흰 대기 화면(11/9)이 카드를 덮어 그림이 커지는 순간이 보이지 않는다 — 10/20 «QR 전 · 후 같은 크기»가 지키려던 것이 이것이다.
+   메일 칸은 오른쪽이 적는 칸이라 키우지 않는다. 900 이하(패드 세로 · 휴대폰)는 아래에서 되돌린다. */
 .result-poster { position:relative; aspect-ratio:5 / 4; overflow:hidden; border-radius:16px; background:#191919; color:white; }
+.result-cloud .result-poster { min-height:calc(100% - 2 * var(--details-pad)); max-width:calc(var(--card-w) - var(--result-gap) - 15.5rem); }
 .result-poster > .pic > img { position:absolute; width:100%; height:100%; inset:0; object-fit:cover; }
 .result-poster::after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(0,0,0,.25),transparent 28%,rgba(0,0,0,.06) 48%,rgba(0,0,0,.82)); }
 /* 왼쪽 위 InKY Film Festival, 오른쪽 위 인천광역시교육청 — 방송국 로고처럼 바탕 없이 흰 로고만 그림 위에 얹는다(11/8 Bumm님 «흰 둥근 바탕을 없앱니다»).
@@ -21,22 +28,27 @@ body:has(#result.active) { background:#fff; }
 .poster-logo .festival-symbol { width:36px; height:23px; }
 .poster-logo .festival-symbol img { left:-31.1px; width:207.8px; }
 .poster-logo-education img { display:block; width:auto; height:27px; }
-.poster-credit { position:absolute; z-index:1; bottom:36px; left:32px; right:32px; }
-.poster-credit p { margin:0 0 12px; font-size:.9375rem; line-height:1.6; }
-.poster-credit strong { display:block; font-size:clamp(36px,calc(3.5 * var(--vw)),56px); font-weight:750; line-height:1.2; letter-spacing:-.045em; }
-.poster-credit > span { display:block; margin-top:20px; font-size:.875rem; color:#eee; }
-.result-details { min-width:0; padding:26px 0; align-self:center; }
+/* 녹음실 멈춤 화면 글(studio.css .studio-pause-title)과 같은 양식 — 작은 글 / 제목 / «장르 | 10초»(11/13 Bumm님) */
+.poster-credit { position:absolute; z-index:1; bottom:36px; left:32px; right:32px; text-shadow:0 2px 8px #0006; }
+.poster-credit small { display:block; margin-bottom:10px; color:#ffffffb8; font-size:.8125rem; font-weight:500; }
+.poster-credit strong { display:block; font-size:clamp(1.375rem,calc(2.6 * var(--vw)),2.75rem); font-weight:700; letter-spacing:-.025em; line-height:1.3; word-break:keep-all; }
+.poster-credit p { display:flex; align-items:center; gap:14px; margin:12px 0 0; color:#ffffffe0; font-size:.9375rem; }
+.poster-credit p span { border-left:1px solid #ffffff5c; padding-left:14px; font-variant-numeric:tabular-nums; }
+.result-details { min-width:0; padding:var(--details-pad) 0; align-self:center; }
 .result-details .result-eyebrow { color:#e52320; font-size:.875rem; font-weight:700; margin:0 0 22px; }
-.result-details h2 { font-size:clamp(26px,calc(2.15 * var(--vw)),34px); font-weight:750; line-height:1.35; letter-spacing:-.04em; margin:0 0 14px; word-break:keep-all; }
+.result-details h2 { font-size:clamp(26px,calc(2.15 * var(--vw)),34px); font-weight:750; line-height:1.35; letter-spacing:-.04em; margin:0 0 14px; word-break:keep-all; text-wrap-style:balance; }
 .result-details h2:focus { outline:none; }
-.result-details p { font-size:1rem; line-height:1.7; word-break:keep-all; }
+.result-details p { font-size:1rem; line-height:1.7; word-break:keep-all; text-wrap-style:pretty; }
 #doneMsg { margin:0 0 24px; color:#626262; }
+/* QR 안내(11/13 Bumm님 문장)는 PC · 패드 모든 크기에서 고른 두 줄이다(balance는 블록에만 듣는다). 칸 폭에 따라 한 줄 · 두 줄로 바뀌면
+   그림 높이(오른쪽 글 높이를 따른다, 위) → 그림 폭 → 오른쪽 칸 폭 → 줄 수가 서로 물려, 1180×820에서 두 줄이 된 글이 카드 밖으로 27px 넘쳐 세로 가운데가 어긋났다 */
+#doneMsg .for-qr { display:block; max-width:20em; text-wrap:balance; }
 .result-symbol { display:grid; place-items:center; width:44px; height:44px; margin:0 0 20px; border-radius:50%; background:#fff1f0; color:#e52320; }
 .result-symbol .action-icon { width:24px; height:24px; }
 .qrbox { display:flex; flex-direction:column; align-items:center; width:fit-content; padding:16px 20px; margin:0 0 22px; background:#fff; border:1px solid #e5e5e5; border-radius:12px; }
 .qrbox img { display:block; width:180px; height:180px; max-width:100%; }
 .qrbox span { margin-top:8px; font-size:.875rem; font-weight:650; color:#333; }
-.savemode { font-size:.875rem; color:#626262; line-height:1.7; word-break:keep-all; }
+.savemode { font-size:.875rem; color:#626262; line-height:1.7; word-break:keep-all; text-wrap-style:pretty; }
 .result-details p.savemode { font-size:.875rem; }
 .result-details p.retention-note { margin:8px 0 0; font-size:.8125rem; color:#626262; }
 .result-actions { margin-top:28px; }
@@ -54,21 +66,19 @@ body:has(#result.active) { background:#fff; }
 #result .btn:focus-visible { outline:3px solid #e52320; outline-offset:4px; }
 #downloadRow { margin:28px 0 24px; }
 .result-fallback .savemode { padding:18px 20px; border:1px solid #e5e5e5; border-radius:10px; background:#f7f7f7; }
-.errbox { margin:24px 0; padding:18px 20px; color:#642a26; background:#fff3f2; border:1px solid #f3d2cf; border-radius:10px; font-size:.9375rem; line-height:1.7; word-break:keep-all; }
+.errbox { margin:24px 0; padding:18px 20px; color:#642a26; background:#fff3f2; border:1px solid #f3d2cf; border-radius:10px; font-size:.9375rem; line-height:1.7; word-break:keep-all; text-wrap-style:pretty; }
 .errbox b { font-weight:700; }
 #result .workflow-footer { color:#737373; padding:20px 24px; font-size:.8125rem; }
 @container app (max-height:800px) and (min-width:601px) {
- .result-card { margin-top:40px; }
- .result-details { padding:0; }
+ .result-card { margin-top:40px; --details-pad:0px; }
  .result-symbol { margin-bottom:14px; }
  .qrbox img { width:152px; height:152px; }
 }
 /* 낮은 창(세로 휴대폰 제외): 완성 화면이 스크롤 없이 한 화면에 들게 여백을 줄이고, 그림은 머리글 · 바닥글을 뺀 높이까지만 쓴다.
    PC · 태블릿은 화면 맞춤이 높이 640을 지켜 주므로 600 아래는 가로로 눕힌 휴대폰뿐이다 — 어차피 스크롤하는 화면이라 그림을 줄이지 않는다(11/8 해상도 전수, 폭 233px로 줄어 두 로고가 겹치고 포스터 글이 위로 잘렸다). */
 @container app (min-height:600px) and (max-height:700px) and (min-width:601px) {
- .result-card { margin-block:20px 16px; }
+ .result-card { margin-block:20px 16px; --details-pad:0px; }
  .result-poster { max-height:calc(var(--app-h) - 154px); }
- .result-details { padding:0; }
  .result-details .result-eyebrow { margin-bottom:10px; }
  .result-symbol { display:none; }
  #doneMsg { margin-bottom:16px; }
@@ -89,7 +99,7 @@ body:has(#result.active) { background:#fff; }
 }
 /* 넓고 높은 창: 실제 크기 그대로 두면 위쪽에 작게 붙고 아래가 빈다(11/7) — 창 높이만큼 넓힌다. */
 @container app (min-width:901px) and (min-height:801px) {
- .result-card { width:min(calc(100% - 80px),max(1280px,calc(var(--app-h) * 1.3))); }
+ .result-card { --card-w:min(calc(100 * var(--vw) - 80px),max(1280px,calc(var(--app-h) * 1.3))); }
 }
 /* 세로로는 머리글과 바닥글 사이 가운데에 둔다(11/8 Bumm님 «아래쪽이 너무 비어 보입니다») — 바닥글의 위 여백도 auto라 남는 높이를 셋으로 나눠
    카드 위에 1몫, 아래에 2몫이 갔다(2560×1369: 위 170px · 아래 340px). 남는 높이가 없으면 auto가 0이 되고, 그때의 위아래 간격은 안쪽 여백이 맡는다
@@ -102,6 +112,8 @@ body:has(#result.active) { background:#fff; }
    들어가지 않아 교육청 로고가 «InKY Film Festival» 끝을 가렸다(11/2 해상도 전수 · 라이브에도 있던 것). */
 @container app (max-width:900px) {
  .result-card { width:calc(100% - 48px); gap:28px; }
+ /* 좁은 두 칸 · 휴대폰은 그림을 폭으로만 정한다(위의 완성 화면 키우기를 쓰지 않는다) */
+ .result-cloud .result-poster { min-height:auto; max-width:none; }
  .result-poster::before { height:72px; }
  .poster-logo { top:14px; height:22px; font-size:.8125rem; gap:6px; }
  .poster-logo-inky { left:16px; }
@@ -118,9 +130,8 @@ body:has(#result.active) { background:#fff; }
  .result-poster { aspect-ratio:16 / 9; border-radius:12px; }
  .result-poster > .pic > img { object-position:center 35%; }
  .poster-credit { bottom:20px; left:20px; }
- .poster-credit p { display:none; }
- .poster-credit strong { font-size:2rem; }
- .poster-credit > span { margin-top:8px; font-size:.8125rem; }
+ .poster-credit small { margin-bottom:6px; font-size:.75rem; }
+ .poster-credit p { margin-top:8px; font-size:.8125rem; }
  .result-details { width:100%; padding:0; }
  .result-details .result-eyebrow { margin-bottom:10px; }
  .qrbox img { width:160px; height:160px; }
@@ -138,7 +149,53 @@ body:has(#result.active) { background:#fff; }
  .result-card { gap:12px; }
  .errbox { margin-block:10px; padding-block:12px; }
 }
-/* 휴대폰에서 직접 체험하면 자기 화면의 QR을 찍을 수 없으므로 같은 공개 주소를 여는 단추를 QR 아래에 둔다(10/17).
-   부스의 노트북·태블릿(넓은 화면)에서는 QR만 보인다 — 학생이 자기 휴대폰으로 받아 가는 것이 기본이다. */
-#result .open-movie { display:none; }
-@media (hover:none) { @container app (max-width:760px) { #result .open-movie { display:flex; width:100%; margin:0 0 18px; } } }
+/* 휴대폰 완성 화면(11/9 시안 — Bumm님 «모바일은 QR 말고 저장하기, 텅텅 빈 거 걱정», 팀장 제안 A~D 전부, 팀장 전달). 휴대폰은 public/fit.js의
+   data-fit phone · none(Result.tsx의 onPhone과 같은 기준)이고, PC · 패드 · 설치판은 QR 그대로다. 설치판에는 휴대폰 요소를 그리지 않는다.
+   A 포스터를 누르면 그 자리에서 완성 영화가 흐른다(이 기기에서 만든 파일 — 다시 받지 않는다). 포스터는 메인 장면 카드와 같은 폭(94%)으로 조금 키운다.
+     10/17의 «내 영화 열기»는 이것으로 바꿔 뺐다
+   B «내 폰에 저장하기»는 큰 빨간 단추 — 아이폰은 공유 창(«비디오 저장»), 안드로이드는 내려받기(Result.tsx)
+   C 보관 기한 한 줄 — 날짜는 자동 삭제 일정(MAIL_PURGE_AT)에서 가져온다  D «다른 더빙하기»는 흰 바탕 · 빨간 테두리로 한 단계 약하게
+   키 큰 휴대폰은 남는 높이를 카드 위아래로 나눠 머리글과 바닥글 사이 세로 가운데에 둔다(PC의 11/8 «아래쪽이 너무 비어 보입니다»와 같은 방식).
+   키운 포스터 · 가운데 두기는 저장 중(merging · uploading)부터 건다 — 완성되는 순간 그림 크기가 바뀌지 않게(10/20 «QR 전 · 후 같은 크기») */
+.poster-play,.poster-movie,.phone-save,#doneMsg .for-phone { display:none; }
+.poster-play { position:absolute; z-index:3; right:14px; bottom:14px; place-items:center; width:56px; height:56px; padding:0; border:0; border-radius:50%; background:#000000a6; box-shadow:0 0 0 2px #ffffffd9; color:#fff; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+.poster-play .action-icon { width:26px; height:26px; margin-left:3px; }
+.poster-play .action-icon path { fill:currentColor; }
+.poster-play:focus-visible { outline:3px solid #e52320; outline-offset:3px; }
+.poster-movie { position:absolute; inset:0; z-index:4; width:100%; height:100%; object-fit:contain; background:#000; border-radius:inherit; }
+.phone-save { margin:0 0 4px; }
+#result .phone-save .btn { width:100%; min-height:clamp(52px,calc(7 * var(--vh)),64px); font-size:1.125rem; }
+.result-details .phone-save p.retention-note { margin:10px 0 0; text-align:center; font-size:.875rem; }
+html:is([data-fit="phone"],[data-fit="none"]) .result-cloud .qrbox,
+html:is([data-fit="phone"],[data-fit="none"]) #doneMsg .for-qr { display:none; }
+html:is([data-fit="phone"],[data-fit="none"]) #doneMsg .for-phone,
+html:is([data-fit="phone"],[data-fit="none"]) .phone-save,
+html:is([data-fit="phone"],[data-fit="none"]) .poster-movie { display:block; }
+html:is([data-fit="phone"],[data-fit="none"]) .poster-play { display:grid; }
+html:is([data-fit="phone"],[data-fit="none"]) .result-cloud #doneHomeBtn { background:#fff; color:#e52320; border-color:#e52320; }
+@container app (max-width:600px) {
+ html:is([data-fit="phone"],[data-fit="none"]) :is(.result-merging,.result-uploading,.result-cloud) .result-poster { margin-inline:calc(50% - var(--app-w) * .47); }
+}
+@container app (max-width:600px) and (min-height:720px) {
+ /* 아래 안쪽 여백 10px + 바닥글 위 여백 20px = 위 30px — 머리글과 바닥글 글자 사이 가운데 */
+ html:is([data-fit="phone"],[data-fit="none"]) :is(.result-merging,.result-uploading,.result-cloud) { margin-block:auto; padding-block:30px 10px; }
+ html:is([data-fit="phone"],[data-fit="none"]) #result:has(.result-merging,.result-uploading,.result-cloud) .workflow-footer { margin-top:0; }
+ /* 11/10 MA 확정(Bumm님 «그림을 화면 끝까지», 팀장 전달): 포스터를 화면 폭 끝까지(모서리 없이) PC와 같은 5:4로 — 10/20 «휴대폰 16:9»를 바꾼 것이다.
+    저장 중부터 같은 크기다. 이 칸에서 영화를 틀면 위아래에 검은 띠가 생기는데, 그것은 Bumm님께 여쭌다(결정판).
+    높이는 남는 높이만큼만 — 그림 밖 몫(머리글 · 카드 여백 · 글 · 단추 · 바닥글, 잰 값 504px + «내 폰에 저장하기»가 화면 높이로 커지는 몫까지 516px)을 빼고
+    16:9에서 5:4 사이다. 5:4를 그대로 두면 실제 브라우저 높이(360×668 · 384×712 — 주소창을 뺀 갤럭시 크롬)에서 «다른 더빙하기»가 첫 화면 끝에 걸렸다.
+    결정판 1~5번 크기(기준 높이 844 이상)는 5:4 그대로다. 저장 중 · 완성이 같은 값이라 그림 크기가 바뀌지 않는다. */
+ html:is([data-fit="phone"],[data-fit="none"]) :is(.result-merging,.result-uploading,.result-cloud) .result-poster { aspect-ratio:auto; height:clamp(calc(var(--app-w) * 9 / 16), calc(var(--app-h) - 516px), calc(var(--app-w) * 4 / 5)); margin-inline:calc(50% - var(--app-w) / 2); border-radius:0; }
+}
+/* 가로로 눕힌 휴대폰: QR이 빠져 글이 그림보다 짧아져도 그림과 글을 위에서 함께 시작한다(11/8 «가로로 눕힌 휴대폰» 규칙과 같은 뜻) */
+@container app (max-height:599px) and (min-width:601px) {
+ html:is([data-fit="phone"],[data-fit="none"]) .result-cloud .result-details { align-self:start; }
+}
+/* 낮은 갤럭시 크롬(360×668 · 384×712 — 주소창을 뺀 높이, 앱 높이 723~724)의 «이 기기에 저장» 화면: «다른 더빙하기»가 첫 화면 끝에 13 · 14px 걸렸다
+   (11/14 해상도 점검, 결정판 B — Bumm님 «⭐ 고침(시안대로) — 지금 즉시 배포까지», 팀장 전달). 그림 · 글 · 단추 크기는 그대로 두고 사이 여백만 줄인다.
+   키 큰 휴대폰(앱 높이 761 이상) · 낮은 휴대폰(720 미만) · PC · 패드는 이 묶음에 들지 않는다. */
+@container app (max-width:600px) and (min-height:720px) and (max-height:760px) {
+ .result-fallback { gap:12px; }
+ .result-fallback #downloadRow { margin:20px 0 16px; }
+ .result-fallback .result-actions { margin-top:16px; }
+}

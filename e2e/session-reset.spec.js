@@ -7,7 +7,7 @@
 // 리액트 전환에서는 스튜디오 진입마다 컴포넌트를 새로 마운트해 구조적으로 막았고,
 // 그게 실제로 지켜지는지 여기서 확인한다.
 import { test, expect } from '@playwright/test';
-import { pauseScenes } from './pause-scenes.js';
+import { openScene, pauseScenes } from './pause-scenes.js';
 import { stopAutoPreview } from './stop-auto-preview.js';
 
 // 이 두 테스트는 장면·녹음·이어 재생을 포함해 상호작용이 길다. 그 사이 서비스워커가 설치를
@@ -20,17 +20,17 @@ test.beforeEach(async ({ page }) => {
 
 test('홈에 나갔다 같은 장르로 다시 들어오면 이전 녹음이 남아있지 않다', async ({ page }) => {
   await page.goto('/');
-  await page.locator('.tile', { hasText: '드라마' }).first().click();
+  // 드라마는 11/14부터 22초 완성본(12.0초 멈춤) — 아래 그림 띠에서 고른다(«드라마» 카드를 바로 누르면 자동 넘김을 약 30초 기다린다)
+  await openScene(page, 'drama');
 
   // 한 번 끝까지 녹음한다.
   await page.locator('#recBtn').click();
-  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 40000 });
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 45000 });
 
   // 홈으로 나갔다가 같은 장르로 다시 들어온다.
   await page.locator('.back').click();
   await expect(page.locator('#home')).toHaveClass(/active/);
-  await page.locator('.tile', { hasText: '드라마' }).first().click();
-  await expect(page.locator('#studio')).toHaveClass(/active/);
+  await openScene(page, 'drama');
 
   // 이전 녹음이 버려져 처음 상태여야 한다.
   await expect(page.locator('#recBtn')).toBeVisible();
@@ -44,15 +44,15 @@ test('녹음 도중 홈으로 나가면 그 녹음 결과가 화면에 반영되
   await page.locator('.tile', { hasText: '애니메이션' }).first().click();
   await page.locator('#recBtn').click();
 
-  // 카운트다운이 끝나고 녹음이 시작된 뒤에 나간다.
-  await expect(page.locator('.recpill')).toBeVisible({ timeout: 15000 });
+  // 카운트다운이 끝나고 녹음이 시작된 뒤에 나간다(애니메이션은 11/14부터 12.0초에 멈춘다).
+  await expect(page.locator('.recpill')).toBeVisible({ timeout: 25000 });
   await page.locator('.back').click();
   await expect(page.locator('#home')).toHaveClass(/active/);
 
   // 기다리는 동안 장면이 넘어가 같은 카드가 뒤편으로 가지 않게 자동 넘김을 멈춘다(8장면에서는 두 칸 넘어간 카드가 가려진다).
   await pauseScenes(page);
-  // 원래 녹음·이어 재생이 끝났을 시간(최대 3.5초 + 5초 + 여유)을 지나도 다른 화면으로 넘어가면 안 된다.
-  await page.waitForTimeout(14000);
+  // 원래 녹음·이어 재생이 끝났을 시간(최대 3.5초 + 이어 재생 8.6초 + 여유)을 지나도 다른 화면으로 넘어가면 안 된다.
+  await page.waitForTimeout(16000);
   await expect(page.locator('#home')).toHaveClass(/active/);
 
   // 다시 들어가도 처음 상태다.

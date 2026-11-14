@@ -13,9 +13,12 @@ const measure = (page) => page.evaluate(() => {
   return {
     frame: { top: Math.round(frame.top), width: Math.round(frame.width), height: Math.round(frame.height) },
     above: Math.round(frame.top - head.bottom),
+    // 키 큰 휴대폰(11/9 시안)의 세 몫: 머리줄↔영상(above), 막대↔안내, 안내↔단추(copyToButtons)
+    barToCopy: Math.round(copy.top - box('.studio-timeline').bottom),
     below: Math.round(window.innerHeight - actions.bottom),
     copyToButtons: Math.round(actions.top - copy.bottom),
     actionsTop: Math.round(actions.top),
+    recTop: document.querySelector('#recBtn') ? Math.round(box('#recBtn').top) : null,
     videoFit: getComputedStyle(document.querySelector('#clip')).objectFit,
     pauseTitle: getComputedStyle(document.querySelector('.studio-pause-title')).display,
     // 기준 화면(390) px로 잰다 — 430 폭은 기준 화면을 1.1배로 키워 보인다(public/fit.js, 10/23)
@@ -36,23 +39,50 @@ for (const [width, height] of [[360, 640], [390, 844], [430, 932]]) {
     await expect(page.locator('.studio-video-frame')).not.toHaveClass(/is-entering/);
 
     const idle = await measure(page);
-    // 영상은 화면 폭에 맞춘 16:9 그대로 — 위아래 띠·자르기 없음
-    expect(idle.frame.width).toBe(width);
+    // 영상은 화면 폭 16:9 그대로 — 위아래 띠·자르기 없음. 키 큰 휴대폰(기준 화면 높이 720 이상)도 화면 폭 끝까지다
+    // (11/10 MA 확정 «그림을 화면 끝까지» — 11/9 시안 B의 94% 둥근 카드를 바꿈)
+    const tall = height / (width / 390) >= 720;
+    expect(Math.abs(idle.frame.width - width)).toBeLessThanOrEqual(1);
     expect(Math.abs(idle.frame.height - width * 9 / 16)).toBeLessThanOrEqual(1);
     expect(idle.videoFit).toBe('contain');
     await expect(page.locator('.studio-ambient')).toHaveCount(0);
-    // 한 덩어리: 안내와 단추가 붙어 있고(10/20 전에는 343·408px), 덩어리 위아래 여백이 같다(단추 아래 여백 16px 차이까지)
-    expect(idle.copyToButtons).toBeLessThanOrEqual(40);
-    expect(Math.abs(idle.above - idle.below)).toBeLessThanOrEqual(20);
+    if (tall) {
+      // 단추는 화면 맨 아래(아래 여백 20px — 기준 화면 px), 그 위의 남는 높이는 세 몫(머리줄↔영상 · 막대↔안내 · 안내↔단추)으로 고르게(11/9 시안 D)
+      const fit = width / 390;
+      expect(Math.abs(idle.below - 20 * fit), `단추 아래 ${idle.below}`).toBeLessThanOrEqual(2);
+      const gaps = [idle.above, idle.barToCopy, idle.copyToButtons];
+      expect(Math.max(...gaps) - Math.min(...gaps), `세 몫 ${gaps}`).toBeLessThanOrEqual(4);
+      expect(Math.min(...gaps), `세 몫 ${gaps}`).toBeGreaterThan(20);
+      // 두 단추는 위아래로 쌓아 가로를 다 쓰고(양옆 16px — 기준 화면 px), 주 단추 «장면 시작»이 아래다(11/10 MA)
+      const preview = await page.locator('#previewBtn').boundingBox();
+      const rec = await page.locator('#recBtn').boundingBox();
+      expect(rec.y, '«장면 시작»이 «미리보기» 아래에 있지 않다').toBeGreaterThan(preview.y + preview.height);
+      for (const b of [preview, rec]) expect(Math.abs(b.width - (width - 32 * fit)), `단추 폭 ${b.width}`).toBeLessThanOrEqual(1);
+      // 로고 줄 · 단계 표시는 맨 위(메인과 같은 머리글), 장르 · 장면 이름은 영상 왼쪽 아래
+      await expect(page.locator('#studio .festival-header')).toBeInViewport({ ratio: 1 });
+      await expect(page.locator('#studio .festival-header [aria-current="step"]')).toContainText('목소리 녹음');
+      const tag = await page.locator('.studio-scene-tag').boundingBox();
+      const frame = await page.locator('.studio-video-frame').boundingBox();
+      expect(tag.x - frame.x, '장면 이름이 영상 왼쪽에 있지 않다').toBeLessThan(20 * fit);
+      expect(frame.y + frame.height - (tag.y + tag.height), '장면 이름이 영상 아래쪽에 있지 않다').toBeLessThan(20 * fit);
+      await expect(page.locator('.studio-scene-tag')).toHaveText('뮤지컬선셋 하이웨이');
+    } else {
+      // 한 덩어리: 안내와 단추가 붙어 있고(10/20 전에는 343·408px), 덩어리 위아래 여백이 같다(단추 아래 여백 16px 차이까지)
+      expect(idle.copyToButtons).toBeLessThanOrEqual(40);
+      expect(Math.abs(idle.above - idle.below)).toBeLessThanOrEqual(20);
+      await expect(page.locator('.studio-scene-tag')).toBeHidden();
+    }
     expect(idle.scroll).toBe(0);
-    // 제목은 머리줄에 한 번만 — 영상 위 «장면 더빙 / 제목 / 장르 | 10초»는 접는다
+    // 제목은 머리줄에 한 번만 — 영상 위 «내 목소리로 완성하는 영화 / 제목 / 장르 | 10초»는 접는다
     expect(idle.pauseTitle).toBe('none');
-    await expect(page.locator('.studio-heading h1')).toHaveText('서커스 첫 무대');
+    await expect(page.locator('.studio-heading h1')).toHaveText('선셋 하이웨이');
     // 진행 막대는 시간 글자 바로 앞까지 온다(둘 사이는 줄 간격 12px뿐)
     expect(idle.barToTime).toBeLessThanOrEqual(12);
 
+    const idleFont = await page.locator('#recBtn').evaluate((el) => getComputedStyle(el).fontSize);
     await page.locator('#recBtn').click();
-    await expect(page.locator('#count')).toBeVisible({ timeout: 15000 });
+    // 뮤지컬은 11/14부터 20.6초 완성본 — 12.0초에 멈추고 문구 1초 뒤 숫자가 나온다
+    await expect(page.locator('#count')).toBeVisible({ timeout: 25000 });
     const countdown = await measure(page);
     await expect(page.locator('#afterRow')).toBeVisible({ timeout: 30000 });
     const recorded = await measure(page);
@@ -60,7 +90,18 @@ for (const [width, height] of [[360, 640], [390, 844], [430, 932]]) {
       expect(phase.frame).toEqual(idle.frame);
       expect(phase.actionsTop).toBe(idle.actionsTop);
     }
+    // 녹음하는 동안 «미리보기»가 빠져도 «장면 시작»은 제자리다(키 큰 휴대폰은 두 줄 칸을 잡아 둔다)
+    expect(countdown.recTop).toBe(idle.recTop);
     // 녹음 뒤에는 «다시 녹음 · 저장하기» 두 단추만(10/20 «다시 듣기» 없앰)
     await expect(page.locator('#afterRow button')).toHaveText([/다시 녹음/, /저장하기/]);
+    if (tall) {
+      // 녹음 뒤 두 단추도 «미리보기 · 장면 시작»과 같은 폭 · 글자 크기다 — 11/14 전수 검토 전에는 글자 폭 알약(121px)으로 가운데 몰리고 글자만 19px였다
+      const fit = width / 390;
+      for (const id of ['#resetBtn', '#saveBtn']) {
+        const b = await page.locator(id).boundingBox();
+        expect(Math.abs(b.width - (width - 32 * fit)), `${id} 폭 ${b.width}`).toBeLessThanOrEqual(1);
+        expect(await page.locator(id).evaluate((el) => getComputedStyle(el).fontSize), `${id} 글자 크기`).toBe(idleFont);
+      }
+    }
   });
 }

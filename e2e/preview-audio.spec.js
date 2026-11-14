@@ -1,12 +1,14 @@
 import { test, expect } from '@playwright/test';
+import { openScene } from './pause-scenes.js';
+import { clipLength, scenePause, TEST_SCENE } from './scene-data.js';
 
-// 장면 더빙 2.0의 소리: 장면은 원판 소리(상대 대사·BGM·효과음)와 함께 재생되고, 녹음 중에는 영상이 5.0초에
+// 장면 더빙 2.0의 소리: 장면은 원판 소리(상대 대사·BGM·효과음)와 함께 재생되고, 녹음 중에는 영상이 멈춤 시각에
 // 멈춰 스피커가 조용하다(스피커 소리가 마이크로 들어가 겹치지 않게). 이어 재생은 원판 소리가 다시 난다.
 // 들어가면 저절로 흐르는 미리보기도 원판 소리와 함께 재생한다(11/7 Bumm님).
 test('들어가면 흐르는 미리보기와 장면은 원판 소리를 내고, 녹음 중에는 조용하며, 이어 재생에서 원판 소리가 다시 난다', async ({ page }) => {
   await page.goto('/');
-  await page.locator('#splash').waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: '드라마 더빙 시작', exact: true }).click();
+  // 시험 장면(SF, 통과본)을 아래 그림 띠에서 고른다 — 가운데가 아닌 카드의 «… 더빙 시작»을 바로 누르면 자동 넘김이 그 카드를 데려올 때까지 기다린다
+  await openScene(page, TEST_SCENE.id);
   await page.locator('#clip').evaluate(video => {
     const context = new window.AudioContext();
     const analyser = context.createAnalyser();
@@ -28,12 +30,12 @@ test('들어가면 흐르는 미리보기와 장면은 원판 소리를 내고, 
   await page.locator('#recBtn').click();
   await expect.poll(sounding, { timeout: 8000, intervals: [100] }).toBe(true);
 
-  await expect(page.locator('#recpill')).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('#recpill')).toBeVisible({ timeout: (scenePause(TEST_SCENE.id) + 12) * 1000 });
   await expect(page.locator('#clip')).toHaveJSProperty('paused', true);
   expect(await sounding()).toBe(false);
 
   await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'continuing', { timeout: 6000 });
   await expect.poll(sounding, { timeout: 5000, intervals: [100] }).toBe(true);
-  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: (clipLength(TEST_SCENE.id) - scenePause(TEST_SCENE.id) + 10) * 1000 });
   await page.evaluate(() => window.probe.context.close());
 });

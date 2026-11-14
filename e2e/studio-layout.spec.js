@@ -16,9 +16,11 @@ for (const [width, height] of [[1440, 900], [1920, 1080], [1366, 768], [390, 844
       const header = document.querySelector('.studio-heading');
       const frame = document.querySelector('.studio-video-frame');
       const dock = document.querySelector('.studio-player-dock');
+      // 키 큰 세로 휴대폰(11/9 시안)은 조작부 상자를 풀어(display:contents) 막대 · 안내 · 단추를 따로 펼친다 — 맨 위인 진행 막대 줄로 잰다
+      const dockTop = (getComputedStyle(dock).display === 'contents' ? document.querySelector('.studio-timeline') : dock).getBoundingClientRect().top;
       return {
         backgrounds: [header, dock].map(el => getComputedStyle(el).backgroundColor),
-        noOverlap: header.getBoundingClientRect().bottom <= frame.getBoundingClientRect().top && frame.getBoundingClientRect().bottom <= dock.getBoundingClientRect().top,
+        noOverlap: header.getBoundingClientRect().bottom <= frame.getBoundingClientRect().top && frame.getBoundingClientRect().bottom <= dockTop,
         videoFit: getComputedStyle(document.querySelector('#clip')).objectFit,
         overflow: document.documentElement.scrollWidth > window.innerWidth,
       };

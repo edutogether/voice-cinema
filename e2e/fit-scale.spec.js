@@ -52,6 +52,7 @@ for (const [width, height, touch, kind, layoutW, layoutH] of cases) {
     await expect(page.locator('.studio-video-frame')).not.toHaveClass(/is-entering/);
     expect(await overflow()).toEqual({ x: 0, y: 0 });
     // 세로 화면 녹음실은 영상이 폭에 맞춘 16:9 그대로다 — 세로 태블릿도 회색 띠가 없다(10/23, 전에는 영상 틀이 남는 높이를 다 차지했다)
+    // 키 큰 세로 휴대폰(기준 화면 높이 720 이상)도 화면 폭 끝까지다(11/10 MA 확정 — 11/9 시안의 94% 둥근 카드를 바꿈)
     if (height > width) {
       const frame = await page.locator('.studio-video-frame').boundingBox();
       expect(Math.abs(frame.width - width)).toBeLessThanOrEqual(1);

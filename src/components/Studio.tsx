@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { clipUrl, stillUrl, type Genre } from '../genres';
+import { clipUrl, lengthLabel, stillUrl, type Genre } from '../genres';
 import { useDubbing, type Phase } from '../hooks/useDubbing';
 import { RECORD_BASE_SECONDS } from '../config';
 import { STUDIO_COPY } from '../copy';
@@ -9,6 +9,8 @@ import { prefetchFinalClip } from '../lib/ffmpeg';
 
 import { ActionIcon } from './ActionIcon';
 import { ClipTimeline } from './ClipTimeline';
+import { FestivalHeader } from './FestivalHeader';
+import { HiggsfieldMark } from './HiggsfieldMark';
 import { SceneCaption, SceneTurnCue } from './SceneCaption';
 import { StudioEntrance } from './StudioEntrance';
 import type { SceneEntrance } from '../lib/sceneEntrance';
@@ -147,8 +149,10 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
       <div className="studio-workspace">
         <div className="studio-screen">
           <div className="stage">
+            {/* 메인과 같은 로고 줄 · 단계 표시(«2 목소리 녹음») — 키 큰 세로 휴대폰에서만 보인다(11/9 시안, studio.css) */}
+            <FestivalHeader step={2} />
             <div className="studio-heading">
-              <button className="back" id="studioBackBtn" onClick={onHome}><ActionIcon name="back" /> 다른 영화 고르기</button>
+              <button className="back" id="studioBackBtn" onClick={onHome}><ActionIcon name="back" /> <span className="studio-btn-label">다른 영화 고르기</span></button>
               <div className="studio-scene-title">
                 <span className="studio-scene-label"><span id="chipName">{genre.name}</span>{sampleMode && ' · 녹음 샘플 체험'}</span>
                 <h1 ref={titleRef} tabIndex={-1}>{genre.summary}</h1>
@@ -161,10 +165,14 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
                 onProgress={(e) => measureLoaded(e.currentTarget)} onLoadedMetadata={(e) => measureLoaded(e.currentTarget)} />
               <div className="studio-pause-shade" aria-hidden="true" />
               <div className="studio-pause-title" aria-hidden="true">
-                <small>장면 더빙</small>
+                <small>내 목소리로 완성하는 영화</small>
                 <strong>{genre.summary}</strong>
-                <p>{genre.name}<span>10초</span></p>
+                <p>{genre.name}<span>{lengthLabel(genre)}</span></p>
               </div>
+              {/* 영상을 만든 도구의 로고 — 영상의 보이는 오른쪽 위, 미리보기 · 녹음 내내(11/14 Bumm님, Poster Studio와 같은 규칙). 어두운 막 · 3·2·1 · «녹음 중»은 그 위에 온다 */}
+              <HiggsfieldMark />
+              {/* 메인 카드처럼 장르 배지 + 장면 이름을 영상 왼쪽 아래에 — 키 큰 세로 휴대폰에서만(11/9 시안). 그때 위 머리줄의 제목은 화면 읽기용으로만 남긴다 */}
+              <div className="studio-scene-tag" aria-hidden="true"><b>{genre.name}</b>{genre.summary}</div>
               {settled && playing && buffering && <div className="studio-buffering" role="status">영상을 불러오고 있어요 {loaded}%</div>}
               <SceneCaption genre={genre} videoRef={videoRef} enabled={phase === 'watching' || previewing} />
               <SceneTurnCue genre={genre} videoRef={videoRef} enabled={previewing} />
@@ -186,7 +194,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
                 <span className="timeline-state">{(Object.keys(TIMELINE_STATE) as Phase[]).map((p) => (
                   <span key={p} className={p === phase ? 'on' : undefined}>{TIMELINE_STATE[p]}</span>
                 ))}</span>
-                <ClipTimeline phase={phase} videoRef={videoRef} />
+                <ClipTimeline phase={phase} videoRef={videoRef} turn={genre.turn} seconds={genre.seconds} />
               </div>
               <div className={`controls${inTake ? ' is-recording' : ''}${done ? ' is-recorded' : ''}`}>
                 <div className="controls-copy">
@@ -195,14 +203,14 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
                 </div>
                 {!done && <div className="record-actions">
                   {(phase === 'idle' || previewing) && <button className="btn btn-ghost" id="previewBtn" type="button" onClick={previewing ? dub.reset : dub.preview}>
-                    <ActionIcon name={previewing ? 'stop' : 'play'} /> {previewing ? '미리보기 멈춤' : '미리보기'}
+                    <ActionIcon name={previewing ? 'stop' : 'play'} /> <span className="studio-btn-label">{previewing ? '미리보기 멈춤' : '미리보기'}</span>
                   </button>}
                   <button className="btn btn-rec" id="recBtn" ref={startButtonRef} disabled={inTake} onClick={dub.startTake}>
                     <span className="record-dot" aria-hidden="true" /><span>{inTake ? TIMELINE_STATE[phase] : '장면 시작'}</span>
                   </button>
                 </div>}
                 {done && <div className="row" id="afterRow">
-                  <button className="btn btn-ghost" id="resetBtn" onClick={dub.startTake}><ActionIcon name="retry" /> 다시 녹음</button>
+                  <button className="btn btn-ghost" id="resetBtn" onClick={dub.startTake}><ActionIcon name="retry" /> <span className="studio-btn-label">다시 녹음</span></button>
                   <button className="btn btn-save" id="saveBtn" ref={saveButtonRef} onClick={save}>{sampleMode ? '다운로드' : '저장하기'} <ActionIcon name="arrow" /></button>
                 </div>}
               </div>

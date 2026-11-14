@@ -1,4 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { openScene } from './pause-scenes.js';
+import { clipLength, scenePause, TEST_SCENE } from './scene-data.js';
+
+// 시험 장면(SF)은 11/14부터 완성본이다 — 멈춤까지 · 녹음 한 번의 시간을 파일 길이에서 잡는다
+const TO_RECORDING_MS = (scenePause(TEST_SCENE.id) + 12) * 1000;
+const TAKE_MS = (clipLength(TEST_SCENE.id) + 25) * 1000;
 
 async function openHome(page) {
   await page.route('**/sw.js', route => route.abort());
@@ -7,10 +13,8 @@ async function openHome(page) {
   await page.locator('#splash').waitFor({ state: 'detached' });
 }
 
-async function openStudio(page) {
-  await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
-  await expect(page.locator('#studio')).toHaveClass(/active/);
-}
+// 아래 그림 띠에서 고른다 — 홈으로 돌아온 뒤에는 자동 넘김이 시험 장면을 지나가 있을 수 있다
+const openStudio = (page) => openScene(page, TEST_SCENE.id);
 
 test('브라우저 뒤로가기는 재생을 멈추고 홈으로, 앞으로가기는 새 녹음실로 이동한다', async ({ page }) => {
   await openHome(page);
@@ -57,7 +61,7 @@ test('녹음 중 뒤로가면 녹음을 중단하고 이전 목소리를 앞으�
   await openHome(page);
   await openStudio(page);
   await page.locator('#recBtn').click();
-  await expect(page.locator('.recpill')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('.recpill')).toBeVisible({ timeout: TO_RECORDING_MS });
   await page.goBack();
   await expect(page.locator('#home')).toHaveClass(/active/);
   expect(await page.evaluate(() => window.lastRecorder.state)).toBe('inactive');
@@ -75,7 +79,7 @@ test('결과에서 뒤로가면 녹음이 남고 앞으로가기로 중복 저�
   await openHome(page);
   await openStudio(page);
   await page.locator('#recBtn').click();
-  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 40000 });
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: TAKE_MS });
   await page.locator('#saveBtn').click();
   await expect(page.locator('#done')).toBeVisible({ timeout: 60000 });
   expect(uploads).toBe(1);

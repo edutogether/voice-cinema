@@ -148,7 +148,7 @@ export async function recordOnce(page, button = '#recBtn') {
   await page.waitForFunction((n) => {
     const studio = document.querySelector('#studio');
     return window.__mic.takes.length > n && window.__mic.takes[n].stoppedAt && ['recorded', 'idle'].includes(studio?.dataset.phase);
-  }, before, { timeout: 40000 });
+  }, before, { timeout: 60000 }); // 11/14 완성본 장르(12.0초 멈춤)는 한 번에 약 29초
   const phase = await page.locator('#studio').getAttribute('data-phase');
   return { phase, check: await page.locator('#hint').getAttribute('data-take-check'), hint: await page.locator('#hint').textContent() };
 }

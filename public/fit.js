@@ -15,6 +15,9 @@
  * 가로가 긴 PC 창에서는 높이 비율과 거의 같다. 화면 전체 비율(zoom)과 따로다 — CSS가 그것을 되돌린 뒤 이것만 건다.
  * 배율은 넓이 비율의 제곱근(√)과 1(그 전의 고정 크기)의 한가운데다(11/8 Bumm님 «작은 모니터에서 스플래시가 되게 작아졌다. 이전 거랑 지금의 중간 정도로») —
  * 제곱근만 쓰면 작은 창에서 너무 작았다(시험 모니터 1408×713 0.548 → 0.774, 1280×585 0.474 → 0.737, 1920×945 0.737 → 0.868). 2560×1305는 그대로 1이다.
+ * 머리글 로고 배율(--brand-scale): 노트북 기본 화면(1366×768)보다 작은 앱 화면에서 머리글 양쪽 로고(CGV × 교육청 · InKY Film Festival)를 화면 넓이의 비율
+ * (가로 × 세로 ÷ 1366×768)만큼 줄인다(11/10 Bumm님 «1024×768 · 1180×820 · 1280×720 — 1페이지와 3페이지 양쪽 로고 크기를 줄입니다», 크기마다 숫자를 두지 않는다).
+ * 1366×768 이상은 1이고, 가장 작게는 900 이하 태블릿 머리글의 CGV 크기(58 / 76)까지다. 900 이하 · 휴대폰 머리글은 자기 크기를 따로 쓴다(home.css).
  * 인라인 스크립트를 두지 않는 규칙(CSP) 때문에 별도 파일로 두고, body 첫머리에서 읽어 첫 그림부터 맞춘다. */
 (function () {
   var PHONE_W = 390;
@@ -22,6 +25,9 @@
   var MIN_H = 640;
   var SPLASH_W = 2560;
   var SPLASH_H = 1305;
+  var BRAND_W = 1366;
+  var BRAND_H = 768;
+  var BRAND_MIN = 58 / 76;
   var root = document.documentElement;
   var body = document.body;
   var probe = document.createElement('div');
@@ -48,8 +54,11 @@
     body.style.zoom = z === 1 ? '' : String(z);
     root.style.setProperty('--fit', String(z));
     root.style.setProperty('--fit-undo', String(1 / z));
-    root.style.setProperty('--app-w', root.clientWidth / z + 'px');
-    root.style.setProperty('--app-h', h / z + 'px');
+    var appW = root.clientWidth / z;
+    var appH = h / z;
+    root.style.setProperty('--app-w', appW + 'px');
+    root.style.setProperty('--app-h', appH + 'px');
+    root.style.setProperty('--brand-scale', String(Math.max(BRAND_MIN, Math.min(1, (appW * appH) / (BRAND_W * BRAND_H)))));
     root.style.setProperty('--splash-scale', String((1 + Math.sqrt((w * h) / (SPLASH_W * SPLASH_H))) / 2));
     root.dataset.fit = kind;
   };

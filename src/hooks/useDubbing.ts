@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { PAUSE_SECONDS, RECORD_BASE_SECONDS, RECORD_MAX_SECONDS, VOICE_WINDOW_SECONDS } from '../config';
+import { RECORD_BASE_SECONDS, RECORD_MAX_SECONDS, VOICE_WINDOW_SECONDS } from '../config';
+import { genreById } from '../genres';
 import { pickSupportedMime } from '../logic';
 import { decodeTake, engineReady, processVoice, type VoicePlan } from '../lib/ffmpeg';
 import { stopVideoAt, watchVideoTime } from '../lib/videoClock';
@@ -30,8 +31,8 @@ const ENGINE_DECODE_WAIT_MS = 20000;
 
 // 권한 대기·실패 원인을 해당 전환 시점의 안내로 보여준다.
 const HINT = {
-  idle: "'장면 시작'을 누르면 장면이 흐르다 가장 긴박한 순간에 멈춰요. 그때 내 목소리로 외쳐 주세요 !",
-  previewing: "문구가 뜨는 곳이 당신의 목소리가 들어갈 자리예요. '장면 시작'을 누르면 바로 녹음해요.",
+  idle: "'장면\u00a0시작'을 누르면 장면이 흐르다 가장 긴박한 순간에 멈춰요. 그때 내 목소리로 외쳐 주세요 !",
+  previewing: "문구가 뜨는 곳이 당신의 목소리가 들어갈 자리예요. '장면\u00a0시작'을 누르면 바로 녹음해요.",
   previewMuted: "소리가 꺼진 채 재생 중이에요. 화면의 '소리 켜기'를 눌러 주세요.",
   requesting: "마이크를 준비하고 있어요. 마이크를 쓸지 묻는 창이 뜨면 '허용'을 눌러 주세요.",
   watching: '장면을 보세요. 곧 내 차례가 와요 !',
@@ -294,6 +295,9 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
   // 진행 중이던 비동기 작업(카운트다운, 마이크 권한 등)이 끝났을 때 그 사이 사용자가
   // 화면을 떠났거나 처음부터 다시 했는지 판단하는 단일 취소 토큰.
   const runRef = useRef(0);
+  // 멈춤 시각 — 장르마다 다르다(10초 장면 5.0초, 11/14 완성본 12.0초). 장면 객체를 효과에 걸지 않으려고 ref로 읽는다.
+  const pauseRef = useRef(genreById(genreId).pause);
+  pauseRef.current = genreById(genreId).pause;
 
   const stopVoice = useCallback(() => {
     voiceRef.current?.();
@@ -357,7 +361,8 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     stopVoice();
     const ctx = audioRef.current;
     v.muted = false;
-    v.currentTime = PAUSE_SECONDS;
+    const pause = pauseRef.current;
+    v.currentTime = pause;
     let finished = false;
     const end = () => {
       if (finished) return;
@@ -380,10 +385,10 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
       source.connect(level).connect(ctx.destination);
       let started = false;
       const stopWatch = watchVideoTime(v, (time) => {
-        if (started || v.paused || time < PAUSE_SECONDS - 0.05) return;
+        if (started || v.paused || time < pause - 0.05) return;
         started = true;
         stopWatch();
-        source.start(0, Math.max(0, time - PAUSE_SECONDS));
+        source.start(0, Math.max(0, time - pause));
       });
       voiceRef.current = () => {
         stopWatch();
@@ -468,7 +473,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
       setPhase('watching');
       v.muted = false;
       const reachedPause = new Promise<void>((resolve) => {
-        cancelClockRef.current = stopVideoAt(v, PAUSE_SECONDS, resolve);
+        cancelClockRef.current = stopVideoAt(v, pauseRef.current, resolve);
       });
       try {
         await v.play();

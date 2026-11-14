@@ -3,6 +3,11 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { countdownLog, watchCountdown } from './countdown-watch.js';
 import { stopAutoPreview } from './stop-auto-preview.js';
+import { clipLength, scenePause, TEST_SCENE } from './scene-data.js';
+
+// 시험 장면(SF, 첫 카드)은 11/14부터 완성본이다 — 멈춤까지 · 이어 재생 · 한 번 체험의 시간을 파일 길이에서 잡는다
+const PAUSE = scenePause(TEST_SCENE.id);
+const LENGTH = clipLength(TEST_SCENE.id);
 
 test.use({ serviceWorkers: 'block' });
 
@@ -17,11 +22,11 @@ async function openSample(page) {
   });
   await page.goto('/?preview=home-design');
   await page.locator('#splash').waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
+  await page.getByRole('button', { name: `${TEST_SCENE.name} 더빙 시작`, exact: true }).click();
 }
 
-test('마이크 없이 장면·5.0초 멈춤·321·3초·이어 재생·원본 다운로드를 체험한다', async ({ page }) => {
-  test.setTimeout(120000); // 두 번 녹음한다(한 번에 약 18초)
+test('마이크 없이 장면·멈춤·321·3초·이어 재생·원본 다운로드를 체험한다', async ({ page }) => {
+  test.setTimeout(150000); // 두 번 체험한다(한 번에 약 31초)
   const externalRequests = [];
   page.on('request', request => {
     if (/cloudfunctions|firebaseappcheck|ffmpeg-core/.test(request.url())) externalRequests.push(request.url());
@@ -30,28 +35,28 @@ test('마이크 없이 장면·5.0초 멈춤·321·3초·이어 재생·원본 �
   await openSample(page);
   await expect(page.locator('#hint')).toContainText('샘플 체험 · 마이크 녹음 없음');
   await page.locator('#recBtn').click();
-  await page.locator('#cue').waitFor({ timeout: 10000 });
+  await page.locator('#cue').waitFor({ timeout: (PAUSE + 5) * 1000 });
   await expect(page.locator('#recpill')).toContainText('샘플 녹음 체험 중');
   // 3·2·1 다음 «녹음 중»과 «이제 당신의 목소리를 들려주세요 !»가 함께 뜬다(11/8 Bumm님) — 샘플 체험도 같다
   expect((await countdownLog(page)).map((e) => e.key)).toEqual(['cue', '3초 뒤 녹음 시작', '2초 뒤 녹음 시작', '1초 뒤 녹음 시작', 'recording', 'speak']);
   await expect(page.locator('#recBtn')).toBeDisabled();
-  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: (LENGTH - PAUSE + 12) * 1000 });
   // «다시 듣기»는 없다(10/20 대표님) — 녹음 뒤에는 «다시 녹음»·«저장하기»만
   await expect(page.locator('#replayBtn')).toHaveCount(0);
   // «다시 녹음»은 «장면 시작»처럼 곧바로 처음부터 다시 체험한다(11/8 Bumm님)
   await page.locator('#resetBtn').click();
   await expect(page.locator('#afterRow')).toHaveCount(0);
   await expect(page.locator('#studio')).toHaveAttribute('data-phase', /requesting|watching/);
-  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 25000 });
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: (LENGTH + 15) * 1000 });
   await page.locator('#saveBtn').click();
   await expect(page.locator('#result.active')).toContainText('원본 영상을 받아보세요');
   await expect(page.locator('#qrbox')).toHaveCount(0);
   const downloadEvent = page.waitForEvent('download');
   await page.locator('#downloadBtn').click();
   const download = await downloadEvent;
-  expect(download.suggestedFilename()).toBe('Voice Cinema_판타지_원본.mp4');
+  expect(download.suggestedFilename()).toBe(`Voice Cinema_${TEST_SCENE.name}_원본.mp4`);
   const digest = bytes => createHash('sha256').update(bytes).digest('hex');
-  expect(digest(await readFile(await download.path()))).toBe(digest(await readFile('public/clips/final/fantasy.mp4')));
+  expect(digest(await readFile(await download.path()))).toBe(digest(await readFile(`public/clips/final/${TEST_SCENE.id}.mp4`)));
   await page.locator('#sampleBackBtn').click();
   await expect(page.locator('#studio.active #afterRow')).toBeVisible();
   expect(await page.evaluate(() => window.sampleMicRequests)).toBe(0);
@@ -61,7 +66,7 @@ test('마이크 없이 장면·5.0초 멈춤·321·3초·이어 재생·원본 �
 test('카운트다운 도중 뒤로가면 남은 체험이 취소된다', async ({ page }) => {
   await openSample(page);
   await page.locator('#recBtn').click();
-  await expect(page.locator('#count')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('#count')).toBeVisible({ timeout: (PAUSE + 5) * 1000 });
   await page.goBack();
   await expect(page.locator('#home.active')).toBeVisible();
   // 아래 그림 띠에서 키보드로 고른다 — 가운데 장면(«스릴러 더빙 시작»)이 올 때까지 자동 넘김을 기다리면, 멈춰 둔 시험 커서 밑으로 그림 띠가 흘러

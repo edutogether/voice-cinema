@@ -3,11 +3,14 @@
 // 업로드(/upload)와 메일(/mail)은 가로채 프로덕션에 아무것도 쌓이지 않고 메일도 나가지 않는다 — 주소는 가짜다.
 // 끊김은 navigator.onLine을 시험이 쥐어 흉내 낸다(새로고침해도 끊긴 채로 시작한다). 원판 · 엔진은 로컬 서버에서 그대로 받는다.
 import { Buffer } from 'node:buffer';
+import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
+import { clipLength, TEST_SCENE } from './scene-data.js';
 
 const UPLOAD_PATTERN = '**/voiceCinema/upload';
 const MAIL_PATTERN = '**/voiceCinema/mail';
-const TAKE_MS = 40000;
+// 녹음 한 번 — 장면은 모두 통과본이고 그중 가장 긴 것이 시험 장면 SF다(11/14 완성본, 길이는 파일에서 읽는다)
+const TAKE_MS = (clipLength(TEST_SCENE.id) + 25) * 1000;
 const TEACHER = 'teacher@school.kr';
 // 업로드가 실제로 돌려주는 모양(file.publicUrl — «dubs/»의 «/»가 %2F) 그대로 둔다. 11/8까지 시험이 «/» 그대로인 가짜 링크를 써서
 // 메일 서버가 진짜 링크를 거절하는 것을 몰랐다(functions/test/mail.test.js)
@@ -17,7 +20,7 @@ const CONDITIONS = [
   '크롬 기록(사이트 데이터)을 지우면 보내기 전 영화도 지워져요.',
 ];
 
-// 더빙 한 번(약 20초) · 합성 · App Check 대기(업로드와 메일에 한 번씩)까지 넉넉히
+// 더빙 한 번(약 31초) · 합성 · App Check 대기(업로드와 메일에 한 번씩)까지 넉넉히
 test.describe.configure({ timeout: 180000 });
 
 function mp4Duration(buffer) {
@@ -123,7 +126,7 @@ test('끊긴 채 더빙을 마치면 메일 칸이 뜨고, 인터넷이 돌아�
 
   await enterMail(page);
   await expect(page.locator('#mailHandoff h2')).toHaveText('네트워크가 복구되면 보내 드릴게요');
-  await expect(page.locator('#doneMsg')).toHaveText('이 브라우저에 잠시 보관했다가 인터넷이 돌아오면 보내고 바로 지워요.');
+  await expect(page.locator('#doneMsg')).toHaveText('이 브라우저에 잠시 보관했다가 인터넷이 돌아오면 보내고 바로 지울게요.');
   await expect(page.locator('#mailConditions li')).toHaveText(CONDITIONS);
   expect(await stored(page)).toEqual({ items: 1, videos: 1 });
   // 맡긴 뒤 화면의 단추는 «다른 더빙하기» 하나이고 빨간 주 단추다(11/9 Bumm님 «다른 더빙하기 버튼도 빨간색인 게 나을 듯 ?»)
@@ -142,7 +145,8 @@ test('끊긴 채 더빙을 마치면 메일 칸이 뜨고, 인터넷이 돌아�
   expect(seen.uploads).toHaveLength(1);
   expect(seen.uploads[0].filename).toMatch(/^dub_sf_\d+_[0-9a-f]{12}\.mp4$/);
   const mp4 = Buffer.from(seen.uploads[0].dataBase64, 'base64');
-  expect(Math.abs(mp4Duration(mp4) - 10)).toBeLessThanOrEqual(.05);
+  // SF는 11/14부터 완성본 — 합성 길이는 원판 파일 길이다(숫자로 박지 않는다)
+  expect(Math.abs(mp4Duration(mp4) - mp4Duration(readFileSync('public/clips/sf.mp4')))).toBeLessThanOrEqual(.05);
   expect(seen.mails).toEqual([{ to: TEACHER, items: [{ name: '민수', url: MOVIE_URL }] }]);
 });
 
@@ -150,7 +154,7 @@ test('맡긴 뒤 창을 새로고침해도 남아 있고, 다시 연 창이 인�
   await startOffline(context);
   const seen = await catchServer(context);
 
-  await dubAndSave(page, '판타지');
+  await dubAndSave(page, '애니메이션');
   await enterMail(page, '지우');
   await page.reload();
   await expect(page.locator('#mailQueueChip')).toHaveText('메일 대기 1건');
@@ -246,7 +250,7 @@ test('브라우저가 저장소를 막아 맡기지 못하면 적던 칸으로 �
     };
   });
 
-  await dubAndSave(page, '스포츠');
+  await dubAndSave(page, '스릴러');
   await page.locator('#mailName').fill('민수');
   await page.locator('#mailAddress').fill(TEACHER);
   await page.locator('#mailNextBtn').click();
