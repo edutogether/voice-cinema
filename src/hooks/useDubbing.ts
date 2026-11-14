@@ -10,7 +10,7 @@ import { checkTake, liveDecision, rms, type Verdict } from '../lib/voiceCheck';
 //   장면 시작 → 0~5.0초 재생(상대 대사 자막) → 5.0초에서 멈춤 → «이제 당신의 차례입니다 !» 1초
 //   → 3·2·1 1초씩(숫자만) → 녹음기가 실제로 켜진 뒤 «녹음 중»과 «이제 당신의 목소리를 들려주세요 !»(숫자 하나처럼 1초) → 3.0초(말이 이어지면 3.5초까지)
 //   → 녹음 검사 → 같은 영상을 5.0초부터 이어 재생하며 다듬은 목소리를 5.0초에 맞춰 들려줌 → 다시 녹음(곧바로 장면 시작과 같은 흐름)·저장.
-// 녹음실에 들어가면 장면 전체가 소리와 함께 저절로 흐른다(미리보기, 11/7 Bumm님 — 녹음·합성 없이 보기만, 멈춤·3·2·1 없이 대사 구간 문구만, 끝나거나 멈추면 준비 상태로).
+// 녹음실에 들어가면 장면이 소리와 함께 저절로 흐르고 아이 목소리 칸이 끝나는 때 멈춘다(미리보기, 11/7 Bumm님 · 끝 시각 11/14 — 녹음·합성 없이 보기만, 멈춤·3·2·1 없이 대사 구간 문구만, 끝나거나 멈추면 준비 상태로).
 // 다시 보고 싶으면 작은 «미리보기» 단추로 같은 재생을 한다(10/20 대표님).
 // «다시 듣기»는 10/20 대표님 지시로 없앴다(이어 재생이 이미 내 목소리가 들어간 장면을 들려준다).
 // 단계(phase) 하나가 화면 전체를 결정하고, 정리는 effect cleanup이 맡는다.
@@ -593,7 +593,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
   }, [phase, videoRef, sampleMode, audioContext, stopClock, stopVoice, finishTake]);
 
   /**
-   * 녹음 없이 장면 전체를 소리와 함께 본다(10/20 대표님, 11/7부터 들어가면 저절로). 끝나거나 멈추면(브라우저가 멈춘 경우도) 준비 상태로 돌아간다.
+   * 녹음 없이 장면을 소리와 함께 본다(10/20 대표님, 11/7부터 들어가면 저절로) — 처음부터 아이 목소리 칸이 끝나는 때까지(11/14). 끝나거나 멈추면(브라우저가 멈춘 경우도) 준비 상태로 돌아간다.
    * 미리보기를 접는 쪽(reset·startTake)은 실행 번호를 먼저 올리므로, 그때 생기는 멈춤은 여기서 지난 실행으로 무시된다.
    */
   const playPreview = useCallback(() => {
@@ -604,7 +604,11 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     setMicError(null);
     setHint(HINT.previewing);
     setPhase('previewing');
+    // 미리보기는 «당신의 목소리가 들어갈 자리예요 !»가 꺼지는 때(멈춤 + 목소리 칸 3.5초 = genre.turn.end)에 끝난다 — 여덟 편 모두
+    // (11/14 Bumm님 «미리보기는 당신의 목소리가 들어갈 차례에요 ! 가 꺼지면서 끝나게끔 세팅하자 전부다»). 멈추면 아래 pause가 준비 상태로 돌린다.
+    const stopAtTurnEnd = stopVideoAt(v, pauseRef.current + VOICE_WINDOW_SECONDS, () => {});
     const detach = () => {
+      stopAtTurnEnd();
       v.removeEventListener('pause', finish);
       v.removeEventListener('ended', finish);
     };

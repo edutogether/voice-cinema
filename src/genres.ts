@@ -33,6 +33,8 @@ export interface Genre {
 // 11/14 완성본(Bumm님 «폭주기관차 올려»): 상대 대사 4.5~7.5초, 12.0초에 멈춘다(graybox-7-1113 «7편 동작 시간표»).
 // 완성본은 편마다 길이가 달라(21.0 · 22.0 · 23.5 · 28.0 · 28.7초 …) 숫자로 박지 않고 원판 파일(public/clips/<장르>.mp4)에서 읽는다(tools/clip-versions.js).
 // 완성본 상대 대사는 보통 4.5~7.5초 한 줄이다. 시각 · 줄 수가 다른 편은 say()로 넘긴다(드라마 — 11/14 팀장 전달, 소리 파형으로 잰 값).
+// 여덟 편의 글 · 시각은 원판 소리에서 다시 쟀다 — 말소리 대역(300~3400Hz) 0.1초 크기 + 구간 받아쓰기, 자막은 목소리가 나기 0.1초 전에 뜬다
+// (11/14 Bumm님 «웹앱도 설치판도 대사 타이밍과 글자를 제대로 나오게 맞춰야지 소리랑 다르면 안되지»).
 const say = (text: string, start: number, end: number): Line => ({ text, start, end });
 // 멈춤은 보통 12.0초, 편마다 다르면 film('대사', 13.9)처럼 넘긴다(판타지 v8.5는 13.9초 = 30fps 417번째 프레임 — 11/14 팀장 전달).
 const film = (lines: string | Line[], pause = 12) =>
@@ -43,14 +45,14 @@ const scene = (g: Omit<Genre, 'turn' | 'seconds'> & { seconds?: number }): Genre
   ({ ...g, seconds: g.seconds ?? lengths[`${g.id}.mp4`], turn: turn(g.pause) });
 
 export const GENRES: Genre[] = [
-  scene({ id: 'sf', name: 'SF', color: '#3fa7c9', summary: '퍼스트 헬로', ...film([say('인사해 봐… 크게 !', 7.6, 8.8)]) }),
-  scene({ id: 'fantasy', name: '판타지', color: '#8a63d2', summary: '빛의 결투', ...film([say('감히 나와 겨루겠다고 ?', 5.3, 6.7), say('후회하게 해 주마 !', 7.3, 8.3)], 13.9) }),
-  scene({ id: 'animation', name: '애니메이션', color: '#d97b3f', summary: '날아라 미르', ...film([say('준비됐어 ?', 5.6, 6.6), say('하나, 둘…', 7.2, 8.3)]) }),
+  scene({ id: 'sf', name: 'SF', color: '#3fa7c9', summary: '퍼스트 헬로', ...film([say('이것 봐, 외계인이야 !', 7.5, 8.8)]) }),
+  scene({ id: 'fantasy', name: '판타지', color: '#8a63d2', summary: '빛의 결투', ...film([say('감히 나와 겨루겠다고 ?', 5.0, 6.7), say('후회하게 해 주마 !', 7.3, 8.3)], 13.9) }),
+  scene({ id: 'animation', name: '애니메이션', color: '#d97b3f', summary: '날아라 미르', ...film([say('준비됐어 ?', 5.9, 6.7), say('하나, 둘…', 7.0, 8.3)]) }),
   scene({ id: 'hero', name: '히어로', color: '#c94f5c', summary: '폭주기관차', ...film([say('네가 멈춰, 지금 !', 4.8, 6.4)]) }),
-  scene({ id: 'thriller', name: '스릴러', color: '#2f9e6e', summary: '우리 같이 놀자', ...film([say('여기야~', 2.1, 3.0), say('여기 있어~', 5.0, 5.9), say('우리랑… 같이 놀자.', 9.6, 11.8)]) }),
-  scene({ id: 'drama', name: '드라마', color: '#c9a24b', summary: '안녕, 설이', ...film([say('이제 출발해야지~', 0.1, 1.7), say('설이한테 꼭 다시 온다고 인사해 !', 5.3, 7.6)]) }),
-  scene({ id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '버저비터', ...film([say('3초 남았어 !', 8.6, 9.4), say('너만 믿을게 !', 9.5, 10.4)], 15) }),
-  scene({ id: 'musical', name: '뮤지컬', color: '#c4559e', summary: '선셋 하이웨이', ...film([say('우리 같이 춤추자 !', 8.4, 9.5)]) }),
+  scene({ id: 'thriller', name: '스릴러', color: '#2f9e6e', summary: '우리 같이 놀자', ...film([say('여기야~', 2.1, 3.0), say('여기 있어~', 5.0, 5.9), say('우리랑… 같이 놀자.', 9.4, 11.8)]) }),
+  scene({ id: 'drama', name: '드라마', color: '#c9a24b', summary: '안녕, 설이', ...film([say('이제 출발해야지~', 0.1, 1.7), say('설이한테 꼭 다시 온다고 인사해 !', 8.9, 11.9)]) }),
+  scene({ id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '버저비터', ...film([say('3초 남았어 !', 8.4, 9.4), say('너만 믿을게 !', 9.5, 10.4)], 15) }),
+  scene({ id: 'musical', name: '뮤지컬', color: '#c4559e', summary: '선셋 하이웨이', ...film([say('우리 같이 춤추자 !', 8.2, 9.5)]) }),
 ];
 
 /** 장르 id로 장면 자료를 찾는다 — 녹음실(useDubbing)과 합성(mergeClip)이 멈춤 시각을 여기서 읽는다. */

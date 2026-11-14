@@ -7,7 +7,12 @@ import { fitScale } from '../lib/fit';
 // 대기 화면은 한 장면을 충분히 본 뒤 다음 장면을 소개한다. 직접 조작하는 간격과 구분한다.
 // 6초는 가운데 미리보기가 실제로 재생되기 시작한 때부터 센다(10/24 Bumm님 ⑧) — 느린 와이파이에서 고른 때부터 세면 미리보기가
 // 뜨기도 전에 넘어가며 받던 것을 버렸다. 미리보기가 끝내 안 뜨면(받기 실패 등) 고른 때부터 PREVIEW_WAIT_MAX_MS 뒤에 넘긴다.
+// 머무는 시간은 장면마다 다르다 — 기본 6초, 애니메이션 · 스릴러 · 드라마 · 뮤지컬(3 · 5 · 6 · 8번)은 8초
+// (11/14 Bumm님 «3 5 6 8번은 8초로 메인화면 6초를 조금 늘려줘 그니까 장면마다 조금 다르게 하는거지»).
 const AUTO_ADVANCE_MS = 6000;
+const LONGER_ADVANCE_MS = 8000;
+const LONGER_SCENES = new Set(['animation', 'thriller', 'drama', 'musical']);
+const advanceMs = (genre: Genre) => LONGER_SCENES.has(genre.id) ? LONGER_ADVANCE_MS : AUTO_ADVANCE_MS;
 const PREVIEW_WAIT_MAX_MS = 30000;
 
 /** 중앙 작품은 앞으로, 이웃 작품은 뒤로 놓는다. 여덟 장면의 바로가기는 항상 보인다. */
@@ -65,7 +70,7 @@ export function SceneCarousel({ active, onSelect }: { active: boolean; onSelect:
     if (!active || !ready || !visible || autoPaused || currentCardHovered || keyboardPaused) return;
     const timer = window.setTimeout(() => {
       setSelected(index => (index + 1) % GENRES.length);
-    }, previewStarted === selected ? AUTO_ADVANCE_MS : PREVIEW_WAIT_MAX_MS);
+    }, previewStarted === selected ? advanceMs(GENRES[selected]) : PREVIEW_WAIT_MAX_MS);
     return () => window.clearTimeout(timer);
   }, [active, ready, visible, autoPaused, currentCardHovered, keyboardPaused, selected, previewStarted]);
   const choiceViewport = useRef<HTMLDivElement>(null);
