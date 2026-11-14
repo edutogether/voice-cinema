@@ -6,7 +6,7 @@ import { pauseScenes } from './pause-scenes.js';
 // 자리 · 크기 = 1920×1080 영상 기준 값(그림 폭 210 · 위 40 · 오른쪽 48) × 영상이 칸을 덮는 배율(가로 · 세로 중 큰 쪽).
 // 처음의 Poster Studio 값(폭 140 · 위 19.3 · 오른쪽 24.6)은 카드에서 너무 작고 모서리에 붙어 보였다(11/14 Bumm님 «힉스필드 로고도 너무 작고 끝에 붙어있어»).
 const LOGO = { width: 210, top: 40, right: 48 };
-// 첫 화면 장면 카드와 녹음실(미리보기 · 녹음 내내)에 얹고, 영상에는 굽지 않는다. «미리보기 재생 중»은 그래서 왼쪽 위로 옮겼다.
+// 녹음실(미리보기 · 녹음 내내)에 얹고, 영상에는 굽지 않는다. 첫 화면 장면 카드에서는 뺐다(11/14 Bumm님 «어떻게 해도 지저분함»).
 test.use({ serviceWorkers: 'block' });
 
 // poster-studio src/studio/camera-logo.png를 바이트 그대로 복사한 그림(840×166, 보일 크기의 6배) — 색을 바꾸거나 다시 그리지 않는다
@@ -54,13 +54,14 @@ test('로고 그림은 Poster Studio의 camera-logo.png와 바이트까지 같�
 });
 
 for (const [name, opts] of [['PC 1920×1080', { viewport: { width: 1920, height: 1080 } }], ['PC 1280×720', { viewport: { width: 1280, height: 720 } }], ['휴대폰 390×844', PHONE]]) {
-  test(`${name}: 첫 화면 가운데 장면과 녹음실(미리보기 · 녹음 중)의 영상 오른쪽 위에 같은 규칙으로 얹힌다`, async ({ browser }) => {
+  test(`${name}: 첫 화면 장면 카드에는 없고, 녹음실(미리보기 · 녹음 중)의 영상 오른쪽 위에 얹힌다`, async ({ browser }) => {
     test.setTimeout(90000);
     const context = await browser.newContext({ ...opts, permissions: ['microphone'], serviceWorkers: 'block' });
     const page = await context.newPage();
     try {
       await home(page);
-      expectPosterStudioFit(await measure(page, '.scene-shell.is-current .tile-media'), '첫 화면 장면 카드');
+      // 11/14 Bumm님 «미리보기 재생중이라고 뜨는 메인 영상에는 힉스필드를 빼버려야겠어 어떻게 해도 지저분함» — 여덟 카드 어디에도 없다
+      await expect(page.locator('.scene-stage .higgsfield-mark')).toHaveCount(0);
 
       const tile = page.locator('.scene-shell.is-current .tile');
       if (opts.hasTouch) await tile.tap(); else await tile.click();
@@ -76,9 +77,27 @@ for (const [name, opts] of [['PC 1920×1080', { viewport: { width: 1920, height:
   });
 }
 
+// 가로로 눕힌 휴대폰은 «녹음 중»이 같은 오른쪽 위에 와서 로고를 거의 다 덮었다(844×340에서 92px 중 81px) — 녹음하는 동안만 로고를 숨긴다(11/14 Bumm님)
+test('가로 휴대폰 844×390: 미리보기에는 로고가 보이고, 녹음 중에만 숨는다', async ({ browser }) => {
+  test.setTimeout(90000);
+  const context = await browser.newContext({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, permissions: ['microphone'], serviceWorkers: 'block' });
+  const page = await context.newPage();
+  try {
+    await home(page);
+    await page.locator('.scene-shell.is-current .tile').tap();
+    await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'previewing');
+    await expect(page.locator('.studio-video-frame')).not.toHaveClass(/is-entering/);
+    const logo = page.locator('.studio-video-frame .higgsfield-mark img');
+    await expect.poll(() => logo.evaluate((img) => getComputedStyle(img).visibility)).toBe('visible');
+    await page.locator('#recBtn').tap();
+    await expect(page.locator('#recpill')).toBeVisible({ timeout: 60000 });
+    expect(await logo.evaluate((img) => getComputedStyle(img).visibility)).toBe('hidden');
+  } finally { await context.close(); }
+});
+
 // «미리보기 재생 중»은 마우스 기기에만 보인다(9/30부터) — 리눅스 헤드리스처럼 hover:hover · pointer:fine을 보고하지 않는 브라우저에서는 건너뛴다
 for (const reducedMotion of ['reduce', 'no-preference']) {
-  test(`PC: «미리보기 재생 중»은 바탕 없이 왼쪽 위, 빨간 점이 깜빡이고 오른쪽 위 로고와 겹치지 않는다 · 움직임 줄이기 ${reducedMotion}`, async ({ browser }) => {
+  test(`PC: «미리보기 재생 중»은 바탕 없이 왼쪽 위, 빨간 점이 깜빡인다 · 움직임 줄이기 ${reducedMotion}`, async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, serviceWorkers: 'block', reducedMotion });
     const page = await context.newPage();
     try {
@@ -90,16 +109,14 @@ for (const reducedMotion of ['reduce', 'no-preference']) {
         const media = document.querySelector('.scene-shell.is-current .tile-media').getBoundingClientRect();
         const label = document.querySelector('.scene-shell.is-current .tile-preview-label');
         const l = label.getBoundingClientRect();
-        const logo = document.querySelector('.scene-shell.is-current .higgsfield-mark img').getBoundingClientRect();
         const dot = label.querySelector('.onair-dot');
         const blink = dot.getAnimations().find(a => a.animationName === 'onair');
-        return { left: l.left - media.left, top: l.top - media.top, labelRight: l.right, logoLeft: logo.left, mid: media.left + media.width / 2,
+        return { left: l.left - media.left, top: l.top - media.top, labelRight: l.right, mid: media.left + media.width / 2,
           background: getComputedStyle(label).backgroundColor, dot: getComputedStyle(dot).backgroundColor, blinking: blink?.playState };
       });
       expect(got.left).toBeLessThan(20);
       expect(got.top).toBeLessThan(20);
       expect(got.labelRight).toBeLessThan(got.mid);
-      expect(got.labelRight).toBeLessThan(got.logoLeft);
       expect(got.background).toBe('rgba(0, 0, 0, 0)');
       expect(got.dot).toBe('rgb(255, 42, 38)');
       expect(got.blinking).toBe('running');

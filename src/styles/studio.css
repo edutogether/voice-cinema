@@ -188,6 +188,9 @@ body:has(#studio.active) { background:#fff; }
  #studio .record-actions .btn { min-width:0; }
  .studio-sound-on { top:12px; right:max(16px,env(safe-area-inset-right)); }
  .recpill { top:12px; right:max(16px,env(safe-area-inset-right)); left:auto; }
+ /* «녹음 중»이 같은 오른쪽 위의 Higgsfield 로고를 거의 다 덮으므로(844×340에서 92px 중 81px) 녹음하는 동안만 로고를 숨긴다 —
+    새로 놓는 것은 없고 미리보기 · 이어 재생에서는 그대로 보인다(11/14 Bumm님 «가로 녹음 중일 때만 로고 숨김»). */
+ #studio[data-phase="recording"] .higgsfield-mark { visibility:hidden; }
  .record-left { top:0; bottom:auto; height:6px; }
  .scene-caption { bottom:124px; }
 }
