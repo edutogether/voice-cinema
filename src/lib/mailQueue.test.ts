@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { afterFailure, dueGroups, MAX_ATTEMPTS, retryDelay, type MailItem } from './mailQueue';
+import { afterFailure, dueGroups, MAIL_BATCH, MAX_ATTEMPTS, retryDelay, type MailItem } from './mailQueue';
 
 const item = (over: Partial<MailItem>): MailItem => ({
   id: 'a', name: '민수', email: 'teacher@ice.go.kr', genreId: 'fantasy', genreName: '판타지', createdAt: 1, attempts: 0, nextAt: 0, failed: false, url: 'https://example.test/a.mp4', ...over,
@@ -30,5 +30,11 @@ describe('dueGroups', () => {
   it('기다리는 중이거나 «보내지 못함»인 건은 뺀다', () => {
     const groups = dueGroups([item({ id: 'a', nextAt: 11 }), item({ id: 'b', failed: true }), item({ id: 'c', nextAt: 10 })], 10);
     expect(groups.map((g) => g.map((i) => i.id))).toEqual([['c']]);
+  });
+  it(`한 교사에게 ${MAIL_BATCH}편을 넘으면 ${MAIL_BATCH}편씩 나눠 보낸다(서버는 한 통에 ${MAIL_BATCH}편까지 받는다)`, () => {
+    const many = Array.from({ length: MAIL_BATCH * 2 + 1 }, (_, n) => item({ id: `m${n}` }));
+    const groups = dueGroups([...many, item({ id: 'x', email: 'other@naver.com' })], 10);
+    expect(groups.map((g) => g.length)).toEqual([MAIL_BATCH, MAIL_BATCH, 1, 1]);
+    expect(groups.slice(0, 3).flat().map((i) => i.id)).toEqual(many.map((i) => i.id));
   });
 });

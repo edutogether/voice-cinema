@@ -35,7 +35,13 @@ export function afterFailure(item: Pick<MailItem, 'attempts' | 'rejections'>, no
   return { attempts, rejections, nextAt: now + retryDelay(attempts), failed: rejections >= MAX_ATTEMPTS };
 }
 
-/** 지금 보낼 차례인 건을 교사별로 묶는다 — 한 교사에게는 한 통만 간다. */
+/** 한 통에 담는 영화 수의 상한 — 서버(functions/mail.js의 MAX_ITEMS)는 이보다 많으면 400으로 거절한다(test/contract.test.js가 대조). */
+export const MAIL_BATCH = 30;
+
+/**
+ * 지금 보낼 차례인 건을 교사별로 묶는다 — 한 교사에게 한 통이 가고, 30편을 넘으면 30편씩 나눠 여러 통이 간다
+ * (11/14 감사 — 끊긴 동안 같은 선생님 주소를 31명 넘게 적으면 한 통이 서버에서 400으로 거절되고, 8번 거절 뒤 «보내지 못함»이 됐다).
+ */
 export function dueGroups(items: MailItem[], now: number): MailItem[][] {
   const groups = new Map<string, MailItem[]>();
   for (const item of items) {
@@ -43,5 +49,6 @@ export function dueGroups(items: MailItem[], now: number): MailItem[][] {
     const key = item.email.trim().toLowerCase();
     groups.set(key, [...(groups.get(key) ?? []), item]);
   }
-  return [...groups.values()];
+  return [...groups.values()].flatMap((group) =>
+    Array.from({ length: Math.ceil(group.length / MAIL_BATCH) }, (_, i) => group.slice(i * MAIL_BATCH, (i + 1) * MAIL_BATCH)));
 }

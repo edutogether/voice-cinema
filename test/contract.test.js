@@ -148,6 +148,13 @@ test('메일 주소 규칙 · 길이: functions/mail.js와 src/lib/mailAddress.t
   }
 });
 
+// 11/14 감사: 화면은 한 통에 MAIL_BATCH편씩 나눠 보낸다 — 서버가 받는 편수(MAX_ITEMS)보다 크면 그 통이 400으로 거절돼 «보내지 못함»이 된다.
+test('한 통의 영화 수: src/lib/mailQueue.ts의 MAIL_BATCH와 functions/mail.js의 MAX_ITEMS가 같다', () => {
+  const 화면 = extract(read('src/lib/mailQueue.ts'), /export const MAIL_BATCH = (\d+);/, 'MAIL_BATCH');
+  const 서버 = extract(read('functions/mail.js'), /export const MAX_ITEMS = (\d+);/, 'MAX_ITEMS');
+  expect(화면).toBe(서버);
+});
+
 test('장르 이름: functions/mail.js의 메일용 이름표와 src/genres.ts의 name이 같다', () => {
   const 앱 = Object.fromEntries([...read('src/genres.ts').matchAll(/\{ id: '([a-z]+)', name: '([^']+)'/g)].map((m) => [m[1], m[2]]));
   const 표 = read('functions/mail.js').match(/GENRE_NAMES = \{([^}]+)\}/)[1];
