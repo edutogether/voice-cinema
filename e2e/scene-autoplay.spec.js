@@ -38,7 +38,7 @@ test('마우스 없이 첫 장면을 재생하고 여덟 장면을 순서대로 
   }
 });
 
-test('가운데 미리보기가 재생되기 전에는 6초가 지나도 넘기지 않고, 끝내 안 뜨면 30초 뒤에 넘긴다(10/24 ⑧)', async ({ browser }) => {
+test('가운데 미리보기가 재생되기 전에는 8초가 지나도 넘기지 않고, 끝내 안 뜨면 30초 뒤에 넘긴다(10/24 ⑧)', async ({ browser }) => {
   // 서비스워커를 막아야 가로채기가 듣는다(서비스워커가 받는 요청은 page.route를 거치지 않는다)
   const context = await browser.newContext({ serviceWorkers: 'block' });
   const page = await context.newPage();
@@ -52,7 +52,7 @@ test('가운데 미리보기가 재생되기 전에는 6초가 지나도 넘기�
   await page.mouse.move(1, 1);
   const current = page.locator('.scene-shell.is-current');
   await expect(current).toHaveAttribute('data-index', '0');
-  // 고른 때부터 세던 옛 방식은 6초에 넘겼다
+  // 고른 때부터 세던 옛 방식이면 8초(10/24에는 6초)에 넘겼다
   await page.clock.runFor(12000);
   await expect(current).toHaveAttribute('data-index', '0');
   await page.clock.runFor(18500);

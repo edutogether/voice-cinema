@@ -10,7 +10,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const EXE = process.env.VC_DESKTOP_EXE ?? path.join(HERE, '..', 'release', 'win-unpacked', 'Voice Cinema.exe');
 
 for (const reducedMotion of ['reduce', 'no-preference']) {
-  test(`움직임 줄이기 ${reducedMotion}: 스플래시 · 미리보기 · 그림 띠 · 6초 자동 넘김 · 입체 이동 · 녹음실 확대 · 3·2·1이 그대로 돈다`, async () => {
+  test(`움직임 줄이기 ${reducedMotion}: 스플래시 · 미리보기 · 그림 띠 · 8초 자동 넘김 · 입체 이동 · 녹음실 확대 · 3·2·1이 그대로 돈다`, async () => {
     // 새 프로필 · 가짜 마이크 · 소리 끔. 창은 가장 작은 모니터에 뜬다(시험 전용 VC_TEST_SMALLEST_DISPLAY — main.js)
     const app = await _electron.launch({
       executablePath: EXE,

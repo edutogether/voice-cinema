@@ -19,7 +19,7 @@ test('자동 넘김 정지 중 화살표 호버는 이동하지 않고 클릭할
   }
   const previous = page.getByRole('button', { name: '이전 장면', exact: true });
   await previous.hover();
-  await page.clock.runFor(6000);
+  await page.clock.runFor(12000);
   await expect(current).toHaveAttribute('data-index', '0');
   await previous.click();
   await expect(current).toHaveAttribute('data-index', '7');

@@ -76,7 +76,7 @@ async function upload(item: MailItem): Promise<string> {
   return url;
 }
 
-/** 한 선생님 몫을 한 통으로 보낸다. 서버가 { ok: true }로 답해야 보낸 것이다 — 그 밖은 모두 실패로 세어 나중에 다시 보낸다. */
+/** 한 묶음(한 선생님 몫, 30편까지 — mailQueue.ts의 dueGroups)을 한 통으로 보낸다. 서버가 { ok: true }로 답해야 보낸 것이다 — 그 밖은 모두 실패로 세어 나중에 다시 보낸다. */
 async function send(group: MailItem[]): Promise<void> {
   const resp = await fetch(`${API_BASE}/mail`, {
     method: 'POST',

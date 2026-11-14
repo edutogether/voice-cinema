@@ -341,3 +341,18 @@ test('한국 시간 2026-11-14 00:00부터는 문 검사 전에 410 — 저장 �
   expect(의견들()).toHaveLength(1);
   expect(카카오.calls.map((c) => c.url)).toEqual([SEND_URL]);
 });
+
+// 11/14 감사: 카카오 연결은 의견 알림에만 쓰므로 의견이 닫히면 함께 닫는다 — 연결 대기 칸을 새로 쓰지 않고, 카카오에도 묻지 않는다(1초 전까지는 연다)
+test('한국 시간 2026-11-14 00:00부터 /kakao/start · /kakao/callback은 410 — 연결 대기 칸을 쓰지 않는다', async () => {
+  vi.setSystemTime(Date.parse('2026-11-13T23:59:59+09:00'));
+  expect((await 열기('/kakao/start')).status).toBe(302);
+  저장소.docs.delete('kakaoAuth/pending');
+  vi.setSystemTime(Date.parse('2026-11-14T00:00:00+09:00'));
+  for (const path of ['/kakao/start', '/kakao/callback?code=abc&state=0123456789abcdef0123456789abcdef']) {
+    const r = await 열기(path);
+    expect(r.status, path).toBe(410);
+    expect(r.html, path).toContain('카카오 연결이 닫혔어요');
+  }
+  expect(저장소.docs.has('kakaoAuth/pending')).toBe(false);
+  expect(카카오.calls).toEqual([]);
+});

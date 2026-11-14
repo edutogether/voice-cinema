@@ -1,3 +1,9 @@
+# 이 PC(core.autocrlf=true)도 CI(ubuntu, LF)와 같은 줄바꿈으로 꺼낸다 — 2026-11-14 감사.
+# CRLF로 꺼낸 글 파일(index.html · privacy.html · public/ · tools/sw-template.js 등)은 dist/에 그대로 실려
+# 서비스워커 캐시 이름(내용 해시)이 CI 빌드와 달라진다. 그러면 이 PC에서 hosting을 올린 뒤 CI가 같은 커밋을 다시 올릴 때
+# 부스 기기가 화면 캐시(장면 영상 포함)를 한 번 더 받는다(11/14 행사 당일 다섯 번 겪음). 바이너리는 text=auto가 알아서 뺀다.
+* text=auto eol=lf
+
 # Windows 기준선 텍스트가 checkout의 CRLF 변환으로 달라지지 않게 고정한다.
 e2e/release-baseline.spec.js-snapshots/*.json text eol=lf
 e2e/release-baseline.spec.js-snapshots/*.png binary

@@ -40,7 +40,7 @@ function kakaoKeys() {
   return { clientId, clientSecret };
 }
 
-function kakaoPage(res, status, title, lines) {
+export function kakaoPage(res, status, title, lines) {
   res
     .status(status)
     .set('cache-control', 'no-store')

@@ -17,7 +17,7 @@ import {
   FEEDBACK_COLLECTION,
   FEEDBACK_REPLY_BUDGET_MS,
 } from './feedback.js';
-import { createKakao } from './kakao.js';
+import { createKakao, kakaoPage } from './kakao.js';
 import { keepWarmPing, KEEP_WARM_SCHEDULE } from './keepWarm.js';
 
 initializeApp();
@@ -240,8 +240,14 @@ app.post('/feedback', (req, res, next) => {
 });
 
 // 카카오 알림 연결(처음 한 번) — Bumm님이 브라우저로 /kakao/start를 열어 로그인 · 동의한다(functions/kakao.js).
-app.get('/kakao/start', (req, res) => kakao.start(req, res));
-app.get('/kakao/callback', (req, res) => kakao.callback(req, res));
+// 연결은 의견 알림에만 쓰므로 의견이 닫힌 뒤(2026-11-14 00:00 KST)에는 410으로 닫는다(11/14 감사 — 열어 두면 부를 때마다 연결 대기 칸에
+// Firestore 쓰기가 일어나고 문 검사 없이 인스턴스를 붙잡는다). 저장된 토큰의 매일 갱신(feedbackMaintenance)은 그대로 돈다.
+const kakaoOpen = (req, res, next) => {
+  if (!isFeedbackClosed(Date.now())) return next();
+  kakaoPage(res, 410, '카카오 연결이 닫혔어요', ['의견 받기가 끝나 카카오 알림 연결도 받지 않아요.']);
+};
+app.get('/kakao/start', kakaoOpen, (req, res) => kakao.start(req, res));
+app.get('/kakao/callback', kakaoOpen, (req, res) => kakao.callback(req, res));
 
 // 2026-09-01 Firebase Hosting(voice-cinema.web.app)로 이전. GitHub Pages는
 // 한동안 병행 운영했으나 2026-09-08 대표 지시로 폐지했다(포털 카드가 이미 Firebase
@@ -282,9 +288,13 @@ const ALLOWED_ORIGINS = [
 // 그러면 그 인스턴스에 얹혀 있던 다른 학생들의 요청까지 전부 같이 죽는다.
 // 타임아웃을 60→110초로 늘린 뒤(2026-09-06)로는 요청들이 한 인스턴스에 겹쳐
 // 머무는 시간도 그만큼 길어져 이 조건이 더 쉽게 성립한다.
-// concurrency를 1로 두면 요청 하나가 인스턴스 하나를 통째로 쓰므로(실측 기준
-// 47+73+베이스라인 ≈ 180MB로 256MiB 안에 여유 있게 들어옴) 큰 요청 하나가
-// 남의 요청까지 끌고 죽는 경로가 사라진다. 전체 동시 처리량은 maxInstances(10)이
+// concurrency를 1로 두면 요청 하나가 인스턴스 하나를 통째로 쓰므로 큰 요청 하나가
+// 남의 요청까지 끌고 죽는 경로가 사라진다.
+// 메모리는 2026-11-14 행사 당일 256MiB → 512MiB. 10초 장면 때(요청이 작아 실측
+// 47+73+베이스라인 ≈ 180MB)는 256MiB로 넉넉했지만, 완성본(21~30초)이 들어와 요청 본문이
+// 최대 22.8MB가 된 뒤 Cloud Logging에서 «Memory limit of 256 MiB exceeded» 39번(최대
+// 338MiB 사용)과 업로드 500 8번(본문 11~22MB, 모두 화면의 재시도로 200)이 나왔다.
+// 본문 상한(base64 약 26.7MB, 디코딩 20MiB) 요청이 들어와도 넘지 않게 잡은 값이다 — 줄이지 말 것. 전체 동시 처리량은 maxInstances(10)이
 // 그대로 결정하는데, 이 값은 2026-08-28 2000건 스트레스테스트에서 10개 병렬
 // 워커로 실제 검증된 수치와 정확히 같아 처리량 회귀는 없다.
 // 부작용으로 남는 것: 레이트리밋이 인스턴스별 메모리 기반이라 요청이 여러
@@ -293,7 +303,7 @@ const ALLOWED_ORIGINS = [
 export const voiceCinema = onRequest(
   {
     region: 'asia-northeast3',
-    memory: '256MiB',
+    memory: '512MiB',
     timeoutSeconds: 110,
     maxInstances: 10,
     concurrency: 1,
@@ -304,7 +314,7 @@ export const voiceCinema = onRequest(
   app
 );
 
-// 매일 새벽 3시(KST)에 깨어나서, CUTOFF_DATE가 지났으면 업로드된 영상을 전부 지운다.
+// 매일 자정(KST)에 깨어나서, CUTOFF_DATE가 지났으면 업로드된 영상을 전부 지운다.
 // memory를 512MiB로 올린 것과 배치 삭제 둘 다 2026-08-28 발견 반영 — 행사 당일
 // 수천 개가 쌓인 상태에서 한 번에 지우려다 메모리 초과로 이 함수 자체가 죽으면
 // 자동삭제가 아예 안 되는(개인정보가 안 지워지는) 심각한 결과로 이어질 수 있었다.
