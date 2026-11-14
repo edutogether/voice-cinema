@@ -77,6 +77,24 @@ for (const [name, opts] of [['PC 1920×1080', { viewport: { width: 1920, height:
   });
 }
 
+// 가로로 눕힌 휴대폰은 «녹음 중»이 같은 오른쪽 위에 와서 로고를 거의 다 덮었다(844×340에서 92px 중 81px) — 녹음하는 동안만 로고를 숨긴다(11/14 Bumm님)
+test('가로 휴대폰 844×390: 미리보기에는 로고가 보이고, 녹음 중에만 숨는다', async ({ browser }) => {
+  test.setTimeout(90000);
+  const context = await browser.newContext({ viewport: { width: 844, height: 390 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, permissions: ['microphone'], serviceWorkers: 'block' });
+  const page = await context.newPage();
+  try {
+    await home(page);
+    await page.locator('.scene-shell.is-current .tile').tap();
+    await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'previewing');
+    await expect(page.locator('.studio-video-frame')).not.toHaveClass(/is-entering/);
+    const logo = page.locator('.studio-video-frame .higgsfield-mark img');
+    await expect.poll(() => logo.evaluate((img) => getComputedStyle(img).visibility)).toBe('visible');
+    await page.locator('#recBtn').tap();
+    await expect(page.locator('#recpill')).toBeVisible({ timeout: 60000 });
+    expect(await logo.evaluate((img) => getComputedStyle(img).visibility)).toBe('hidden');
+  } finally { await context.close(); }
+});
+
 // «미리보기 재생 중»은 마우스 기기에만 보인다(9/30부터) — 리눅스 헤드리스처럼 hover:hover · pointer:fine을 보고하지 않는 브라우저에서는 건너뛴다
 for (const reducedMotion of ['reduce', 'no-preference']) {
   test(`PC: «미리보기 재생 중»은 바탕 없이 왼쪽 위, 빨간 점이 깜빡인다 · 움직임 줄이기 ${reducedMotion}`, async ({ browser }) => {
