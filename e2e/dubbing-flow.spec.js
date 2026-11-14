@@ -6,7 +6,7 @@ import { Buffer } from 'node:buffer';
 import { test, expect } from '@playwright/test';
 import { countdownLog, watchCountdown } from './countdown-watch.js';
 import { openScene } from './pause-scenes.js';
-import { clipLength, scenePause, TEST_SCENE } from './scene-data.js';
+import { clipLength, scenePause, sceneLines, TEST_SCENE } from './scene-data.js';
 
 const UPLOAD_PATTERN = '**/voiceCinema/upload';
 const GENRE_NAMES = ['SF', '판타지', '애니메이션', '히어로', '스릴러', '드라마', '스포츠', '뮤지컬'];
@@ -100,8 +100,8 @@ test.describe('녹음실: 장면 더빙 2.0 흐름', () => {
     await expect(page.locator('#saveBtn')).not.toBeFocused();
   });
 
-  // 시험 장면(SF)의 상대 대사 — src/genres.ts의 film('…')은 4.5~7.5초 한 줄이다(11/14 완성본, 전에는 10초 장면의 1.6~3.4초를 봤다)
-  const LINE = { text: '인사해 봐… 크게 !', start: 4.5, end: 7.5 };
+  // 시험 장면(SF)의 첫 상대 대사 — 시각은 src/genres.ts에서 읽는다(11/14 9249473에서 4.5~7.5 → 7.6~8.8초로 바뀌어 이 시험이 떨어졌다)
+  const LINE = sceneLines(TEST_SCENE.id)[0];
   test('상대 대사 자막은 대사 시각에 나타나 사라지고, 흰 글씨·배경 상자 없음이다', async ({ page }) => {
     await openStudio(page, TEST_SCENE.name);
     // 자막이 붙고 떨어지는 순간의 영상 시각을 페이지 안에서 기록한다 — 바깥에서 폴링하면 그 지연만큼 늦게 잰다.

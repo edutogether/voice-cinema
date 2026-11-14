@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { openScene } from './pause-scenes.js';
-import { clipLength, scenePause, TEST_SCENE } from './scene-data.js';
+import { clipLength, scenePause, sceneLines, TEST_SCENE } from './scene-data.js';
 
 // 장면 더빙 2.0 상대 대사 자막(app-plan §2-3): 넷플릭스식 — 영상 안 아래 가운데, 영상 폭 80% 안, 두 줄 이내,
 // 영상 높이의 약 5%(최소 14px). 멈춤 뒤 문구·카운트다운·녹음 중에는 없고, 미리보기 · 장면 · 다시 녹음의 대사 시각에 나온다(10/20 «다시 듣기» 없앰).
@@ -44,8 +44,8 @@ for (const [width, height] of [[1440, 900], [390, 844], [360, 640], [844, 390]])
 
 test('자막은 미리보기 · 장면 · 다시 녹음의 대사 시각에 나오고, 멈춘 뒤 문구·카운트다운·녹음 중에는 없다', async ({ page }) => {
   test.setTimeout(150000); // 한 번 녹음하고(약 31초) 다시 녹음을 시작한다
-  // 시험 장면(SF, 통과본)의 대사 «인사해 봐… 크게 !» 4.5~7.5초 · 멈춤 · 길이는 src/genres.ts · 파일에서 온다
-  const LINE = { text: '인사해 봐… 크게 !', start: 4.5 };
+  // 시험 장면(SF, 통과본)의 첫 대사 · 멈춤 · 길이는 src/genres.ts · 파일에서 온다
+  const LINE = sceneLines(TEST_SCENE.id)[0];
   const PAUSE = scenePause(TEST_SCENE.id);
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
@@ -69,9 +69,10 @@ test('자막은 미리보기 · 장면 · 다시 녹음의 대사 시각에 나�
   await expect(caption).toHaveText(LINE.text, { timeout: (LINE.start + 4) * 1000 });
 });
 
-// 11/14 드라마 v7은 대사가 두 줄이다(Bumm님 지시, 팀장 전달) — 아빠(화면 밖) 0.1~1.7초, 할머니 5.3~7.6초.
-// 줄이 바뀌고 사라지는 순간의 영상 시각을 페이지 안에서 기록한다(화면에 나간 프레임 시각 — dubbing-flow의 1.6~3.4초 시험과 같은 방식).
-test('드라마 완성본: 아빠 대사가 0.1~1.7초, 할머니 대사가 5.3~7.6초에 나오고 그 사이에는 자막이 없다', async ({ page }) => {
+// 11/14 드라마 v7은 대사가 두 줄이다(Bumm님 지시, 팀장 전달) — 아빠(화면 밖) · 할머니. 시각은 src/genres.ts에서 읽는다.
+// 줄이 바뀌고 사라지는 순간의 영상 시각을 페이지 안에서 기록한다(화면에 나간 프레임 시각 — dubbing-flow의 자막 시험과 같은 방식).
+const DRAMA = sceneLines('drama');
+test('드라마 완성본: 아빠 · 할머니 대사가 제 시각에 나오고 그 사이에는 자막이 없다', async ({ page }) => {
   await page.goto('/');
   // 들어가면 미리보기가 0초부터 곧바로 흐르므로 기록은 들어가기 전에 건다
   await page.evaluate(() => {
@@ -90,12 +91,14 @@ test('드라마 완성본: 아빠 대사가 0.1~1.7초, 할머니 대사가 5.3~
   });
   await openScene(page, 'drama');
   const caption = page.getByTestId('scene-caption');
-  await expect(caption).toHaveText('설이한테 꼭 다시 온다고 인사해 !', { timeout: 9000 });
-  await expect(caption).toHaveCount(0, { timeout: 4000 });
+  const last = DRAMA.at(-1);
+  await expect(caption).toHaveText(last.text, { timeout: (last.start + 4) * 1000 });
+  await expect(caption).toHaveCount(0, { timeout: (last.end - last.start + 2) * 1000 });
   const log = await page.evaluate(() => window.__captionLog);
-  expect(log.map((x) => x.text)).toEqual(['이제 출발해야지~', null, '설이한테 꼭 다시 온다고 인사해 !', null]);
+  expect(DRAMA).toHaveLength(2);
+  expect(log.map((x) => x.text)).toEqual(DRAMA.flatMap((line) => [line.text, null]));
   // 한 화면 갱신(약 1/30초)만큼의 여유만 둔다.
-  [0.1, 1.7, 5.3, 7.6].forEach((at, i) => {
+  DRAMA.flatMap((line) => [line.start, line.end]).forEach((at, i) => {
     expect(log[i].t).toBeGreaterThanOrEqual(at - 1 / 30);
     expect(log[i].t).toBeLessThan(at + 2 / 30);
   });
