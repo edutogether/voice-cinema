@@ -175,7 +175,9 @@
 - 🟠 **녹음실에 들어가면 장면이 바로 흐른다**(2026-11-07 Bumm님 «누르고 들어가면 바로 영상 재생 … 소리도 나오고 … 멈추고 321은 빼고 … 문구만 주고 그냥 쭉 멈춤없이 지나가게 해서 아 ~ 하게», 10/01 «진입 자동재생 금지»를 바꾼 결정) —
   «더빙하기»를 누르면 녹음·합성 없이 장면이 소리와 함께 흐른다(단계 `previewing`, 마이크를 열지 않는다). 대사 구간(`genre.turn`)에는 «당신의 목소리가 들어갈 자리예요 !»만 얹고 멈춤·3·2·1이 없다.
   🟠 **미리보기는 그 문구가 꺼지는 때(멈춤 + 목소리 칸 3.5초 = `genre.turn.end`)에 끝난다 — 여덟 편 모두**(11/14 Bumm님 «미리보기는 당신의 목소리가 들어갈 차례에요 ! 가 꺼지면서 끝나게끔 세팅하자 전부다», 팀장 `6551e89` —
-  `useDubbing.ts` `playPreview`의 `stopVideoAt`). 전에는 원판 끝(21~30초)까지 흘렀다. `e2e/studio-autoplay.spec.js`가 고정한다
+  `useDubbing.ts` `playPreview`의 `stopVideoAt`). 전에는 원판 끝(21~30초)까지 흘렀다. `e2e/studio-autoplay.spec.js`가 고정한다.
+  🟠 **미리보기 동안 빨간 진행 막대와 시계의 끝도 그때(`turn.end`)다** — 영상이 멈추는 순간 막대가 끝에 닿는다(11/14 Bumm님 «아래 빨간색 진행바가 영상 끝나는거에 안맞네», 팀장 `801884e` — `ClipTimeline.tsx`).
+  녹음 흐름(장면 시작 → 이어 재생)의 끝은 원판 길이 그대로다
   그 문구는 3·2·1의 «이제 당신의 차례입니다 !»와 같은 모양이다 — 영상 전체를 살짝 어둡게 하고 큰 흰 글씨(11/8 Bumm님, 전에는 빨간 둥근 막대).
   끝나거나 멈추면(브라우저가 멈춘 경우도) «준비됐나요 ?»로 돌아가고, 재생 중 «장면 시작»은 바로 녹음 흐름이다(멈춤·3·2·1은 그대로). 작은 «미리보기»는 같은 재생을 다시 한다.
   저장 뒤 · 앞으로/뒤로 이동으로 돌아온 녹음실은 저절로 틀지 않는다. 🟠 **«다시 녹음»은 «장면 시작»을 누른 것처럼 곧바로 처음부터 녹음 흐름이 돈다**
@@ -1026,11 +1028,11 @@ Claude in Chrome은 여분의 브라우저가 아니라 **대표 본인의 크�
   함께 만들고 `test/scene-images.test.js`가 짝과 AV1 Main 프로필을 본다. 🟠 **4:4:4(High 프로필)로 바꾸지 말 것** — 더 작지만 일부 사파리가 못 연다.
   🟠 `.pic`은 `display: contents`라 배치에 끼지 않지만, CSS의 `> img`는 `> .pic > img`로 써야 하고 모서리(`border-radius: inherit`)도 `.pic`이 이어 준다 —
   처음에 빠뜨려 카드 그림 모서리가 0이 됐고 `e2e/tile-autoplay.spec.js`가 잡았다(아이폰 «떡네모» 방어)
-- 🟠 **홈 자동 넘김의 6초는 가운데 미리보기가 실제로 재생된 때부터 센다**(10/24 Bumm님 ⑧, `SceneCarousel.tsx`) — 고른 때부터 세면 느린 와이파이에서 미리보기가
+- 🟠 **홈 자동 넘김의 머무는 시간은 가운데 미리보기가 실제로 재생된 때부터 센다**(10/24 Bumm님 ⑧, `SceneCarousel.tsx`) — 고른 때부터 세면 느린 와이파이에서 미리보기가
   뜨기도 전에 넘어가며 받던 것을 버렸다. 끝내 안 뜨면(받기 실패) 고른 때부터 30초 뒤에 넘긴다. 시계를 돌리는 검사는 미리보기 재생을 본 뒤에 돌린다
   (`e2e/scene-autoplay.spec.js`의 «재생되기 전에는…»이 고정한다 — 옛 코드 빨간불 확인)
-  🟠 **머무는 시간은 장면마다 다르다 — 기본 6초, 애니메이션 · 스릴러 · 드라마 · 뮤지컬(3 · 5 · 6 · 8번)은 8초**(11/14 Bumm님 «3 5 6 8번은 8초로 메인화면 6초를 조금 늘려줘 그니까 장면마다 조금 다르게 하는거지»,
-  팀장 `6551e89` — `SceneCarousel.tsx`의 `LONGER_SCENES`). 세는 시점(미리보기가 실제로 재생된 때)은 그대로다
+  🟠 **여덟 장면 모두 8초 머문다**(11/14 Bumm님 «다 8초로 맞춰», 팀장 `801884e` — `SceneCarousel.tsx`의 `AUTO_ADVANCE_MS`). 그 전에는 6초였고,
+  잠깐(`6551e89`) 3 · 5 · 6 · 8번만 8초였다. 장면마다 다르게 되돌리지 말 것
 - 검사: `e2e/background-load.spec.js`(엔진은 회선으로 한 번 · 안 보이는 카드 그림), `src/lib/backgroundLoad.test.ts`(쉬기 규칙), `e2e/scene-images.spec.js`(AVIF로 보임 · JPEG 주소)
 
 ## 엔진 캐시 — 화면 배포가 부스 기기의 예열을 깨지 않는다 (2026-11-07, 지시 팀장)
@@ -1297,7 +1299,7 @@ Bumm님이 이 PC에 원격으로 들어와 웹을 열자 브라우저가 «움�
 - 🔴 **`src` · `public` · `index.html`에 `prefers-reduced-motion`(CSS `@media` · JS `matchMedia`)을 다시 쓰지 말 것** — 신호가 있어도 없을 때와 똑같이 돈다.
   `test/motion-always.test.js`가 막는다. 신호와 무관한 멈춤은 그대로다: 키보드로 다닐 때 그림 띠를 멈추고 펼치기(`data-keyboard`), 손가락으로 한 번 누르면 멈추기, 탭이 숨으면 멈추기, 스플래시 두 바퀴 하한
 - 🟠 **확인은 늘 두 조건(`reduce` · `no-preference`)으로 한다** — Playwright `emulateMedia({ reducedMotion })` · `test.use({ reducedMotion })`.
-  `e2e/motion-always.spec.js`(스플래시 막대가 실제로 움직임 · 가운데 미리보기 `currentTime` 증가 · 6초 뒤 자동 넘김과 입체 이동 · 그림 띠 흐름 · 녹음실 확대 · 문구와 3·2·1의 `countIn`),
+  `e2e/motion-always.spec.js`(스플래시 막대가 실제로 움직임 · 가운데 미리보기 `currentTime` 증가 · 8초 뒤 자동 넘김과 입체 이동 · 그림 띠 흐름 · 녹음실 확대 · 문구와 3·2·1의 `countIn`),
   `gallery-reveal` · `scene-flow` · `studio-expansion` · `generation-wait` · `arrow-interaction`의 해당 시험, 확인 도구 `release-baseline` · `tools/release-browser-stress.js`가 두 조건이다.
   옛 코드에서 `reduce` 쪽 E2E 10개와 유닛 1개가 빨간불인 것을 확인했다
 - 🟠 **함정: 세션이 띄우는 Playwright · 헤드리스는 기본이 `no-preference`라 이 결함이 안 보인다.** 원격 데스크톱으로 들어가거나 Windows «애니메이션 효과»(설정 → 접근성 → 시각 효과)를 끄면
