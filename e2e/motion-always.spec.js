@@ -32,7 +32,7 @@ for (const reducedMotion of ['reduce', 'no-preference']) {
       expect(splash.moved, '0.25초 사이 막대가 움직였다(px)').toBeGreaterThan(5);
     });
 
-    test('가운데 미리보기가 흐르고, 6초 뒤 다음 장면이 입체로 넘어오며, 아래 그림 띠가 흐른다', async ({ page }) => {
+    test('가운데 미리보기가 흐르고, 8초 뒤 다음 장면이 입체로 넘어오며, 아래 그림 띠가 흐른다', async ({ page }) => {
       // 장면이 넘어올 때 입체 이동(data-moving)이 한 번이라도 일어났는지 페이지 안에서 적는다 — 0.6초 남짓이라 바깥에서 기다리면 놓친다
       await page.addInitScript(() => {
         window.__moved = false;
@@ -58,7 +58,7 @@ for (const reducedMotion of ['reduce', 'no-preference']) {
       });
       expect(flow.name, '아래 그림 띠').not.toBe('none');
       expect(flow.moved, '0.5초 사이 그림 띠가 흘렀다(px)').toBeGreaterThan(1);
-      await expect(current).toHaveAttribute('data-index', '1', { timeout: 9000 });
+      await expect(current).toHaveAttribute('data-index', '1', { timeout: 11000 });
       expect(await page.evaluate(() => window.__moved), '장면이 입체로 넘어왔다').toBe(true);
     });
 

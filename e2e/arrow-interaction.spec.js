@@ -42,7 +42,7 @@ test('중앙 카드의 영상·제목·더빙하기 위에서만 자동 넘김�
     await expect(current).toHaveAttribute('data-index', '0');
   }
   await page.mouse.move(1, 1);
-  await page.clock.runFor(5900);
+  await page.clock.runFor(7900);
   await expect(current).toHaveAttribute('data-index', '0');
   await page.clock.runFor(100);
   await expect(current).toHaveAttribute('data-index', '1');
@@ -52,7 +52,7 @@ for (const area of ['left', 'right', 'top', 'bottom']) {
   test(`중앙 카드 밖 ${area} 영역에 마우스가 있어도 자동 순환한다`, async ({ page }) => {
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
-    // 6초는 가운데 미리보기가 재생된 때부터 센다(10/24 ⑧)
+    // 8초(11/14 Bumm님 «다 8초로 맞춰»)는 가운데 미리보기가 재생된 때부터 센다(10/24 ⑧)
     await expect.poll(() => page.locator('.scene-shell.is-current video').evaluate(v => v.currentTime)).toBeGreaterThan(.05);
     await page.locator('.scene-shell.is-current .tile-media').hover();
     await page.clock.install();
@@ -67,19 +67,13 @@ for (const area of ['left', 'right', 'top', 'bottom']) {
     await page.mouse.move(point.x, point.y);
     expect(await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest('.scene-shell.is-current'), point)).toBe(false);
     const current = page.locator('.scene-shell.is-current');
-    await page.clock.runFor(5900);
+    await page.clock.runFor(7900);
     await expect(current).toHaveAttribute('data-index', '0');
     await page.clock.runFor(100);
     await expect(current).toHaveAttribute('data-index', '1');
     await expect.poll(() => current.locator('video').evaluate(v => v.currentTime)).toBeGreaterThan(.05);
-    await page.clock.runFor(6000);
+    await page.clock.runFor(8000);
     await expect(current).toHaveAttribute('data-index', '2');
-    // 3번(애니메이션)은 8초 머문다 — 3 · 5 · 6 · 8번은 8초, 나머지는 6초(11/14 Bumm님)
-    await expect.poll(() => current.locator('video').evaluate(v => v.currentTime)).toBeGreaterThan(.05);
-    await page.clock.runFor(7900);
-    await expect(current).toHaveAttribute('data-index', '2');
-    await page.clock.runFor(100);
-    await expect(current).toHaveAttribute('data-index', '3');
   });
 }
 

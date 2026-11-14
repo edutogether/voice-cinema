@@ -8,6 +8,8 @@ const PAUSE = scenePause(TEST_SCENE.id);
 const TOTAL = clockText(LENGTH);
 const AT_PAUSE = `${clockText(PAUSE)} / ${TOTAL}`;
 const RUNNING = new RegExp(`^\\d{2}:\\d{2} / ${TOTAL}$`);
+// 미리보기는 목소리 칸 끝(멈춤 + 3.5초)에 멈추므로 시계의 끝도 그 시각이다(11/14 Bumm님 «아래 빨간색 진행바가 영상 끝나는거에 안맞네»)
+const PREVIEW_RUNNING = new RegExp(`^\\d{2}:\\d{2} / ${clockText(PAUSE + 3.5)}$`);
 const enter = (page) => page.getByRole('button', { name: `${TEST_SCENE.name} 더빙 시작`, exact: true }).click();
 
 test('대기는 전체 길이, 장면·이어 재생·미리보기·다시 녹음은 영상 시계를 표시하고 멈춤에서는 멈춤 시각에 선다', async ({ page }) => {
@@ -17,7 +19,7 @@ test('대기는 전체 길이, 장면·이어 재생·미리보기·다시 녹�
   await enter(page);
   const clock = page.locator('.clip-time');
   // 들어가면 장면이 바로 흐르므로(11/7) 영상 시계부터 보이고, 멈추면 대기의 전체 길이로 돌아온다.
-  await expect(clock).toHaveText(RUNNING);
+  await expect(clock).toHaveText(PREVIEW_RUNNING);
   await stopAutoPreview(page);
   await expect(clock).toHaveText(TOTAL);
   await page.locator('#recBtn').click();

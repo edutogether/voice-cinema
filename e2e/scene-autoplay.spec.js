@@ -25,10 +25,10 @@ test('마우스 없이 첫 장면을 재생하고 여덟 장면을 순서대로 
   await page.mouse.move(1, 1);
   await expect(current).toHaveAttribute('data-index', '1');
   for (const index of [2, 3, 4, 5, 6, 7, 0]) {
-    // 6초는 가운데 미리보기가 실제로 재생된 때부터 센다(10/24 ⑧) — 재생이 시작된 것을 보고 시계를 돌린다.
-    // 재생 시작이 시계의 어느 칸에 걸릴지는 실제 시간이라, 5.7초에는 아직, 6.3초에는 넘어가 있는지 본다.
+    // 8초(11/14 Bumm님 «다 8초로 맞춰»)는 가운데 미리보기가 실제로 재생된 때부터 센다(10/24 ⑧) — 재생이 시작된 것을 보고 시계를 돌린다.
+    // 재생 시작이 시계의 어느 칸에 걸릴지는 실제 시간이라, 7.7초에는 아직, 8.3초에는 넘어가 있는지 본다.
     await expect.poll(() => current.locator('video').evaluate(v => v.currentTime)).toBeGreaterThan(.05);
-    await page.clock.runFor(5700);
+    await page.clock.runFor(7700);
     await expect(current).not.toHaveAttribute('data-index', String(index));
     await page.clock.runFor(600);
     await expect(current).toHaveAttribute('data-index', String(index));
