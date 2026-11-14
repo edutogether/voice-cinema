@@ -34,6 +34,16 @@
   probe.setAttribute('aria-hidden', 'true');
   probe.style.cssText = 'position:fixed;left:0;top:0;width:100vw;height:100svh;overflow:scroll;visibility:hidden;pointer-events:none';
   root.appendChild(probe);
+  // 컨테이너 단위(cqw · cqh) 보정 --cq: 사파리(WebKit)는 body zoom 안에서 컨테이너 단위에 비율을 한 번 더 곱한다(크롬은 곱하지 않는다).
+  // zoom 안의 폭 100px 상자에서 100cqw가 몇 px로 계산되는지 재어 되돌릴 값을 준다 — 크롬은 1, 사파리는 1/zoom. CSS는 cq 단위마다 var(--cq, 1)을 곱한다
+  // (11/14 Bumm님 아이폰 캡처: 휴대폰 첫 화면 카드 · «더빙하기» 단추 · 오른쪽 장면 이름이 화면 밖으로 잘림 — 폭 430 아이폰에서 카드가 화면보다 넓었다).
+  var cqBox = document.createElement('div');
+  cqBox.setAttribute('aria-hidden', 'true');
+  cqBox.style.cssText = 'position:absolute;left:0;top:0;width:100px;height:0;container-type:inline-size;visibility:hidden;pointer-events:none';
+  var cqUnit = document.createElement('div');
+  cqUnit.style.cssText = 'width:100cqw;height:0';
+  cqBox.appendChild(cqUnit);
+  body.appendChild(cqBox);
   var touch = function () {
     if (matchMedia('(pointer: coarse)').matches) return true;
     return navigator.maxTouchPoints > 0 && !matchMedia('(pointer: fine)').matches;
@@ -60,6 +70,8 @@
     root.style.setProperty('--app-h', appH + 'px');
     root.style.setProperty('--brand-scale', String(Math.max(BRAND_MIN, Math.min(1, (appW * appH) / (BRAND_W * BRAND_H)))));
     root.style.setProperty('--splash-scale', String((1 + Math.sqrt((w * h) / (SPLASH_W * SPLASH_H))) / 2));
+    var cqPx = parseFloat(getComputedStyle(cqUnit).width);
+    root.style.setProperty('--cq', cqPx > 0 ? String(100 / cqPx) : '1');
     root.dataset.fit = kind;
   };
   fit();

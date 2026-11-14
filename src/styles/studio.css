@@ -35,9 +35,9 @@ body:has(#studio.active) { background:#fff; }
 .scene-caption { position:absolute; z-index:2; left:50%; bottom:6%; transform:translateX(-50%); width:max-content; max-width:80%;
   color:#fff; text-align:center; font-size:clamp(14px,calc(2.6 * var(--vw)),54px); font-weight:600; line-height:1.3; letter-spacing:0; word-break:keep-all;
   pointer-events:none; text-shadow:-1px 0 #000,1px 0 #000,0 -1px #000,0 1px #000,0 2px 6px #000c; }
-.scene-caption { bottom:8cqh; max-width:80cqw; font-size:max(14px,5cqh); }
+.scene-caption { bottom:calc(8cqh * var(--cq, 1)); max-width:calc(80cqw * var(--cq, 1)); font-size:max(14px,5cqh * var(--cq, 1)); }
 @media (orientation:portrait) {
- .scene-caption { bottom:calc((100cqh - 56.25cqw) / 2 + 4.5cqw); font-size:max(14px,2.8cqw); }
+ .scene-caption { bottom:calc(((100cqh - 56.25cqw) / 2 + 4.5cqw) * var(--cq, 1)); font-size:max(14px,2.8cqw * var(--cq, 1)); }
 }
 /* 미리보기의 대사 구간 문구 — 영상은 흐르는 채로 화면을 살짝 어둡게 하고 큰 흰 글씨를 가운데 띄운다.
    녹음 때의 «이제 당신의 차례입니다 !» · 3·2·1 화면과 같은 글씨 · 같은 나타남이다(11/8 Bumm님 — 빨간 둥근 막대를 없앰). 자막과 시간이 겹치지 않는다. */

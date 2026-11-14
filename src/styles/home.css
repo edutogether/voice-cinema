@@ -229,7 +229,7 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
    그림 띠의 높이는 칸 폭(여덟 장 + 한 칸)에서 계산한다. «01 / 08»은 구분선 아래로 옮겨 장면에 세로 공간을 더 준다. */
 @container app (min-width:761px) {
  .chart-layout { --scene-choices-width:calc(var(--app-w) - 64px); --scene-thumbnail-height:calc((var(--scene-choices-width) / 9 - 14px) * 9 / 16); }
- .scene-stage { --scene-share:64%; --scene-width:min(var(--scene-share),(100cqh - 22px - var(--scene-caption-height)) * 16 / 9); container-type:size; }
+ .scene-stage { --scene-share:64%; --scene-width:min(var(--scene-share),(100cqh * var(--cq, 1) - 22px - var(--scene-caption-height)) * 16 / 9); container-type:size; }
  .scene-shell .tile { justify-content:center; }
  .scene-shell .tile-media { flex:none; aspect-ratio:16 / 9; }
  .scene-navigation { height:38px; border-top:1px solid #ececec; }
@@ -295,7 +295,7 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
  .scene-stage { --scene-caption-height:62px; --scene-width:max(calc(50 * var(--vw)), min(calc(94 * var(--vw)), (var(--app-h) - var(--vc-reserve)) * 16 / 9)); flex:none; min-height:0; margin-inline:-16px; height:calc(var(--scene-width) * 9 / 16 + var(--scene-caption-height) + 8px); }
  @supports (width:1cqw) and (height:1svh) {
   .scene-carousel { container-type:inline-size; }
-  .scene-stage { --scene-width:max(calc((100cqw + 32px) * .5), min(calc((100cqw + 32px) * .94), (var(--app-h) - var(--vc-reserve)) * 16 / 9)); }
+  .scene-stage { --scene-width:max(calc((100cqw * var(--cq, 1) + 32px) * .5), min(calc((100cqw * var(--cq, 1) + 32px) * .94), (var(--app-h) - var(--vc-reserve)) * 16 / 9)); }
  }
  .scene-shell { top:4px; bottom:4px; }
  .scene-shell .tile-body { padding:16px 0 0; gap:0; }
@@ -350,7 +350,7 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
  .scene-carousel { flex:1 0 auto; }
  .scene-carousel::after { content:""; flex:1 0 0; }
  .scene-choice-row { margin-block:0; }
- .scene-stage { --scene-width:calc(100cqw + 32px); --scene-enter-height:clamp(44px,calc(7 * var(--vh)),64px); --scene-caption-height:var(--scene-enter-height); --scene-media-height:calc(var(--scene-width) * 9 / 16); flex:3 0 auto; }
+ .scene-stage { --scene-width:calc(100cqw * var(--cq, 1) + 32px); --scene-enter-height:clamp(44px,calc(7 * var(--vh)),64px); --scene-caption-height:var(--scene-enter-height); --scene-media-height:calc(var(--scene-width) * 9 / 16); flex:3 0 auto; }
  .scene-shell { top:0; }
  .scene-shell .tile::before { content:""; flex:1 0 0; }
  .scene-shell .tile,.scene-shell .tile-media,.scene-shell .tile:is(:hover,:focus-visible) .tile-media { border-radius:0; box-shadow:none; }
