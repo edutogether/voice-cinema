@@ -1,3 +1,22 @@
+## 규칙 밖 태그 다섯 개 정리 · code scanning 오탐 넷 닫음 (2026-11-14, 지시 Bumm님 · 팀장 전달)
+
+- **태그 다섯 개를 원격 · 로컬에서 지웠다** — 오늘 찍힌 이름들이 COMMON_STANDARDS §23-4(`-pre-` · `-audited-100` 두 종류만)를 벗어났다. §23-5(«지나온 태그는 지우지 않는다»)의 예외로, Bumm님 지시다.
+  릴리스가 붙은 것은 없었고, 가리키던 커밋은 모두 `master` 또는 `feat/vc-desktop-mail`에 들어 있어 사라지지 않는다. 다시 찍어야 하면 아래 커밋에 같은 이름 · 제목으로 찍는다:
+
+  | 태그 | 가리키던 커밋 | 찍은 때 | 제목(태그 메시지 첫 줄) |
+  |---|---|---|---|
+  | `voice-cinema-freeze-20261114-screen-text` | `ae3f33bc90bfc6b15c7b5abce17382812435bcc0` | 11/14 01:40 | Voice Cinema 11/14 라이브 — 행사 날 되돌릴 자리 (팀장 승인, Bumm 11/13 결정) |
+  | `voice-cinema-freeze-20261114-films3` | `79e03593de14aa95df1e15cc3c8050adfed9d275` | 11/14 06:45 | Voice Cinema 11/14 라이브 — 완성본 세 편 (팀장 OK, Bumm 11/14 «폭주기관차 올려») |
+  | `voice-cinema-freeze-20261114-films8` | `dd84f2cc750b44f8ad4bd9a937d79e8b5574a903` | 11/14 09:50 | 행사 당일 통과본 여덟 편 — 09:09 팀장 로컬 hosting 배포 |
+  | `voice-cinema-freeze-20261114-logo2` | `9f402dda09a8a5d117f7cfe2f969b4919cd22f4a` | 11/14 09:50 | Higgsfield 로고 · 팀장 가지 — 09:43 로컬 hosting 배포 |
+  | `voice-cinema-freeze-20261114-desktop-202` | `641feeea6ed564ce8587c7d56ee4d26238d5cb71` | 11/14 10:39 | 설치판 2.0.2 — 행사 당일 라이브와 같은 화면 · 영상 |
+
+  이 밖의 태그(`…-20261111-desktop-motion` · `…-20261111-motion-always` · `…-20261113-logo-ma` · `-audited-100` 들)와 릴리스는 건드리지 않았다
+- **code scanning 열린 경고 넷을 «오탐»으로 닫았다**(Bumm님 결정 (가)) — 닫을 때 근거 한 줄씩 붙였다. 열린 경고 0개
+  - #7 · #8 · #9 `js/missing-rate-limiting`(`functions/index.js` `/upload` · `/mail` · `/feedback`) — 핸들러 앞 `boothGuard`가 `createRateLimiter`로 IP별 분당 한도를 직접 센다.
+    진짜 핸들러로 429를 보는 시험이 있다(`upload-rate-limit` · `mail-rate-limit` · `feedback-handler`). app.md «레이트리밋은 "있다"가 아니라 "그 자리에서 불린다"를 검사한다» 절과 같은 근거
+  - #6 `js/regex-injection`(`tools/verify/layout-compare.mjs:17`) — 배포되지 않는 로컬 비교 도구의 `--ignore` 정규식이다. 돌리는 사람이 자기 명령줄에 넣는 값이라 의도된 동작
+
 ## 종합감사(행사 당일) — 찾은 결함 여덟 가지를 고치고 10/10, 라이브 Hosting · Functions를 CI 빌드 한 커밋으로 · 설치판 2.0.3은 일요일 공개 대기 (2026-11-14, 지시 Bumm님 · 팀장 전달)
 
 COMMON_STANDARDS §4~§7 기준으로 웹앱 · functions · 설치판 가지(`feat/vc-desktop-mail`)를 감사했다(§7 — Opus 6개 항목 · Sonnet 4개 항목을 따로 맡겨 서로 결과를 보지 않게 했다). 범위는 9/10 감사(`voice-cinema-freeze-20260910-audited-100`) 뒤에 바뀐 코드와
