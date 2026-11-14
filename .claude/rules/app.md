@@ -1305,6 +1305,8 @@ Bumm님이 이 PC에 원격으로 들어와 웹을 열자 브라우저가 «움�
   `var(--app-w)` · `var(--app-h)`(기준 화면 크기, px)와 `calc(N * var(--vw))` · `calc(N * var(--vh))`를 쓴다. `--app-*`는 fit.js가 준다
 - 🔴 **폭 · 높이 조건은 `@media`가 아니라 `@container app`으로** — `#root`가 `container: app / size`다. `@media (max-width…)`는 실제 화면 px로
   판정해 기준 화면과 어긋난다. `hover` · `pointer` · `orientation`은 `@media` 그대로다(비율과 무관). `prefers-reduced-motion`은 쓰지 않는다(«움직임 줄이기» 절)
+- 🔴 **WebKit은 zoom 안의 `cqw` · `cqh`에 zoom을 곱한다 — cq 단위에는 늘 `var(--cq, 1)`을 곱한다**(11/14 행사 당일, 팀장 `8ffac37`) — 크롬은 곱하지 않는다.
+  그래서 아이폰 사파리에서만 휴대폰 첫 화면 카드 · «더빙하기» · 장면 이름이 화면 밖으로 잘렸다. `public/fit.js`가 `--cq`(크롬 · 설치판 1, 사파리 1/zoom)를 재어 준다. 새 cq 단위를 쓸 때 빠뜨리면 사파리에서만 깨지고 크롬 검사로는 안 잡힌다
 - 🟠 **`getBoundingClientRect()`는 화면 px다** — 그 값을 CSS의 px(transform · 변수)로 넣을 때는 `fitScale()`(`src/lib/fit.ts`)로 나눈다
   (`SceneCarousel.tsx`의 흐름 거리, `StudioEntrance.tsx`의 확대 시작점). 나누지 않으면 2560에서 1.87배로 움직인다
 - **크기 구간별 손질을 새로 만들지 않는다**(대표님 지시). 깨지는 크기가 나오면 구간을 파지 말고 기준 화면이나 비율 규칙에서 푼다
