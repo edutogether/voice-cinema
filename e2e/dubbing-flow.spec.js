@@ -37,7 +37,8 @@ test.describe('홈 화면', () => {
     for (const name of GENRE_NAMES) {
       await expect(page.locator('.tile', { hasText: name }).first()).toBeAttached();
     }
-    await expect(page.locator('.chart-heading h1 span')).toHaveText('8');
+    // 제목 옆 장면 수(8)는 뺐다(11/14 Bumm님 «더빙할 영화 고르기 옆에 숫자 8 빼버리고»)
+    await expect(page.locator('.chart-heading h1 span')).toHaveCount(0);
   });
 
   // 2026-09-03: 교육청 주최 안내 문구는 개인정보처리방침 별도 페이지(privacy.html)에 있다.

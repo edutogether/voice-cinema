@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { previewUrl, firstUrl, thumbUrl, stillUrl, thumbAvifUrl, stillAvifUrl, type Genre } from '../genres';
 import { ActionIcon } from './ActionIcon';
-import { HiggsfieldMark } from './HiggsfieldMark';
 
 // 재생이 멈췄는지 되돌아보는 간격. loop만으로는 실제 기기에서 계속 돈다는 보장이
 // 없다 — 절전 모드, 동시 디코드 한도, 백그라운드 전환 등으로 브라우저가 임의로
@@ -88,12 +87,11 @@ export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, ne
           {/* 가운데 카드(playing)는 받는 동안에도 영상 자리를 보인다 — 포스터(영상 첫 프레임)가 먼저 보이고 그 위에서 0초부터 이어진다. 카드 그림(멈춤 장면)에서 0초로 튀던 것을 없앤다(11/14 Bumm님). */}
           <video className={playing ? 'preview active' : 'preview'} ref={videoRef} muted playsInline preload="none" poster={showImage ? firstUrl(genre.id) : undefined} />
         </span>
-        {/* 영상을 만든 도구의 로고 — 그림의 보이는 오른쪽 위(11/14 Bumm님, Poster Studio와 같은 규칙) */}
-        <HiggsfieldMark />
         <span className="tile-number">{String(sceneNumber).padStart(2, '0')}</span>
         {/* 휴대폰 폭에서만 보인다 — 장르 배지와 장면 이름을 그림 오른쪽 아래에 얹고 아래 이름 줄을 접는다(10/19 대표님, home.css) */}
         <span className="tile-tag"><b>{genre.name}</b>{genre.summary}</span>
-        {/* 흰 굵은 글자 + 깜빡이는 빨간 점, 바탕 막대 없음 · 그림 왼쪽 위(11/14 Bumm님 — 오른쪽 위는 Higgsfield 로고 자리, home.css) */}
+        {/* 흰 굵은 글자 + 깜빡이는 빨간 점, 바탕 막대 없음 · 그림 왼쪽 위(11/14 Bumm님, home.css). 첫 화면 카드에는 Higgsfield 로고를 두지 않는다 —
+            11/14 Bumm님 «미리보기 재생중이라고 뜨는 메인 영상에는 힉스필드를 빼버려야겠어 어떻게 해도 지저분함». 로고는 녹음실 영상에만 얹는다(Studio). */}
         <span className="tile-preview-label"><i className="onair-dot" aria-hidden="true" />미리보기 재생 중</span>
       </span>
       <span className="tile-body">

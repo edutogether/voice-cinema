@@ -65,7 +65,6 @@ body:has(#home.active) { background:#fff; }
 .chart-title { font-weight:inherit; word-break:keep-all; }
 .chart-title em { color:#df291f; font-style:normal; }
 .chart-title-phone { display:none; }
-.chart-heading h1 span { display:grid; place-items:center; width:26px; height:26px; background:#f3f3f3; border-radius:50%; font-size:.875rem; letter-spacing:0; font-weight:600; }
 .tile { position:relative; display:flex; flex-direction:column; width:100%; min-width:0; min-height:0; appearance:none; border:0; padding:0; text-align:left; background:white; color:#171717; font:inherit; cursor:pointer; border-radius:12px; }
 .tile-media { display:block; position:relative; flex:1; min-height:0; width:100%; overflow:hidden; background:#181818; }
 /* 카드를 채우는 자식도 자신의 모서리를 갖는다 — iOS는 transform이 걸린 카드(캐러셀의 크기 변화)에서
@@ -171,13 +170,16 @@ html[data-fit="none"] .download-link { display:none; }
 
 /* CGV 실사이트의 중앙 확대·양옆 후퇴 구조. 여섯 선택지는 아래에서 모두 보인다. */
 .scene-carousel { display:flex; flex-direction:column; flex:1; min-height:0; }
-.scene-stage { --scene-caption-height:94px; position:relative; flex:1; min-height:200px; overflow:hidden; touch-action:pan-y; }
+.scene-stage { --scene-caption-height:62px; position:relative; flex:1; min-height:200px; overflow:hidden; touch-action:pan-y; }
 .scene-shell { position:absolute; left:50%; top:10px; bottom:12px; width:var(--scene-width); transform-origin:50% 42%; will-change:transform,opacity; }
 .scene-shell .tile { width:100%; height:100%; margin:0; padding:0; box-shadow:none; border-radius:16px; background:transparent; }
 .scene-shell .tile-media { border-radius:16px; box-shadow:0 8px 24px #17202c12; }
-.scene-shell .tile-body { min-height:var(--scene-caption-height); padding:18px 4px 4px; gap:20px; opacity:1; transition:opacity .18s ease; }
-.scene-shell .gname { font-size:1.875rem; gap:12px; }
-.scene-shell .gsub { font-size:.9375rem; margin-top:6px; }
+/* 장면 이름은 장르 옆 한 줄이고(«SF 퍼스트 헬로»), 그 줄과 빨간 «더빙하기»의 아래 끝을 맞춘다 — 장르 이름은 줄 간격 1로 두어 글자 아래가 줄 상자 아래와 같다
+   (11/14 Bumm님 «판타지 밑에 빛의 결투 써있는거 판타지 옆으로 옮기고 옆에 빨간버튼하고도 아랫정렬 잘 맞춰서 이상하게 비뚤어보이지 않게»). 두 줄이던 때의 높이 94px는 62px로 줄였다. */
+.scene-shell .tile-body { min-height:var(--scene-caption-height); padding:10px 4px 0; gap:20px; align-items:flex-end; opacity:1; transition:opacity .18s ease; }
+.scene-shell .tile-copy { display:flex; align-items:baseline; gap:14px; }
+.scene-shell .gname { font-size:1.875rem; gap:12px; line-height:1; }
+.scene-shell .gsub { font-size:.9375rem; margin-top:0; line-height:1; }
 .scene-shell .tile-enter { background:#df291f; color:white; border:0; padding:13px 22px; font-size:.9375rem; }
 .scene-shell .tile-number { font-size:clamp(3.5rem,calc(6 * var(--vw)),6rem); left:24px; bottom:18px; }
 .scene-shell:not(.is-current) .tile-body { opacity:0; pointer-events:none; }
@@ -250,11 +252,7 @@ body:has(#splash) .scene-choice-track { animation-play-state:paused; }
 @container app (min-width:761px) and (max-height:820px) {
  .chart-layout { padding-top:16px; }
  .chart-heading { padding-bottom:10px; }
- .scene-stage { --scene-caption-height:62px; }
- .scene-shell .tile-body { padding:10px 4px 0; }
- .scene-shell .tile-copy { display:flex; align-items:baseline; gap:14px; }
  .scene-shell .gname { font-size:1.5rem; }
- .scene-shell .gsub { margin-top:0; }
  .scene-shell .tile-enter { padding-block:11px; }
  .scene-shell .tile-number { font-size:3.5rem; left:18px; bottom:12px; }
 }
