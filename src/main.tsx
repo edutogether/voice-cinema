@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { installSplash } from './lib/splash';
-import { escapeKakaoInApp } from './lib/kakaoEscape';
+import { dropKakaoOpenMark, escapeKakaoInApp } from './lib/kakaoEscape';
 import { startMailDelivery } from './lib/mailDelivery';
 import './styles/base.css';
 import './styles/splash.css';
@@ -24,4 +24,5 @@ function startApp() {
   );
 }
 
+dropKakaoOpenMark();
 if (!escapeKakaoInApp(startApp)) startApp();

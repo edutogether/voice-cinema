@@ -3,7 +3,7 @@
 import { test, expect } from 'vitest';
 import {
   pickAudioExtension, buildUploadFilename, pickSupportedMime, shouldRetryUpload,
-  isKakaoInApp, kakaoExternalUrl, kakaoMenuHint, isPreviewChannel,
+  isKakaoInApp, kakaoExternalUrl, withoutKakaoOpenMark, kakaoMenuHint, isPreviewChannel,
 } from './logic';
 
 test('pickAudioExtension: mp4 계열은 m4a, 그 외(webm/opus)는 webm', () => {
@@ -65,10 +65,18 @@ test('isKakaoInApp: 카카오톡 안 브라우저만 잡고, 다른 브라우저
   expect(isKakaoInApp(UA.kakaoStory)).toBe(false);
 });
 
-test('kakaoExternalUrl: 지금 주소를 통째로 인코딩해 카카오톡의 다른 브라우저 열기 주소에 싣는다', () => {
-  expect(kakaoExternalUrl('https://voice.edutogether.kr/')).toBe('kakaotalk://web/openExternal?url=https%3A%2F%2Fvoice.edutogether.kr%2F');
-  // 쿼리·해시가 바깥 주소의 쿼리로 새지 않게 &·#·=까지 인코딩한다
-  expect(kakaoExternalUrl('https://voice.edutogether.kr/?a=1&b=2#x')).toBe('kakaotalk://web/openExternal?url=https%3A%2F%2Fvoice.edutogether.kr%2F%3Fa%3D1%26b%3D2%23x');
+test('kakaoExternalUrl: 지금 주소에 넘김 표시를 붙여 통째로 인코딩해 카카오톡의 다른 브라우저 열기 주소에 싣는다', () => {
+  expect(kakaoExternalUrl('https://voice.edutogether.kr/', 'k1')).toBe('kakaotalk://web/openExternal?url=https%3A%2F%2Fvoice.edutogether.kr%2F%3Fvc-open%3Dk1');
+  // 쿼리·해시가 바깥 주소의 쿼리로 새지 않게 &·#·=까지 인코딩한다. 원래 쿼리 · 해시는 그대로 둔다
+  expect(kakaoExternalUrl('https://voice.edutogether.kr/?a=1&b=2#x', 'k2')).toBe('kakaotalk://web/openExternal?url=https%3A%2F%2Fvoice.edutogether.kr%2F%3Fa%3D1%26b%3D2%26vc-open%3Dk2%23x');
+  // 표시가 다르면 주소가 달라진다 — 바깥 브라우저가 열려 있던 같은 주소의 탭을 다시 꺼내지 않게(11/14)
+  expect(kakaoExternalUrl('https://voice.edutogether.kr/', 'a')).not.toBe(kakaoExternalUrl('https://voice.edutogether.kr/', 'b'));
+});
+
+test('withoutKakaoOpenMark: 넘김 표시만 빼고 나머지 쿼리 · 해시는 둔다, 표시가 없으면 null', () => {
+  expect(withoutKakaoOpenMark('https://voice.edutogether.kr/?vc-open=k1')).toBe('https://voice.edutogether.kr/');
+  expect(withoutKakaoOpenMark('https://voice.edutogether.kr/?a=1&vc-open=k1#x')).toBe('https://voice.edutogether.kr/?a=1#x');
+  expect(withoutKakaoOpenMark('https://voice.edutogether.kr/?a=1')).toBeNull();
 });
 
 test('kakaoMenuHint: 카카오가 안내한 메뉴 위치대로 — 아이폰은 위 가운데 주소, 안드로이드는 아래 오른쪽 메뉴', () => {
