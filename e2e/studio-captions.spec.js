@@ -4,18 +4,18 @@ import { clipLength, scenePause, sceneLines, TEST_SCENE } from './scene-data.js'
 
 // 장면 더빙 2.0 상대 대사 자막(app-plan §2-3): 넷플릭스식 — 영상 안 아래 가운데, 영상 폭 80% 안, 두 줄 이내,
 // 영상 높이의 약 5%(최소 14px). 멈춤 뒤 문구·카운트다운·녹음 중에는 없고, 미리보기 · 장면 · 다시 녹음의 대사 시각에 나온다(10/20 «다시 듣기» 없앰).
-// 가장 긴 대사는 11/14 드라마 완성본 «안녕, 설이»의 할머니 대사다(한글 13자, 5.3초에 나온다)
-const LONGEST = ['드라마', '설이한테 꼭 다시 온다고 인사해 !'];
+// 가장 긴 대사는 11/14 드라마 완성본 «안녕, 설이»의 할머니 대사다(한글 13자) — 글과 시각은 src/genres.ts에서 읽는다
+const LONGEST = sceneLines('drama').reduce((a, b) => (b.text.length > a.text.length ? b : a));
 
 for (const [width, height] of [[1440, 900], [390, 844], [360, 640], [844, 390]]) {
   test(`${width}×${height}: 가장 긴 대사도 영상 안에 두 줄 이내로, 폭 80% 안에 놓인다`, async ({ page }) => {
     await page.setViewportSize({ width, height });
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
-    await page.getByRole('button', { name: `${LONGEST[0]} 더빙 시작`, exact: true }).click();
+    await page.getByRole('button', { name: '드라마 더빙 시작', exact: true }).click();
     await page.locator('#recBtn').click();
     const caption = page.getByTestId('scene-caption');
-    await expect(caption).toHaveText(LONGEST[1], { timeout: 9000 });
+    await expect(caption).toHaveText(LONGEST.text, { timeout: (LONGEST.start + 4) * 1000 });
     const box = await page.evaluate(() => {
       const video = document.querySelector('#clip');
       const v = video.getBoundingClientRect();
