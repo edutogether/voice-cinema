@@ -443,7 +443,7 @@ Bumm님이 **"Codex로 인계"** 또는 **"Claude로 인계"**라고 하면 넘�
 | 배포 동결 | **2026-11-07(금) 마지막 배포 → 11-14 행사 종료까지 동결**(행사일 D-7) | 9/8 산정 |
 | 주소 | 옛 주소를 행사 전에 끄지 않는다. `deploy.yml`·`firebase.json`·`.firebaserc`의 `voice-cinema`는 배포 대상 식별자 | 9/9 |
 | 개인정보 | 앱 안에 동의 절차를 만들지 않는다(오프라인 동의 존재). `dubs/`를 비우자고 올리기 전에 안부터 본다 | 8/27 · 9/11 |
-| 서버 | `concurrency: 1`, `trust proxy` 값 `1`, `/upload` 검사 순서, 타임아웃 110초 양쪽 일치, `BOOTH_TOKEN` 양쪽 일치, CORS 정규식 앵커·점 이스케이프, `uuid` override 유지, `npm audit fix --force` 금지 | app.md |
+| 서버 | `concurrency: 1`, `trust proxy` 값 `1`, `/upload` 검사 순서, 타임아웃 110초 양쪽 일치, `BOOTH_TOKEN` 양쪽 일치, CORS 정규식 앵커·점 이스케이프, `npm audit fix --force` 금지(의존성 덮어쓰기는 11/14 판 올리기로 뺐다) | app.md |
 
 ## 5. 작업 현황
 

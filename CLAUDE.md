@@ -74,7 +74,7 @@ CSP도 ffmpeg.wasm(Worker+WebAssembly+`blob:`) · MediaRecorder(`blob:` 재생) 
 - **Storage `dubs/`는 학생 완성본이 들어가는 운영 경로다.** 🟠 **"지워야 한다"고 올리기 전에 안을 먼저 본다** — `gcloud storage ls gs://inky-voice-cinema.firebasestorage.app/dubs/ --account=edutogether2015@gmail.com`
   (기본 계정은 403). 2026-09-11 안 보고 «삭제»를 올렸다가 되물음을 받았다(경위는 archive).
 - **아이패드(사파리)는 권장하지 않는다** — 마이크 호환 문제. 노트북 또는 안드로이드 태블릿을 쓴다.
-- **`npm audit fix --force`를 실행하지 말 것** — `firebase-admin`을 10.3.0으로 내려 모듈형 API가 사라진다. 의존성 덮어쓰기(functions의 uuid · rimraf→glob, 루트의 eslint→minimatch)도 지우지 말 것 — 이유와 확인은 `app.md`.
+- **`npm audit fix --force`를 실행하지 말 것** — `firebase-admin`을 10.3.0으로 내려 모듈형 API가 사라진다. 의존성 덮어쓰기는 11/14 판 올리기(firebase-admin 14.5.1 · eslint 10.15)로 셋 다 뺐다 — 근거와 다시 넣을 때의 함정은 `app.md`.
 
 ## 자율 권한
 `bypassPermissions`는 커밋되는 `.claude/settings.json`이 아니라 gitignore된 `.claude/settings.local.json`에 있다(대표 직접 커밋, COMMON_STANDARDS §9). **세션 자신의 권한 · 설정 파일은 대표 본인이 이 창에서 직접 지시할 때만 수정한다.**

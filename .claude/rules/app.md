@@ -307,9 +307,11 @@
 - **`voiceCinema`의 `concurrency: 1`을 올리지 말 것** — 요청 하나가 큰 본문을 붙들어, 겹치면 OOM으로 다른 학생 요청까지
   연쇄로 죽는다. 처리량은 `maxInstances`가 담당한다
 - 🟠 **`voiceCinema`의 `memory: '512MiB'`를 256MiB로 되돌리지 말 것**(2026-11-14 감사, 행사 당일) — 완성본(21~30초)이 들어와 업로드 본문이
-  최대 22.8MB가 되자 256MiB 인스턴스가 «Memory limit of 256 MiB exceeded»를 39번(최대 338MiB) 내고 업로드 500이 8번 났다(모두 화면의
+  최대 22.8MB가 되자 256MiB 인스턴스가 «Memory limit of 256 MiB exceeded»를 50번(09:31~15:59, 최대 338MiB) 내고 업로드 500이 10번 났다(모두 화면의
   재시도로 200, 잃은 영화 0). 9/7에 잡은 256MiB는 10초 장면 기준(실측 ≈ 180MB)이었다. 확인은
   `gcloud logging read 'resource.labels.service_name="voicecinema" AND textPayload:"Memory limit"' --project inky-voice-cinema --account=edutogether2015@gmail.com --freshness=1d`
+  - 🟠 **512MiB 실사용 확인 대기**(11/14 Bumm님 결정 (가), 팀장 전달) — 512MiB 배포(11/14 오후) 뒤에는 부스가 닫혀(16:00) 큰 업로드가 아직 없다. 시험 업로드는 하지 않고,
+    **다음에 실제로 쓸 때 첫 큰 업로드(본문 15MB 이상)의 기록으로** 200 · «Memory limit» 0번을 확인한 뒤 이 줄을 🟢로 바꾼다(위 명령 · 크기는 업로드 성공 줄 `[upload:…] 성공: … (N바이트)`의 바이트 — 저장 이름은 공개 주소라 보고에 옮기지 않는다)
 - 🟢 **`/kakao/start` · `/kakao/callback`은 의견이 닫힌 뒤(`FEEDBACK_CLOSE_AT`) 410이다**(11/14 감사) — 연결은 의견 알림에만 쓴다. 열어 두면 문 검사 없이
   부를 때마다 연결 대기 칸에 Firestore 쓰기가 일어났다. 저장된 토큰의 매일 갱신은 그대로 돈다(`feedback-handler.test.js`)
 - **CORS 허용 출처 정규식의 앵커(`^`/`$`)를 풀지 말 것** — 부모 도메인 항목이 서브도메인을 매치하지
@@ -331,34 +333,25 @@
 - **`public/vendor/`의 ffmpeg를 번들러에 태우지 말 것** — Worker+WebAssembly+blob: URL로 코어를 스스로
   로드하므로, 번들러가 해시·재작성하면 경로 해석이 깨진다. `src/lib/vendor.ts`의 절대경로 동적 import를 유지한다
 - **`npm audit fix --force`를 실행하지 말 것** — `firebase-admin`을 10.3.0으로 다운그레이드해 지금 쓰는 모듈형
-  API가 사라지면서 코드가 깨진다. functions `npm audit`는 2026-11-01 기준 0건이다(uuid · glob 덮어쓰기, 아래 두 항목)
+  API가 사라지면서 코드가 깨진다. functions `npm audit`는 2026-11-14 기준 0건이다(firebase-admin 14.5.1 — 덮어쓰기 없이, 아래 «덮어쓰기 셋을 뺐다»)
 - 🟠 **firebase-tools를 `package.json` · `package-lock.json`에 다시 넣지 말 것**(2026-11-01 Bumm님 결정, `_shared/CONVENTIONS.md` §3.7) —
   쓰는 자리에서 정확한 판을 박아 `npx --yes firebase-tools@15.32.1`로 부른다(`@latest` · 범위 금지). 잠금 파일에 두면 firebase-tools가 끌고 오는
   고친 판 없는 옛 minimatch(3 · 5 · 6 · 9) 때문에 Dependabot 경고가 닫히지 않는다(11판으로 덮어쓰면 배포가 깨진다). 빼자 루트 `npm audit`가 26건 → 5건이 됐다
-  (남은 5건은 eslint의 minimatch 하나 — 아래 eslint 덮어쓰기로 0건).
+  (남은 5건은 eslint의 minimatch 하나 — 11/1 eslint 덮어쓰기로 0건, 11/14 eslint 10.15가 스스로 minimatch 11을 써서 덮어쓰기를 뺐다).
   - deploy 잡은 auth **전**에 `npx --yes firebase-tools@<판> --version`으로 받아 두고, auth 뒤 배포 두 줄이 같은 판을 다시 부른다 — 두 번째 부름은
     다시 설치하지 않는다(빈 캐시에서 첫 부름 29초 설치, 두 번째 4초 · 설치 없음 실측). `test/contract.test.js`가 세 줄이 같은 정확한 판인지,
     받기가 auth 앞인지, 잠금 파일에 없는지를 검사한다(다섯 가지로 일부러 틀리게 해 빨간불 확인)
   - **대가(알고 고른 것)**: CLI의 하위 의존성은 실행할 때마다 정해지고 Dependabot이 추적하지 않는다. 2026-10-09에 잠금 파일로 옮긴 이유(«자격증명을
     깐 뒤 잠기지 않은 하위 의존성을 받는다»)는 받기를 auth 앞에 두는 것으로 절반만 남겼다. 판을 올릴 때는 `deploy.yml`의 세 줄을 함께 바꾼다
   - 로컬에서도 같은 판으로 부른다: `npx firebase-tools@15.32.1 <명령>`(이 저장소 폴더 안에서 — `firebase.json`을 읽는다)
-- 🟠 **`functions/package.json`의 `overrides`에 있는 `"uuid": "^11.1.1"`을 지우지 말 것**(2026-09-10, 11/14 감사 때 `CLAUDE.md`에서 옮김) — 이것 하나로
-  moderate 6건이 0건이 된다. 취약한 `uuid@9`는 `firebase-admin` → `@google-cloud/storage@7`(11/14 잠금 파일 7.22.0) → `teeny-request@9`로 딸려 오는 전이 의존성이다.
-  `teeny-request`가 uuid를 쓰는 자리는 `index.js`의 `uuid.v4()` **한 곳뿐**이라 덮어써도 안전하다 — 그 호출과 `Storage` 생성, `functions/index.js` 로드까지 실제로 실행해 확인했다(2026-09-10)
-- 🟢 **루트 `overrides`(gaxios → uuid `^11.1.1`)는 2026-11-01에 뺐다** — firebase-tools와 함께 gaxios가 루트 트리에서 사라졌다. npx로 받는 CLI 안의
-  uuid 9는 위 «대가»에 든다(그쪽에는 덮어쓰기가 닿지 않는다)
-- 🟠 **`functions/package.json`의 `overrides`에 있는 `"rimraf": { "glob": "^14.0.3" }`을 지우지 말 것**(2026-11-01) — 이것으로 Dependabot #31(glob)·
-  #32(minimatch)가 닫힌다. glob 10.5.0 · minimatch 9.0.9는 firebase-admin 14.3.0 → firestore 8.7.1 → google-gax 5.0.8 → rimraf 5.0.10으로 딸려 오는데,
-  고친 판이 glob 14.0.2 · minimatch 11.0.1(10/27 공개)뿐이고 rimraf 최신(6.1.3)도 glob `^13`이라 Dependabot이 PR을 만들지 못한다.
-  firebase-admin을 14.5.0으로 올려도 firestore 9가 같은 google-gax 5를 데려와 빠지지 않는다(잠금 파일로 확인). google-gax 안에 rimraf를 부르는
-  파일이 없어 **함수가 도는 동안 rimraf · glob은 로드되지 않는다.** 확인한 것: rimraf 5 + glob 14로 `glob()` · `globSync()`와 rimraf의 glob 경로(맞는 파일 0개),
-  functions 유닛 55개, functions `npm audit` 0건. 범위를 rimraf로 좁힌 것은 다른 곳이 glob을 새로 쓰면 그쪽은 건드리지 않게 하려는 것이다
-- 🟠 **루트 `package.json`의 `overrides`에 있는 `"eslint": { "minimatch": "^11.0.1" }`을 지우지 말 것**(2026-11-01, 지시 팀장 — Codyssey PR #104 ·
-  CLASSCADE와 같은 방식) — 이것으로 Dependabot #43(minimatch)이 닫히고 루트 `npm audit`가 0건이 된다. firebase-tools를 뺀 뒤 루트의 minimatch는
-  eslint 10.10.0이 쓰는 10.2.6 하나였고, 고친 판은 11.0.1 이상뿐인데 최신 eslint 10.14.0도 `^10.2.6`이다. eslint와 `@eslint/config-array`는 이름으로
-  불러 쓰므로(`minimatch.Minimatch`) 11판에서도 그대로 돈다 — 10.2.6과 11.0.3에서 검사 대상 파일 78개 · 결과(메시지 0) · 파일별 규칙 64종 · 무시 경로 판정이
-  바이트까지 같았다. 범위를 eslint로 좁혔다(나중에 들어오는 다른 패키지가 옛 minimatch를 함수로 부르면 깨지지 않게).
-  🔴 **firebase-tools 같은 옛 소비자에는 11판을 덮어쓰지 말 것** — 11판은 `require("minimatch")`가 함수가 아니라 객체라서, firebase-tools `lib/fsAsync.js`
+- 🟢 **의존성 덮어쓰기(`overrides`) 셋을 2026-11-14에 뺐다 — 판을 올리자 덮어쓸 대상이 트리에서 사라졌다**(지시 Bumm 11/14, 팀장 전달 — eslint 10.15 · @playwright/test 1.65.1 · firebase-admin 14.5.1)
+  - functions `"uuid": "^11.1.1"`(9/10, moderate 6건) · `"rimraf": { "glob": "^14.0.3" }`(11/1, Dependabot #31 · #32) — firebase-admin 14.5.1이 `@google-cloud/storage` 8.4.0 · `@google-cloud/firestore` 9.4.1 ·
+    google-gax 6.17.0을 데려오며 uuid · glob · rimraf · minimatch가 functions 트리에서 모두 빠졌다(`npm ls uuid glob rimraf minimatch` 비어 있음). 옛 사정: uuid 9는 storage 7 → teeny-request 9,
+    glob 10 · minimatch 9는 firestore 8 → google-gax 5 → rimraf 5로 딸려 왔다
+  - 루트 `"eslint": { "minimatch": "^11.0.1" }`(11/1, Dependabot #43) — eslint 10.15.0 자신이 `minimatch ^11.0.5`를 쓴다(트리에 11.0.8 하나)
+  - Storage 8 · Firestore 9의 깨지는 변경은 «Node 22 이상» 하나뿐이다(google-cloud-node 릴리스 노트) — 함수 런타임이 Node 22(`functions/package.json` engines)라 맞다.
+    확인: 린트 · 타입, 유닛 루트 151 · functions 147(진짜 `publicUrl()` · 핸들러 시험 포함), `npm audit` 루트 · functions 0건, 웹 E2E
+  - 🔴 **덮어쓰기를 다시 넣어야 하면 firebase-tools 같은 옛 소비자에는 minimatch 11판을 덮어쓰지 말 것** — 11판은 `require("minimatch")`가 함수가 아니라 객체라서, firebase-tools `lib/fsAsync.js`
   (functions 배포 묶기 `prepareFunctionsUpload`가 쓴다)와 superstatic이 `minimatch(...)`로 부르는 자리가 깨진다(배포가 죽는다)
 - **동결 기간에는 배포하지 말 것** — 아래 "행사 직전 배포 동결" 절의 기준과 절차를 따른다
 
@@ -743,7 +736,11 @@ Storage에 닿지 않는다. 저장 이름과 덮어쓰기 방지는 `upload-nam
   이 방어가 조용히 빠지면 스크립트 하나가 업로드를 무제한으로 때려도 아무도 모른다
 - **CodeQL이 `js/missing-rate-limiting`(high)으로 이 자리를 지적하는데 오탐이다** —
   `express-rate-limit` 같은 미들웨어 모양만 찾아서 핸들러 안에서 직접 검사하는 구현을 못 본다.
-  지적을 지우려고 구현을 미들웨어로 바꾸지 말 것 — 지금 것이 실측으로 도는 것이 확인돼 있다
+  지적을 지우려고 구현을 미들웨어로 바꾸지 말 것 — 지금 것이 실측으로 도는 것이 확인돼 있다.
+  🟢 2026-11-14 열려 있던 #7~#9(`functions/index.js`의 `/upload` · `/mail` · `/feedback`)를 이 근거로 «오탐»으로 닫았다(지시 Bumm 11/14, 팀장 전달 — 닫을 때 남긴 근거: `boothGuard`가 `createRateLimiter`로
+  IP별 분당 한도를 직접 셈 · 업로드 60 · 메일 20 · 의견 10 · 인증 전 600 · 진짜 핸들러 시험 셋이 429를 확인)
+- 🟢 **`tools/verify/layout-compare.mjs`의 `js/regex-injection`(#6)도 오탐이다** — 배포되지 않는 로컬 비교 도구의 `--ignore` 정규식이고, 돌리는 사람이 자기 명령줄에 직접 넣는 값이다.
+  서버 · 화면 어디에도 실리지 않는다. 같은 날 같은 근거로 닫았다
 - **`public/vendor/ffmpeg/worker.js`의 CodeQL 지적도 오탐이다** — `importScripts(_coreURL)`의
   `_coreURL`은 `src/lib/ffmpeg.ts`가 넘기는 **소스에 박힌 절대경로**(`/vendor/ffmpeg-core/ffmpeg-core.js`)를
   blob으로 바꾼 것이라 사용자 값이 닿지 않는다. **벤더 파일을 직접 고치지 말 것** — 업그레이드에서 날아간다

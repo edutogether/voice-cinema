@@ -35,8 +35,8 @@
   완성본 업로드에 256MiB가 넘쳤다), `trust proxy: 1`, 업로드 검사 순서(인증 전 상한 → BOOTH_TOKEN → App Check → 업로드 한도
   → 본문). 저장 이름은 서버가 정한다. MP4 MIME·바이트 시그니처·디코딩된 크기 20MiB·파일명 120자 검증과 CORS 앵커·점 이스케이프를 유지한다.
 - 업로드 110초와 `BOOTH_TOKEN`의 클라이언트·서버 일치는 `src/config.ts`·`functions/index.js` 및
-  `test/contract.test.js`로 유지한다. Functions의 `uuid` override와 `rimraf` → `glob` override, 루트의
-  `eslint` → `minimatch` override를 유지하고 `npm audit fix --force`를 사용하지 않는다.
+  `test/contract.test.js`로 유지한다. 의존성 덮어쓰기(`overrides`)는 2026-11-14 판 올리기로 셋 다 뺐다
+  (firebase-admin 14.5.1 · eslint 10.15 — 덮어쓸 대상이 트리에 없다). `npm audit fix --force`를 사용하지 않는다.
 - 장면 원판은 H.264/AAC이고 소리 트랙(원판 소리)이 있어야 한다 — 합성이 원판 소리에 목소리를 그 장르의 멈춤 시각만큼 늦춰 섞는다. 2026-11-14부터
   여덟 편 모두 완성본이라 길이(21.0~30.1초)와 멈춤 시각(12.0 · 13.9 · 15.0초)이 편마다 다르고, 길이는 숫자로 박지 않고 원판 파일에서
   읽는다(`tools/clip-versions.js` → `src/genres.ts`). 원판·합성용 원판(로고를 구운 `clips/final/`)·미리보기(0~멈춤

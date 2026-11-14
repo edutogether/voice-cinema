@@ -1,3 +1,14 @@
+## 의존성 판 올리기 — eslint 10.15 · @playwright/test 1.65.1 · firebase-admin 14.5.1, 덮어쓰기 셋을 뺌 (2026-11-14, 지시 Bumm님 · 팀장 전달)
+
+- **루트**: eslint 10.10 → 10.15.0, @playwright/test 1.63 → 1.65.1(CI가 브라우저 캐시 키를 Playwright 판으로 잡아 새로 받는다). **functions**: firebase-admin 14.3 → 14.5.1
+  (`@google-cloud/storage` 7 → 8.4.0 · `@google-cloud/firestore` 8 → 9.4.1 · google-gax 5 → 6.17.0). Storage 8 · Firestore 9의 깨지는 변경은 «Node 22 이상» 하나 — 함수 런타임이 Node 22다
+- **덮어쓰기(`overrides`) 셋을 뺐다** — functions `uuid ^11.1.1` · `rimraf → glob ^14.0.3`, 루트 `eslint → minimatch ^11.0.1`. 판을 올리자 덮어쓸 대상(uuid 9 · glob 10 · rimraf 5 · minimatch 9 · 10)이
+  트리에서 사라졌다(functions `npm ls uuid glob rimraf minimatch` 비어 있음, 루트 minimatch는 eslint 10.15 자신의 `^11.0.5` → 11.0.8 하나). app.md · AGENTS.md · CLAUDE.md의 «지우지 말 것»을 이 사실로 고쳤다
+  (firebase-tools 같은 옛 소비자에 minimatch 11을 덮어쓰지 말라는 🔴 경고는 남김)
+- 문서: app.md — 함수 메모리 512MiB **실사용 확인 대기**(Bumm님 결정 (가): 시험 업로드 없이 다음 실사용 첫 큰 업로드 기록으로), 메모리 초과 횟수를 CHANGELOG와 같은 50번 · 500 10번으로, code scanning 넷을 닫은 근거
+- 확인(이 PC): 린트 · 타입, 유닛 루트 151 · functions 147, 웹 E2E 344 통과 · 12 건너뜀 · 실패 0(Playwright 1.65.1, 22.4분), `npm audit` 루트 · functions 0건,
+  잠금 파일을 `--package-lock-only`로 다시 만들어도 바이트가 같음(package.json과 맞음)
+
 ## 규칙 밖 태그 다섯 개 정리 · code scanning 오탐 넷 닫음 (2026-11-14, 지시 Bumm님 · 팀장 전달)
 
 - **태그 다섯 개를 원격 · 로컬에서 지웠다** — 오늘 찍힌 이름들이 COMMON_STANDARDS §23-4(`-pre-` · `-audited-100` 두 종류만)를 벗어났다. §23-5(«지나온 태그는 지우지 않는다»)의 예외로, Bumm님 지시다.
