@@ -10,6 +10,7 @@ import { prefetchFinalClip } from '../lib/ffmpeg';
 import { ActionIcon } from './ActionIcon';
 import { ClipTimeline } from './ClipTimeline';
 import { FestivalHeader } from './FestivalHeader';
+import { HiggsfieldMark } from './HiggsfieldMark';
 import { SceneCaption, SceneTurnCue } from './SceneCaption';
 import { StudioEntrance } from './StudioEntrance';
 import type { SceneEntrance } from '../lib/sceneEntrance';
@@ -168,6 +169,8 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
                 <strong>{genre.summary}</strong>
                 <p>{genre.name}<span>{lengthLabel(genre)}</span></p>
               </div>
+              {/* 영상을 만든 도구의 로고 — 영상의 보이는 오른쪽 위, 미리보기 · 녹음 내내(11/14 Bumm님, Poster Studio와 같은 규칙). 어두운 막 · 3·2·1 · «녹음 중»은 그 위에 온다 */}
+              <HiggsfieldMark />
               {/* 메인 카드처럼 장르 배지 + 장면 이름을 영상 왼쪽 아래에 — 키 큰 세로 휴대폰에서만(11/9 시안). 그때 위 머리줄의 제목은 화면 읽기용으로만 남긴다 */}
               <div className="studio-scene-tag" aria-hidden="true"><b>{genre.name}</b>{genre.summary}</div>
               {settled && playing && buffering && <div className="studio-buffering" role="status">영상을 불러오고 있어요 {loaded}%</div>}

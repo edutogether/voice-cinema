@@ -78,7 +78,7 @@ body:has(#home.active) { background:#fff; }
 .tile-number { position:absolute; bottom:10px; left:18px; color:#fff; font-size:clamp(2.5rem,calc(4 * var(--vw)),4.5rem); font-weight:800; font-style:italic; line-height:1; letter-spacing:-.06em; text-shadow:0 2px 12px #0008; }
 /* «미리보기 재생 중» — 바탕 막대 없이 흰 굵은 글자와 깜빡이는 빨간 점만(11/14 Bumm님 «빨간 배경바 없애, 옆에 깜빡이는 점을 빨간색으로 하면 깔끔하잖아»,
    11/13의 빨간 ON AIR 막대를 바꾼 결정). 밝은 장면 위에서도 읽히게 글자에 그림자 두 겹. 깜빡임은 움직임 줄이기 설정과 상관없이 돈다(COMMON_STANDARDS §34) */
-.tile-preview-label { display:none; position:absolute; right:12px; top:12px; align-items:center; gap:7px; color:#fff; font-size:.75rem; font-weight:700; line-height:1.5; letter-spacing:.02em; text-shadow:0 1px 2px #000c, 0 0 8px #0009; }
+.tile-preview-label { display:none; position:absolute; left:12px; top:12px; align-items:center; gap:7px; color:#fff; font-size:.75rem; font-weight:700; line-height:1.5; letter-spacing:.02em; text-shadow:0 1px 2px #000c, 0 0 8px #0009; }
 .onair-dot { flex-shrink:0; width:8px; height:8px; border-radius:50%; background:#ff2a26; box-shadow:0 0 0 1px #0005, 0 0 8px #ff2a26; animation:onair 1.6s ease-in-out infinite; }
 @keyframes onair { 50% { opacity:.25; } }
 .tile-tag { display:none; }

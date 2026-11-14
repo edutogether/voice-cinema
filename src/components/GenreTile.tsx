@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { previewUrl, thumbUrl, stillUrl, thumbAvifUrl, stillAvifUrl, type Genre } from '../genres';
 import { ActionIcon } from './ActionIcon';
+import { HiggsfieldMark } from './HiggsfieldMark';
 
 // 재생이 멈췄는지 되돌아보는 간격. loop만으로는 실제 기기에서 계속 돈다는 보장이
 // 없다 — 절전 모드, 동시 디코드 한도, 백그라운드 전환 등으로 브라우저가 임의로
@@ -86,10 +87,12 @@ export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, ne
           </picture>}
           <video className="preview" ref={videoRef} muted playsInline preload="none" />
         </span>
+        {/* 영상을 만든 도구의 로고 — 그림의 보이는 오른쪽 위(11/14 Bumm님, Poster Studio와 같은 규칙) */}
+        <HiggsfieldMark />
         <span className="tile-number">{String(sceneNumber).padStart(2, '0')}</span>
         {/* 휴대폰 폭에서만 보인다 — 장르 배지와 장면 이름을 그림 오른쪽 아래에 얹고 아래 이름 줄을 접는다(10/19 대표님, home.css) */}
         <span className="tile-tag"><b>{genre.name}</b>{genre.summary}</span>
-        {/* 방송 «ON AIR» 등처럼 빨간 바탕 · 흰 글자 · 천천히 숨 쉬는 흰 점(11/13 Bumm님 «빨간색이나 방송계 온에어 느낌나게 … 칙칙함», home.css) */}
+        {/* 흰 굵은 글자 + 깜빡이는 빨간 점, 바탕 막대 없음 · 그림 왼쪽 위(11/14 Bumm님 — 오른쪽 위는 Higgsfield 로고 자리, home.css) */}
         <span className="tile-preview-label"><i className="onair-dot" aria-hidden="true" />미리보기 재생 중</span>
       </span>
       <span className="tile-body">
