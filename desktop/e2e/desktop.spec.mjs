@@ -6,6 +6,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installSyntheticMic, recordOnce } from '../../e2e/synthetic-mic.js';
+import { profileDir } from './profile.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const EXE = process.env.VC_DESKTOP_EXE ?? path.join(HERE, '..', 'release', 'win-unpacked', 'Voice Cinema.exe');
@@ -26,7 +27,7 @@ const finalClipLength = (id) => mp4Duration(readFileSync(path.join(path.dirname(
 async function launch(args = []) {
   const app = await _electron.launch({
     executablePath: EXE,
-    args: [`--user-data-dir=${test.info().outputPath('profile')}`, '--mute-audio', '--use-fake-device-for-media-stream', ...args],
+    args: [`--user-data-dir=${profileDir()}`, '--mute-audio', '--use-fake-device-for-media-stream', ...args],
     env: { ...process.env, VC_TEST_SMALLEST_DISPLAY: '1' },
   });
   const page = await app.firstWindow();

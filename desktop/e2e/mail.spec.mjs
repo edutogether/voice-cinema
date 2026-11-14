@@ -8,6 +8,7 @@ import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { installSyntheticMic, recordOnce } from '../../e2e/synthetic-mic.js';
+import { profileDir } from './profile.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const EXE = process.env.VC_DESKTOP_EXE ?? path.join(HERE, '..', 'release', 'win-unpacked', 'Voice Cinema.exe');
@@ -247,7 +248,7 @@ async function expectFormFits(page) {
 }
 
 test('끊김 → 입력 → 확인 → 대기 → 복구 → 올리기 → 메일 보내기 → 기기에서 삭제', async () => {
-  const profile = test.info().outputPath('profile');
+  const profile = profileDir();
   const { app, page } = await launch(profile);
   expect(await app.evaluate(({ app: electronApp }) => electronApp.getName())).toBe('Voice Cinema');
   // 첫 화면: 노란 표시 하나, 기다리는 메일이 없으니 메일 대기 단추도 없다
@@ -361,7 +362,7 @@ test('끊김 → 입력 → 확인 → 대기 → 복구 → 올리기 → 메�
 });
 
 test('다음 사람의 칸은 비어 있고 이전 주소가 제안되지 않으며, 같은 선생님은 한 통으로 묶이고, 껐다 켜도 이어서 보내고, 디스크 · 로그에 이름 · 주소가 없다', async () => {
-  const profile = test.info().outputPath('profile');
+  const profile = profileDir();
   const first = await launch(profile);
   await openStudio(first.page, '판타지');
   await offline(first.app, true);
@@ -451,7 +452,7 @@ test('다음 사람의 칸은 비어 있고 이전 주소가 제안되지 않으
 });
 
 test('인터넷이 있어도 올리지 못하면 메일 화면으로 가고, 대기에 남고, «보내지 못함»은 다시 보낼 수 있고, 운영자가 지우면 영상까지 사라진다', async () => {
-  const profile = test.info().outputPath('profile');
+  const profile = profileDir();
   const { app, page } = await launch(profile);
   await setReply(app, { status: 500, body: { ok: false } });
   await openStudio(page, '판타지');
@@ -555,7 +556,7 @@ test('인터넷이 있어도 올리지 못하면 메일 화면으로 가고, 대
 
 // «이 기기에 저장»은 휴대폰에서만(11/9 Bumm님) — 대기열을 열 수 없어도 메일 칸이고, 맡기지 못하면 알리고 «다시 제작하기»를 기다린다.
 test('대기열을 열 수 없으면(키 손상) 메일 칸에서 맡기지 못했다고 알리고, «이 기기에 저장»으로 가지 않는다', async () => {
-  const profile = test.info().outputPath('profile');
+  const profile = profileDir();
   mkdirSync(path.join(profile, 'mail-queue'), { recursive: true });
   writeFileSync(path.join(profile, 'mail-queue', 'queue.key'), 'not-a-sealed-key');
   const { app, page } = await launch(profile);

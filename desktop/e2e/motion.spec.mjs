@@ -5,6 +5,7 @@
 import { test, expect, _electron } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { profileDir } from './profile.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const EXE = process.env.VC_DESKTOP_EXE ?? path.join(HERE, '..', 'release', 'win-unpacked', 'Voice Cinema.exe');
@@ -14,7 +15,7 @@ for (const reducedMotion of ['reduce', 'no-preference']) {
     // 새 프로필 · 가짜 마이크 · 소리 끔. 창은 가장 작은 모니터에 뜬다(시험 전용 VC_TEST_SMALLEST_DISPLAY — main.js)
     const app = await _electron.launch({
       executablePath: EXE,
-      args: [`--user-data-dir=${test.info().outputPath('profile')}`, '--mute-audio', '--use-fake-device-for-media-stream'],
+      args: [`--user-data-dir=${profileDir()}`, '--mute-audio', '--use-fake-device-for-media-stream'],
       env: { ...process.env, VC_TEST_SMALLEST_DISPLAY: '1' },
     });
     try {
