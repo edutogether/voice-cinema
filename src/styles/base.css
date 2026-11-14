@@ -29,8 +29,8 @@
    배율은 칸을 꽉 채운 틀(.higgsfield-mark)에서 잰다 — 칸 높이가 flex로 정해지는 자리에서 칸 자체를 재면 높이가 0으로 읽힌다(Poster Studio 11/13 실측).
    z-index 1은 가로 휴대폰 녹음실의 위 그림자 띠(::before) 위에 오게 하려는 것이다 — 어두운 막 · 3·2·1 · 자막 · «녹음 중»(2~4)은 그 위에 온다. 그림 폭을 읽기 전에는 숨긴다. */
 .higgsfield-mark { position:absolute; inset:0; z-index:1; container-type:size; pointer-events:none; }
-.higgsfield-mark > img { position:absolute; top:max(100cqw * 19.3 / 1920, 100cqh * 19.3 / 1080); right:max(100cqw * 24.6 / 1920, 100cqh * 24.6 / 1080);
-  width:calc(var(--logo-px, 0) * max(100cqw / 1920, 100cqh / 1080)); height:auto; }
+.higgsfield-mark > img { position:absolute; top:calc(max(100cqw * 19.3 / 1920, 100cqh * 19.3 / 1080) * var(--cq, 1)); right:calc(max(100cqw * 24.6 / 1920, 100cqh * 24.6 / 1080) * var(--cq, 1));
+  width:calc(var(--logo-px, 0) * max(100cqw / 1920, 100cqh / 1080) * var(--cq, 1)); height:auto; }
 .higgsfield-mark > img:not([style]) { visibility:hidden; }
 
 /* 폭·높이 구간은 이 상자(@container app)로 판정한다 — 화면을 통째로 비율 조정해도 기준 화면 크기로 갈린다. */
