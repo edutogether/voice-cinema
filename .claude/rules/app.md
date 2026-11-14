@@ -360,6 +360,8 @@
 - `e2e/dubbing-flow.spec.js` «장르마다 다른 길이 · 멈춤 시각»이 여덟 장르의 멈춤 · 이어 재생 · 원판 끝을, 정상 흐름 · 히어로가 합성 길이(원판 파일 길이) · 20MB 아래를 본다.
   🟠 **E2E는 길이 · 멈춤 시각을 숫자로 박지 않는다** — `e2e/scene-data.js`의 `clipLength`(원판 mvhd) · `scenePause`(미리보기 길이)로 읽는다. 장면 영상이 바뀌어도 시험을 고치지 않게 하려는 것이다
   (11/14 — 새 판이 들어올 때마다 «10초 · 5.0초»를 박은 시험이 떨어졌다). 녹음 · 합성을 도는 시험은 `TEST_SCENE`(SF, 첫 카드 · 통과본)을 쓰고, 가운데가 아닌 카드는 `openScene()`(`e2e/pause-scenes.js`)으로 그림 띠에서 고른다
+  🟠 **자막 시각 · 대사 글도 박지 않는다** — `sceneLines(id)`가 `src/genres.ts`의 `say('대사', 시작, 끝)`을 읽는다. 11/14 `9249473`이 SF 자막을 4.5~7.5 → 7.6~8.8초로 맞추자 4.5초를 박은 자막 시험이 떨어져,
+  `9f402dd`부터 master CI가 빨간불이었다(앱은 맞았다 — 7.6초에 정확히 붙음). CI가 빨간 동안은 배포 대조가 아무것도 올리지 않는다(«master 끝의 CI가 통과 상태가 아니면 건너뜀»)
 
 ## 행사 직전 배포 동결 (2026-09-08 산정, 팀장 승인 — 날짜는 대표 확인 시 조정 가능)
 
@@ -1305,6 +1307,8 @@ Bumm님이 이 PC에 원격으로 들어와 웹을 열자 브라우저가 «움�
   `var(--app-w)` · `var(--app-h)`(기준 화면 크기, px)와 `calc(N * var(--vw))` · `calc(N * var(--vh))`를 쓴다. `--app-*`는 fit.js가 준다
 - 🔴 **폭 · 높이 조건은 `@media`가 아니라 `@container app`으로** — `#root`가 `container: app / size`다. `@media (max-width…)`는 실제 화면 px로
   판정해 기준 화면과 어긋난다. `hover` · `pointer` · `orientation`은 `@media` 그대로다(비율과 무관). `prefers-reduced-motion`은 쓰지 않는다(«움직임 줄이기» 절)
+- 🔴 **WebKit은 zoom 안의 `cqw` · `cqh`에 zoom을 곱한다 — cq 단위에는 늘 `var(--cq, 1)`을 곱한다**(11/14 행사 당일, 팀장 `8ffac37`) — 크롬은 곱하지 않는다.
+  그래서 아이폰 사파리에서만 휴대폰 첫 화면 카드 · «더빙하기» · 장면 이름이 화면 밖으로 잘렸다. `public/fit.js`가 `--cq`(크롬 · 설치판 1, 사파리 1/zoom)를 재어 준다. 새 cq 단위를 쓸 때 빠뜨리면 사파리에서만 깨지고 크롬 검사로는 안 잡힌다
 - 🟠 **`getBoundingClientRect()`는 화면 px다** — 그 값을 CSS의 px(transform · 변수)로 넣을 때는 `fitScale()`(`src/lib/fit.ts`)로 나눈다
   (`SceneCarousel.tsx`의 흐름 거리, `StudioEntrance.tsx`의 확대 시작점). 나누지 않으면 2560에서 1.87배로 움직인다
 - **크기 구간별 손질을 새로 만들지 않는다**(대표님 지시). 깨지는 크기가 나오면 구간을 파지 말고 기준 화면이나 비율 규칙에서 푼다

@@ -28,7 +28,11 @@ for (const [name, ua, hint] of [['아이폰', UA.iphone, '화면 위 가운데 �
       await page.goto('/');
       await expect(page.locator('#kakao-escape-title')).toHaveText('브라우저로 여는 중…');
       await expect.poll(() => tried.length).toBe(1);
-      expect(tried[0]).toBe(`kakaotalk://web/openExternal?url=${encodeURIComponent(page.url())}`);
+      // 지금 주소에 매번 다른 넘김 표시(vc-open)를 붙여 넘긴다 — 바깥 브라우저가 열려 있던 같은 주소의 탭을 다시 꺼내지 않게(11/14)
+      const sent = new URL(decodeURIComponent(tried[0].replace('kakaotalk://web/openExternal?url=', '')));
+      expect(tried[0].startsWith('kakaotalk://web/openExternal?url=')).toBe(true);
+      expect(sent.origin + sent.pathname).toBe(new URL(page.url()).origin + '/');
+      expect(sent.searchParams.get('vc-open')).toMatch(/^[0-9a-z]+$/);
       await expect(page.locator('#kakao-escape-title')).toHaveText('다른 브라우저에서 열어 주세요', { timeout: 4000 });
       await expect(page.locator('.kakao-escape-hint')).toContainText(hint);
       await expect(page.locator('.kakao-escape-open')).toHaveAttribute('href', tried[0]);
@@ -81,6 +85,15 @@ for (const [name, ua] of [['아이폰 사파리', UA.safari], ['갤럭시 크롬
       await page.waitForTimeout(1000);
       await expect(page.locator('#kakao-escape')).toHaveCount(0);
       expect(tried).toHaveLength(0);
+    });
+
+    test('카카오톡에서 넘어온 주소의 넘김 표시는 뜨자마자 지우고, 스플래시부터 처음 상태로 시작한다', async ({ page }) => {
+      await page.goto('/?vc-open=k1');
+      await expect(page.locator('#splash')).toBeAttached();
+      await expect.poll(() => page.url()).toBe(new URL('/', page.url()).href);
+      await page.locator('#splash').waitFor({ state: 'detached' });
+      await expect(page.locator('#kakao-escape')).toHaveCount(0);
+      expect(new URL(page.url()).search).toBe('');
     });
   });
 }

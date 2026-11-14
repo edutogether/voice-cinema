@@ -1,4 +1,4 @@
-import { isKakaoInApp, kakaoExternalUrl, kakaoMenuHint } from '../logic';
+import { isKakaoInApp, kakaoExternalUrl, kakaoMenuHint, withoutKakaoOpenMark } from '../logic';
 
 // 카카오톡 안 브라우저로 열리면 다른 브라우저(아이폰 사파리·갤럭시 기본 브라우저)로 넘긴다(10/20 대표님) —
 // 카카오톡 안에서는 녹음 마이크와 영상 저장이 막힐 수 있다. 리액트보다 먼저 돌아 스플래시 위에 덮는다.
@@ -45,11 +45,17 @@ function markTried(): void {
   } catch {}
 }
 
+/** 카카오톡에서 넘어온 주소의 넘김 표시(?vc-open=…)를 지운다 — 주소 칸 · 공유 · 새로고침에 남지 않게. 페이지를 다시 읽지 않는다. */
+export function dropKakaoOpenMark(): void {
+  const clean = withoutKakaoOpenMark(location.href);
+  if (clean) history.replaceState(history.state, '', clean);
+}
+
 /** 카카오톡 안이면 안내를 띄우고 true — 앱은 «여기서 계속하기»를 누를 때 `startApp`으로 띄운다. 아니면 false. */
 export function escapeKakaoInApp(startApp: () => void): boolean {
   const ua = navigator.userAgent;
   if (!isKakaoInApp(ua)) return false;
-  const target = kakaoExternalUrl(location.href);
+  const target = kakaoExternalUrl(location.href, Date.now().toString(36));
 
   const box = document.createElement('div');
   box.id = 'kakao-escape';

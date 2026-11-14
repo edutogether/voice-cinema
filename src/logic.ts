@@ -49,8 +49,25 @@ export function isKakaoInApp(ua: string): boolean {
 
 // 카카오톡의 «다른 브라우저로 열기» 주소. 카카오가 문서로 낸 주소는 아니다 — 카카오 데브톡의 카카오 쪽 답은
 // «인앱 브라우저는 개발자 문서 범위가 아니다»였고, 이 형식은 개발자들이 널리 쓰는 것이다. 실제 동작은 실기기로 확인한다.
-export function kakaoExternalUrl(href: string): string {
-  return `kakaotalk://web/openExternal?url=${encodeURIComponent(href)}`;
+//
+// 넘길 주소에는 매번 다른 표시(?vc-open=…)를 붙인다 — 같은 주소의 탭이 바깥 브라우저에 이미 열려 있으면 브라우저가 그 탭을 다시 꺼내
+// 지난번 화면(메인)이 먼저 보인 뒤 새로 떠서 스플래시가 나중에 나왔다(11/14 Bumm님 «메인 떴다가 스플래시 뜨면 허접해보이니까 고치라는거»,
+// 여러 번 열어 본 아이폰 사파리). 주소가 매번 다르면 새 탭에서 처음부터 연다 — 들어올 때마다 처음 상태로 시작한다는 이 앱의 원칙과 같다.
+// 표시는 바깥 브라우저에서 뜨자마자 withoutKakaoOpenMark로 주소에서 지운다(main.tsx).
+export const KAKAO_OPEN_PARAM = 'vc-open';
+
+export function kakaoExternalUrl(href: string, mark: string): string {
+  const url = new URL(href);
+  url.searchParams.set(KAKAO_OPEN_PARAM, mark);
+  return `kakaotalk://web/openExternal?url=${encodeURIComponent(url.href)}`;
+}
+
+/** 주소에 넘김 표시가 있으면 그것만 뺀 주소, 없으면 null. */
+export function withoutKakaoOpenMark(href: string): string | null {
+  const url = new URL(href);
+  if (!url.searchParams.has(KAKAO_OPEN_PARAM)) return null;
+  url.searchParams.delete(KAKAO_OPEN_PARAM);
+  return url.href;
 }
 
 // 자동 이동이 안 될 때 손으로 여는 길 — 카카오 데브톡에서 카카오 쪽이 안내한 메뉴 위치 그대로(2023-12-04):
