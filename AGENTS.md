@@ -25,18 +25,18 @@
 - React·TypeScript·Vite의 `src/`를 `dist/`로 빌드한다. 학생 목소리는 브라우저 ffmpeg.wasm으로 합성하고 Functions가 검증·Storage 저장을 맡는다. `functions/`는 독립 npm 프로젝트다.
 - LOCKED: Functions `concurrency: 1`·`maxInstances: 10`, `trust proxy: 1`, 업로드 검사 순서(인증 전 상한 → BOOTH_TOKEN → App Check → 업로드 한도 → 본문). 저장 이름은 서버가 정한다. MP4 MIME·바이트 시그니처·디코딩된 크기 20MiB·파일명 120자 검증과 CORS 앵커·점 이스케이프를 유지한다.
 - 업로드 110초와 `BOOTH_TOKEN`의 클라이언트·서버 일치는 `src/config.ts`·`functions/index.js` 및 `test/contract.test.js`로 유지한다. Functions의 `uuid` override와 `rimraf` → `glob` override, 루트의 `eslint` → `minimatch` override를 유지하고 `npm audit fix --force`를 사용하지 않는다.
-- 장면 원판은 H.264/AAC, 정확히 10.0초, 5.0초에 키프레임이 있고 소리 트랙(원판 소리)이 있어야 한다 — 합성이 원판 소리에 목소리를 5.0초 늦춰 섞는다. 원판·미리보기·정지 화면은 `node tools/build-scene.mjs <장르> --parts A.mp4 B.mp4`로 한 번에 만들고, 녹음실 재생과 합성 모두 원판 한 파일을 쓴다(2.0, 2026-10-16). 원판 소리는 `node tools/build-scene-audio.mjs <큐 목록.json> <소리.wav>`로 만든다 — 트랙마다 출처·라이선스가 없으면 만들지 않고, 목소리 칸(5.0~8.5초)은 −8dB로 낮춘다. ffmpeg는 `public/vendor/` 절대 경로 동적 import를 유지한다.
+- 장면 원판은 H.264/AAC이고 소리 트랙(원판 소리)이 있어야 한다 — 합성이 원판 소리에 목소리를 그 장르의 멈춤 시각만큼 늦춰 섞는다. 2026-11-14부터 여덟 편 모두 완성본이라 길이(21.0~30.1초)와 멈춤 시각(12.0 · 13.9 · 15.0초)이 편마다 다르고, 길이는 숫자로 박지 않고 원판 파일에서 읽는다(`tools/clip-versions.js` → `src/genres.ts`). 원판·합성용 원판(로고를 구운 `clips/final/`)·미리보기(0~멈춤 시각, 소리 없음)·정지 화면은 `node tools/build-scene.mjs <장르> --film <완성본.mp4> --pause <초>`로 한 번에 만들고, 멈춤 시각에 키프레임을 두며 목소리 칸(멈춤 ~ +3.5초)의 원판 소리를 −8dB로 낮춘다. 소리를 큐 목록에서 새로 만들 때는 `tools/build-scene-audio.mjs`를 쓰고, 트랙마다 출처·라이선스가 없으면 만들지 않는다. ffmpeg는 `public/vendor/` 절대 경로 동적 import를 유지한다.
 - `firebase.json`의 `Permissions-Policy: microphone=(self)`와 ffmpeg Worker·WASM·blob 재생을 허용하는 CSP를 유지한다. 보안 헤더 변경은 실제 녹음→합성 흐름으로 검증한다.
 - 학생 목소리가 담긴 완성 MP4를 다루며 이름·학교·연락처는 수집하지 않는다. 완성 파일은 링크 보유자가 열 수 있다는 고지를 유지한다. 랜덤 토큰 없는 파일명을 허용하지 않고 클라이언트 Storage 직접 접근 deny를 유지한다.
 - `dubs/`의 2026-12-01 KST 자정부터 매일 실행하는 삭제 예약·고지·경계 테스트를 일치시킨다. 로컬 폴백 파일은 자동 삭제 대상이 아니므로 운영자의 삭제 안내를 유지한다.
 - 참가 학교의 사전 오프라인 동의가 승인된 운영 방식이다. 앱 내 동의 절차를 임의로 추가하지 않는다.
 - 서비스워커 목록·캐시 버전은 자동 생성이다. `dist/sw.js` 대신 `tools/sw-template.js`·`tools/precache-plugin.js`를 수정하고 `public/clips/`의 영상은 프리캐시하지 않는다. 탐색 요청은 프리캐시보다 먼저 처리하며 캐시 조회의 `ignoreVary: true`를 유지한다. 업데이트로 녹음 중인 탭을 강제 새로고침하지 않는다.
-- 메인 미리보기는 무음이다. 상세(녹음실)는 «더빙하기»로 들어가면 장면이 멈춤·3·2·1 없이 원본 소리와 함께 한 번 흐르고(그 누름 안에서 `play()`, 11/7 Bumm님) 끝나면 준비 화면이다. 뒤로·앞으로 이동으로 돌아올 때는 틀지 않는다. «다시 녹음»은 «장면 시작»처럼 곧바로 처음부터 녹음 흐름이 돈다(11/8 Bumm님). 박자는 5.0초 멈춤 → 문구 1초 → 3·2·1 1초씩 → 녹음. 로컬 체험 모드는 루프백 주소와 `?preview=home-design`에만 한정하며 실제 녹음·합성·업로드 검사를 대신하지 않는다.
+- 메인 미리보기는 무음이고 0초부터 멈춤 시각까지다. 상세(녹음실)는 «더빙하기»로 들어가면 장면이 멈춤·3·2·1 없이 원본 소리와 함께 흐르고(그 누름 안에서 `play()`, 11/7 Bumm님) 목소리 칸 문구가 꺼지는 때(멈춤 + 3.5초)에 끝나 준비 화면이 된다(11/14 Bumm님). 뒤로·앞으로 이동으로 돌아올 때는 틀지 않는다. «다시 녹음»은 «장면 시작»처럼 곧바로 처음부터 녹음 흐름이 돈다(11/8 Bumm님). 박자는 장르의 멈춤 시각 → 문구 1초 → 3·2·1 1초씩 → 녹음(기본 3초, 말이 이어지면 3.5초까지). 로컬 체험 모드는 루프백 주소와 `?preview=home-design`에만 한정하며 실제 녹음·합성·업로드 검사를 대신하지 않는다.
 
 ## 배포·산출물
 
 - 정식 주소는 `voice.edutogether.kr`, Hosting 대상 사이트는 `voice-cinema`다. 프로젝트 기본 사이트 `inky-voice-cinema`와 혼동하지 않는다. 배포 대상은 빌드된 `dist/`이며 `public/`의 파일은 그대로 공개되므로 내부 자료를 넣지 않는다.
-- 이 저장소의 운영 배포 가지는 `master`다. CI 통과 후 `storage,functions` → `hosting:voice-cinema` 순으로 배포된다. 같은 `deploy.yml`이 예약 실행(cron 매시 23분, GitHub 지연으로 실제로는 몇 시간에 한 번꼴)으로 라이브 배포 커밋(`/version.json`, 함수 `GET /`의 `commit`)을 master 끝과 대조해 뒤처졌으면 다시 배포한다 — master에 없는 코드를 로컬에서 배포하면 다음 대조 때 master 끝으로 되돌려진다. 배포 도구 firebase-tools는 `package.json`·`package-lock.json`에 두지 않고 `deploy.yml`에서 정확한 판으로 `npx --yes firebase-tools@15.32.1`을 부른다(2026-11-01, `_shared/CONVENTIONS.md` §3.7) — 받기는 auth 앞, 판은 세 줄이 같아야 하며 `test/contract.test.js`가 검사한다. 로컬에서도 같은 판으로 부른다. 직접 push·병합·배포 승인은 상위 규칙을 따른다. 행사 전에는 기존 `voice-cinema.web.app` 주소를 끄지 않으며, 2026-11-07 마지막 배포 이후 11-14 행사 종료까지의 배포 동결을 유지한다.
+- 이 저장소의 운영 배포 가지는 `master`다. CI 통과 후 `firestore:rules,storage,functions` → `hosting:voice-cinema` 순으로 배포된다. 같은 `deploy.yml`이 예약 실행(cron 매시 23분, GitHub 지연으로 실제로는 몇 시간에 한 번꼴)으로 라이브 배포 커밋(`/version.json`, 함수 `GET /`의 `commit`)을 master 끝과 대조해 뒤처졌으면 다시 배포한다 — master에 없는 코드를 로컬에서 배포하면 다음 대조 때 master 끝으로 되돌려진다. 배포 도구 firebase-tools는 `package.json`·`package-lock.json`에 두지 않고 `deploy.yml`에서 정확한 판으로 `npx --yes firebase-tools@15.32.1`을 부른다(2026-11-01, `_shared/CONVENTIONS.md` §3.7) — 받기는 auth 앞, 판은 세 줄이 같아야 하며 `test/contract.test.js`가 검사한다. 로컬에서도 같은 판으로 부른다. 직접 push·병합·배포 승인은 상위 규칙을 따른다. 행사 전에는 기존 `voice-cinema.web.app` 주소를 끄지 않으며, 2026-11-07 마지막 배포 이후 11-14 행사 종료까지의 배포 동결을 유지한다.
 - 폰트 원본·라이선스는 `fonts/`에 보존하고 배포에는 서브셋만 포함한다. `vite.config.ts`의 폰트 서브셋 생성 → 프리캐시 생성 순서를 유지한다.
 
 ## 검사·운영 회귀
@@ -52,7 +52,7 @@ npm run test:e2e
 - E2E의 4321 포트가 이 앱의 최신 산출물을 제공하는지 확인한다(`reuseExistingServer`). 프론트·Functions 테스트 범위를 섞거나 로컬 체험 모드로 실제 마이크·합성 검증을 대체하지 않는다.
 - 스플래시는 한 탭에서 한 번만 표시한다. 갱신·재진입 회귀는 `e2e/splash-once.spec.js`로 확인한다.
 - 스플래시는 `_docs/ops/microphone-asset.md`의 마이크 PNG를 유지한다. 파비콘은 InKY 로고의 노란 카메라(`public/icons/favicon-inky.png`, Poster Studio·InKY Calculator와 같은 파일) 하나이고 탭 상태에 따라 바꾸지 않는다(회색 전환 폐기, 2026-10-07). 로고의 `filter: drop-shadow`·`will-change`를 추가하지 않고, 로딩바 두 바퀴 하한 `--hold: calc(var(--bar-cycle) * 2)`를 유지한다.
-- 터치 기기의 카드 미리보기는 전부 음소거 재생한다. 동시 재생 제한은 UA가 아닌 반복 play 거부로 판정하고, 콜백을 안정적으로 유지해 엔진 다운로드 중 재생이 끊기지 않게 한다.
+- 카드 미리보기는 음소거로 재생한다. 캐러셀은 가운데 한 장만 재생하므로 인앱 브라우저의 동시 재생 제한에 걸리지 않는다(브라우저 이름·UA로 가르지 않는다). 재생 효과를 부모가 넘기는 콜백에 걸지 않아 엔진 다운로드 중 재생이 끊기지 않게 한다.
 - 프론트 변경은 엔진 캐시 재다운로드 영향을 확인한다. 인라인 script와 `color-mix()`를 추가하지 않는다.
 - 움직임 줄이기(`prefers-reduced-motion`) 신호를 읽어 멈추거나 건너뛰지 않는다 — 신호가 있어도 늘 정상처럼 돈다(2026-11-11 Bumm님, 원격 접속 · Windows 애니메이션 효과 끔에서 크롬이 `reduce`를 보고한다). 움직임 확인은 `reduce` · `no-preference` 두 조건으로 한다(`e2e/motion-always.spec.js`, `test/motion-always.test.js`).
 - 화면 묶음의 Windows 기준선은 `e2e/release-baseline.spec.js`를 `VOICE_VISUAL_BASELINE=1`로 실행한다. 승인된 변경을 대조한 뒤에만 갱신하고 갱신 옵션 없이 재검증한다. PNG와 레이아웃·조작 의미 JSON을 함께 보존한다.

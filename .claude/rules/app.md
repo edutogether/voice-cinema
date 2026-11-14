@@ -30,6 +30,8 @@
 - 파일명은 `dub_<장르>_<타임스탬프>_<6바이트 랜덤토큰>.mp4` — 토큰이 없으면 좁은 시간대를 순차 대입해 남의 영상을
   추측할 수 있어, `buildUploadFilename()`이 토큰 없이 호출되면 예외를 던진다. 이 방어를 없애지 말 것
 - 보관·삭제 정책:
+  - 🟢 **행사 뒤 설정은 지금 그대로 — Bumm님 11/14 그대로 확정**(팀장 전달): 11/30까지 보관 · 12/1 00:00부터 매일 `dubs/` 삭제와 메일 `/mail` 410 ·
+    의견 보내기 11/14 00:00 닫힘(`FEEDBACK_CLOSE_AT`) · 서버 깨우기 11/15 00:00 끝(`KEEP_WARM_UNTIL`). 값을 바꾸지 않고, 감사에서 결함으로 세지 않으며, 다시 묻지 않는다
   - **2026-12-01부터** 예약 함수 `cleanupAfterCutoff`가 매일 자정(KST)에 `dubs/` 전체를 삭제한다
     ("다운로드는 11월 안에만 가능" 정책, 화면에도 안내됨)
   - **고지문의 시각과 예약 시각은 반드시 같아야 한다** — `privacy.html`이 "12월 1일 00:00에는 전부
@@ -302,8 +304,14 @@
   붙여서, 저장할 때와 찾을 때의 요청 헤더가 달라 캐시에 있는데도 못 찾는다(전환 중 실측). 그러면 오프라인에서 앱이 안 뜬다.
   **이 규칙은 폴백 경로에도 그대로 적용된다** — 2026-09-08 감사에서 탐색 폴백 두 곳이 이 규칙을 빠뜨린 채
   남아 있는 것이 발견됐다(우연히 매칭돼 안 터졌을 뿐). 규칙이 가장 필요한 자리가 바로 마지막 방어선이다
-- **`voiceCinema`의 `concurrency: 1`을 올리지 말 것** — 요청 하나가 최대 ~47MB를 붙들어, 256MiB 인스턴스에서
-  겹치면 OOM으로 다른 학생 요청까지 연쇄로 죽는다. 처리량은 `maxInstances`가 담당한다
+- **`voiceCinema`의 `concurrency: 1`을 올리지 말 것** — 요청 하나가 큰 본문을 붙들어, 겹치면 OOM으로 다른 학생 요청까지
+  연쇄로 죽는다. 처리량은 `maxInstances`가 담당한다
+- 🟠 **`voiceCinema`의 `memory: '512MiB'`를 256MiB로 되돌리지 말 것**(2026-11-14 감사, 행사 당일) — 완성본(21~30초)이 들어와 업로드 본문이
+  최대 22.8MB가 되자 256MiB 인스턴스가 «Memory limit of 256 MiB exceeded»를 39번(최대 338MiB) 내고 업로드 500이 8번 났다(모두 화면의
+  재시도로 200, 잃은 영화 0). 9/7에 잡은 256MiB는 10초 장면 기준(실측 ≈ 180MB)이었다. 확인은
+  `gcloud logging read 'resource.labels.service_name="voicecinema" AND textPayload:"Memory limit"' --project inky-voice-cinema --account=edutogether2015@gmail.com --freshness=1d`
+- 🟢 **`/kakao/start` · `/kakao/callback`은 의견이 닫힌 뒤(`FEEDBACK_CLOSE_AT`) 410이다**(11/14 감사) — 연결은 의견 알림에만 쓴다. 열어 두면 문 검사 없이
+  부를 때마다 연결 대기 칸에 Firestore 쓰기가 일어났다. 저장된 토큰의 매일 갱신은 그대로 돈다(`feedback-handler.test.js`)
 - **CORS 허용 출처 정규식의 앵커(`^`/`$`)를 풀지 말 것** — 부모 도메인 항목이 서브도메인을 매치하지
   않는 게 불편하다고 앵커를 느슨하게 하면, 공격자가 가진 도메인의 서브도메인이나 접미사 위조
   (`https://edutogether.kr.attacker.com`)까지 통째로 열린다. 서브도메인을 허용해야 하면 앵커를 푸는 대신
@@ -334,6 +342,9 @@
   - **대가(알고 고른 것)**: CLI의 하위 의존성은 실행할 때마다 정해지고 Dependabot이 추적하지 않는다. 2026-10-09에 잠금 파일로 옮긴 이유(«자격증명을
     깐 뒤 잠기지 않은 하위 의존성을 받는다»)는 받기를 auth 앞에 두는 것으로 절반만 남겼다. 판을 올릴 때는 `deploy.yml`의 세 줄을 함께 바꾼다
   - 로컬에서도 같은 판으로 부른다: `npx firebase-tools@15.32.1 <명령>`(이 저장소 폴더 안에서 — `firebase.json`을 읽는다)
+- 🟠 **`functions/package.json`의 `overrides`에 있는 `"uuid": "^11.1.1"`을 지우지 말 것**(2026-09-10, 11/14 감사 때 `CLAUDE.md`에서 옮김) — 이것 하나로
+  moderate 6건이 0건이 된다. 취약한 `uuid@9`는 `firebase-admin` → `@google-cloud/storage@7`(11/14 잠금 파일 7.22.0) → `teeny-request@9`로 딸려 오는 전이 의존성이다.
+  `teeny-request`가 uuid를 쓰는 자리는 `index.js`의 `uuid.v4()` **한 곳뿐**이라 덮어써도 안전하다 — 그 호출과 `Storage` 생성, `functions/index.js` 로드까지 실제로 실행해 확인했다(2026-09-10)
 - 🟢 **루트 `overrides`(gaxios → uuid `^11.1.1`)는 2026-11-01에 뺐다** — firebase-tools와 함께 gaxios가 루트 트리에서 사라졌다. npx로 받는 CLI 안의
   uuid 9는 위 «대가»에 든다(그쪽에는 덮어쓰기가 닿지 않는다)
 - 🟠 **`functions/package.json`의 `overrides`에 있는 `"rimraf": { "glob": "^14.0.3" }`을 지우지 말 것**(2026-11-01) — 이것으로 Dependabot #31(glob)·
@@ -362,12 +373,12 @@
   🟠 **여덟 편의 자막 글 · 시각은 원판 소리에서 다시 잰 값이다**(11/14 Bumm님 «웹앱도 설치판도 대사 타이밍과 글자를 제대로 나오게 맞춰야지 소리랑 다르면 안되지», 팀장 `6551e89`) —
   말소리 대역(300~3400Hz) 0.1초 크기 + 구간 받아쓰기, 자막은 목소리가 나기 0.1초 전에 뜬다. SF 글은 «이것 봐, 외계인이야 !»(7.5~8.8초, 전에는 «인사해 봐… 크게 !»), 드라마 할머니 줄은 5.3~7.6초가 소리보다 3.7초 일렀다.
   애니메이션은 «준비됐어 ?» 5.9~6.7초 · «하나, 둘…» 7.0~8.3초, 판타지 첫 줄 · 스포츠 첫 줄 · 뮤지컬 · 스릴러 셋째 줄은 시작을 0.2~0.3초 당겼다. 🟠 **글이나 시각을 눈대중으로 고치지 말 것** — 원판이 바뀌면 소리에서 다시 잰다
-- 자막은 장르마다 여러 줄을 받는다 — `src/genres.ts`의 `lines`. `film('대사')`는 4.5~7.5초 한 줄, 시각 · 줄 수가 다른 편은 `film([say('대사', 시작, 끝), …])`로 넘긴다.
+- 자막은 장르마다 여러 줄을 받는다 — `src/genres.ts`의 `lines`. 편마다 `film([say('대사', 시작, 끝), …])`로 적는다(11/14 감사에서 한 줄 문자열 모양 `film('대사')`는 쓰는 편이 없어 뺐다).
   `test/scene-clips.test.js`가 줄마다 멈춤 전에 끝나는지 · 서로 겹치지 않는지 본다
-- 멈춤은 `film('대사')`의 기본값 12.0초이고, 편마다 다르면 `film('대사', 13.9)`처럼 넘긴다(판타지 13.9초 — 0.1초 단위면 된다. 변환이 그 시각에 키프레임을 둔다)
+- 멈춤은 `film()`의 기본값 12.0초이고, 편마다 다르면 `film([...], 13.9)`처럼 넘긴다(판타지 13.9초 — 0.1초 단위면 된다. 변환이 그 시각에 키프레임을 둔다)
 - 🔴 **완성본 길이를 숫자로 박지 말 것**(11/14 팀장 «편마다 길이가 다르다 — 파일에서 읽게») — `tools/clip-versions.js`가 빌드 때 `public/clips`의 mp4마다 mvhd 길이를 읽어
   `virtual:clip-versions`의 `lengths`로 내보내고, `src/genres.ts`의 `scene()`이 완성본의 `seconds`를 `lengths['<장르>.mp4']`에서 채운다. 원판만 바꿔 넣으면 길이가 따라온다
-- 🔴 **멈춤 시각 · 길이를 `src/config.ts`의 `PAUSE_SECONDS` · `CLIP_SECONDS`로 다시 묶지 말 것** — 그 둘은 10초 장면의 값이다. 녹음실 멈춤 · 이어 재생(`useDubbing.ts`의 `pauseRef`) · 목소리 칸(`turn`) ·
+- 🔴 **멈춤 시각 · 길이를 `src/config.ts`의 `PAUSE_SECONDS`(10초 장면의 5.0초)나 고정 길이로 다시 묶지 말 것** — `PAUSE_SECONDS`는 10초 장면 소리 도구와의 계약에만 남았고, 쓰이지 않던 `CLIP_SECONDS`(10)는 11/14 감사에서 뺐다. 녹음실 멈춤 · 이어 재생(`useDubbing.ts`의 `pauseRef`) · 목소리 칸(`turn`) ·
   진행 막대(`ClipTimeline`의 `seconds`) · 합성의 목소리 늦춤(`mixFilter(pause)` → `adelay`)이 모두 장르의 `seconds` · `pause`(`src/genres.ts`)를 쓴다. 하나라도 5초로 남으면 목소리가 낮추지 않은 자리에 들어간다
 - `test/scene-clips.test.js`가 완성본 길이가 박혀 있지 않은지, 화면이 받는 길이 목록이 원판 mvhd와 같은지, 합성용 원판 = 원판 길이 · 미리보기 = 멈춤 시각 · 목소리 칸이 원판 안인지를 본다
 - 변환은 `node tools/build-scene.mjs <장르> --film <완성본.mp4> --pause 12` — 길이는 완성본 그대로(프레임 단위), 소리의 목소리 칸(멈춤 ~ +3.5초)을 −8dB로 낮추고,
@@ -812,6 +823,8 @@ master의 배포 차이는 `functions/package-lock.json`). 조사해 보니 **`7
   - 🟠 **그렇게 hosting만 로컬로 올리면 functions 표시는 옛 커밋이라 «두 곳이 다르다»가 되고, CI가 통과한 뒤 다음 판정이 같은 커밋을 CI 빌드로 다시 올린다.**
     화면 · 동작은 같지만 이 PC 빌드는 CRLF라 서비스워커 캐시 이름이 CI 빌드와 다르다(아래 «엔진 캐시» — 11/14 라이브 `950564be7c26` · 엔진 `7530e6c077bc`가 이 PC 값).
     그래서 다시 올라가면 부스 기기는 다음에 탭을 열 때 화면 캐시(그 안의 장면 영상)를 한 번 더 받는다. 엔진 31MB(wasm)는 내용이 같아 옮겨지고 `ffmpeg-core.js`(112KB)만 다시 받는다
+    🟢 **11/14 감사부터 `.gitattributes`(`* text=auto eol=lf`)로 이 PC도 LF로 꺼낸다** — 이 PC 빌드의 엔진 캐시 이름이 CI 값(`3a3682eeb407`)과 같아졌다. 같은 커밋이면 로컬 빌드와 CI 빌드의 캐시 이름이 같아
+    CI가 다시 올려도 부스 기기가 다시 받지 않는다. 그 전에 꺼낸 다른 작업 폴더(worktree)는 CRLF 그대로일 수 있다 — `git ls-files --eol | grep w/crlf`가 비어 있는지 보고 빌드한다
 - 🟢 **동결(11-07~11-14) 중에도 무해하다** — master 끝이 곧 동결본이라 평소엔 "이미 이 커밋"으로 아무것도 안 하고,
   문서 커밋은 "문서만 바뀌었다"로 건너뛴다. 라이브가 옛것으로 덮였을 때만 동결본을 다시 올리는데, 빌드가 결정적이라
   산출물·서비스워커 캐시 이름이 동결 때와 같아 **덮이기 전 상태로 돌아갈 뿐 예열을 깨지 않는다**
@@ -1040,7 +1053,7 @@ Claude in Chrome은 여분의 브라우저가 아니라 **대표 본인의 크�
 라이브 `82f4846`에서 재 보니 화면 배포 한 번이면 부스 기기가 **두 번째로 열 때** 엔진 31MB를 다시 받았다. 첫 번째로 열 때는 옛 서비스워커가 옛 캐시로 엔진을 내주고, 그사이 새 서비스워커가 옛 캐시를 지웠기 때문이다.
 - 🔴 **엔진을 화면 캐시(`CACHE_NAME`)에 다시 합치지 말 것** — `tools/sw-template.js`의 `ENGINE_CACHE`는 이름이 엔진 내용으로만 정해진다(`tools/precache-plugin.js`). 화면만 바뀌면 그대로 남고, 엔진이 바뀌면 이름이 달라져 옛 엔진이 지워진다
 - 🟠 **옛 캐시에서 옮기는 `adoptEngine`의 내용 대조와 `catch`를 빼지 말 것** — 대조가 없으면 깨지거나 옛 판인 엔진이 들어오고, `catch`가 없으면 옮기다 실패할 때 서비스워커 설치가 통째로 실패해 앱이 옛 판에 남는다. 못 옮기면 회선으로 받는 길이 그대로 남는다
-- 🟠 **캐시 이름을 이 PC 빌드와 라이브로 맞대 «같다 · 다르다»를 판정하지 말 것**(11/8 확인) — 이 PC는 `core.autocrlf=true`로 글 파일을 CRLF로 꺼내고 CI는 LF라, 내용 해시로 짓는 서비스워커 캐시 이름이 다르다(`fece3fe`: 이 PC `58d7e333f47b` · 엔진 `7530e6c077bc`, 라이브 `b0b9c0f560f9` · 엔진 `3a3682eeb407`). 화면 번들 이름(`main-BFrkAMTb.js`)은 같다. 부스 기기가 엔진을 다시 받는지는 라이브 `sw.js`의 엔진 캐시 이름을 배포 전후로 맞대 본다
+- 🟢 **11/14 감사 전까지는 캐시 이름을 이 PC 빌드와 라이브로 맞대 «같다 · 다르다»를 판정할 수 없었다**(11/8 확인 — 지금은 `.gitattributes`로 LF, 위 «배포 대조» 절) — 이 PC는 `core.autocrlf=true`로 글 파일을 CRLF로 꺼내고 CI는 LF라, 내용 해시로 짓는 서비스워커 캐시 이름이 다르다(`fece3fe`: 이 PC `58d7e333f47b` · 엔진 `7530e6c077bc`, 라이브 `b0b9c0f560f9` · 엔진 `3a3682eeb407`). 화면 번들 이름(`main-BFrkAMTb.js`)은 같다. 부스 기기가 엔진을 다시 받는지는 라이브 `sw.js`의 엔진 캐시 이름을 배포 전후로 맞대 본다
 - `e2e/engine-cache-keep.spec.js`가 네 길(옛 판에서 넘어옴 · 화면 배포 · 엔진 배포 · 옮기기 실패)을 고정한다. 같은 주소에서 빌드를 바꿔 끼워야 해 이 파일만 작은 서버를 직접 띄우고 엔진 요청 수를 서버에서 센다. 넷 다 수정의 한 조각을 빼면 빨간불이다
 - 장면 영상 캐시는 화면 캐시에 그대로 있어 화면 배포 때 지워진다(한 장르 약 6MB, 범위 밖)
 - 🟠 **합성 오류 원문을 화면에 넣지 말 것** — `src/lib/ffmpeg.ts`의 오류에는 FFmpeg 기록 8줄이 들어 있고, 11/7까지 아이 화면에 그대로 나왔다. `Result.tsx`는 정해진 문구만 보이고 원문은 콘솔(`[영상 합성 실패]`)에 남긴다. `e2e/dubbing-flow.spec.js`가 고정한다
@@ -1129,12 +1142,12 @@ Claude in Chrome은 여분의 브라우저가 아니라 **대표 본인의 크�
 - **단추**: `src/components/DownloadLink.tsx`. 첫 화면(`step === 1`)에만, 개인정보처리방침 링크 바로 왼쪽(같은 줄 · 같은 색 · 간격 8px). 글자 없이 Lucide `download` 하나, 1.15em, 밑줄 없음, 마우스를 올리면 커서만 손가락이고 `title`을 넣지 않는다. 화면 읽기 프로그램용 이름은 `aria-label`
   - 🟠 **휴대폰(폭 760 이하 · 가로로 눕힌 터치 휴대폰)과 설치판 안에서는 보이지 않는다** — 휴대폰에서는 Windows 설치 파일을 쓸 수 없고, 설치판은 이미 설치했다. 설치판은 브라우저 이름의 `Electron/`으로 가른다. 태블릿은 누르는 칸만 넓힌다(방침 링크를 덮지 않는다)
   - 🔴 **누르기 전에는 설치 파일 요청이 0건이어야 한다.** prefetch · preload · 서비스워커 미리 받기에 넣지 않는다(`e2e/download-link.spec.js`)
-- **연결**: `firebase.json` `redirects` 302 → `https://storage.googleapis.com/inky-voice-cinema-download/VoiceCinema-Setup.exe`. 주소를 바꾸면 `src/config.ts`의 `SETUP_DOWNLOAD`와 리디렉션을 같이 고친다(`test/contract.test.js`가 맞춰 본다). 파일(약 240MB)은 `public/`에 두지 않는다 — 배포가 그만큼 늘고 저장소에 넣을 수 없다
+- **연결**: `firebase.json` `redirects` 302 → `https://storage.googleapis.com/inky-voice-cinema-download/VoiceCinema-Setup.exe`. 주소를 바꾸면 `src/config.ts`의 `SETUP_DOWNLOAD`와 리디렉션을 같이 고친다(`test/contract.test.js`가 맞춰 본다). 파일(11/8 2.0 약 240MB → 11/14 2.0.x 약 350MB)은 `public/`에 두지 않는다 — 배포가 그만큼 늘고 저장소에 넣을 수 없다
 - 🔴 **공개 범위는 그 객체 하나다.** 버킷은 객체별 권한(균일 접근 끔)이고 버킷 권한에 공개 항목이 없다. 버킷에 `allUsers`를 주지 않는다(안의 파일이 전부 공개된다). 버킷을 «균일 접근»으로 바꾸지 않는다(객체 권한이 무시돼 403이 된다)
 - **파일을 바꿀 때**(같은 이름으로 덮는다): `gcloud storage cp <exe> gs://inky-voice-cinema-download/VoiceCinema-Setup.exe --content-type=application/vnd.microsoft.portable-executable --content-disposition='attachment; filename="Voice Cinema Setup.exe"' --cache-control=no-cache --predefined-acl=publicRead --account=edutogether2015@gmail.com`
   - `--predefined-acl=publicRead`를 빼면 비공개로 덮여 403이 난다. 받는 이름은 이 `Content-Disposition`이 정한다(다른 주소로 넘어가면 `<a download>`의 이름이 듣지 않는다)
   - 🔴 **파일을 먼저 올리고 그 뒤에 아이콘을 배포한다** — 거꾸로 하면 그 사이 아이콘이 403이다
-- **비용**: 한 번 받을 때 약 0.24GB(인터넷 송신 GB당 약 $0.12 → 한 번에 약 $0.03). 저장은 월 1센트 미만
+- **비용**: 한 번 받을 때 약 0.35GB(인터넷 송신 GB당 약 $0.12 → 한 번에 약 $0.04, 11/14 2.0.x 기준). 저장은 월 1센트 남짓
 - 🟢 **2026-11-08 공개**(팀장 확인): 버킷 `inky-voice-cinema-download`(inky-voice-cinema · asia-northeast3 · 객체별 권한, Poster Studio `inky-poster-studio-download`와 같은 모양)에 `feat/vc-desktop` `fabfecd` 빌드(239,560,087바이트, SHA-256 `f2064049…54a9337`)를 올렸다. 라이브 링크 302 → 200(attachment) · 받은 파일 해시 같음 · 버킷 목록 익명 403을 확인했다. 아이콘은 그 뒤 `fece3fe` 배포로 나갔다
 
 ## 메일 전달 서버 `/mail` (2026-11-08, 지시 팀장 — Bumm님 답 전달)
@@ -1142,6 +1155,9 @@ Claude in Chrome은 여분의 브라우저가 아니라 **대표 본인의 크�
 같은 날 웹(크롬)도 부르게 됐다 — 웹 화면 · 대기열은 아래 «웹 메일 전달» 절.
 - 경로: `POST /mail` `{ to, items: [{ name, url }] }` → 서버가 메일 틀(`functions/mail.js`의 `buildMailMessage`)을 정해 Resend로 보낸다.
   보내는 사람 `Voice Cinema <voice-cinema@edutogether.kr>`(도메인 `edutogether.kr` 인증, 11/8 팀장). 받는 사람은 한 통에 한 명, 영화는 한 통에 30편까지
+  🟠 **화면은 한 선생님 몫이 30편을 넘으면 30편씩 나눠 여러 통으로 보낸다**(11/14 감사, `src/lib/mailQueue.ts`의 `MAIL_BATCH` · `dueGroups`) — 전에는 한 통에 다 담아, 끊긴 동안 같은 주소를 31명 넘게 적으면
+  서버가 400으로 거절하고 8번 뒤 «보내지 못함»이 됐다. `MAIL_BATCH`는 서버 `MAX_ITEMS`와 같아야 한다(`test/contract.test.js`). `src/lib/mailQueue.test.ts`가 61편 → 30 · 30 · 1을 본다(나누기를 빼면 빨간불 확인).
+  설치판도 같은 코드라 master를 합쳐 다시 빌드해야 들어간다(2.0.3에는 없음)
 - 🟠 **답장 주소(`reply_to`)는 행사 공용 메일 `edutogether2015@gmail.com`이다**(11/8 Bumm님) — edutogether.kr에는 받는 메일함(MX)이 없어 답장이 되돌아온다.
   본문 끝줄도 «궁금한 점은 이 메일에 답장해 주세요»다. 둘을 함께 바꾼다(`mail.test.js`가 본다)
 - 🔴 **`/upload`와 같은 문 검사(`boothGuard`)를 거친다** — 인증 전 상한(분당 600) → `BOOTH_TOKEN` → App Check → 경로별 한도(업로드 분당 60, 메일 분당 20).
@@ -1421,10 +1437,10 @@ Bumm님이 정할 것·직접 하실 것·세션이 할 것을 11/14 기준 순�
 ## 명령
 - 개발 서버: `npm run dev` (http://localhost:4321)
 - 빌드: `npm run build` (`tsc --noEmit` + `vite build` → `dist/`)
-- 테스트: `npm test` (vitest, 루트 136 + functions 146 = 282개, 2026-11-09 끝 화면 · 저장 대기 화면 기준). 개별 실행은 `cd functions && npm test`
+- 테스트: `npm test` (vitest — 루트에 이어 `functions/`까지 돈다). 개별 실행은 `cd functions && npm test`. 개수는 여기 박지 않는다(다음 커밋에 낡는다) — 보고할 때 실행 기록의 `Tests` 줄을 센다
 - 린트: `npm run lint` (eslint). `src/`는 `tsc`가 담당하므로 eslint 대상에서 뺐다. 빈 `catch{}`는 이 코드베이스가
   의도적으로 쓰는 패턴이라 허용해뒀다 — 버그가 아니다
-- E2E: `npm run test:e2e` (300개 — 그중 6개는 조건부 건너뜀, 2026-11-09 저장 대기 두 편 하한 기준) — 빌드 후 `dist/`를 서빙해 실제 산출물로 검증한다. 최초 1회
+- E2E: `npm run test:e2e`(개수는 실행 기록에서 센다 — 몇 개는 조건부로 건너뛴다) — 빌드 후 `dist/`를 서빙해 실제 산출물로 검증한다. 최초 1회
   `npx playwright install chromium` 필요하고, Playwright 버전을 올리면 이 설치를 다시 해야 한다
 - 에뮬레이터: 쓰지 않음 — 서버 쪽은 순수 함수만 유닛테스트하고, 실제 동작은 배포 후 라이브로 확인한다
 
