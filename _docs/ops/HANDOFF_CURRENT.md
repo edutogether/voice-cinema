@@ -8,7 +8,8 @@
 
 ### 2026-11-14 행사 당일 — 2.0 마무리: 종합감사 10/10 · 라이브 한 커밋 · 설치판 2.0.2 유지(2.0.4 일요일 공개 대기) (지시 Bumm님 · 팀장 전달)
 
-- 🟢 **라이브 = master `ad579f4`**(CI 빌드, Hosting `version.json` · Functions `GET /` 같은 커밋, 서비스워커 캐시 `20b19c4b81a8` · 엔진 `3a3682eeb407`, 함수 메모리 512Mi). 프리즈 태그 `voice-cinema-freeze-20261114-audited-100`.
+- 🟢 **라이브 = master `2325ef7`**(11/14 18:55 CI 빌드 — 의존성 판 올리기 `c1f5401` 포함, Hosting `version.json` · Functions `GET /` 같은 커밋, 서비스워커 캐시 `20b19c4b81a8` · 엔진 `3a3682eeb407` 그대로(화면 산출물이 감사 판과 같다), 함수 메모리 512Mi · 리비전 `voicecinema-00078-qec`).
+  프리즈 태그 `voice-cinema-freeze-20261114-audited-100`(`ad579f4` — 감사한 트리). 이 판올림에는 새 태그를 찍지 않았다(COMMON_STANDARDS §23-4, 팀장 결정 (가)).
   행사 중(10:08~14:32)에는 팀장이 이 PC에서 hosting만 열 번 올렸고(CHANGELOG «행사 당일 라이브 셋째~열째»), 이 판에서 CI 빌드로 다시 맞췄다. 이제 다시 **master push → CI → 배포 대조**가 유일한 배포 길이다.
 - 종합감사(COMMON_STANDARDS §4~§7, Opus 6 · Sonnet 4 항목 따로): 결함 여덟 가지를 고치고 10/10 — 함수 메모리 512MiB · 의견 닫힌 뒤 카카오 410 · Dependabot #44 · 메일 30편씩 · 쓰지 않는 코드와 낡은 주석 · 빈 검사 · LF(`.gitattributes`) ·
   문서 분량. 근거와 검증은 CHANGELOG «종합감사(행사 당일)».
