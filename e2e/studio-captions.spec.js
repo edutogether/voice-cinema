@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { openScene } from './pause-scenes.js';
+import { clipLength, scenePause, TEST_SCENE } from './scene-data.js';
 
 // 장면 더빙 2.0 상대 대사 자막(app-plan §2-3): 넷플릭스식 — 영상 안 아래 가운데, 영상 폭 80% 안, 두 줄 이내,
-// 영상 높이의 약 5%(최소 14px). 멈춤 뒤 문구·카운트다운·녹음 중에는 없고, 미리보기 · 장면 · 다시 녹음의 1.6~3.4초에 나온다(10/20 «다시 듣기» 없앰).
+// 영상 높이의 약 5%(최소 14px). 멈춤 뒤 문구·카운트다운·녹음 중에는 없고, 미리보기 · 장면 · 다시 녹음의 대사 시각에 나온다(10/20 «다시 듣기» 없앰).
 // 가장 긴 대사는 11/14 드라마 완성본 «안녕, 설이»의 할머니 대사다(한글 13자, 5.3초에 나온다)
 const LONGEST = ['드라마', '설이한테 꼭 다시 온다고 인사해 !'];
 
@@ -41,29 +42,31 @@ for (const [width, height] of [[1440, 900], [390, 844], [360, 640], [844, 390]])
   });
 }
 
-test('자막은 미리보기 · 장면 · 다시 녹음의 1.6~3.4초에 나오고, 멈춘 뒤 문구·카운트다운·녹음 중에는 없다', async ({ page }) => {
-  test.setTimeout(120000); // 두 번 녹음한다(한 번에 약 18초)
+test('자막은 미리보기 · 장면 · 다시 녹음의 대사 시각에 나오고, 멈춘 뒤 문구·카운트다운·녹음 중에는 없다', async ({ page }) => {
+  test.setTimeout(150000); // 한 번 녹음하고(약 31초) 다시 녹음을 시작한다
+  // 시험 장면(SF, 통과본)의 대사 «인사해 봐… 크게 !» 4.5~7.5초 · 멈춤 · 길이는 src/genres.ts · 파일에서 온다
+  const LINE = { text: '인사해 봐… 크게 !', start: 4.5 };
+  const PAUSE = scenePause(TEST_SCENE.id);
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
-  // 10초 장면(1.6초 자막)으로 — SF는 11/14부터 완성본이라 판타지를 아래 그림 띠에서 키보드로 고른다
-  await page.locator('.scene-choice[data-genre="fantasy"]').focus();
+  await page.locator(`.scene-choice[data-genre="${TEST_SCENE.id}"]`).focus();
   await page.keyboard.press('Enter');
   const caption = page.getByTestId('scene-caption');
   // 들어가면 흐르는 미리보기(11/7)에서도 나온다
-  await expect(caption).toHaveText('나와 겨루겠다고 ?', { timeout: 6000 });
+  await expect(caption).toHaveText(LINE.text, { timeout: (LINE.start + 4) * 1000 });
   await page.locator('#recBtn').click();
-  await expect(caption).toHaveText('나와 겨루겠다고 ?', { timeout: 6000 });
+  await expect(caption).toHaveText(LINE.text, { timeout: (LINE.start + 4) * 1000 });
   // 문구 1초 · 숫자 1초씩(11/8) — 페이지 안에서 매 화면 확인하는 waitFor로 기다린다
-  await page.locator('#cue').waitFor({ timeout: 8000 });
+  await page.locator('#cue').waitFor({ timeout: (PAUSE - LINE.start + 5) * 1000 });
   await expect(caption).toHaveCount(0);
   await page.locator('#count').waitFor({ timeout: 3000 });
   await expect(caption).toHaveCount(0);
   await expect(page.locator('#recpill')).toBeVisible({ timeout: 8000 });
   await expect(caption).toHaveCount(0);
-  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: (clipLength(TEST_SCENE.id) - PAUSE + 12) * 1000 });
   // «다시 녹음»은 처음부터 다시 흐르므로(11/8) 자막도 다시 나온다
   await page.locator('#resetBtn').click();
-  await expect(caption).toHaveText('나와 겨루겠다고 ?', { timeout: 6000 });
+  await expect(caption).toHaveText(LINE.text, { timeout: (LINE.start + 4) * 1000 });
 });
 
 // 11/14 드라마 v7은 대사가 두 줄이다(Bumm님 지시, 팀장 전달) — 아빠(화면 밖) 0.1~1.7초, 할머니 5.3~7.6초.

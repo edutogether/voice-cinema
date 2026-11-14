@@ -5,10 +5,12 @@
 import { Buffer } from 'node:buffer';
 import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
+import { clipLength, TEST_SCENE } from './scene-data.js';
 
 const UPLOAD_PATTERN = '**/voiceCinema/upload';
 const MAIL_PATTERN = '**/voiceCinema/mail';
-const TAKE_MS = 40000;
+// 녹음 한 번 — 장면은 모두 통과본이고 그중 가장 긴 것이 시험 장면 SF다(11/14 완성본, 길이는 파일에서 읽는다)
+const TAKE_MS = (clipLength(TEST_SCENE.id) + 25) * 1000;
 const TEACHER = 'teacher@school.kr';
 // 업로드가 실제로 돌려주는 모양(file.publicUrl — «dubs/»의 «/»가 %2F) 그대로 둔다. 11/8까지 시험이 «/» 그대로인 가짜 링크를 써서
 // 메일 서버가 진짜 링크를 거절하는 것을 몰랐다(functions/test/mail.test.js)
@@ -18,7 +20,7 @@ const CONDITIONS = [
   '크롬 기록(사이트 데이터)을 지우면 보내기 전 영화도 지워져요.',
 ];
 
-// 더빙 한 번(약 20초) · 합성 · App Check 대기(업로드와 메일에 한 번씩)까지 넉넉히
+// 더빙 한 번(약 31초) · 합성 · App Check 대기(업로드와 메일에 한 번씩)까지 넉넉히
 test.describe.configure({ timeout: 180000 });
 
 function mp4Duration(buffer) {
@@ -152,7 +154,7 @@ test('맡긴 뒤 창을 새로고침해도 남아 있고, 다시 연 창이 인�
   await startOffline(context);
   const seen = await catchServer(context);
 
-  await dubAndSave(page, '판타지');
+  await dubAndSave(page, '애니메이션');
   await enterMail(page, '지우');
   await page.reload();
   await expect(page.locator('#mailQueueChip')).toHaveText('메일 대기 1건');
@@ -248,7 +250,7 @@ test('브라우저가 저장소를 막아 맡기지 못하면 적던 칸으로 �
     };
   });
 
-  await dubAndSave(page, '스포츠');
+  await dubAndSave(page, '스릴러');
   await page.locator('#mailName').fill('민수');
   await page.locator('#mailAddress').fill(TEACHER);
   await page.locator('#mailNextBtn').click();

@@ -6,7 +6,7 @@
 // (10/17 06:40 대표님: 휴대폰도 캐러셀 확정, 장르 색 질문은 끝 — 확정값이라 지우지 않고 둔다). 원작 제목은 앱 화면 어디에도 쓰지 않는다.
 
 import clipVersions, { lengths } from 'virtual:clip-versions';
-import { CLIP_SECONDS, PAUSE_SECONDS, VOICE_WINDOW_SECONDS } from './config';
+import { VOICE_WINDOW_SECONDS } from './config';
 
 /** 상대 대사 한 줄과 그 자막이 나와 있는 시각(초). */
 export interface Line { text: string; start: number; end: number }
@@ -31,12 +31,10 @@ export interface Genre {
 
 // 10초 장면: 상대 대사는 1.6초에 시작해 3.4초 전에 끝나고(스토리보드 §0), 5.0초에 멈춘다.
 // 11/14 완성본(Bumm님 «폭주기관차 올려»): 상대 대사 4.5~7.5초, 12.0초에 멈춘다(graybox-7-1113 «7편 동작 시간표»).
-// 완성본은 편마다 길이가 달라(21.0 · 22.0 · 23.5초 …) 숫자로 박지 않고 원판 파일(public/clips/<장르>.mp4)에서 읽는다(tools/clip-versions.js).
-const line = (text: string): Line[] => [{ text, start: 1.6, end: 3.4 }];
-const scene10 = { seconds: CLIP_SECONDS, pause: PAUSE_SECONDS, label: '10초' };
+// 완성본은 편마다 길이가 달라(21.0 · 22.0 · 23.5 · 28.0 · 28.7초 …) 숫자로 박지 않고 원판 파일(public/clips/<장르>.mp4)에서 읽는다(tools/clip-versions.js).
 // 완성본 상대 대사는 보통 4.5~7.5초 한 줄이다. 시각 · 줄 수가 다른 편은 say()로 넘긴다(드라마 — 11/14 팀장 전달, 소리 파형으로 잰 값).
 const say = (text: string, start: number, end: number): Line => ({ text, start, end });
-// 멈춤은 보통 12.0초, 편마다 다를 수 있다(판타지는 15.0초 판을 만드는 중 — 11/14 팀장 알림).
+// 멈춤은 보통 12.0초, 편마다 다르면 film('대사', 13.9)처럼 넘긴다(판타지 v8.5는 13.9초 = 30fps 417번째 프레임 — 11/14 팀장 전달).
 const film = (lines: string | Line[], pause = 12) =>
   ({ lines: typeof lines === 'string' ? [say(lines, 4.5, 7.5)] : lines, pause, label: '20초' });
 // 대사 구간은 목소리 칸 그대로다(멈춤 ~ +3.5초, 합성이 쓰는 값과 같다).
@@ -46,12 +44,12 @@ const scene = (g: Omit<Genre, 'turn' | 'seconds'> & { seconds?: number }): Genre
 
 export const GENRES: Genre[] = [
   scene({ id: 'sf', name: 'SF', color: '#3fa7c9', summary: '퍼스트 헬로', ...film('인사해 봐… 크게 !') }),
-  scene({ id: 'fantasy', name: '판타지', color: '#8a63d2', summary: '빛의 결투', lines: line('나와 겨루겠다고 ?'), ...scene10 }),
+  scene({ id: 'fantasy', name: '판타지', color: '#8a63d2', summary: '빛의 결투', ...film('나와 겨루겠다고 ?', 13.9) }),
   scene({ id: 'animation', name: '애니메이션', color: '#d97b3f', summary: '날아라 미르', ...film('준비됐어 ? 하나, 둘…') }),
   scene({ id: 'hero', name: '히어로', color: '#c94f5c', summary: '폭주기관차', ...film('네가 멈춰, 지금 !') }),
   scene({ id: 'thriller', name: '스릴러', color: '#2f9e6e', summary: '우리 같이 놀자', ...film('우리랑… 같이 놀자.') }),
   scene({ id: 'drama', name: '드라마', color: '#c9a24b', summary: '안녕, 설이', ...film([say('이제 출발해야지~', 0.1, 1.7), say('설이한테 꼭 다시 온다고 인사해 !', 5.3, 7.6)]) }),
-  scene({ id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '마지막 슛', lines: line('너한테 맡긴다 !'), ...scene10 }),
+  scene({ id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '마지막 슛', ...film('너한테 맡긴다 !', 15) }),
   scene({ id: 'musical', name: '뮤지컬', color: '#c4559e', summary: '선셋 하이웨이', ...film('음악 간다, 신호 줘 !') }),
 ];
 

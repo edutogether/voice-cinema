@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { scenePause, TEST_SCENE } from './scene-data.js';
 
 // 움직임 줄이기(prefers-reduced-motion: reduce)를 보고하는 브라우저에서도 화면은 그대로 움직인다
 // (11/11 Bumm님 «여덟 앱 모두, 움직임 줄이기와 상관없이 늘 정상처럼 돌게», 팀장 전달).
@@ -78,10 +79,10 @@ for (const reducedMotion of ['reduce', 'no-preference']) {
       });
       await page.goto('/');
       await page.locator('#splash').waitFor({ state: 'detached' });
-      await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
+      await page.getByRole('button', { name: `${TEST_SCENE.name} 더빙 시작`, exact: true }).click();
       await expect(page.locator('#studio')).toHaveAttribute('data-phase', 'previewing');
       await page.locator('#recBtn').click();
-      await expect(page.locator('#recpill')).toBeVisible({ timeout: 20000 });
+      await expect(page.locator('#recpill')).toBeVisible({ timeout: (scenePause(TEST_SCENE.id) + 12) * 1000 });
       const log = await page.evaluate(() => window.__studioMotion);
       expect(log.entering, '장면이 녹음실 영상 자리로 커졌다').toBe(true);
       expect(log.cue, '«이제 당신의 차례입니다 !»').toBe('countIn');

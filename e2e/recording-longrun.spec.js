@@ -3,10 +3,13 @@
 import { test, expect } from '@playwright/test';
 import { installSyntheticMic, rawTake, recordOnce } from './synthetic-mic.js';
 import { voiceInMovie } from './movie-check.js';
+import { openScene } from './pause-scenes.js';
+import { scenePause } from './scene-data.js';
 
 // 목소리 높이는 서로의 배음(2배·3배)과 겹치지 않게 골랐다 — 220과 440처럼 겹치면 섞이지 않았어도 섞인 것처럼 잡힌다
-// 넷째 값은 멈춤 시각 — 11/14부터 SF · 히어로 · 드라마 · 뮤지컬은 완성본이라 12.0초에 멈추고 목소리도 거기 들어간다
-const ROUNDS = [['sf', 'SF', 230, 12], ['fantasy', '판타지', 290, 5], ['hero', '히어로', 370, 12], ['drama', '드라마', 470, 12], ['musical', '뮤지컬', 590, 12]];
+// 장면은 통과본 다섯 편이다 — 판타지 · 스포츠 · 뮤지컬은 새 판이 들어오는 자리라 그 소리(배음)에 기대지 않는다(11/14).
+// 멈춤 시각은 파일에서 읽는다(편마다 다르다) — 목소리도 거기 들어간다
+const ROUNDS = [['sf', 230], ['animation', 290], ['hero', 370], ['thriller', 470], ['drama', 590]].map(([id, f0]) => [id, f0, scenePause(id)]);
 
 test('아이 다섯 명이 잇달아 녹음·저장해도 자원이 쌓이지 않고 영화마다 그 아이 목소리만 들어간다', async ({ page }) => {
   test.setTimeout(600000);
@@ -15,7 +18,7 @@ test('아이 다섯 명이 잇달아 녹음·저장해도 자원이 쌓이지 �
     uploads.push(JSON.parse(route.request().postData()));
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, url: 'https://storage.googleapis.com/fake/longrun.mp4' }) });
   });
-  await installSyntheticMic(page, ROUNDS.map(([, , f0]) => ({ delay: 0.3, dur: 1.8, f0 })));
+  await installSyntheticMic(page, ROUNDS.map(([, f0]) => ({ delay: 0.3, dur: 1.8, f0 })));
   await page.addInitScript(() => {
     const counts = { contexts: [], written: new Set(), deleted: new Set(), urls: 0, revoked: 0 };
     window.__res = counts;
@@ -42,13 +45,14 @@ test('아이 다섯 명이 잇달아 녹음·저장해도 자원이 쌓이지 �
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
   const snapshots = [];
-  for (const [i, [id, name, , pause]] of ROUNDS.entries()) {
-    await page.getByRole('button', { name: `${name} 더빙 시작`, exact: true }).click();
+  for (const [i, [id, , pause]] of ROUNDS.entries()) {
+    // 아래 그림 띠에서 고른다 — 가운데가 아닌 카드의 «… 더빙 시작»은 자동 넘김이 그 카드를 데려올 때까지 기다린다
+    await openScene(page, id);
     expect(await recordOnce(page)).toMatchObject({ phase: 'recorded', check: 'ok' });
     await page.locator('#saveBtn').click();
     await expect(page.locator('#qrbox')).toBeVisible({ timeout: 90000 });
     // 이 영화에는 이 아이의 목소리 높이만 있다(앞 아이들의 높이는 그 1/20 아래)
-    const v = await voiceInMovie(page, uploads.at(-1).dataBase64, id, ROUNDS.map(([, , f]) => f), pause);
+    const v = await voiceInMovie(page, uploads.at(-1).dataBase64, id, ROUNDS.map(([, f]) => f), pause);
     const mine = v.tones[i];
     for (const [j, other] of v.tones.entries()) if (j !== i) expect(mine, `${i + 1}번째 영화에 ${j + 1}번째 목소리`).toBeGreaterThan(20 * other);
     // 목소리는 멈춤 시각 + 녹음 안 말소리 시작 자리에 들어간다(시험이 예약한 때가 아니라 녹음 파일에 실제로 담긴 자리 기준)

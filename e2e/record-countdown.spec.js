@@ -1,8 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { countdownEnds, countdownLog, watchCountdown } from './countdown-watch.js';
+import { scenePause, TEST_SCENE } from './scene-data.js';
 
-// 5.0초 멈춤 뒤 «이제 당신의 차례입니다 !» → 3·2·1(숫자만, 11/8 Bumm님)이 화면 가운데 보이고 다른 요소에 가려지지 않는다.
-// 그동안 영상은 5.0초 정지 화면 그대로다. 녹음기가 실제로 켜진 뒤에 «녹음 중»과 «이제 당신의 목소리를 들려주세요 !»가 함께 보이고,
+// 시험 장면(SF, 첫 카드)의 멈춤 시각 — 11/14 완성본은 편마다 다르다(파일에서 읽는다)
+const PAUSE = scenePause(TEST_SCENE.id);
+
+// 멈춤 뒤 «이제 당신의 차례입니다 !» → 3·2·1(숫자만, 11/8 Bumm님)이 화면 가운데 보이고 다른 요소에 가려지지 않는다.
+// 그동안 영상은 멈춘 정지 화면 그대로다. 녹음기가 실제로 켜진 뒤에 «녹음 중»과 «이제 당신의 목소리를 들려주세요 !»가 함께 보이고,
 // 그 문구는 숫자 하나처럼 1초 뒤 사라지며 녹음은 이어진다(11/8 Bumm님 «321하고 똑같이만큼»).
 // 문구와 숫자는 정확히 1초에 하나씩 넘어가고, 절정(멈춤)에서 «녹음 중»까지 4초다(11/8 Bumm님 «너무 빠르다» — 10/24에는 1.5초, 그 전에는 3.9초).
 // 나타나는 순간은 화면에서 기록해 두고 본다(e2e/countdown-watch.js).
@@ -15,17 +19,17 @@ for (const [label, viewport] of [
     await watchCountdown(page);
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
-    await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
+    await page.getByRole('button', { name: `${TEST_SCENE.name} 더빙 시작`, exact: true }).click();
     await page.locator('#recBtn').click();
 
-    await expect(page.locator('#recpill')).toBeVisible({ timeout: 20000 });
+    await expect(page.locator('#recpill')).toBeVisible({ timeout: (PAUSE + 12) * 1000 });
     const log = await countdownLog(page);
     expect(log.map((e) => e.key)).toEqual(['cue', '3초 뒤 녹음 시작', '2초 뒤 녹음 시작', '1초 뒤 녹음 시작', 'recording', 'speak']);
     expect(log[0].text).toBe('이제 당신의 차례입니다 !');
     for (const entry of log) {
       expect(entry.inViewport, entry.key).toBe(true);
-      // 문구·숫자·«녹음 중» 내내 영상은 5.0초 정지 화면이다
-      expect(entry).toMatchObject({ paused: true, time: 5 });
+      // 문구·숫자·«녹음 중» 내내 영상은 멈춘 정지 화면이다
+      expect(entry).toMatchObject({ paused: true, time: PAUSE });
     }
     // 3·2·1에는 숫자 말고 아무 글도 없다(11/8 Bumm님 «뭘 3·2·1에 계속 밑에 주저리 나오냐»)
     for (const [i, entry] of log.slice(1, 4).entries()) {

@@ -1,4 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { clipLength, scenePause, TEST_SCENE } from './scene-data.js';
+
+// 시험 장면(SF, 첫 카드)은 11/14부터 완성본이다 — 멈춤까지 · 이어 재생 시간을 파일 길이에서 잡는다
+const enter = (page) => page.getByRole('button', { name: `${TEST_SCENE.name} 더빙 시작`, exact: true }).click();
+const TO_RECORDING_MS = (scenePause(TEST_SCENE.id) + 12) * 1000;
+const AFTER_RECORDING_MS = (clipLength(TEST_SCENE.id) - scenePause(TEST_SCENE.id) + 12) * 1000;
 
 for (const [name, reason, hint] of [
   ['NotAllowedError', 'denied', '마이크를 쓸 수 없게 막혀'],
@@ -19,15 +25,15 @@ for (const [name, reason, hint] of [
     }, name);
     await page.goto('/');
     await page.locator('#splash').waitFor({ state: 'detached' });
-    await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
+    await enter(page);
     await page.locator('#recBtn').click();
     await expect(page.locator('#hint')).toHaveAttribute('data-mic-error', reason);
     await expect(page.locator('#hint')).toContainText(hint);
     await expect(page.locator('#recBtn')).toBeEnabled();
     await page.locator('#recBtn').click();
     // 3·2·1은 e2e/record-countdown.spec.js가 따로 본다 — 여기서는 녹음이 실제로 시작되는지만
-    await expect(page.locator('#recpill')).toBeVisible({ timeout: 20000 });
-    await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
+    await expect(page.locator('#recpill')).toBeVisible({ timeout: TO_RECORDING_MS });
+    await expect(page.locator('#afterRow')).toBeVisible({ timeout: AFTER_RECORDING_MS });
   });
 }
 
@@ -35,7 +41,7 @@ test('녹음 API가 없는 브라우저를 권한 거부로 오인하지 않는�
   await page.addInitScript(() => { window.MediaRecorder = undefined; });
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
+  await enter(page);
   await page.locator('#recBtn').click();
   await expect(page.locator('#hint')).toHaveAttribute('data-mic-error', 'unsupported');
   await expect(page.locator('#hint')).toContainText('크롬이나 사파리');
@@ -43,7 +49,7 @@ test('녹음 API가 없는 브라우저를 권한 거부로 오인하지 않는�
 });
 
 test('연결이 끊긴 마이크는 다시 얻어 다음 참가자가 녹음한다', async ({ page }) => {
-  test.setTimeout(120000); // 두 번 녹음한다(한 번에 약 18초)
+  test.setTimeout(150000); // 두 번 녹음한다(한 번에 약 31초)
   await page.addInitScript(() => {
     const request = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
     window.micRequests = 0;
@@ -56,13 +62,13 @@ test('연결이 끊긴 마이크는 다시 얻어 다음 참가자가 녹음한�
   });
   await page.goto('/');
   await page.locator('#splash').waitFor({ state: 'detached' });
-  await page.getByRole('button', { name: '판타지 더빙 시작', exact: true }).click();
+  await enter(page);
   await page.locator('#recBtn').click();
-  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 30000 });
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: TO_RECORDING_MS + AFTER_RECORDING_MS });
   await page.evaluate(() => window.testMic.getTracks().forEach(track => track.stop()));
   // «다시 녹음»은 곧바로 다음 녹음을 시작한다(11/8) — 끊긴 마이크를 버리고 새로 얻는다
   await page.locator('#resetBtn').click();
-  await expect(page.locator('#recpill')).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('#recpill')).toBeVisible({ timeout: TO_RECORDING_MS });
   expect(await page.evaluate(() => window.micRequests)).toBe(2);
-  await expect(page.locator('#afterRow')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#afterRow')).toBeVisible({ timeout: AFTER_RECORDING_MS });
 });

@@ -30,7 +30,7 @@ const genres = [...source.matchAll(/scene\(\{ id: '([a-z]+)'[^\n]*\.\.\.(?:film\
 
 test('장르 여덟 개를 모두 읽었고, 완성본 길이는 숫자로 박혀 있지 않다', () => {
   expect(genres.map((g) => g.id)).toHaveLength(8);
-  expect(genres.filter((g) => g.film).map((g) => g.id).sort()).toEqual(['animation', 'drama', 'hero', 'musical', 'sf', 'thriller']);
+  expect(genres.filter((g) => g.film).map((g) => g.id).sort()).toEqual(['animation', 'drama', 'fantasy', 'hero', 'musical', 'sf', 'sports', 'thriller']);
   expect(source).not.toMatch(/const film = [^\n]*seconds:/);
   expect(filmPause).toBe(12);
   expect(source).toMatch(/seconds: g\.seconds \?\? lengths\[`\$\{g\.id\}\.mp4`\]/);
