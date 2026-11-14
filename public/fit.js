@@ -70,7 +70,7 @@
     root.style.setProperty('--app-h', appH + 'px');
     root.style.setProperty('--brand-scale', String(Math.max(BRAND_MIN, Math.min(1, (appW * appH) / (BRAND_W * BRAND_H)))));
     root.style.setProperty('--splash-scale', String((1 + Math.sqrt((w * h) / (SPLASH_W * SPLASH_H))) / 2));
-    var cqPx = parseFloat(getComputedStyle(cqUnit).width);
+    var cqPx = parseFloat(window.getComputedStyle(cqUnit).width);
     root.style.setProperty('--cq', cqPx > 0 ? String(100 / cqPx) : '1');
     root.dataset.fit = kind;
   };
