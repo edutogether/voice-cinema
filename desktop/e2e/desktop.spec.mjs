@@ -19,6 +19,9 @@ function mp4Duration(buffer) {
   return buffer.readUInt32BE(at + 20) / buffer.readUInt32BE(at + 16);
 }
 
+/** 설치판에 든 합성용 원판(clips/final)의 길이 — 장면마다 길이가 다르다(11/14 완성본 21~30초). 숫자로 박지 않는다(app.md «완성본») */
+const finalClipLength = (id) => mp4Duration(readFileSync(path.join(path.dirname(EXE), 'resources', 'web', 'clips', 'final', `${id}.mp4`)));
+
 /** 검사마다 새 프로필로 띄운다(가짜 마이크 장치 · 소리 끔). 창은 가장 작은 모니터에 뜬다(시험 전용 VC_TEST_SMALLEST_DISPLAY — main.js). */
 async function launch(args = []) {
   const app = await _electron.launch({
@@ -115,7 +118,7 @@ test('마이크만 허락하고 카메라는 거절한다', async () => {
   await app.close();
 });
 
-test('녹음 → 합성 → 업로드가 되면 QR이 뜨고, 올린 것은 10초 영화다', async () => {
+test('녹음 → 합성 → 업로드가 되면 QR이 뜨고, 올린 것은 원판 길이의 영화다', async () => {
   const { app, page } = await launch();
   await routeUpload(app, { status: 200, body: { ok: true, url: 'https://storage.googleapis.com/test/dub.mp4' } });
   await openStudio(page, '판타지');
@@ -148,24 +151,24 @@ test('녹음 → 합성 → 업로드가 되면 QR이 뜨고, 올린 것은 10�
   expect(wait.qrAt, 'QR은 둘째 대기 영상이 끝난 뒤에').toBeGreaterThanOrEqual(shown[1].endedAt);
   const [uploaded] = await uploads(app);
   expect(uploaded.filename).toMatch(/^dub_fantasy_\d+_[0-9a-f]+\.mp4$/);
-  expect(Math.abs(mp4Duration(Buffer.from(uploaded.dataBase64, 'base64')) - 10)).toBeLessThanOrEqual(0.05);
+  expect(Math.abs(mp4Duration(Buffer.from(uploaded.dataBase64, 'base64')) - finalClipLength('fantasy'))).toBeLessThanOrEqual(0.05);
   await app.close();
 });
 
 // 3·2·1 뒤에 아이가 아무 말도 안 해도 장면은 끝까지 흐르고 영화가 만들어진다(11/9 Bumm님 «321 한담에 말 안하니 … 중간에 끊어져버림 이럼 안돼» —
 // 웹 e2e/recording-voice.spec.js와 같은 화면 · 같은 판정)
-test('3·2·1 뒤에 아무 말도 안 해도(무음) 장면이 끝까지 이어지고, 저장하면 10초 영화가 올라간다', async () => {
+test('3·2·1 뒤에 아무 말도 안 해도(무음) 장면이 끝까지 이어지고, 저장하면 원판 길이의 영화가 올라간다', async () => {
   const { app, page } = await launch();
   await routeUpload(app, { status: 200, body: { ok: true, url: 'https://storage.googleapis.com/test/dub.mp4' } });
   await openStudio(page, '판타지', [{ silent: true }]);
   const r = await recordOnce(page);
   expect(r).toMatchObject({ phase: 'recorded', check: 'silent' });
   expect(r.hint).toContain('목소리가 들리지 않았어요');
-  expect(await page.locator('#clip').evaluate((v) => v.ended || v.currentTime > 9.5)).toBe(true);
+  expect(await page.locator('#clip').evaluate((v) => v.ended || v.currentTime > v.duration - 0.5)).toBe(true);
   await page.locator('button', { hasText: '저장하기' }).click();
   await expect(page.locator('#qrImg')).toBeVisible({ timeout: 90000 });
   const [uploaded] = await uploads(app);
-  expect(Math.abs(mp4Duration(Buffer.from(uploaded.dataBase64, 'base64')) - 10)).toBeLessThanOrEqual(0.05);
+  expect(Math.abs(mp4Duration(Buffer.from(uploaded.dataBase64, 'base64')) - finalClipLength('fantasy'))).toBeLessThanOrEqual(0.05);
   await app.close();
 });
 
