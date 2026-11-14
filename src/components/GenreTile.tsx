@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { previewUrl, thumbUrl, stillUrl, thumbAvifUrl, stillAvifUrl, type Genre } from '../genres';
+import { previewUrl, firstUrl, thumbUrl, stillUrl, thumbAvifUrl, stillAvifUrl, type Genre } from '../genres';
 import { ActionIcon } from './ActionIcon';
 import { HiggsfieldMark } from './HiggsfieldMark';
 
@@ -85,7 +85,8 @@ export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, ne
             <source type="image/avif" srcSet={`${thumbAvifUrl(genre.id)} 320w, ${stillAvifUrl(genre.id)} 1280w`} sizes="(min-width: 1000px) 33vw, 50vw" />
             <img className="thumb" src={thumbUrl(genre.id)} srcSet={`${thumbUrl(genre.id)} 320w, ${stillUrl(genre.id)} 1280w`} sizes="(min-width: 1000px) 33vw, 50vw" alt="" />
           </picture>}
-          <video className="preview" ref={videoRef} muted playsInline preload="none" />
+          {/* 가운데 카드(playing)는 받는 동안에도 영상 자리를 보인다 — 포스터(영상 첫 프레임)가 먼저 보이고 그 위에서 0초부터 이어진다. 카드 그림(멈춤 장면)에서 0초로 튀던 것을 없앤다(11/14 Bumm님). */}
+          <video className={playing ? 'preview active' : 'preview'} ref={videoRef} muted playsInline preload="none" poster={showImage ? firstUrl(genre.id) : undefined} />
         </span>
         {/* 영상을 만든 도구의 로고 — 그림의 보이는 오른쪽 위(11/14 Bumm님, Poster Studio와 같은 규칙) */}
         <HiggsfieldMark />

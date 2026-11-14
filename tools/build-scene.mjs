@@ -11,6 +11,7 @@
 //
 // 만드는 것(app-plan §2-5): public/clips/<장르>.mp4(1920×1080 H.264/AAC, 30fps, 키프레임 1초 간격 — 5.0초 포함,
 // 자막 없음), previews/<장르>.mp4(0~5.0초 무음, 1280×720 — 최고조까지만, 해소는 아낀다),
+// firsts/<장르>.jpg(1280×720)는 0초 첫 프레임(메인 가운데 카드 영상 포스터).
 // thumbs/<장르>.jpg(640×360)와 stills/<장르>.jpg(1280×720) — 둘 다 5.0초 멈춤 화면. 같은 그림의 AVIF도 옆에 만든다(tools/build-avif.mjs, 10/24).
 // 내려받는 영상에는 로고(tools/video-logos.png — 왼쪽 위 InKY Film Festival, 오른쪽 위 인천광역시교육청)가 들어간다(10/20 대표님,
 // 11/13 Bumm님 «흰 바 없이 완성 그림처럼»). 로고만 바꿀 때는 --final로 합성용 원판만 다시 만든다.
@@ -55,7 +56,14 @@ if (PAUSE + 3.5 > SECONDS) throw new Error(`멈춤 ${PAUSE}초 + 목소리 칸 3
 // 완성본은 길수록 최대 비트레이트를 낮춰 영상이 130Mbit(약 16MB)를 넘지 않게 한다 — 합성본이 업로드 한도(20MiB) 아래에 머문다.
 // 26초까지는 5Mbps 그대로이고(11/14 네 편 · 드라마), 32.5초면 4Mbps다.
 const FILM_MBPS = Math.min(5, Math.floor(1300 / SECONDS) / 10);
-const VIDEO = ['-c:v', 'libx264', '-profile:v', 'high', '-preset', 'slow', '-crf', '20',
+// 완성본은 품질 기준 CRF 24다(11/14 Bumm님 «모바일이랑 PC 1920 선에서 티 안 나게 용량 최적화», 팀장 전달) — CRF 20은 거의 늘 위 상한에 걸려
+// 상한만큼 컸다. 스포츠 · 판타지로 20 · 23 · 24 · 25 · 26을 재어 VMAF(1920×1080 · 휴대폰 1170×658)가 20보다 1점 안쪽으로만 떨어지는 24를 골랐다
+// (1920 기준 스포츠 98.5 → 97.8, 판타지 94.2 → 93.2 — 판타지는 20도 상한에 묶여 95 아래다). 상한은 그대로 둔다. 10초 장면은 20 그대로다.
+// 미리보기(1280×720)는 20 그대로 둔다 — 24로 재면 SF · 애니메이션이 2점 넘게 떨어졌고(1280 기준 96.6 → 94.4 · 97.0 → 94.2), 편마다 1~5MB라 줄일 몫도 작다.
+// 그 기준(1920 · 휴대폰 모두 VMAF 95 이상, 지금 판보다 2점 넘게 떨어지지 않음)을 못 지키는 편은 --crf로 한 단계씩 낮춘다 — 편마다 쓴 값은 _docs/CHANGELOG.md 11/14.
+const CRF = flag('--crf') ?? (SECONDS > 10 ? '24' : '20');
+if (!/^\d{2}$/.test(CRF)) throw new Error('--crf는 두 자리 정수');
+const VIDEO = ['-c:v', 'libx264', '-profile:v', 'high', '-preset', 'slow', '-crf', CRF,
   ...(SECONDS > 10 ? ['-maxrate', `${FILM_MBPS}M`, '-bufsize', `${FILM_MBPS * 2}M`] : ['-maxrate', '8M', '-bufsize', '16M']),
   '-g', '30', '-keyint_min', '30', '-sc_threshold', '0', '-force_key_frames', `0,${PAUSE}`, '-pix_fmt', 'yuv420p'];
 
@@ -122,6 +130,7 @@ if (mode === '--film') {
 mkdirSync(join(clips, 'previews'), { recursive: true });
 mkdirSync(join(clips, 'thumbs'), { recursive: true });
 mkdirSync(join(clips, 'stills'), { recursive: true });
+mkdirSync(join(clips, 'firsts'), { recursive: true });
 mkdirSync(join(clips, 'final'), { recursive: true });
 const main = join(clips, `${genre}.mp4`);
 const final = join(clips, 'final', `${genre}.mp4`);
@@ -134,6 +143,8 @@ ff(['-i', picture, '-t', String(PAUSE), '-an', '-vf', 'scale=1280:720:flags=lanc
   join(clips, 'previews', `${genre}.mp4`)]);
 ff(['-ss', String(PAUSE), '-i', picture, '-frames:v', '1', '-vf', 'scale=1280:720:flags=lanczos', '-q:v', '2', join(clips, 'stills', `${genre}.jpg`)]);
 ff(['-ss', String(PAUSE), '-i', picture, '-frames:v', '1', '-vf', 'scale=640:360:flags=lanczos', '-q:v', '2', join(clips, 'thumbs', `${genre}.jpg`)]);
+// 미리보기 첫 프레임(1280×720) — 메인 가운데 카드 영상의 포스터. 멈춤 장면 그림에서 0초 영상으로 튀지 않게 한다(11/14 Bumm님, GenreTile).
+ff(['-i', picture, '-frames:v', '1', '-vf', 'scale=1280:720:flags=lanczos', '-q:v', '2', join(clips, 'firsts', `${genre}.jpg`)]);
 buildAvif([genre]);
 
 rmSync(work, { recursive: true, force: true });
