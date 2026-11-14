@@ -4,7 +4,7 @@
 // 대표님이 휴대폰 폭으로 보시고 «보는 중에 왜 옛날식으로 허접하게 화면이 바뀌냐»고 지적해, 터치 기기도
 // PC와 같은 캐러셀을 쓰게 했다(밀어서 넘기고, 가운데 장면을 누르면 녹음실). 그래서 이제 터치에서도
 // **가운데 장면 한 장만** 재생된다 — 예전 «한 장만 재생으로 되돌리지 말 것»은 여섯 장이 한 화면에 다 보이는
-// 격자 이야기였고, 캐러셀은 큰 장면이 하나뿐이라 그 문제가 없다(장면이 6초마다 저절로 넘어간다).
+// 격자 이야기였고, 캐러셀은 큰 장면이 하나뿐이라 그 문제가 없다(장면이 8초마다 저절로 넘어간다 — 11/14 Bumm님).
 //
 // 스크린샷으로는 정지 화면과 구분되지 않는다 — currentTime이 실제로 흐르는지 본다.
 import { test, expect } from '@playwright/test';
@@ -32,7 +32,7 @@ const 첫화면 = async (page) => {
   await page.waitForFunction(() => !document.getElementById('splash'), null, { timeout: 20000 });
 };
 
-// 장면 자동 넘김을 멈춘다 — 6초마다 가운데가 바뀌면 «같은 장면»을 지켜보는 검사가 흔들린다.
+// 장면 자동 넘김을 멈춘다 — 8초마다 가운데가 바뀌면 «같은 장면»을 지켜보는 검사가 흔들린다.
 // 멈춤 단추는 없다(10/20 대표님) — 손가락 한 번 누르기로 멈춘다(검사 준비일 뿐, e2e/pause-scenes.js).
 const 자동넘김멈춤 = pauseScenes;
 
@@ -132,7 +132,7 @@ test.describe('마우스가 없는 기기', () => {
     await expect(번호).toHaveText('01');
   });
 
-  // 휴대폰에는 멈춤 단추가 없다(10/19 대표님) — 손가락으로 한 번 밀거나 누르면 자동 넘김(6초)과 아래 그림 띠의 흐름이 멈춘다(V-h).
+  // 휴대폰에는 멈춤 단추가 없다(10/19 대표님) — 손가락으로 한 번 밀거나 누르면 자동 넘김(8초)과 아래 그림 띠의 흐름이 멈춘다(V-h).
   for (const 동작 of ['밀기', '누르기']) {
     test(`한 번 ${동작}면 자동 넘김과 아래 그림 띠의 흐름이 멈춘다`, async ({ page }) => {
       await 첫화면(page);
@@ -155,8 +155,8 @@ test.describe('마우스가 없는 기기', () => {
       }
       await expect(번호).toHaveText('02');
       await expect(page.locator('.scene-choices')).toHaveAttribute('data-paused', 'true');
-      // 자동 넘김 간격(6초)보다 오래 기다려도 그대로다
-      await page.waitForTimeout(7000);
+      // 자동 넘김 간격(8초, SceneCarousel.tsx의 AUTO_ADVANCE_MS)보다 오래 기다려도 그대로다 — 11/14 8초로 바뀐 뒤 7초 기다림은 멈춤이 빠져도 통과했다
+      await page.waitForTimeout(9000);
       await expect(번호).toHaveText('02');
     });
   }

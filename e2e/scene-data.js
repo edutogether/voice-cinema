@@ -1,4 +1,4 @@
-// 장르마다 원판 길이 · 멈춤 시각이 다르다(11/14 완성본 — 편마다 21~30초, 멈춤 12.0 · 15.0초). 시험은 숫자를 박지 않고 파일에서 읽는다 —
+// 장르마다 원판 길이 · 멈춤 시각이 다르다(11/14 완성본 — 편마다 21~30초, 멈춤 12.0 · 13.9 · 15.0초). 시험은 숫자를 박지 않고 파일에서 읽는다 —
 // 앱도 길이를 원판 파일에서 읽는다(tools/clip-versions.js → src/genres.ts). 멈춤 시각은 미리보기 길이에서 읽는다:
 // 미리보기(previews/<장르>.mp4)는 0초부터 멈춤 시각까지다(tools/build-scene.mjs, test/scene-clips.test.js가 둘을 맞대 본다).
 import { readFileSync } from 'node:fs';
@@ -27,7 +27,7 @@ export function clockText(time, length = time) {
 /**
  * 장르의 상대 대사 자막 [{ text, start, end }] — 앱이 쓰는 src/genres.ts의 `film([say('대사', 시작, 끝), …])`를 그대로 읽는다.
  * 자막 시각은 편마다 지시문 · 실제 소리에 맞춰 바뀐다(11/14 9249473에서 SF 4.5~7.5 → 7.6~8.8초) — 시험에 숫자로 박으면 그때마다 CI가 떨어진다.
- * `film('대사')` 한 줄 모양이면 film()의 기본 시각(`say(lines, 시작, 끝)`)을 읽는다. 못 읽으면 통과가 아니라 실패다.
+ * 대사를 못 읽으면 통과가 아니라 실패다(11/14 감사에서 한 줄 문자열 모양 `film('대사')`는 앱에서 뺐다).
  */
 export function sceneLines(id) {
   const source = readFileSync('src/genres.ts', 'utf8');
@@ -35,11 +35,8 @@ export function sceneLines(id) {
   if (!row) throw new Error(`src/genres.ts에 ${id} 장면 줄이 없음`);
   const said = [...row.matchAll(/say\('([^']*)', ([\d.]+), ([\d.]+)\)/g)]
     .map(([, text, start, end]) => ({ text, start: Number(start), end: Number(end) }));
-  if (said.length) return said;
-  const single = row.match(/film\('([^']*)'/);
-  const fallback = source.match(/say\(lines, ([\d.]+), ([\d.]+)\)/);
-  if (!single || !fallback) throw new Error(`${id} 장면의 대사를 읽지 못함`);
-  return [{ text: single[1], start: Number(fallback[1]), end: Number(fallback[2]) }];
+  if (!said.length) throw new Error(`${id} 장면의 대사를 읽지 못함`);
+  return said;
 }
 
 /**
