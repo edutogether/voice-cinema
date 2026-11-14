@@ -4,7 +4,8 @@ import { watchCountdown, countdownLog } from './countdown-watch.js';
 import { clipLength, scenePause, TEST_SCENE } from './scene-data.js';
 
 // 녹음실 자동 재생(11/7 Bumm님 «누르고 들어가면 바로 영상 재생 … 소리도 나오고 … 멈추고 321은 빼고 … 문구만 주고 그냥 쭉 멈춤없이 지나가게 해서 아 ~ 하게»):
-// «더빙하기»를 누르면 장면이 처음부터 끝까지 소리와 함께 흐르고, 아이 대사 구간에는 문구만 나온다. 끝나면 준비 화면이다. «장면 시작» 뒤의 녹음은 그대로 멈춤·3·2·1이다.
+// «더빙하기»를 누르면 장면이 처음부터 소리와 함께 흐르고, 아이 대사 구간에는 문구만 나오며, 문구가 꺼지는 때(멈춤 + 3.5초)에 끝나 준비 화면이 된다
+// (11/14 Bumm님 «미리보기는 당신의 목소리가 들어갈 차례에요 ! 가 꺼지면서 끝나게끔 세팅하자 전부다»). «장면 시작» 뒤의 녹음은 그대로 멈춤·3·2·1이다.
 // 대사 구간 문구는 3·2·1과 같은 모양이다 — 영상을 살짝 어둡게 하고 큰 흰 글씨(11/8 Bumm님, 그 전에는 빨간 둥근 막대).
 // 소리는 브라우저가 «누름 안에서 부른 play()»에만 허용하므로(아이폰이 가장 엄격하다) 그 순서를 페이지 안에서 기록해 본다.
 const CUE = '당신의 목소리가 들어갈 자리예요 !';
@@ -51,7 +52,7 @@ const enter = async (page, id = TEST_SCENE.id) => {
   await page.locator(`.scene-choice[data-genre="${id}"]`).click();
 };
 
-test('누르면 그 누름 안에서 소리를 켠 채 재생을 부르고, 멈춤·3·2·1·멈춤 화면의 막 없이 끝까지 흐른 뒤 준비 화면으로 돌아온다', async ({ page }) => {
+test('누르면 그 누름 안에서 소리를 켠 채 재생을 부르고, 멈춤·3·2·1·멈춤 화면의 막 없이 흐르다 대사 구간 문구가 꺼질 때 끝나 준비 화면으로 돌아온다', async ({ page }) => {
   test.setTimeout((LENGTH + 35) * 1000);
   await recordFrames(page);
   await enter(page);
@@ -84,9 +85,12 @@ test('누르면 그 누름 안에서 소리를 켠 채 재생을 부르고, 멈�
   await expect(phase(page)).toHaveAttribute('data-phase', 'idle', { timeout: (LENGTH + 5) * 1000 });
   const frames = await page.evaluate(() => window.__frames);
   const playing = frames.filter((f) => f.time > 0);
-  // 끝까지 흘렀다 — 뒤의 프레임이 원판 끝 근처이고, 처음에서 끝까지 한 번도 멈추지 않았다
-  expect(playing.at(-1).time).toBeGreaterThan(LENGTH - 0.5);
-  expect(playing.filter((f) => f.paused && f.time < LENGTH - 0.5)).toEqual([]);
+  // 문구가 꺼지는 때(멈춤 + 3.5초)에 끝났다 — 원판 끝까지 가지 않고, 그때까지 한 번도 멈추지 않았다
+  const END = PAUSE + 3.5;
+  expect(LENGTH).toBeGreaterThan(END + 1);
+  expect(playing.at(-1).time).toBeGreaterThan(END - 0.2);
+  expect(playing.at(-1).time).toBeLessThan(END + 0.1);
+  expect(playing.filter((f) => f.paused && f.time < END - 0.2)).toEqual([]);
   expect(playing.every((f) => !f.muted)).toBe(true);
   // 멈춤 시각에서 멈추지 않았다 — 앞뒤 프레임 시각이 끊기지 않는다
   const around = playing.filter((f) => f.time > PAUSE - 0.2 && f.time < PAUSE + 0.5);

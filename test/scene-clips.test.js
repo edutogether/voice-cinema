@@ -44,7 +44,8 @@ test('화면이 받는 길이 목록(virtual:clip-versions의 lengths)이 원판
 });
 
 test('상대 대사 자막은 줄마다 멈춤 전에 끝나고 서로 겹치지 않는다 — 드라마는 아빠 · 할머니 두 줄', () => {
-  expect(genres.find((g) => g.id === 'drama').lines).toEqual([[0.1, 1.7], [5.3, 7.6]]);
+  // 할머니 줄은 원판 소리에서 9.0~11.8초다(11/14 다시 잼 — 예전 값 5.3~7.6초는 소리보다 3.7초 일렀다)
+  expect(genres.find((g) => g.id === 'drama').lines).toEqual([[0.1, 1.7], [8.9, 11.9]]);
   for (const { id, lines, pause } of genres) {
     expect(lines.length, id).toBeGreaterThan(0);
     lines.forEach(([start, end], i) => {

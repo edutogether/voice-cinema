@@ -74,6 +74,12 @@ for (const area of ['left', 'right', 'top', 'bottom']) {
     await expect.poll(() => current.locator('video').evaluate(v => v.currentTime)).toBeGreaterThan(.05);
     await page.clock.runFor(6000);
     await expect(current).toHaveAttribute('data-index', '2');
+    // 3번(애니메이션)은 8초 머문다 — 3 · 5 · 6 · 8번은 8초, 나머지는 6초(11/14 Bumm님)
+    await expect.poll(() => current.locator('video').evaluate(v => v.currentTime)).toBeGreaterThan(.05);
+    await page.clock.runFor(7900);
+    await expect(current).toHaveAttribute('data-index', '2');
+    await page.clock.runFor(100);
+    await expect(current).toHaveAttribute('data-index', '3');
   });
 }
 

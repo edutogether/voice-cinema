@@ -97,7 +97,7 @@ test('가로 휴대폰 844×390: 미리보기에는 로고가 보이고, 녹음 
 
 // «미리보기 재생 중»은 마우스 기기에만 보인다(9/30부터) — 리눅스 헤드리스처럼 hover:hover · pointer:fine을 보고하지 않는 브라우저에서는 건너뛴다
 for (const reducedMotion of ['reduce', 'no-preference']) {
-  test(`PC: «미리보기 재생 중»은 바탕 없이 왼쪽 위, 빨간 점이 깜빡인다 · 움직임 줄이기 ${reducedMotion}`, async ({ browser }) => {
+  test(`PC: «미리보기 재생 중»은 바탕 없이 오른쪽 위(위 20px · 오른쪽 24px 띄움), 빨간 점이 깜빡인다 · 움직임 줄이기 ${reducedMotion}`, async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, serviceWorkers: 'block', reducedMotion });
     const page = await context.newPage();
     try {
@@ -111,12 +111,13 @@ for (const reducedMotion of ['reduce', 'no-preference']) {
         const l = label.getBoundingClientRect();
         const dot = label.querySelector('.onair-dot');
         const blink = dot.getAnimations().find(a => a.animationName === 'onair');
-        return { left: l.left - media.left, top: l.top - media.top, labelRight: l.right, mid: media.left + media.width / 2,
+        return { right: media.right - l.right, top: l.top - media.top, labelLeft: l.left, mid: media.left + media.width / 2,
           background: getComputedStyle(label).backgroundColor, dot: getComputedStyle(dot).backgroundColor, blinking: blink?.playState };
       });
-      expect(got.left).toBeLessThan(20);
-      expect(got.top).toBeLessThan(20);
-      expect(got.labelRight).toBeLessThan(got.mid);
+      // 11/14 Bumm님 «우상단에 … 너무 위랑 우측 가에 붙이지말고 조금씩 여유를 줘»
+      expect(Math.abs(got.right - 24)).toBeLessThan(0.6);
+      expect(Math.abs(got.top - 20)).toBeLessThan(0.6);
+      expect(got.labelLeft).toBeGreaterThan(got.mid);
       expect(got.background).toBe('rgba(0, 0, 0, 0)');
       expect(got.dot).toBe('rgb(255, 42, 38)');
       expect(got.blinking).toBe('running');

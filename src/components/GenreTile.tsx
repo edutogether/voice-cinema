@@ -90,7 +90,7 @@ export function GenreTile({ genre, sceneNumber, previewOnly = false, playing, ne
         <span className="tile-number">{String(sceneNumber).padStart(2, '0')}</span>
         {/* 휴대폰 폭에서만 보인다 — 장르 배지와 장면 이름을 그림 오른쪽 아래에 얹고 아래 이름 줄을 접는다(10/19 대표님, home.css) */}
         <span className="tile-tag"><b>{genre.name}</b>{genre.summary}</span>
-        {/* 흰 굵은 글자 + 깜빡이는 빨간 점, 바탕 막대 없음 · 그림 왼쪽 위(11/14 Bumm님, home.css). 첫 화면 카드에는 Higgsfield 로고를 두지 않는다 —
+        {/* 흰 굵은 글자 + 깜빡이는 빨간 점, 바탕 막대 없음 · 그림 오른쪽 위, 가장자리에서 조금 띄움(11/14 Bumm님, home.css). 첫 화면 카드에는 Higgsfield 로고를 두지 않는다 —
             11/14 Bumm님 «미리보기 재생중이라고 뜨는 메인 영상에는 힉스필드를 빼버려야겠어 어떻게 해도 지저분함». 로고는 녹음실 영상에만 얹는다(Studio). */}
         <span className="tile-preview-label"><i className="onair-dot" aria-hidden="true" />미리보기 재생 중</span>
       </span>
