@@ -49,7 +49,7 @@ export const GENRES: Genre[] = [
   scene({ id: 'hero', name: '히어로', color: '#c94f5c', summary: '폭주기관차', ...film('네가 멈춰, 지금 !') }),
   scene({ id: 'thriller', name: '스릴러', color: '#2f9e6e', summary: '우리 같이 놀자', ...film('우리랑… 같이 놀자.') }),
   scene({ id: 'drama', name: '드라마', color: '#c9a24b', summary: '안녕, 설이', ...film([say('이제 출발해야지~', 0.1, 1.7), say('설이한테 꼭 다시 온다고 인사해 !', 5.3, 7.6)]) }),
-  scene({ id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '마지막 슛', ...film('너한테 맡긴다 !', 15) }),
+  scene({ id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '버저비터', ...film([say('3초 남았어 !', 8.6, 9.4), say('너만 믿을게 !', 9.5, 10.4)], 15) }),
   scene({ id: 'musical', name: '뮤지컬', color: '#c4559e', summary: '선셋 하이웨이', ...film('음악 간다, 신호 줘 !') }),
 ];
 
