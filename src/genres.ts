@@ -75,6 +75,8 @@ export const finalClipUrl = (genreId: string) => clip(`final/${genreId}.mp4`);
 // 선택 화면만 가벼운 사본을 쓴다 — 0초 ~ 멈춤 시각(최고조까지)을 소리 없이 되풀이한다. 해소는 아낀다.
 export const previewUrl = (genreId: string) => clip(`previews/${genreId}.mp4`);
 export const thumbUrl = (genreId: string) => clip(`thumbs/${genreId}.jpg`);
+// 미리보기 영상의 첫 프레임 — 가운데 카드의 영상 포스터다. 카드 그림(멈춤 장면)에서 0초 영상으로 튀지 않게, 가운데로 오는 순간 이 그림을 보이고 그 위에서 영상이 0초부터 이어진다(11/14 Bumm님 «장면 넘어갈 때마다 그림이 잠깐 뜨다 처음부터»).
+export const firstUrl = (genreId: string) => clip(`firsts/${genreId}.jpg`);
 // 멈춤 화면(10초 장면은 5.0초 `K050`, 완성본은 12.0초). 녹음실 포스터와 메인의 넓은 영상 벽에 쓴다.
 export const stillUrl = (genreId: string) => clip(`stills/${genreId}.jpg`);
 // 같은 그림의 AVIF(10/24 와이파이 최적화 ⑥, 약 24% 작다) — 화면은 <picture>로 이것을 먼저 쓰고, 못 읽는 기기는 위 JPEG을 쓴다.
