@@ -36,6 +36,7 @@ async function recordFrames(page) {
         window.__frames.push({ time: v.currentTime, paused: v.paused, muted: v.muted,
           cue: document.querySelector('.scene-turn-cue')?.textContent ?? null,
           turnOverlay: !!document.querySelector('#overlay, #cue, #count, #recpill'),
+          bar: new window.DOMMatrixReadOnly(getComputedStyle(document.querySelector('#bar')).transform).a,
           shade: shade ? Number(getComputedStyle(shade).opacity) : 0 });
       }
       requestAnimationFrame(tick);
@@ -91,6 +92,9 @@ test('누르면 그 누름 안에서 소리를 켠 채 재생을 부르고, 멈�
   expect(playing.at(-1).time).toBeGreaterThan(END - 0.2);
   expect(playing.at(-1).time).toBeLessThan(END + 0.1);
   expect(playing.filter((f) => f.paused && f.time < END - 0.2)).toEqual([]);
+  // 빨간 진행 막대도 영상이 멈추는 그때 끝에 닿는다(11/14 Bumm님 «아래 빨간색 진행바가 영상 끝나는거에 안맞네»)
+  expect(playing.at(-1).bar).toBeGreaterThan(0.97);
+  expect(playing.find((f) => f.time > PAUSE - 0.05).bar).toBeLessThan(PAUSE / END + 0.03);
   expect(playing.every((f) => !f.muted)).toBe(true);
   // 멈춤 시각에서 멈추지 않았다 — 앞뒤 프레임 시각이 끊기지 않는다
   const around = playing.filter((f) => f.time > PAUSE - 0.2 && f.time < PAUSE + 0.5);
