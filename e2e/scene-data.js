@@ -30,13 +30,36 @@ export function clockText(time, length = time) {
  * 대사를 못 읽으면 통과가 아니라 실패다(11/14 감사에서 한 줄 문자열 모양 `film('대사')`는 앱에서 뺐다).
  */
 export function sceneLines(id) {
-  const source = readFileSync('src/genres.ts', 'utf8');
-  const row = source.split('\n').find((line) => line.includes(`scene({ id: '${id}'`));
-  if (!row) throw new Error(`src/genres.ts에 ${id} 장면 줄이 없음`);
-  const said = [...row.matchAll(/say\('([^']*)', ([\d.]+), ([\d.]+)\)/g)]
+  const said = [...sceneRow(id).matchAll(/say\('([^']*)', ([\d.]+), ([\d.]+)\)/g)]
     .map(([, text, start, end]) => ({ text, start: Number(start), end: Number(end) }));
   if (!said.length) throw new Error(`${id} 장면의 대사를 읽지 못함`);
   return said;
+}
+
+/**
+ * 녹음실 미리보기가 끝나는 시각(초) — 앱이 쓰는 src/genres.ts의 `previewEnd: N`을 그대로 읽는다(11/16 Bumm님이 편마다 정한 값).
+ * 못 읽으면 통과가 아니라 실패다.
+ */
+export function scenePreviewEnd(id) {
+  const found = sceneRow(id).match(/previewEnd: ([\d.]+)/);
+  if (!found) throw new Error(`${id} 장면의 previewEnd를 읽지 못함`);
+  return Number(found[1]);
+}
+
+/**
+ * 미리보기가 끝 시각에 멈춘 뒤 끝 문구(어두운 막 + «당신의 목소리가 들어갈 자리예요 !»)를 띄워 두는 시간(초) — 앱이 쓰는 src/config.ts의
+ * PREVIEW_HOLD_SECONDS를 그대로 읽는다(11/16, 여덟 편 같은 값). 못 읽으면 통과가 아니라 실패다.
+ */
+export function previewHoldSeconds() {
+  const found = readFileSync('src/config.ts', 'utf8').match(/export const PREVIEW_HOLD_SECONDS = ([\d.]+);/);
+  if (!found) throw new Error('src/config.ts의 PREVIEW_HOLD_SECONDS를 읽지 못함');
+  return Number(found[1]);
+}
+
+function sceneRow(id) {
+  const row = readFileSync('src/genres.ts', 'utf8').split('\n').find((line) => line.includes(`scene({ id: '${id}'`));
+  if (!row) throw new Error(`src/genres.ts에 ${id} 장면 줄이 없음`);
+  return row;
 }
 
 /**

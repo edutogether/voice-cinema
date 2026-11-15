@@ -39,8 +39,9 @@ body:has(#studio.active) { background:#fff; }
 @media (orientation:portrait) {
  .scene-caption { bottom:calc(((100cqh - 56.25cqw) / 2 + 4.5cqw) * var(--cq, 1)); font-size:max(14px,2.8cqw * var(--cq, 1)); }
 }
-/* 미리보기의 대사 구간 문구 — 영상은 흐르는 채로 화면을 살짝 어둡게 하고 큰 흰 글씨를 가운데 띄운다.
-   녹음 때의 «이제 당신의 차례입니다 !» · 3·2·1 화면과 같은 글씨 · 같은 나타남이다(11/8 Bumm님 — 빨간 둥근 막대를 없앰). 자막과 시간이 겹치지 않는다. */
+/* 미리보기 끝 문구 — 미리보기가 끝 시각에 멈추면 그 마지막 프레임 위로 화면을 살짝 어둡게 하고 큰 흰 글씨를 가운데 띄워 1.5초 둔 뒤 준비 화면으로 넘어간다(11/16).
+   녹음 때의 «이제 당신의 차례입니다 !» · 3·2·1 화면과 같은 글씨 · 같은 나타남이다(11/8 Bumm님 — 빨간 둥근 막대를 없앰).
+   끝 시각은 여덟 편 모두 마지막 상대 대사가 끝난 뒤라 막 아래에 자막이 남지 않는다(test/scene-clips.test.js). */
 .scene-turn-cue { position:absolute; inset:0; z-index:2; display:grid; place-items:center; padding:24px; background:#0006; pointer-events:none; animation:cueShade .25s ease-out; }
 /* 브라우저가 소리 재생을 막았을 때만 나온다 — 누르면 소리가 난다 */
 .studio-sound-on { position:absolute; z-index:4; top:16px; right:16px; display:inline-flex; align-items:center; gap:8px; min-height:var(--touch-min); padding:8px 16px; border:1px solid #ffffff80; border-radius:999px; background:#171717cc; color:#fff; font:inherit; font-size:.9375rem; font-weight:600; cursor:pointer; }

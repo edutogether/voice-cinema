@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { watchVideoTime } from '../lib/videoClock';
 import { STUDIO_COPY } from '../copy';
 import type { Genre } from '../genres';
@@ -33,12 +33,12 @@ export function SceneCaption({ genre, videoRef, enabled }: { genre: Genre; video
 }
 
 /**
- * 미리보기의 아이 대사 구간 문구(11/7 Bumm님 «멈추고 321은 빼고 … 문구만 주고 그냥 쭉 멈춤없이 지나가게 해서 아 ~ 하게»).
- * 영상은 멈추지 않는다. 화면을 살짝 어둡게 하고 큰 흰 글씨로 띄운다 — 녹음 때의 3·2·1 화면과 같은 모양이다
- * (11/8 Bumm님 «빨간 둥근 막대는 없앱니다»). 구간은 장르 값(genre.turn)이다.
+ * 미리보기 끝 문구 — 미리보기가 끝 시각(genre.previewEnd)에 멈추면 그 마지막 프레임 위로 멈춤 장면처럼 화면을 살짝 어둡게 하고
+ * «당신의 목소리가 들어갈 자리예요 !»를 큰 흰 글씨로 띄운다. 녹음 때의 «이제 당신의 차례입니다 !» · 3·2·1 화면과 같은 모양이다(11/8 Bumm님 «빨간 둥근 막대는 없앱니다»).
+ * 영상이 흐르는 동안에는 가리지 않는다 — 끝 1.5초 전부터 덮었더니 «말한 초보다 다 조금씩 짧아졌다»(11/16 Bumm님 정정, 팀장 전달).
+ * 띄워 두는 시간(PREVIEW_HOLD_SECONDS)이 지나면 준비 화면으로 넘어간다(useDubbing의 playPreview).
  */
-export function SceneTurnCue({ genre, videoRef, enabled }: { genre: Genre; videoRef: VideoRef; enabled: boolean }) {
-  const turns = useMemo(() => [genre.turn], [genre.turn]);
-  if (useVideoWindow(videoRef, turns, enabled) < 0) return null;
+export function SceneTurnCue({ show }: { show: boolean }) {
+  if (!show) return null;
   return <div className="scene-turn-cue" role="status"><strong>{STUDIO_COPY.lineNow}</strong></div>;
 }

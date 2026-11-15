@@ -19,7 +19,7 @@ export interface Genre {
   summary: string;
   /** 상대 대사 — 앱이 영상 위에 띄우는 넷플릭스식 자막. 영상·완성본에는 굽지 않는다. 시각 순서이고 서로 겹치지 않는다(드라마는 두 줄 — 11/14). */
   lines: Line[];
-  /** 아이 대사 구간(초) — 미리보기에서 «당신의 목소리가 들어갈 자리예요 !»가 나오는 자리. 멈춤 시각에서 계산한다(`turn()` — 멈춤 ~ +3.5초). */
+  /** 아이 대사 구간(초) — 목소리 칸(멈춤 ~ +3.5초). 키 큰 세로 휴대폰의 진행 막대에 «내 차례 칸»으로 보인다. 멈춤 시각에서 계산한다(`turn()`). */
   turn: { start: number; end: number };
   /** 원판 길이(초) — 원판 파일에서 읽은 길이(21.0~30.1초). test/scene-clips.test.js가 mp4와 맞대 본다. */
   seconds: number;
@@ -27,6 +27,11 @@ export interface Genre {
   label: string;
   /** 녹음실이 멈추는 시각(초) — 목소리가 여기서부터 목소리 칸(3.5초)에 들어간다. 원판은 이 칸의 소리를 −8dB 낮춰 두었다(tools/build-scene.mjs). */
   pause: number;
+  /** 녹음실 미리보기(들어가면 저절로 흐르는 장면)가 끝나는 시각(초) — 편마다 Bumm님이 정한 값(11/16). 영상 · 소리는 이 시각까지 가리는 것 없이
+   *  흐르고, 멈춘 마지막 프레임 위에 끝 문구가 뜬다(useDubbing의 playPreview). 미리보기 동안 진행 막대 · 시계의 끝도 이 값이다.
+   *  스릴러 12.25 · 드라마 12.00은 Bumm님이 임시판을 보고 정한 값이다(11/16 4차 · 3차) — 스릴러는 손전등이 켜지는 375번째 프레임(12.50초)보다 0.25초 앞,
+   *  드라마는 다음 장면이 시작되는 360번째 프레임(12.00초) 자리다. 스릴러만 멈춤 시각(12.0)을 넘는다. */
+  previewEnd: number;
 }
 
 // 11/14 완성본(Bumm님 «폭주기관차 올려» 뒤 여덟 편 모두): 편마다 길이(21.0~30.1초)와 멈춤 시각이 다르다.
@@ -42,14 +47,14 @@ const scene = (g: Omit<Genre, 'turn' | 'seconds'>): Genre =>
   ({ ...g, seconds: lengths[`${g.id}.mp4`], turn: turn(g.pause) });
 
 export const GENRES: Genre[] = [
-  scene({ id: 'sf', name: 'SF', color: '#3fa7c9', summary: '퍼스트 헬로', ...film([say('이것 봐, 외계인이야 !', 7.5, 8.8)]) }),
-  scene({ id: 'fantasy', name: '판타지', color: '#8a63d2', summary: '빛의 결투', ...film([say('감히 나와 겨루겠다고 ?', 5.0, 6.7), say('후회하게 해 주마 !', 7.3, 8.3)], 13.9) }),
-  scene({ id: 'animation', name: '애니메이션', color: '#d97b3f', summary: '날아라 미르', ...film([say('준비됐어 ?', 5.9, 6.7), say('하나, 둘…', 7.0, 8.3)]) }),
-  scene({ id: 'hero', name: '히어로', color: '#c94f5c', summary: '폭주기관차', ...film([say('네가 멈춰, 지금 !', 4.8, 6.4)]) }),
-  scene({ id: 'thriller', name: '스릴러', color: '#2f9e6e', summary: '우리 같이 놀자', ...film([say('여기야~', 2.1, 3.0), say('여기 있어~', 5.0, 5.9), say('우리랑… 같이 놀자.', 9.4, 11.8)]) }),
-  scene({ id: 'drama', name: '드라마', color: '#c9a24b', summary: '안녕, 설이', ...film([say('이제 출발해야지~', 0.1, 1.7), say('설이한테 꼭 다시 온다고 인사해 !', 8.9, 11.9)]) }),
-  scene({ id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '버저비터', ...film([say('3초 남았어 !', 8.4, 9.4), say('너만 믿을게 !', 9.5, 10.4)], 15) }),
-  scene({ id: 'musical', name: '뮤지컬', color: '#c4559e', summary: '선셋 하이웨이', ...film([say('우리 같이 춤추자 !', 8.2, 9.5)]) }),
+  scene({ id: 'sf', name: 'SF', color: '#3fa7c9', summary: '퍼스트 헬로', ...film([say('이것 봐, 외계인이야 !', 7.5, 8.8)]), previewEnd: 11 }),
+  scene({ id: 'fantasy', name: '판타지', color: '#8a63d2', summary: '빛의 결투', ...film([say('감히 나와 겨루겠다고 ?', 5.0, 6.7), say('후회하게 해 주마 !', 7.45, 8.37)], 13.9), previewEnd: 13 }),
+  scene({ id: 'animation', name: '애니메이션', color: '#d97b3f', summary: '날아라 미르', ...film([say('준비됐어 ?', 5.9, 6.7), say('하나, 둘…', 7.0, 8.3)]), previewEnd: 12 }),
+  scene({ id: 'hero', name: '히어로', color: '#c94f5c', summary: '폭주기관차', ...film([say('네가 멈춰, 지금 !', 4.8, 6.4)]), previewEnd: 11 }),
+  scene({ id: 'thriller', name: '스릴러', color: '#2f9e6e', summary: '우리 같이 놀자', ...film([say('여기야', 2.1, 3.0), say('여기 있어', 4.5, 5.5), say('우리랑… 같이 놀자.', 9.4, 11.9)]), previewEnd: 12.25 }),
+  scene({ id: 'drama', name: '드라마', color: '#c9a24b', summary: '안녕, 설이', ...film([say('이제 출발해야지', 0.1, 1.7), say('설이한테 꼭 다시 온다고 인사해 !', 8.9, 11.9)]), previewEnd: 12 }),
+  scene({ id: 'sports', name: '스포츠', color: '#3f7fb8', summary: '버저비터', ...film([say('3초 남았어 !', 8.4, 9.4), say('너만 믿을게 !', 9.5, 10.4)], 15), previewEnd: 14 }),
+  scene({ id: 'musical', name: '뮤지컬', color: '#c4559e', summary: '선셋 하이웨이', ...film([say('우리 같이 춤추자 !', 8.2, 9.5)]), previewEnd: 11 }),
 ];
 
 /** 장르 id로 장면 자료를 찾는다 — 녹음실(useDubbing)과 합성(mergeClip)이 멈춤 시각을 여기서 읽는다. */

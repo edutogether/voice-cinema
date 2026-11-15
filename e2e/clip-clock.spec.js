@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { stopAutoPreview } from './stop-auto-preview.js';
-import { clipLength, clockText, scenePause, TEST_SCENE } from './scene-data.js';
+import { clipLength, clockText, scenePause, scenePreviewEnd, TEST_SCENE } from './scene-data.js';
 
 // 시험 장면(SF)의 길이 · 멈춤 시각은 파일에서 읽는다(11/14 완성본 — 편마다 다르다). 시간 글은 «초:100분의 1초»(앱과 같은 모양).
 const LENGTH = clipLength(TEST_SCENE.id);
@@ -8,8 +8,8 @@ const PAUSE = scenePause(TEST_SCENE.id);
 const TOTAL = clockText(LENGTH);
 const AT_PAUSE = `${clockText(PAUSE)} / ${TOTAL}`;
 const RUNNING = new RegExp(`^\\d{2}:\\d{2} / ${TOTAL}$`);
-// 미리보기는 목소리 칸 끝(멈춤 + 3.5초)에 멈추므로 시계의 끝도 그 시각이다(11/14 Bumm님 «아래 빨간색 진행바가 영상 끝나는거에 안맞네»)
-const PREVIEW_RUNNING = new RegExp(`^\\d{2}:\\d{2} / ${clockText(PAUSE + 3.5)}$`);
+// 미리보기는 장르마다 정한 시각(previewEnd, 11/16)에 멈추므로 시계의 끝도 그 시각이다(11/14 Bumm님 «아래 빨간색 진행바가 영상 끝나는거에 안맞네»)
+const PREVIEW_RUNNING = new RegExp(`^\\d{2}:\\d{2} / ${clockText(scenePreviewEnd(TEST_SCENE.id))}$`);
 const enter = (page) => page.getByRole('button', { name: `${TEST_SCENE.name} 더빙 시작`, exact: true }).click();
 
 test('대기는 전체 길이, 장면·이어 재생·미리보기·다시 녹음은 영상 시계를 표시하고 멈춤에서는 멈춤 시각에 선다', async ({ page }) => {

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { RECORD_BASE_SECONDS, RECORD_MAX_SECONDS, VOICE_WINDOW_SECONDS } from '../config';
+import { flushSync } from 'react-dom';
+import { PREVIEW_HOLD_SECONDS, RECORD_BASE_SECONDS, RECORD_MAX_SECONDS, VOICE_WINDOW_SECONDS } from '../config';
 import { genreById } from '../genres';
 import { pickSupportedMime } from '../logic';
 import { decodeTake, engineReady, processVoice, type VoicePlan } from '../lib/ffmpeg';
@@ -266,6 +267,8 @@ export interface Dubbing {
   micError: MicFailure | null;
   /** 브라우저가 소리를 막아 소리 없이 재생 중이다 — 화면의 «소리 켜기»로 켠다 */
   soundBlocked: boolean;
+  /** 미리보기가 끝 시각(previewEnd)에 멈춰 마지막 프레임 위에 끝 문구를 띄워 두는 중이다(PREVIEW_HOLD_SECONDS 동안, 11/16) */
+  previewEnded: boolean;
   startTake: () => void;
   preview: () => void;
   /** 준비 상태를 따지지 않고 바로 재생한다 — 들어가는 순간(누름 안에서 동기로) 부르는 자리 */
@@ -279,6 +282,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
   const [phase, setPhase] = useState<Phase>(autoPreview ? 'previewing' : 'idle');
   const [hint, setHint] = useState<string>(autoPreview ? HINT.previewing : HINT.idle);
   const [soundBlocked, setSoundBlocked] = useState(false);
+  const [previewEnded, setPreviewEnded] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [recordLeft, setRecordLeft] = useState(1);
   const [speakNow, setSpeakNow] = useState(false);
@@ -298,6 +302,9 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
   // 멈춤 시각 — 장르마다 다르다(10초 장면 5.0초, 11/14 완성본 12.0초). 장면 객체를 효과에 걸지 않으려고 ref로 읽는다.
   const pauseRef = useRef(genreById(genreId).pause);
   pauseRef.current = genreById(genreId).pause;
+  // 미리보기가 끝나는 시각 — 장르마다 다르다(장르 자료의 previewEnd, 11/16). 같은 까닭으로 ref로 읽는다.
+  const previewEndRef = useRef(genreById(genreId).previewEnd);
+  previewEndRef.current = genreById(genreId).previewEnd;
 
   const stopVoice = useCallback(() => {
     voiceRef.current?.();
@@ -327,6 +334,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     setRecordLeft(1);
     setMicError(null);
     setSoundBlocked(false);
+    setPreviewEnded(false);
     setHint(HINT.idle);
     setPhase('idle');
   }, [stopClock, discardTake, stopVoice, videoRef]);
@@ -593,7 +601,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
   }, [phase, videoRef, sampleMode, audioContext, stopClock, stopVoice, finishTake]);
 
   /**
-   * 녹음 없이 장면을 소리와 함께 본다(10/20 대표님, 11/7부터 들어가면 저절로) — 처음부터 아이 목소리 칸이 끝나는 때까지(11/14). 끝나거나 멈추면(브라우저가 멈춘 경우도) 준비 상태로 돌아간다.
+   * 녹음 없이 장면을 소리와 함께 본다(10/20 대표님, 11/7부터 들어가면 저절로) — 처음부터 장르마다 정한 시각(previewEnd)까지(11/16). 끝나면 끝 문구를 잠깐 띄운 뒤, 브라우저가 멈추면 바로 준비 상태로 돌아간다.
    * 미리보기를 접는 쪽(reset·startTake)은 실행 번호를 먼저 올리므로, 그때 생기는 멈춤은 여기서 지난 실행으로 무시된다.
    */
   const playPreview = useCallback(() => {
@@ -602,13 +610,27 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     const myRun = ++runRef.current;
     resetVideo(v);
     setMicError(null);
+    setPreviewEnded(false);
     setHint(HINT.previewing);
     setPhase('previewing');
-    // 미리보기는 «당신의 목소리가 들어갈 자리예요 !»가 꺼지는 때(멈춤 + 목소리 칸 3.5초 = genre.turn.end)에 끝난다 — 여덟 편 모두
-    // (11/14 Bumm님 «미리보기는 당신의 목소리가 들어갈 차례에요 ! 가 꺼지면서 끝나게끔 세팅하자 전부다»). 멈추면 아래 pause가 준비 상태로 돌린다.
-    const stopAtTurnEnd = stopVideoAt(v, pauseRef.current + VOICE_WINDOW_SECONDS, () => {});
+    // 미리보기는 장르마다 정한 시각(genre.previewEnd — 11 · 12 · 12.25 · 13 · 14초)에 끝난다(11/16 Bumm님 지시, 팀장 전달 — 11/14의
+    // «멈춤 + 목소리 칸 3.5초»를 바꾼 값). 그 시각까지 영상 · 소리를 가리지 않고, 멈추면 마지막 프레임 위에 어두운 막 +
+    // «당신의 목소리가 들어갈 자리예요 !»를 PREVIEW_HOLD_SECONDS 동안 띄운 뒤 준비 상태로 돌아간다(SceneTurnCue — 11/16 정정 «다 조금씩 짧아졌다»:
+    // 끝 1.5초 전부터 덮었더니 장면이 그만큼 가려졌다). 끝에서 멈춘 것은 아래 pause(브라우저가 멈춤 — 바로 준비 상태로)로 보내지 않는다 —
+    // 멈춤 소식은 다음 작업으로 오므로 그 전에 듣기를 뗀다. 띄워 두는 동안 «장면 시작» · «미리보기 멈춤»은 그대로 듣는다(stopClock이 기다림을 끊는다).
+    const stopAtEnd = stopVideoAt(v, previewEndRef.current, () => {
+      v.removeEventListener('pause', finish);
+      v.removeEventListener('ended', finish);
+      if (myRun !== runRef.current) return;
+      setPreviewEnded(true);
+      // 영상을 처음(0초)으로 되돌리는 것과 끝 문구를 내리는 것을 한 번에 그린다 — 따로 그리면 그 사이 한 프레임 동안 끝 문구 아래에 첫 장면이 비친다(11/16 E2E에서 잡힘)
+      const hold = window.setTimeout(() => {
+        if (myRun === runRef.current) flushSync(reset);
+      }, PREVIEW_HOLD_SECONDS * 1000);
+      cancelClockRef.current = () => window.clearTimeout(hold);
+    });
     const detach = () => {
-      stopAtTurnEnd();
+      stopAtEnd();
       v.removeEventListener('pause', finish);
       v.removeEventListener('ended', finish);
     };
@@ -633,7 +655,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
         failed();
         return;
       }
-      // 브라우저가 소리 재생을 막았다 — 그림과 대사 구간 문구라도 보이게 소리 없이 틀고, 누르면 소리가 나는 «소리 켜기»를 보인다.
+      // 브라우저가 소리 재생을 막았다 — 그림 · 자막 · 끝 문구라도 보이게 소리 없이 틀고, 누르면 소리가 나는 «소리 켜기»를 보인다.
       v.muted = true;
       setSoundBlocked(true);
       setHint(HINT.previewMuted);
@@ -671,6 +693,7 @@ export function useDubbing(genreId: string, videoRef: React.RefObject<HTMLVideoE
     takeCheck,
     micError,
     soundBlocked,
+    previewEnded: phase === 'previewing' && previewEnded,
     startTake,
     preview,
     playPreview,

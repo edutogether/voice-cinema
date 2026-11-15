@@ -9,6 +9,9 @@ export const SETUP_DOWNLOAD = { href: '/download/VoiceCinema-Setup.exe', file: '
 export const PAUSE_SECONDS = 5;
 /** 목소리 칸의 길이 — 멈춤 시각부터 이만큼 원판 소리를 −8dB 낮춰 둔다(tools/build-scene.mjs · build-scene-audio.mjs, test/contract.test.js가 대조). */
 export const VOICE_WINDOW_SECONDS = 3.5;
+/** 녹음실 미리보기가 끝 시각(장르의 previewEnd)에 멈춘 뒤 그 마지막 프레임 위에 어두운 막 + «당신의 목소리가 들어갈 자리예요 !»를 띄워 두는 시간(초) —
+ *  여덟 편 모두 같다. 이 시간이 지나면 준비 화면으로 넘어간다(11/16 Bumm님 정정 «다 조금씩 짧아졌다» — 끝 전에 가리지 않는다, 팀장 전달). */
+export const PREVIEW_HOLD_SECONDS = 1.5;
 // 녹음은 기본 3.0초이고, 그때 말이 이어지고 있으면 목소리 칸 끝(3.5초)까지 늘린다(10/24 대표님 — 말끝 보호).
 export const RECORD_BASE_SECONDS = 3;
 export const RECORD_MAX_SECONDS = VOICE_WINDOW_SECONDS;

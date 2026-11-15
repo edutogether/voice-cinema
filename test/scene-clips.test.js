@@ -55,6 +55,23 @@ test('상대 대사 자막은 줄마다 멈춤 전에 끝나고 서로 겹치지
   }
 });
 
+// 녹음실 미리보기는 장르마다 Bumm님이 정한 시각까지 가리는 것 없이 흐르다 멈추고(11/16), 멈춘 마지막 프레임 위에
+// 어두운 막 + «당신의 목소리가 들어갈 자리예요 !»를 PREVIEW_HOLD_SECONDS 동안 띄운다(그 동작은 e2e/studio-autoplay.spec.js가 본다)
+const previewEnds = Object.fromEntries([...source.matchAll(/scene\(\{ id: '([a-z]+)'[^\n]*previewEnd: ([\d.]+) \}\)/g)].map((m) => [m[1], Number(m[2])]));
+const holdSeconds = Number(readFileSync(path.join(root, 'src', 'config.ts'), 'utf8').match(/export const PREVIEW_HOLD_SECONDS = ([\d.]+);/)?.[1]);
+
+test('미리보기 끝은 Bumm님이 정한 값(11/16)이고, 끝 문구를 띄워 두는 시간은 1.5초다', () => {
+  expect(previewEnds).toEqual({ sf: 11, fantasy: 13, animation: 12, hero: 11, thriller: 12.25, drama: 12, sports: 14, musical: 11 });
+  expect(holdSeconds).toBe(1.5);
+  for (const { id, pause, lines } of genres) {
+    const end = previewEnds[id];
+    // 0.01초 단위(스릴러 12.25처럼 Bumm님이 정한 값 — src/genres.ts의 previewEnd 설명), 목소리 칸 안, 상대 대사 자막이 모두 끝난 뒤
+    expect(Math.abs(end * 100 - Math.round(end * 100)), id).toBeLessThan(1e-9);
+    expect(end, id).toBeLessThan(pause + 3.5);
+    expect(end, id).toBeGreaterThanOrEqual(Math.max(...lines.map(([, lineEnd]) => lineEnd)));
+  }
+});
+
 test.each(genres)('$id: 합성용 원판은 원판과 같은 길이, 미리보기는 멈춤 시각까지, 목소리 칸이 원판 안에 든다', ({ id, pause }) => {
   const length = seconds(`${id}.mp4`);
   expect(length).toBeGreaterThanOrEqual(pause + 3.5);

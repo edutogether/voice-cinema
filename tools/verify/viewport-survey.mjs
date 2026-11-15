@@ -28,6 +28,7 @@ import { Buffer } from 'node:buffer';
 import path from 'node:path';
 import { chromium, _electron } from '@playwright/test';
 import { listenOnSafePort } from '../safe-port.mjs';
+import { scenePreviewEnd } from '../../e2e/scene-data.js';
 
 const args = process.argv.slice(2);
 const opt = (name, def) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : def; };
@@ -566,11 +567,12 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
     await phase('previewing');
     await page.locator('.scene-caption').waitFor({ timeout: 15000 });
     await shot('05-녹음실-재생-상대대사');
-    await seek(5.3);
+    // 미리보기 끝 문구 — 끝 시각에 멈춘 마지막 프레임 위에 어두운 막과 함께 1.5초 뜬다(11/16, 끝 시각은 장르 자료에서 읽는다)
+    await seek(scenePreviewEnd('animation') - 0.3);
     await page.locator('.scene-turn-cue').waitFor({ timeout: 8000 });
-    await shot('06-녹음실-재생-대사구간');
+    await delay(400); // 나타나는 움직임(.25초) 도중에 찍으면 글자가 흐리게 나온다
+    await shot('06-녹음실-재생-끝문구');
     step = '녹음실 시작 전';
-    await seek(9.75);
     await phase('idle');
     await delay(300);
     await shot('07-녹음실-시작전');
@@ -614,7 +616,12 @@ async function surveySize(browser, { kind, w, h, tag, scale }) {
     await opened.failNext(3);
     await page.locator('#saveBtn').click();
     await page.locator('#loading').waitFor({ timeout: 20000 });
-    await delay(150);
+    // 대기 그림이 다 받혀 그려진 뒤에 찍는다 — 150ms 뒤 바로 찍으면 그림이 비거나 반쯤 그려진 채로 남았다(11/16 설명서 캡처)
+    await page.waitForFunction(() => {
+      const still = document.querySelector('#loading .generation-robot-still');
+      return !!still && still.complete && still.naturalWidth > 0;
+    }, null, { timeout: 15000 }).catch(() => {});
+    await delay(600);
     await page.evaluate(() => { scrollTo(0, 0); });
     await shot('15-저장중');
     // 올리지 못하면 PC · 패드 · 설치판은 메일 전달 화면, 휴대폰은 이 기기에 저장으로 간다(11/9 Bumm님)

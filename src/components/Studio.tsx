@@ -175,7 +175,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
               <div className="studio-scene-tag" aria-hidden="true"><b>{genre.name}</b>{genre.summary}</div>
               {settled && playing && buffering && <div className="studio-buffering" role="status">영상을 불러오고 있어요 {loaded}%</div>}
               <SceneCaption genre={genre} videoRef={videoRef} enabled={phase === 'watching' || previewing} />
-              <SceneTurnCue genre={genre} videoRef={videoRef} enabled={previewing} />
+              <SceneTurnCue show={dub.previewEnded} />
               {previewing && dub.soundBlocked && <button type="button" className="studio-sound-on" id="soundOnBtn" onClick={dub.soundOn}><ActionIcon name="soundOff" /> 소리 켜기</button>}
               {phase === 'cue' && <div className="studio-cue" role="status" id="cue"><strong>{STUDIO_COPY.yourTurn}</strong></div>}
               {/* 3·2·1은 숫자만(11/8 Bumm님 «뭘 3·2·1에 계속 밑에 주저리 나오냐»), 말할 차례 문구는 녹음기가 켜질 때 «녹음 중»과 함께 떠 숫자 하나만큼(1초) 있다 */}
@@ -194,7 +194,7 @@ export function Studio({ active, genre, onHome, onSave, entrance, sampleMode, au
                 <span className="timeline-state">{(Object.keys(TIMELINE_STATE) as Phase[]).map((p) => (
                   <span key={p} className={p === phase ? 'on' : undefined}>{TIMELINE_STATE[p]}</span>
                 ))}</span>
-                <ClipTimeline phase={phase} videoRef={videoRef} turn={genre.turn} seconds={genre.seconds} />
+                <ClipTimeline phase={phase} videoRef={videoRef} turn={genre.turn} seconds={genre.seconds} previewEnd={genre.previewEnd} />
               </div>
               <div className={`controls${inTake ? ' is-recording' : ''}${done ? ' is-recorded' : ''}`}>
                 <div className="controls-copy">

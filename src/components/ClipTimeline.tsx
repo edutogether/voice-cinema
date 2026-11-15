@@ -6,15 +6,15 @@ function formatTime(seconds: number, length: number): string {
   return `${String(Math.floor(hundredths / 100)).padStart(2, '0')}:${String(hundredths % 100).padStart(2, '0')}`;
 }
 
-// 2.0에서는 장면을 마음대로 넘겨 보지 않는다(미리보기는 처음부터 목소리 칸 끝까지, 녹음은 장면 시작 → 5.0초 멈춤 → 녹음 → 이어 재생).
+// 2.0에서는 장면을 마음대로 넘겨 보지 않는다(미리보기는 처음부터 장르마다 정한 시각까지, 녹음은 장면 시작 → 멈춤 → 녹음 → 이어 재생).
 // 그래서 진행바는 탐색 막대가 아니라 영상 시계를 보여 주기만 한다.
 const SHOWN: readonly Phase[] = ['previewing', 'watching', 'cue', 'countdown', 'recording', 'checking', 'continuing', 'recorded'];
 
-/** seconds: 원판 길이(장르의 seconds — 10초 장면 10, 11/14 완성본은 원판 파일에서 읽은 길이).
- *  미리보기는 목소리 칸이 끝나는 때(turn.end)에 멈추므로 그때는 막대 · 숫자의 끝도 turn.end다 — 막대가 영상이 멈추는 순간 끝에 닿는다
- *  (11/14 Bumm님 «아래 빨간색 진행바가 영상 끝나는거에 안맞네»). */
-export function ClipTimeline({ phase, videoRef, turn, seconds }: { phase: Phase; videoRef: React.RefObject<HTMLVideoElement | null>; turn?: { start: number; end: number }; seconds: number }) {
-  const length = phase === 'previewing' && turn ? turn.end : seconds;
+/** seconds: 원판 길이(장르의 seconds — 11/14 완성본은 원판 파일에서 읽은 길이). previewEnd: 미리보기가 끝나는 시각(장르의 previewEnd).
+ *  미리보기 동안은 막대 · 숫자의 끝도 previewEnd다 — 막대가 영상이 멈추는 순간 끝에 닿는다(11/14 Bumm님 «아래 빨간색 진행바가 영상 끝나는거에 안맞네»,
+ *  11/16부터 그 끝이 장르마다 정한 시각). */
+export function ClipTimeline({ phase, videoRef, turn, seconds, previewEnd }: { phase: Phase; videoRef: React.RefObject<HTMLVideoElement | null>; turn: { start: number; end: number }; seconds: number; previewEnd: number }) {
+  const length = phase === 'previewing' ? previewEnd : seconds;
   const total = formatTime(length, length);
   const textRef = useRef<HTMLSpanElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -57,8 +57,9 @@ export function ClipTimeline({ phase, videoRef, turn, seconds }: { phase: Phase;
     <div className={`progress${shown ? ' show' : ''}`} id="progress" ref={trackRef}
       role="progressbar" aria-label="영상 진행"
       aria-valuemin={0} aria-valuemax={100} aria-valuenow={phase === 'recorded' ? 100 : 0}>
-      {/* 내 차례 칸(장면 자료의 turn) — 키 큰 세로 휴대폰에서만 보인다(11/9 시안, studio.css). 진행 막대(i)가 그 위로 지나간다 */}
-      {turn && <span className="progress-turn" aria-hidden="true"
+      {/* 내 차례 칸(장면 자료의 turn) — 키 큰 세로 휴대폰에서만 보인다(11/9 시안, studio.css). 진행 막대(i)가 그 위로 지나간다.
+          미리보기는 녹음하지 않으므로 그리지 않는다(11/16 — 스릴러 미리보기는 목소리 칸에 0.38초 들어가 끝나지만, 미리보기 막대에 내 차례 칸은 없다) */}
+      {phase !== 'previewing' && <span className="progress-turn" aria-hidden="true"
         style={{ left: `${(turn.start / length) * 100}%`, width: `${((turn.end - turn.start) / length) * 100}%` }} />}
       <i id="bar" ref={barRef} /></div>
     <span className="clip-time" aria-hidden="true" ref={textRef}>{initialText}</span>
