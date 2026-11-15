@@ -58,7 +58,7 @@ export function ClipTimeline({ phase, videoRef, turn, seconds, previewEnd }: { p
       role="progressbar" aria-label="영상 진행"
       aria-valuemin={0} aria-valuemax={100} aria-valuenow={phase === 'recorded' ? 100 : 0}>
       {/* 내 차례 칸(장면 자료의 turn) — 키 큰 세로 휴대폰에서만 보인다(11/9 시안, studio.css). 진행 막대(i)가 그 위로 지나간다.
-          미리보기는 녹음하지 않으므로 그리지 않는다(11/16 — 스릴러 미리보기는 목소리 칸에 0.38초 들어가 끝나지만, 미리보기 막대에 내 차례 칸은 없다) */}
+          미리보기는 녹음하지 않으므로 그리지 않는다(11/16 — 스릴러 미리보기는 목소리 칸에 0.25초 들어가 끝나지만, 미리보기 막대에 내 차례 칸은 없다) */}
       {phase !== 'previewing' && <span className="progress-turn" aria-hidden="true"
         style={{ left: `${(turn.start / length) * 100}%`, width: `${((turn.end - turn.start) / length) * 100}%` }} />}
       <i id="bar" ref={barRef} /></div>
