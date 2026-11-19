@@ -69,7 +69,7 @@
   번꼴)으로 라이브 배포 커밋(`/version.json`, 함수 `GET /`의 `commit`)을 master 끝과 대조해 뒤처졌으면 다시 배포한다 — master에
   없는 코드를 로컬에서 배포하면 다음 대조 때 master 끝으로 되돌려진다. 배포 도구 firebase-tools는
   `package.json`·`package-lock.json`에 두지 않고 `deploy.yml`에서 정확한 판으로
-  `npx --yes firebase-tools@15.32.1`을 부른다(2026-11-01, `_shared/CONVENTIONS.md` §3.7) — 받기는 auth
+  `npx --yes firebase-tools@15.37.0`을 부른다(2026-11-01, `_shared/CONVENTIONS.md` §3.7) — 받기는 auth
   앞, 판은 세 줄이 같아야 하며 `test/contract.test.js`가 검사한다. 로컬에서도 같은 판으로 부른다. 직접 push·병합·배포 승인은 상위 규칙을
   따른다. 행사 전에는 기존 `voice-cinema.web.app` 주소를 끄지 않으며, 2026-11-07 마지막 배포 이후 11-14 행사 종료까지의 배포 동결을
   유지한다.

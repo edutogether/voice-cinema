@@ -1,3 +1,13 @@
+## 의존성 안정 최신판으로 올림 (2026-11-19, 지시 Bumm님 · 팀장 전달, COMMON_STANDARDS §36)
+
+- 루트: react · react-dom 19.3.0 → 19.3.1, vite 8.3.5 → 8.3.8, vitest 5.0.5 → 5.1.1, @vitejs/plugin-react 6.1.1 → 6.3.0, subset-font 2.7.0 → 2.9.0, @types/node 26.5.0 → 26.6.6.
+  functions: express 5.2.1 → 5.3.0, firebase-functions 7.3.2 → 7.4.0, vitest 5.0.5 → 5.1.1. 이 밖은 이미 최신(`npm outdated` 빈 표).
+- 배포 도구 firebase-tools 15.32.1 → 15.37.0(`deploy.yml` 세 줄 · `app.md` · `AGENTS.md`, 계약 시험이 세 줄이 같은 판인지 본다).
+- 고정 액션(SHA): checkout v4 → v7.0.1, setup-node v4 → v7.1.0, cache v4 → v6.1.0, upload-artifact v4 → v7.0.2, google-github-actions/auth v2 → v3.
+- 이전 판 프리즈 태그 `voice-cinema-freeze-20261119-pre-deps`. 확인: lint · 빌드 · 유닛(루트 152 · functions 147) · E2E 345 통과 · 12 건너뜀 · 실패 0 · `npm audit` 0건.
+- 🟠 화면 산출물이 바뀐다(번들 `main-TvjWvSJ5.js` → `main-DT4aBg-e.js`) — 배포하면 부스 기기는 다음에 열 때 화면 캐시를 한 번 다시 받는다(엔진 캐시는 내용이 같아 유지).
+- 이 PC의 `tmpcaption-models`(쓰는 곳 없음)도 휴지통으로 보냈다.
+
 ## Node 판 올림 — 시험 · CI는 26, Functions 런타임은 24 (2026-11-19, 지시 Bumm님 · 팀장 전달)
 
 - GitHub Actions `node-version` 22 → 26(`ci.yml` 둘 · `deploy.yml` 하나), 루트 `package.json` `engines.node` `>=18` → `>=26`, `functions/package.json` `engines.node` `22` → `24`.
