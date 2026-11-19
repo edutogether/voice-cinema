@@ -7,6 +7,8 @@
 - 이전 판 프리즈 태그 `voice-cinema-freeze-20261119-pre-deps`. 확인: lint · 빌드 · 유닛(루트 152 · functions 147) · E2E 345 통과 · 12 건너뜀 · 실패 0 · `npm audit` 0건.
 - 🟠 화면 산출물이 바뀐다(번들 `main-TvjWvSJ5.js` → `main-DT4aBg-e.js`) — 배포하면 부스 기기는 다음에 열 때 화면 캐시를 한 번 다시 받는다(엔진 캐시는 내용이 같아 유지).
 - 이 PC의 `tmpcaption-models`(쓰는 곳 없음)도 휴지통으로 보냈다.
+- 🟢 **라이브 = `ac0be15`**(PR #23 병합, 11/19): CI · 자동 배포 성공. `version.json` · 함수 `GET /` 모두 `ac0be15`, 화면 번들 `main-DT4aBg-e.js`, 런타임 nodejs24, `/upload` 403 · OPTIONS 204, 첫 화면 콘솔 오류 0.
+  세션 브라우저에서 옛 화면(캐시 `430a5d141650`)을 열어 둔 채 배포 뒤 다시 열자 새 서비스워커가 옛 화면 캐시를 지우고 새 캐시 `6c2fe120d6e8`(31건)을 채웠고, 엔진 캐시 `3a3682eeb407`은 그대로였다.
 
 ## Node 판 올림 — 시험 · CI는 26, Functions 런타임은 24 (2026-11-19, 지시 Bumm님 · 팀장 전달)
 
