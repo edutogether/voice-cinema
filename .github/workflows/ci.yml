@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22
+          node-version: 26
       # 설치는 배포(deploy.yml)와 똑같이 `npm ci`로 한다(2026-09-27). `npm install`은
       # package.json과 lockfile이 어긋나도 조용히 맞춰 주고 통과한다 — 그러면 PR은
       # 초록인데 배포 잡의 `npm ci`에서야 떨어진다(로컬에서 두 명령을 같은 어긋난
@@ -58,7 +58,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 22
+          node-version: 26
       - run: npm ci
       # --with-deps를 쓰지 않는다. 그 옵션만이 apt를 건드리는 부분인데,
       # 2026-09-10에 Google의 apt 저장소가 자기 Release 파일이 약속한 해시와 다른

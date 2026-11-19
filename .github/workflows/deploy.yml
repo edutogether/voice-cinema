@@ -151,7 +151,7 @@ jobs:
           ref: ${{ needs.changes.outputs.sha }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: '22'
+          node-version: '26'
       - run: npm ci
         working-directory: functions
       # 2026-09-08 리액트 전환: 배포 폴더가 docs/(소스 그대로)에서 dist/(빌드

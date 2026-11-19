@@ -1,3 +1,11 @@
+## Node 판 올림 — 시험 · CI는 26, Functions 런타임은 24 (2026-11-19, 지시 Bumm님 · 팀장 전달)
+
+- GitHub Actions `node-version` 22 → 26(`ci.yml` 둘 · `deploy.yml` 하나), 루트 `package.json` `engines.node` `>=18` → `>=26`, `functions/package.json` `engines.node` `22` → `24`.
+  Cloud Functions의 정식 지원 최신판이 nodejs24(정식 2025-11-20)이고 nodejs26은 아직 Preview라 운영 서버에는 쓰지 않는다 — 26이 정식이 되면 다시 올린다.
+- Node 26.13.1에서 `npm ci`(루트 · functions) · lint · 유닛(루트 152 · functions 147) · 빌드 · `npm audit` 0건을 확인했다. 이전 판 프리즈 태그 `voice-cinema-freeze-20261119-pre-node26`.
+- 🟠 Functions 런타임이 24로 바뀌므로 배포 뒤 라이브 동작(`GET /` 커밋 표시 · 업로드 경로)을 직접 확인한다.
+- 이 PC의 `tmpcaption-env`(Python 3.14 venv, 쓰지 않는 임시 환경)를 휴지통으로 보냈다(Bumm님 «이전 버전 보관 안 함»).
+
 ## 정정판 라이브 확인 · 설명서 4종 다시 냄 · 짧은 감사 · 프리즈 태그 (2026-11-16, 지시 Bumm님 · 팀장 전달)
 
 - 🟢 **라이브 = `55dbb19`**(아래 정정판): CI 43755703532 통과(유닛 루트 152 · functions 147, E2E 345 통과 · 12 건너뜀 · 실패 0, 59.7분) → Deploy Backend 43761361633 —
