@@ -121,7 +121,7 @@
 - 🟠 **미리보기 채널 주소(`voice-cinema--<채널>.web.app`)에서는 업로드가 늘 막힌다** — 서버 허용 출처(`ALLOWED_ORIGINS`)에 없어서다.
   10/20 대표님 아이폰 시험의 «클라우드 업로드 실패»가 이것이었다(서버 기록: 미리보기 주소에서 OPTIONS 3번, POST 0번 — 같은 날 실제 주소의
   PC 업로드는 200). 그래서 그 주소의 실패 화면은 «미리보기 주소에서는 QR을 만들 수 없어요…»라고 알린다(`src/logic.ts`의 `isPreviewChannel`).
-  업로드를 확인하려면 실제 주소에서 한다. 서버 기록은 `npx firebase-tools@15.32.1 functions:log --only voiceCinema --json`으로 본다
+  업로드를 확인하려면 실제 주소에서 한다. 서버 기록은 `npx firebase-tools@15.37.0 functions:log --only voiceCinema --json`으로 본다
 - 🟠 **휴대폰 화면은 «화면 크기»가 아니라 «실제 브라우저 높이»로 잰다**(2026-10-17) — 주소창 때문에 iPhone 13 사파리는 390×664,
   안드로이드는 360×640 안팎이다. 390×844(화면 전체)로만 재고 «한 화면에 든다»고 보고했다가, 팀장이 iPhone 13 흉내로 찍자
   가운데 카드가 폭의 43%로 쪼그라든 것이 드러났다(그때는 남는 높이에 맞춰 카드를 줄이는 방식이었다)
@@ -344,7 +344,7 @@
 - **`npm audit fix --force`를 실행하지 말 것** — `firebase-admin`을 10.3.0으로 다운그레이드해 지금 쓰는 모듈형
   API가 사라지면서 코드가 깨진다. functions `npm audit`는 2026-11-14 기준 0건이다(firebase-admin 14.5.1 — 덮어쓰기 없이, 아래 «덮어쓰기 셋을 뺐다»)
 - 🟠 **firebase-tools를 `package.json` · `package-lock.json`에 다시 넣지 말 것**(2026-11-01 Bumm님 결정, `_shared/CONVENTIONS.md` §3.7) —
-  쓰는 자리에서 정확한 판을 박아 `npx --yes firebase-tools@15.32.1`로 부른다(`@latest` · 범위 금지). 잠금 파일에 두면 firebase-tools가 끌고 오는
+  쓰는 자리에서 정확한 판을 박아 `npx --yes firebase-tools@15.37.0`로 부른다(`@latest` · 범위 금지). 잠금 파일에 두면 firebase-tools가 끌고 오는
   고친 판 없는 옛 minimatch(3 · 5 · 6 · 9) 때문에 Dependabot 경고가 닫히지 않는다(11판으로 덮어쓰면 배포가 깨진다). 빼자 루트 `npm audit`가 26건 → 5건이 됐다
   (남은 5건은 eslint의 minimatch 하나 — 11/1 eslint 덮어쓰기로 0건, 11/14 eslint 10.15가 스스로 minimatch 11을 써서 덮어쓰기를 뺐다).
   - deploy 잡은 auth **전**에 `npx --yes firebase-tools@<판> --version`으로 받아 두고, auth 뒤 배포 두 줄이 같은 판을 다시 부른다 — 두 번째 부름은
@@ -352,7 +352,7 @@
     받기가 auth 앞인지, 잠금 파일에 없는지를 검사한다(다섯 가지로 일부러 틀리게 해 빨간불 확인)
   - **대가(알고 고른 것)**: CLI의 하위 의존성은 실행할 때마다 정해지고 Dependabot이 추적하지 않는다. 2026-10-09에 잠금 파일로 옮긴 이유(«자격증명을
     깐 뒤 잠기지 않은 하위 의존성을 받는다»)는 받기를 auth 앞에 두는 것으로 절반만 남겼다. 판을 올릴 때는 `deploy.yml`의 세 줄을 함께 바꾼다
-  - 로컬에서도 같은 판으로 부른다: `npx firebase-tools@15.32.1 <명령>`(이 저장소 폴더 안에서 — `firebase.json`을 읽는다)
+  - 로컬에서도 같은 판으로 부른다: `npx firebase-tools@15.37.0 <명령>`(이 저장소 폴더 안에서 — `firebase.json`을 읽는다)
 - 🟢 **의존성 덮어쓰기(`overrides`) 셋을 2026-11-14에 뺐다 — 판을 올리자 덮어쓸 대상이 트리에서 사라졌다**(지시 Bumm 11/14, 팀장 전달 — eslint 10.15 · @playwright/test 1.65.1 · firebase-admin 14.5.1)
   - functions `"uuid": "^11.1.1"`(9/10, moderate 6건) · `"rimraf": { "glob": "^14.0.3" }`(11/1, Dependabot #31 · #32) — firebase-admin 14.5.1이 `@google-cloud/storage` 8.4.0 · `@google-cloud/firestore` 9.4.1 ·
     google-gax 6.17.0을 데려오며 uuid · glob · rimraf · minimatch가 functions 트리에서 모두 빠졌다(`npm ls uuid glob rimraf minimatch` 비어 있음). 옛 사정: uuid 9는 storage 7 → teeny-request 9,
