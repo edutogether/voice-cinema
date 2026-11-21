@@ -9,6 +9,8 @@
 
 ## 기준 원장
 
+🔴 **먼저 읽기**: 규칙 장부 `_docs/RULES.md`(Bumm님이 정한 것 · 일을 시작하기 전에 끝까지)와 순서 문서 `_docs/RUNBOOK.md`(그 일의 절)를 읽는다. 완료 보고에 «읽은 것: RULES R-n, RUNBOOK §n»을 적는다.
+
 현재 앱 상태·담당·최신 승인 사항은 `_docs/ops/HANDOFF_CURRENT.md`를 먼저 확인한다. 작업 전에 `.claude/rules/app.md`의
 금지·함정 목록도 직접 읽는다. 구조는 `README.md`·`CLAUDE.md`, 작업 의도·승인 기록은 `_docs/intents/README.md`를 참고한다. 과거
 기록보다 최신 사용자 지시·인계 사항을 우선하며, 도구 전환은 같은 원장의 §1 절차를 따른다.
