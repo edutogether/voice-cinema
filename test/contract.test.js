@@ -209,3 +209,11 @@ test('합성: 리미터는 자동 레벨을 끄고 지연을 보정하며, 원�
   expect(mix).not.toMatch(/volume|sidechaincompress|acompressor/);
   expect(source).toMatch(/'-c:v', 'copy'/);
 });
+
+// 2026-11-14 Bumm님 «아래 빨간색 진행바가 영상 끝나는거에 안맞네» (RULES R-25): 미리보기 중 진행 막대 · 시계의 끝은 장르의 previewEnd이고,
+// 녹음하지 않는 미리보기에는 «내 차례 칸»을 그리지 않는다. 녹음 흐름의 끝은 원판 길이 그대로다.
+test('진행 막대: 미리보기 중에는 끝이 previewEnd이고 내 차례 칸을 그리지 않으며, 그 밖에는 원판 길이다', () => {
+  const source = read('src/components/ClipTimeline.tsx');
+  expect(source).toMatch(/const length = phase === 'previewing' \? previewEnd : seconds;/);
+  expect(source).toMatch(/\{phase !== 'previewing' && <span className="progress-turn"/);
+});
