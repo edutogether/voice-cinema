@@ -24,7 +24,7 @@
 | R-4 | 2026-10-21 | 배포 | «배포 직전 한 줄 → 팀장 «확인» → 배포» 순서. 확인을 받기 전에는 배포하지 않는다 | app.md «자주 틀리는 것» (10/21 팀장) | 직접 열어 확인 | 유효 |
 | R-5 | 2026-11-19 | 배포 | 배포가 따라붙는 변경은 가지에 올려 CI를 본 뒤 팀장 배포 승인을 받고 master에 넣는다(이 저장소는 master 푸시가 곧 배포) | 11/19 팀장 «앞으로 배포가 따라붙는 변경은 가지에 올려 CI를 본 뒤 팀장 배포 승인을 받고 master에 넣으세요» | 직접 열어 확인 | 유효 |
 | R-6 | 2026-10-08 | 배포 | 로컬 `firebase deploy`를 쓰지 않는다. 라이브에 무엇을 올렸으면 그 커밋을 곧바로 master에 push한다(안 그러면 다음 배포 대조가 되돌린다) | app.md «배포 대조» (Bumm님 결정 10/8) | `test/deploy-gate.test.js` · `test/live-commit.test.js` | 유효 |
-| R-7 | 2026-11-19 | 빌드 · 의존성 | CI · 로컬 시험은 Node 26, Functions 런타임은 24(26은 Cloud Functions에서 정식이 되면 올린다) | 대표님 11/19 «앱도 컴퓨터도 최신 버전만 보관하고, 겹치는 이전 버전은 보관하지 않는다» | `.github/workflows/ci.yml` · `functions/package.json` engines | 유효 |
+| R-7 | 2026-11-19 | 빌드 · 의존성 | CI · 로컬 시험은 Node 26, Functions 런타임도 26(Cloud Functions 정식 최신판 — 2026-11-23 nodejs26 GA, 11/24 24 → 26) | 대표님 11/19 «앱도 컴퓨터도 최신 버전만 보관하고, 겹치는 이전 버전은 보관하지 않는다» | `.github/workflows/ci.yml` · `functions/package.json` engines | 유효 |
 | R-8 | 2026-11-19 | 의존성 | 의존성 · 고정 액션(SHA) · firebase-tools는 안정된 최신판으로 올리고 지난 판은 보관하지 않는다(COMMON_STANDARDS §36) | 대표님 11/19 «안정된 최신판으로 올리고 지난 판은 지운다» | `npm outdated`(루트 · functions) 빈 표 | 유효 |
 | R-9 | 2026-11-01 | 배포 도구 | firebase-tools를 `package.json` · 잠금 파일에 넣지 않고 `npx --yes firebase-tools@<정확한 판>`으로 부른다(세 줄이 같은 판) | CONVENTIONS §3.7 (Bumm님 결정 11/1) | `test/contract.test.js` | 유효 |
 | R-10 | 2026-11-14 | 문서 | 팀장이 전한 지시는 Bumm님 지시다 — `CLAUDE.md` · `AGENTS.md` · `.claude/rules/` 수정 · 커밋은 재확인 없이 한다(예외는 `.claude/settings*.json` 하나) | 헌법 §3 · CLAUDE.md «팀장이 전한 지시는 Bumm님 지시다» (Bumm님 11/14, CLASSCADE가 한국어 규칙 수정을 거절한 일) | 직접 열어 확인 | 유효 |

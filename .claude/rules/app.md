@@ -358,7 +358,7 @@
     google-gax 6.17.0을 데려오며 uuid · glob · rimraf · minimatch가 functions 트리에서 모두 빠졌다(`npm ls uuid glob rimraf minimatch` 비어 있음). 옛 사정: uuid 9는 storage 7 → teeny-request 9,
     glob 10 · minimatch 9는 firestore 8 → google-gax 5 → rimraf 5로 딸려 왔다
   - 루트 `"eslint": { "minimatch": "^11.0.1" }`(11/1, Dependabot #43) — eslint 10.15.0 자신이 `minimatch ^11.0.5`를 쓴다(트리에 11.0.8 하나)
-  - Storage 8 · Firestore 9의 깨지는 변경은 «Node 22 이상» 하나뿐이다(google-cloud-node 릴리스 노트) — 함수 런타임이 Node 24(`functions/package.json` engines — 11/19 22에서 올림, 26은 Cloud Functions에서 아직 Preview라 쓰지 않는다)라 맞다.
+  - Storage 8 · Firestore 9의 깨지는 변경은 «Node 22 이상» 하나뿐이다(google-cloud-node 릴리스 노트) — 함수 런타임이 Node 26(`functions/package.json` engines — 11/19 22 → 24, 11/24 Cloud Functions nodejs26 정식(GA)이 되어 26)이라 맞다.
     확인: 린트 · 타입, 유닛 루트 151 · functions 147(진짜 `publicUrl()` · 핸들러 시험 포함), `npm audit` 루트 · functions 0건, 웹 E2E
   - 🔴 **덮어쓰기를 다시 넣어야 하면 firebase-tools 같은 옛 소비자에는 minimatch 11판을 덮어쓰지 말 것** — 11판은 `require("minimatch")`가 함수가 아니라 객체라서, firebase-tools `lib/fsAsync.js`
   (functions 배포 묶기 `prepareFunctionsUpload`가 쓴다)와 superstatic이 `minimatch(...)`로 부르는 자리가 깨진다(배포가 죽는다)

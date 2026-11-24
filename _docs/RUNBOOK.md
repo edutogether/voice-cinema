@@ -80,7 +80,7 @@
   1. `curl -s https://voice.edutogether.kr/version.json` → **확인**: `commit`이 방금 병합한 master 끝(`git rev-parse HEAD`)과 같다
   2. `curl -s https://asia-northeast3-inky-voice-cinema.cloudfunctions.net/voiceCinema/` → **확인**: `commit`이 같은 값
   3. `curl -s -o /dev/null -w "%{http_code}" -X POST -H "Origin: https://voice.edutogether.kr" -H "Content-Type: application/json" -d '{}' <함수 주소>/upload` → **확인**: 403(인증 없이). 같은 주소에 `-X OPTIONS -H "Access-Control-Request-Method: POST"` → 204. 실제 업로드는 일으키지 않는다
-  4. `gcloud run services describe voicecinema --region asia-northeast3 --project inky-voice-cinema --account=edutogether2015@gmail.com --format="value(metadata.labels,spec.template.metadata.annotations)"` → **확인**: 런타임이 `nodejs24`
+  4. `gcloud run services describe voicecinema --region asia-northeast3 --project inky-voice-cinema --account=edutogether2015@gmail.com --format="value(metadata.labels,spec.template.metadata.annotations)"` → **확인**: 런타임이 `nodejs26`
   5. 세션 브라우저(내부 브라우저)로 정본 주소를 열어 콘솔 오류 0 · 화면 번들 이름 확인. 화면이 바뀐 배포는 배포 전에 옛 화면을 한 번 열어 두었다가 배포 뒤 다시 열어, 새 서비스워커가 옛 화면 캐시를 지우고 새 캐시를 채우며 엔진 캐시 이름은 그대로인지 `caches.keys()`로 본다
 - **끝나면 남길 것**: `_docs/CHANGELOG.md`에 «라이브 = `<커밋>`» 한 줄
 - **막히면**: 새 화면이 안 보이면 배포 실패로 오인하지 말고 서비스워커 캐시(비공개 탭 · 새 탭)부터. `curl -sD- https://voice.edutogether.kr/ -o /dev/null | grep -i cache-control`로 서버 원본을 본다
