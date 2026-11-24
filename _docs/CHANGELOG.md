@@ -1,3 +1,9 @@
+## Functions 런타임 24 → 26 (2026-11-24, 지시 Bumm님, COMMON_STANDARDS §36)
+
+- Cloud Functions nodejs26이 2026-11-23 정식(GA)이 되어(Google Cloud 릴리스 노트) `functions/package.json` `engines.node`를 24 → 26으로 올렸다(`firebase.json`에는 `runtime`이 없다). 이전 판 프리즈 태그 `voice-cinema-freeze-20261124-pre-nodejs26`.
+- 확인(Node 26.13.1): lint · 빌드 · 유닛 루트 153 · functions 147 · Functions 에뮬레이터(`firebase-tools@15.37.0 emulators:exec --only functions`)가 `voiceCinema`를 불러 `/upload`를 인증 없이 부르면 403.
+  🟡 firebase-tools 15.37.0은 nodejs26을 아직 «beta»로 표시해 배포 때 «Preview» 경고를 낸다(실제 GA는 Google 노트) — 경고만 나고 배포는 진행된다. 다음 firebase-tools에서 사라지면 이 줄을 지운다.
+
 ## 의존성 안정 최신판으로 올림 (2026-11-19, 지시 Bumm님 · 팀장 전달, COMMON_STANDARDS §36)
 
 - 루트: react · react-dom 19.3.0 → 19.3.1, vite 8.3.5 → 8.3.8, vitest 5.0.5 → 5.1.1, @vitejs/plugin-react 6.1.1 → 6.3.0, subset-font 2.7.0 → 2.9.0, @types/node 26.5.0 → 26.6.6.
